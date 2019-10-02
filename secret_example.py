@@ -1,5 +1,6 @@
 """ 
-file to store the account credenitals or API token. 
+example of the "secret.py" file where you can store the
+account credenitals or API token. 
 credentials variable may have two different format:
 -------
 1. Login/password
