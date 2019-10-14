@@ -84,7 +84,7 @@ class Req:
             try: 
                 url = self._url(uri)
                 console.info("Request > POST %s" % url)
-                resp = self.session.post(url, json=body)
+                resp = self.session.post(url, data=body)
                 resp.raise_for_status()
             except HTTPError as http_err:
                 console.error(f'HTTP error occurred: {http_err}')  # Python 3.6

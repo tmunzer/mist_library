@@ -64,11 +64,16 @@ mist = mist_lib.Mist_Session()
 org_id = org_select()
 site_ids = site_select(org_id)
 
-  
-settings = mist_lib.models.sites.Settings()
-settings.rogue.cli()
+
+wh = mist_lib.models.sites.webhooks.Webhook()
+wh.cli()
+print(wh)
 
 for site_id in site_ids:
-    mist_lib.requests.sites.settings.update(mist, site_id, settings.toJSON())
-    print(mist_lib.requests.sites.settings.get(mist, site_id)['result']["rogue"])
+    mist_lib.requests.sites.webhooks.create(mist, site_id, wh.toJSON())
+    print(mist_lib.requests.sites.webhooks.get(mist, site_id)['result'])
 exit(0)
+
+
+for webhook in mist_lib.requests.sites.webhooks.get(mist, site_id)["result"]:
+    mist_lib.requests.sites.webhooks.delete(mist, webhook['site_id'], webhook['id'])
