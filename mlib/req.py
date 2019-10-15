@@ -27,6 +27,8 @@ class Req:
         return "https://" + self.host + uri
 
     def _check_authorization(self, method, org_id="", site_id=""):
+        return True
+        # TODO: current validation may not working in some conditions... Bypassing it
         if method in ["POST", "PUT", "DELETE"]:
             if org_id != "":
                 for privilige in self.privileges:
@@ -84,12 +86,23 @@ class Req:
             try: 
                 url = self._url(uri)
                 console.info("Request > POST %s" % url)
-                resp = self.session.post(url, data=body)
+                print("--")
+                print(type(body))
+                if type(body) == str:
+                    resp = self.session.post(url, data=body)
+                elif type(body) == dict:
+                    resp = self.session.post(url, json=body)
+                else: 
+                    resp = self.session.post(url, json=body)
                 resp.raise_for_status()
             except HTTPError as http_err:
                 console.error(f'HTTP error occurred: {http_err}')  # Python 3.6
+                print(resp.request.headers)                
+                print(resp.request.body)
             except Exception as err:
                 console.error(f'Other error occurred: {err}')  # Python 3.6
+                print(resp.request.headers)                
+                print(resp.request.body)
             else: 
                 return self._response(resp, uri)
         else:
@@ -104,7 +117,12 @@ class Req:
                 url = self._url(uri)
                 console.info("Request > PUT %s" % url)
                 console.debug("Request body: \r\n%s" % body)
-                resp = self.session.put(url, data=body)
+                if type(body) == str:
+                    resp = self.session.put(url, data=body)
+                elif type(body) == dict:
+                    resp = self.session.put(url, json=body)
+                else: 
+                    resp = self.session.put(url, json=body)
                 resp.raise_for_status()
             except HTTPError as http_err:
                 console.error(f'HTTP error occurred: {http_err}')  # Python 3.6
