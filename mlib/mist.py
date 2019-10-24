@@ -30,7 +30,7 @@ class Mist_Session(Req):
         self.last_name = ""
         self.phone = ""
         self.via_sso = False
-        self.privileges = []
+        self.privileges = Privileges([])
         self.session_expiry = ""
         self.tags = []
         self.authenticated = False
@@ -147,9 +147,19 @@ class Mist_Session(Req):
     def get_authenticated(self):
         return self.authenticated or self.apitoken != ""
 
-    def get_api_token(self):
+    def list_api_token(self):
+        uri = "https://%s/api/v1/self/apitokens" % self.host
+        resp = self.session.get(uri)
+        return resp
+
+    def create_api_token(self):
         uri = "https://%s/api/v1/self/apitokens" % self.host
         resp = self.session.post(uri)
+        return resp
+
+    def delete_api_token(self, token_id):
+        uri = "https://%s/api/v1/self/apitokens/%s" % (self.host, token_id)
+        resp = self.session.delete(uri)
         return resp
 
     def two_factor_authentication(self, two_factor):

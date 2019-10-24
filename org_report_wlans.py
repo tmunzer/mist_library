@@ -11,10 +11,10 @@ wlans_summarized = []
 fields = ["ssid", "enabled", "auth", "auth_servers", "acct_servers", "band", "interface", "vlan_id", "dynamic_vlan", "hide_ssid" ]
 for entry in mist.privileges:
     if not "site_id" in entry and "org_id" in entry and entry["org_id"] != "":
-        sites = mist_lib.requests.org.sites.mget(mist, entry["org_id"])["result"]
+        sites = mist_lib.requests.org.sites.get(mist, entry["org_id"])["result"]
         for site in sites:
             wlans = []
-            site_wlans = mist_lib.requests.sites.wlan.report(mist, site["id"], fields)            
+            site_wlans = mist_lib.requests.sites.wlans.report(mist, site["id"], fields)            
             for site_wlan in site_wlans:                
                 site_wlan.insert(0, entry["name"])
                 site_wlan.insert(1, entry["org_id"])

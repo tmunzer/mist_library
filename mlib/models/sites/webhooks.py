@@ -38,7 +38,7 @@ class Webhook:
         return string
         
     def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
+        return json.dumps(self.__dict__)
 
     def define(self, name = "", wh_type="http-post", url="", secret="", splunk_token="", verify_cert=False, enabled=True, topics=[]):
         self.set_name(name)
@@ -87,8 +87,8 @@ class Webhook:
             val = input("Please enter the number corresponding to your webhook type: ")                
             try:
                 val_num = int(val)
-                if val_num >= 0 and val_num < len(self.types_list):
-                    resp = self.set_type(self.types_list[val_num])
+                if val_num >= 0 and val_num < len(types_list):
+                    resp = self.set_type(types_list[val_num])
             except:
                 print("Please enter a number between 0 and %s" % len(types_list))
         resp = False

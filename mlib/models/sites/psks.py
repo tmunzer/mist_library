@@ -103,7 +103,7 @@ class Psk:
             return False
 
     def set_passphrase(self, value):        
-        if len(value) >= 0 and len(value)<=63:            
+        if len(value) >= 8 and len(value)<=63:            
             self.passphrase = value
             return True
         elif len(value) == 64:         
@@ -130,7 +130,7 @@ class Psk:
         return True
 
     def set_vlan_id(self, value):
-        if len(value) == 0:
+        if value == "" or value == 0:
             self.vlan_id = 0     
             return True
         else:
@@ -147,14 +147,18 @@ class Psk:
                 return False  
 
     def set_mac(self, value):
-        try:
-            value = str(value)
-            value = value.replace(":", "").replace("-", "")
-            if re.match('^[0-9A-F]*$', value):
-                self.mac = value
-                return True
-            else:
+        if value == "":
+            self.mac = ""
+            return True
+        else:
+            try:
+                value = str(value)
+                value = value.replace(":", "").replace("-", "")
+                if re.match('^[0-9A-F]*$', value):
+                    self.mac = value
+                    return True
+                else:
+                    console.error("%s is not a valid MAC Address format." % value)
+            except:
                 console.error("%s is not a valid MAC Address format." % value)
-        except:
-            console.error("%s is not a valid MAC Address format." % value)
-            return False
+                return False

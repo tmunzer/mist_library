@@ -33,7 +33,7 @@ def delete(mist_session, org_id, site_id):
     resp = mist_session.mist_delete(uri)
     return resp
 
-def mget(mist_session, org_id):
+def get(mist_session, org_id):
     uri = "/api/v1/orgs/%s/sites" % org_id
     resp = mist_session.mist_get(uri, org_id=org_id)
     return resp
