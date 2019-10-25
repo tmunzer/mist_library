@@ -20,7 +20,7 @@ finally:
 class Mist_Session(Req):
     """Class managing REST login and requests"""
 
-    def __init__(self):    
+    def __init__(self, session_file=None):    
 
         # user and https session parameters
         self.host = ""
@@ -37,9 +37,12 @@ class Mist_Session(Req):
         self.session = requests.session()
         self.session.headers.update({'Content-Type': "application/json"})
         self.csrftoken = ""
-        self.apitoken = ""
+        self.apitoken = None
         #Try to log in
-        self._credentials()
+        if session_file != None:
+            self._load(session_file)
+        else:
+            self._credentials()
         # if successfuly authenticated
         if (self.get_authenticated()): self.getself()
         # if authentication failed, exit with error code 255
@@ -66,6 +69,25 @@ class Mist_Session(Req):
                     string += "%s\r\n" % (getattr(self, field))
                 string += "\r\n"
         return string
+
+    def _restore_session(self, file):                
+        console.info("Restoring session...")
+        try:
+            with open(file, 'r') as f:
+                for line in f:
+                    line = line.replace('\n', '')
+                    line = json.loads(line)
+                    if "cookie" in line:
+                        cookie = line["cookie"]
+                        self.session.cookies.set(**cookie)
+                    elif "host" in line:
+                        self.host = line["host"]
+            console.info("Session restored.")
+            console.debug("Cookies > %s" % self.session.cookies)
+            console.debug("Host > %s" % self.host) 
+            self._set_authenticated(True)
+        except:
+            console.error("Unable to load session...")            
 
     def _credentials(self):
         try:
@@ -145,7 +167,7 @@ class Mist_Session(Req):
             del self.session
 
     def get_authenticated(self):
-        return self.authenticated or self.apitoken != ""
+        return self.authenticated or self.apitoken != None
 
     def list_api_token(self):
         uri = "https://%s/api/v1/self/apitokens" % self.host
@@ -205,6 +227,21 @@ class Mist_Session(Req):
                             self.tags.append(tag)
                     else:
                         setattr(self, key, val)
+
+    def save(self, file_path="./session.py"):
+        if self.apitoken != None:
+            console.error("API Token used. There is no cookies to save...")
+        else:
+            console.warning("This will save in clear text your session cookies!")
+            sure = input("Are you sure? (y/N)")
+            if sure.lower() == "y":
+                with open(file_path, 'w') as f:
+                    for cookie in self.session.cookies:
+                        cookie_json = json.dumps({"cookie":{"domain": cookie.domain, "name": cookie.name, "value": cookie.value}})
+                        f.write("%s\r\n" % cookie_json)
+                    host = json.dumps({"host": self.host})
+                    f.write("%s\r\n" % host)
+                console.info("session saved.")
 
 def disp(data):
     print(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))

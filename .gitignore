@@ -1,5 +1,6 @@
 secret.*
 config.py
+session.py
 
 
 # Byte-compiled / optimized / DLL files
