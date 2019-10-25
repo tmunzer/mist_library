@@ -72,7 +72,7 @@ try:
         for row in ppsk_file:
             username = row[0]
             passphrase = row[1]
-            ssid = "MlN"            
+            ssid = "test"            
             print(', '.join(row))
             psk.define(name=username, passphrase=passphrase, ssid=ssid)
             mist_lib.requests.sites.psks.create(mist, site_id, psk.toJSON())

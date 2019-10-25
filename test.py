@@ -1,8 +1,8 @@
 import mlib
 
 
-session = mlib.Mist_Session()
-
+session = mlib.Mist_Session("./sessidon.py")
+exit(0)
 
 import csv
 import sys

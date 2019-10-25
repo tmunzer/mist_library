@@ -9,3 +9,8 @@ def get_ap_led_status(mist_session):
     resp = mist_session.mist_get(uri)
     return resp
 
+def get_ap_models(mist_session):
+    uri = "/api/v1/const/device_models"
+    resp = mist_session.mist_get(uri)
+    return resp
+
