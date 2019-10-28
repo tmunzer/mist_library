@@ -46,65 +46,70 @@ def select_rule_type():
 
 def configure_rule(rule_conf):
     if rule_conf['src'] == "name":
-        #TODO
-            # // use device name (via Installer APIs)
-            #{
-            #     "src": "name",
-            #     "expression": "[0:3]",           // "abcdef" -> "abc"
-            #                   "split(.)[1]",     // "a.b.c" -> "b"
-            #                   "split(-)[1][0:3], // "a1234-b5678-c90" -> "b56"  
-            #     "prefix": "XX-",
-            #     "suffix": "-YY"
-            # },             
-        print("not yet implemented...")
+        # // use device name (via Installer APIs)
+        #{
+        #     "src": "name",
+        #     "expression": "[0:3]",           // "abcdef" -> "abc"
+        #                   "split(.)[1]",     // "a.b.c" -> "b"
+        #                   "split(-)[1][0:3], // "a1234-b5678-c90" -> "b56"  
+        #     "prefix": "XX-",
+        #     "suffix": "-YY"
+        # },             
+        print("Expression to extract the site name from the LLDP system name")
+        print("Example: \"[0:3]\",           // \"abcdef\" -> \"abc\"")
+        print("         \"split(.)[1]\",     // \"a.b.c\" -> \"b\"")
+        print("         \"split(-)[1][0:3]\", // \"a1234-b5678-c90\" -> \"b56\"")
+        rule_conf['expression'] = input("Expression: ")
+        rule_conf['prefix'] = input("Prefix (XX-)": )
+        rule_conf['suffix'] = input("Suffix (-XX)": )
     elif rule_conf['src'] == "subnet":
-            # // use subnet
-            # {
-            #     "src": "subnet",
-            #     "subnet": "10.1.2.0/18",
-            #     "value": "s1351"
-            # },
-            rule_conf['subnet'] = input("Please enter the subnet value (ex: 10.1.2.0/18): ")
-            site_id = cli.select_site(mist, org_id=org_id)
-            rule_conf['value'] = mist_lib.requests.org.sites.stats(mist, site_id)['result']['name']             
+        # // use subnet
+        # {
+        #     "src": "subnet",
+        #     "subnet": "10.1.2.0/18",
+        #     "value": "s1351"
+        # },
+        rule_conf['subnet'] = input("Please enter the subnet value (ex: 10.1.2.0/18): ")
+        site_id = cli.select_site(mist, org_id=org_id)
+        rule_conf['value'] = mist_lib.requests.org.sites.stats(mist, site_id)['result']['name']             
     elif rule_conf['src'] == "lldp_system_name":
-            # // use LLDP System Name
-            # {
-            #     "src": "lldp_system_name",
-            #     "expression": "..." // same as above
-            # },
-            print("Expression to extract the site name from the LLDP system name")
-            print("Example: \"[0:3]\",           // \"abcdef\" -> \"abc\"")
-            print("         \"split(.)[1]\",     // \"a.b.c\" -> \"b\"")
-            print("         \"split(-)[1][0:3]\", // \"a1234-b5678-c90\" -> \"b56\"")
-            rule_conf['expression'] = input("Expression: ")
+        # // use LLDP System Name
+        # {
+        #     "src": "lldp_system_name",
+        #     "expression": "..." // same as above
+        # },
+        print("Expression to extract the site name from the LLDP system name")
+        print("Example: \"[0:3]\",           // \"abcdef\" -> \"abc\"")
+        print("         \"split(.)[1]\",     // \"a.b.c\" -> \"b\"")
+        print("         \"split(-)[1][0:3]\", // \"a1234-b5678-c90\" -> \"b56\"")
+        rule_conf['expression'] = input("Expression: ")
     elif rule_conf['src'] == "dns_suffix":
-            # // use DNS Suffix
-            # {
-            #     "src": "dns_suffix",
-            #     "expression": "..." // same as above
-            # },
-            print("Expression to extract the site name from the DNS suffix name")
-            print("Example: \"[0:3]\",           // \"abcdef\" -> \"abc\"")
-            print("         \"split(.)[1]\",     // \"a.b.c\" -> \"b\"")
-            print("         \"split(-)[1][0:3]\", // \"a1234-b5678-c90\" -> \"b56\"")
-            rule_conf['expression'] = input("Expression: ")
+        # // use DNS Suffix
+        # {
+        #     "src": "dns_suffix",
+        #     "expression": "..." // same as above
+        # },
+        print("Expression to extract the site name from the DNS suffix name")
+        print("Example: \"[0:3]\",           // \"abcdef\" -> \"abc\"")
+        print("         \"split(.)[1]\",     // \"a.b.c\" -> \"b\"")
+        print("         \"split(-)[1][0:3]\", // \"a1234-b5678-c90\" -> \"b56\"")
+        rule_conf['expression'] = input("Expression: ")
     elif rule_conf['src'] == "model":
-            # {
-            #     "src": "model",
-            #     "model": "AP41",
-            #     "value": "s1351"
-            # }       
-            rule_conf['model'] = input("Please enter the model of AP: ")
-            site_id = cli.select_site(mist, org_id=org_id)
-            rule_conf['value'] = mist_lib.requests.org.sites.stats(mist, site_id)['result']['name'] 
+        # {
+        #     "src": "model",
+        #     "model": "AP41",
+        #     "value": "s1351"
+        # }       
+        rule_conf['model'] = input("Please enter the model of AP: ")
+        site_id = cli.select_site(mist, org_id=org_id)
+        rule_conf['value'] = mist_lib.requests.org.sites.stats(mist, site_id)['result']['name'] 
     return rule_conf
 
 
 ####### ENTRY POINT
 
 
-mist = mist_lib.Mist_Session("./session.py")
+mist = mist_lib.Mist_Session()
 
 org_id = cli.select_org(mist)
 #cli.display_json(mist_lib.requests.org.settings.get(mist, org_id)["result"])
