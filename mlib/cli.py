@@ -1,18 +1,19 @@
 import mlib as mist_lib
+import json
 
-def select_org(mist, allow_many=False):
+def select_org(mist_session, allow_many=False):
     i=-1
     org_ids=[]
     print("\r\nAvailable organizations:")
-    for privilege in mist.privileges:
+    for privilege in mist_session.privileges:
         if privilege["scope"] == "org":
             i+=1
             org_ids.append(privilege["org_id"])
             print("%s) %s (id: %s)" % (i, privilege["name"], privilege["org_id"]))
-    string = "\r\nSelect an Org (0 to %s, "
+    string = "\r\nSelect an Org (0 to %s," % i
     if allow_many == True:
         string += ""
-    resp = input(" or q to exit): " %i)
+    resp = input(" %s or q to exit): " % string)
     if resp == "q":
         exit(0)
     else:
@@ -22,17 +23,17 @@ def select_org(mist, allow_many=False):
                 return org_ids[resp_num]
             else:
                 print("Please enter a number between 0 and %s." %i)
-                return select_org(mist)
+                return select_org(mist_session)
         except:
             print("Please enter a number.")
-            return select_org(mist)
+            return select_org(mist_session)
 
-def select_site(mist, org_id=None, allow_many=False):
+def select_site(mist_session, org_id=None, allow_many=False):
     if org_id == None:
-        org_id = select_org(mist)
+        org_id = select_org(mist_session)
     i=-1
     site_ids=[]
-    site_choices = mist_lib.requests.org.sites.get(mist, org_id)['result']
+    site_choices = mist_lib.requests.org.sites.get(mist_session, org_id)['result']
     print("\r\nAvailable sites:")
     for site in site_choices:        
         i+=1
@@ -56,4 +57,8 @@ def select_site(mist, org_id=None, allow_many=False):
                     return select_site(org_id)
         except:
             print("Only numbers are allowed.")
-            return select_site(mist, org_id, allow_many)
+            return select_site(mist_session, org_id, allow_many)
+
+
+def display_json(data):
+    print(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))

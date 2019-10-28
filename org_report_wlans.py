@@ -5,7 +5,7 @@ from tabulate import tabulate
 csv_separator = ","
 
 
-mist = mist_lib.Mist_Session()
+mist = mist_lib.Mist_Session("./session.py")
 
 wlans_summarized = []
 fields = ["ssid", "enabled", "auth", "auth_servers", "acct_servers", "band", "interface", "vlan_id", "dynamic_vlan", "hide_ssid" ]

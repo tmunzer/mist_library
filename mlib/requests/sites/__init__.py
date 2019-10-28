@@ -16,3 +16,4 @@ from . import virtual_beacons
 from . import webhooks
 from . import wlans
 from . import zones
+from . import devices

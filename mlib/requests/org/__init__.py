@@ -5,3 +5,4 @@ from . import licenses
 from . import site_groups
 from . import sites
 from . import stats
+from . import settings

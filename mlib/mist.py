@@ -40,7 +40,7 @@ class Mist_Session(Req):
         self.apitoken = None
         #Try to log in
         if session_file != None:
-            self._load(session_file)
+            self._restore_session(session_file)
         else:
             self._credentials()
         # if successfuly authenticated
