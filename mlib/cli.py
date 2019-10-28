@@ -1,15 +1,42 @@
 import mlib as mist_lib
 import json
 
+def _search_org(orgs, org_id):
+    i = 0
+    for org in orgs:
+        if org['org_id'] == org_id:
+            return i
+        i+=1
+    return None
+
 def select_org(mist_session, allow_many=False):
     i=-1
-    org_ids=[]
+    org_ids = []
     print("\r\nAvailable organizations:")
     for privilege in mist_session.privileges:
         if privilege["scope"] == "org":
             i+=1
             org_ids.append(privilege["org_id"])
             print("%s) %s (id: %s)" % (i, privilege["name"], privilege["org_id"]))
+
+    orgs_with_sites = []
+    for privilege in mist_session.privileges:
+        if privilege["scope"] == "site":
+            index = _search_org(orgs_with_sites, privilege["org_id"])
+            if index == None:
+                i+=1
+                org_ids.append(privilege["org_id"])
+                print("%s) %s (id: %s)" % (i, privilege["org_name"], privilege["org_id"]))
+                orgs_with_sites.append({
+                    "org_id": privilege["org_id"], 
+                    "name": privilege["name"], 
+                    "sites": [
+                        {"site_id": privilege["site_id"], "name": privilege["name"]}
+                        ]
+                    })
+            else:
+                orgs_with_sites[index]["sites"].append({"site_id": privilege["site_id"], "name": privilege["name"]})
+
     string = "\r\nSelect an Org (0 to %s," % i
     if allow_many == True:
         string += ""
@@ -33,14 +60,19 @@ def select_site(mist_session, org_id=None, allow_many=False):
         org_id = select_org(mist_session)
     i=-1
     site_ids=[]
-    site_choices = mist_lib.requests.org.sites.get(mist_session, org_id)['result']
+    site_choices = []
+    for privilege in mist_session.privileges:
+        if privilege["scope"] == "site" and privilege["org_id"] == org_id:
+            site_choices.append({"id": privilege["site_id"], "name": privilege["name"]})
+    if site_choices == []:
+        site_choices = mist_lib.requests.org.sites.get(mist_session, org_id)['result']
     print("\r\nAvailable sites:")
     for site in site_choices:        
         i+=1
         site_ids.append(site["id"])
         print("%s) %s (id: %s)" % (i, site["name"], site["id"]))
     if allow_many: resp = input("\r\nSelect a Site (0 to %s, \"0,1\" for sites 0 and 1, \"a\" for all, or q to exit): " %i)
-    else: resp = input("\r\nSelect a Site (0 to %s, \"0,1\" for sites 0 and 1, or q to exit): " %i)
+    else: resp = input("\r\nSelect a Site (0 to %s, or q to exit): " %i)
     if resp.lower() == "q":
         exit(0)
     elif resp.lower() == "a" and allow_many:
