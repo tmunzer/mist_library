@@ -1,0 +1,37 @@
+{
+    "ssid": "mistworkshop",
+    "enabled": true,
+    "auth": {
+        "type": "psk",
+        "psk": "mistworkshop"
+    },
+    "roam_mode": "none",
+    "band": "both",
+    "band_steer": false,
+    "rateset": {
+        "24": {
+            "min_rssi": 0,
+            "template": "high-density"
+        },
+        "5": {
+            "min_rssi": -70,
+            "template": "high-density"
+        }
+    },
+    "disable_11ax": false,
+    "vlan_enabled": false,
+    "hide_ssid": false,
+    "isolation": false,
+    "arp_filter": false,
+    "limit_bcast": false,
+    "allow_mdns": false,
+    "apply_to": "site",
+    "wxtag_ids": [],
+    "ap_ids": [],
+    "schedule": {
+        "enabled": false
+    },
+    "qos": {
+        "overwrite": false
+    }
+}

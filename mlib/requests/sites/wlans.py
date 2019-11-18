@@ -4,11 +4,23 @@ def get(mist_session, site_id):
     resp = mist_session.mist_get(uri, site_id=site_id)
     return resp
 
+
+def create(mist_session, site_id, wlan_settings):
+    uri = "/api/v1/sites/%s/wlans" % site_id
+    resp = mist_session.mist_post(uri, site_id=site_id, body=wlan_settings)
+    return resp
+
+def delete(mist_session, site_id, wlan_id):
+    uri = "/api/v1/sites/%s/wlans/%s" % (site_id, wlan_id)
+    resp = mist_session.mist_delete(uri, site_id=site_id)
+    return resp
+
+
 def report(mist_session, site_id, fields):
     wlans = get(mist_session, site_id)
     result = []
     for wlan in wlans['result']:
-        temp= []
+        temp = []
         for field in fields:
             if field not in wlan:
                 temp.append("")
@@ -18,25 +30,29 @@ def report(mist_session, site_id, fields):
                 string = ""
                 for server_num, server_val in enumerate(wlan["auth_servers"]):
                     if "host" in server_val:
-                        string += "%s:%s" %(server_val["host"], server_val["port"])
+                        string += "%s:%s" % (server_val["host"],
+                                             server_val["port"])
                     else:
-                        string += "%s:%s" %(server_val["ip"], server_val["port"])
-                    if server_num < len(wlan["auth_servers"]) -1:
+                        string += "%s:%s" % (server_val["ip"],
+                                             server_val["port"])
+                    if server_num < len(wlan["auth_servers"]) - 1:
                         string += " - "
                 temp.append(string)
             elif field == "acct_servers":
                 string = ""
                 for server_num, server_val in enumerate(wlan["auth_servers"]):
                     if "host" in server_val:
-                        string += "%s:%s" %(server_val["host"], server_val["port"])
+                        string += "%s:%s" % (server_val["host"],
+                                             server_val["port"])
                     else:
-                        string += "%s:%s" %(server_val["ip"], server_val["port"])
-                    if server_num < len(wlan["acct_servers"]) -1:
+                        string += "%s:%s" % (server_val["ip"],
+                                             server_val["port"])
+                    if server_num < len(wlan["acct_servers"]) - 1:
                         string += " - "
                 temp.append(string)
-            elif field == "dynamic_vlan" :
+            elif field == "dynamic_vlan":
                 string = "Disabled"
-                if wlan["dynamic_vlan"] != None and wlan["dynamic_vlan"]["enabled"] == True: 
+                if wlan["dynamic_vlan"] != None and wlan["dynamic_vlan"]["enabled"] == True:
                     string = "default: "
                     if "default_vlan_id" in wlan["dynamic_vlan"]:
                         string += "%s | others: " % wlan["dynamic_vlan"]["default_vlan_id"]
@@ -45,12 +61,12 @@ def report(mist_session, site_id, fields):
                     if wlan["dynamic_vlan"]["vlans"] != None:
                         for vlan_num, vlan_val in enumerate(wlan["dynamic_vlan"]["vlans"]):
                             string += "%s" % vlan_val
-                            if vlan_num < len(wlan["dynamic_vlan"]["vlans"]) -1:
+                            if vlan_num < len(wlan["dynamic_vlan"]["vlans"]) - 1:
                                 string += " - "
                     else:
                         string += "None"
                 temp.append(string)
             else:
-                temp.append("%s" %wlan[field])
+                temp.append("%s" % wlan[field])
         result.append(temp)
     return result
