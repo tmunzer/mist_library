@@ -60,8 +60,8 @@ def configure_rule(rule_conf):
         print("         \"split(.)[1]\",     // \"a.b.c\" -> \"b\"")
         print("         \"split(-)[1][0:3]\", // \"a1234-b5678-c90\" -> \"b56\"")
         rule_conf['expression'] = input("Expression: ")
-        rule_conf['prefix'] = input("Prefix (XX-)": )
-        rule_conf['suffix'] = input("Suffix (-XX)": )
+        rule_conf['prefix'] = input("Prefix (XX-): " )
+        rule_conf['suffix'] = input("Suffix (-XX): ")
     elif rule_conf['src'] == "subnet":
         # // use subnet
         # {
