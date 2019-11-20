@@ -41,7 +41,7 @@ class Mist_Session(Req):
         #Try to log in
         if session_file != None:
             self._restore_session(session_file)
-        else:
+        if self.authenticated == False:
             self._credentials()
         # if successfuly authenticated
         if (self.get_authenticated()): self.getself()
@@ -86,10 +86,16 @@ class Mist_Session(Req):
             console.debug("Cookies > %s" % self.session.cookies)
             console.debug("Host > %s" % self.host) 
             self._set_authenticated(True)
+            valid = self.getself()
+            if valid == False:
+                console.error("Session expired...")
+                self._set_authenticated(False)
+
         except:
             console.error("Unable to load session...")            
 
     def _credentials(self):
+        self.session = requests.session()
         try:
             from config import credentials
             console.notice("Login file found.")
@@ -133,7 +139,6 @@ class Mist_Session(Req):
         resp = self.session.post(self._url(uri), json=body)
         if resp.status_code == 200:
             console.notice("authenticated")
-
             self._set_authenticated(True)
         elif resp.status_code == 400:
             console.error("not authenticated: " + resp.json["detail"])
@@ -206,7 +211,7 @@ class Mist_Session(Req):
         Return: none"""
         uri = "/api/v1/self"
         resp = self.mist_get(uri)
-        if resp['result'] != "":
+        if resp != None and 'result' in resp:
             # Deal with 2FA if needed
             if (
                 "two_factor_required" in resp['result']
@@ -227,6 +232,10 @@ class Mist_Session(Req):
                             self.tags.append(tag)
                     else:
                         setattr(self, key, val)
+                return True
+        else:
+            console.error("Authentication not valid...")
+            return False
 
     def save(self, file_path="./session.py"):
         if self.apitoken != None:
