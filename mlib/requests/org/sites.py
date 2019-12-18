@@ -18,13 +18,8 @@ def create(mist_session, org_id, name, timezone="", country_code="", address="",
     resp = mist_session.mist_post(uri, org_id=org_id, body=body)
     return resp
 
-def update(mist_session, org_id, site_id, update={}):
+def update(mist_session, org_id, site_id, body={}):
     uri = "/api/v1/sites/%s" % site_id
-    fields = ["name", "timezone", "country_code", "address", "lat", "lng", "sitegroup_ids", "rftemplate_id", "secpolicy_id", "alarmtemplate_id"]
-    body = {}
-    for field in fields:
-        if hasattr(update, field):
-            body[field] = update[field]
     resp = mist_session.mist_put(uri, org_id=org_id, body=body)
     return resp
     

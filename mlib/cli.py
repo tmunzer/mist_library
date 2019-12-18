@@ -83,7 +83,10 @@ def select_site(mist_session, org_id=None, allow_many=False):
             for num in resp:
                 resp_num = int(num)
                 if resp_num >= 0 and resp_num <= i:
-                    return site_choices[resp_num]["id"]
+                    if allow_many:
+                        return [site_choices[resp_num]["id"]]
+                    else:
+                        return site_choices[resp_num]["id"]
                 else:
                     print("%s is not part of the possibilities." % resp_num)
                     return select_site(org_id)

@@ -60,7 +60,7 @@ def display_wlan(site_id):
 
 
 mist = mist_lib.Mist_Session("./session.py")
-mist.save()
+#mist.save()
 site_id = cli.select_site(mist, allow_many=False)
 
 while True:

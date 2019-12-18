@@ -1,3 +1,14 @@
+'''
+Python script to invite/add adminsitrators from a CSV file.
+The CSV file must have 3 rows: email, first name, last name
+
+You can run the script with the command "python3 org_admins_import.py <path_to_the_csv_file>"
+
+The script has 3 different steps:
+1) admin login
+2) select the organisation where you want to add/invite the admins
+3) choose if you want to give access to the whole organisation, or only to specific sites
+'''
 import mlib as mist_lib
 from tabulate import tabulate
 import mlib.cli as cli
@@ -5,26 +16,26 @@ import sys
 import csv
 #### PARAMETERS #####
 csv_separator = ","
-privileges = [{ "scope":"site", "site_id": "91e219cb-8fe7-4ab7-88bb-a7dcfdfebbd5", "role": "write" }]
-org_id = "ebad74f0-2614-42a8-b400-850a0f98248a"
-    # "privileges": [
-    #     { "scope":"org", "role": "admin" },
-    #     { "scope":"site", "site_id": "d96e3952-53e8-4266-959a-45acd55f5114", "role": "admin" }
-    # ]
-
+privileges = []
+    
 mist = mist_lib.Mist_Session()
+
+roles = {"s": "admin", "n": "write", "o": "read", "h":"helpdesk"}
+role = ""
 if privileges == []:
     org_id = cli.select_org(mist)
-    permission = input("Which level of privilege at the org level (\"a\" for admin, \"w\" for write,\"r\" for read,\"h\" for helpdesk,\"i\" for installer, \"n\" for none)")
-    if permission.lower() == "a":
-        privileges.append()
+    while role not in roles:
+        role = input("Which level of privilege at the org level (\"s\" for Super Admin, \"n\" for Network Admin,\"o\" for observer,\"h\" for helpdesk)")    
     while True:
-        all_sites = input("Do you want to select specific sites (Y/n)?")
+        all_sites = input("Do you want to select specific sites (y/N)?")
         if all_sites.lower()=="y": 
             site_ids = cli.select_site(mist, org_id, True)
+            for site_id in site_ids:
+                privileges.append({"scope": "site", "org_id": org_id, "site_id": site_id, "role":roles[role]})
             break
-        elif all_sites.lower() == "n" or all_sites == "":
-            site_ids = []
+        elif all_sites.lower() == "n" or all_sites == "":            
+            site_ids = mist_lib.org.sites.get(mist, org_id)
+            privileges.append({"scope": "org", "org_id": org_id, "site_id":site_ids["result"][0], "role":roles[role]})
             break
 
 
@@ -43,5 +54,6 @@ except:
     print("Error while opening the CSV file... Aborting")
 
 admins = mist_lib.requests.org.admins.get(mist, org_id)['result']
-print(admins)
+print(tabulate(admins))
+#print(admins)
 exit(0)
