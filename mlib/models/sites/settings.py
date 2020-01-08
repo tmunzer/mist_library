@@ -6,7 +6,7 @@ try:
 except:
     log_level = 6
 finally:
-    from mlib.debug import Console
+    from mlib.__debug import Console
     console = Console(log_level)
 
 

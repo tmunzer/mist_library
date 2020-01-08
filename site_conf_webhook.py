@@ -13,7 +13,7 @@ def multichoices(list_title="", entries_list="", allow_all=False):
     for entry in entries_list:        
         i+=1
         ids.append(entry["id"])
-        print("%s) %s (id: %s)" % (i, site["name"], site["id"]))
+        print("%s) %s (id: %s)" % (i, entry["name"], entry["id"]))
     resp = input("\r\nSelect a Site (0 to %s, \"0,1\" for sites 0 and 1, a for all, or q to exit): " %i)
     if resp == "q":
         exit(0)

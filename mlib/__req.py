@@ -8,7 +8,7 @@ try:
 except:
     log_level = 6
 finally:
-    from .debug import Console
+    from .__debug import Console
     console = Console(log_level)
 
 

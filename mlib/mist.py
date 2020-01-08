@@ -3,7 +3,7 @@ import json
 import weakref
 from getpass import getpass
 
-from .req import Req
+from .__req import Req
 from .models.privilege import Privileges
 
 
@@ -12,7 +12,7 @@ try:
 except:
     log_level = 6
 finally:
-    from .debug import Console
+    from .__debug import Console
     console = Console(log_level)
 
 #### PARAMETERS #####

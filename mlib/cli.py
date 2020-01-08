@@ -1,6 +1,7 @@
 import mlib as mist_lib
 import json
 
+
 def _search_org(orgs, org_id):
     i = 0
     for org in orgs:
@@ -97,3 +98,4 @@ def select_site(mist_session, org_id=None, allow_many=False):
 
 def display_json(data):
     print(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
+
