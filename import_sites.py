@@ -1,15 +1,22 @@
 import mlib as mist_lib
 from mlib import cli
-from mlib import debug
 from geopy import Nominatim
 from tzwhere import tzwhere
+
+try:
+    from config import log_level
+except:
+    log_level = 6
+finally:
+    from mlib.__debug import Console
+    console = Console(log_level)
+
 #### PARAMETERS #####
 
 geolocator = Nominatim(user_agent="import_app")
 tzwhere = tzwhere.tzwhere()
 
 
-console = debug.Console(6)
 mist = mist_lib.Mist_Session("./session.py")
 #mist.save()
 org_id = "203d3d02-dbc0-4c1b-9f41-76896a3330f4"#cli.select_org(mist)
