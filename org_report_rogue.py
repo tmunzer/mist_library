@@ -1,15 +1,25 @@
+'''
+Python script gerenates a Rogue AP report.
+It will list all the Rogue APs based on the selected types ("r_type" variable), 
+and generate a CSV file based on the selected fields ("fields" variable).
+
+The script is requesting information for all the organisation the admin has access to.
+
+You can run the script with the command "python3 org_report_rogue.py"
+'''
+
 import mlib as mist_lib
 from tabulate import tabulate
 
 #### PARAMETERS #####
 csv_separator = ","
+fields = ["ssid", "bssid", "num_aps", "ap_mac", "channel", "avg_rssi", "times_heard" ]
+r_types = [ "honeypot", "lan", "others", "spoof"]
 
 
 mist = mist_lib.Mist_Session("./session.py")
 
 rogues_summarized = []
-fields = ["ssid", "bssid", "num_aps", "ap_mac", "channel", "avg_rssi", "times_heard" ]
-r_types = [ "honeypot", "lan", "others", "spoof"]
 
 for r_type in r_types:
     for entry in mist.privileges:    
