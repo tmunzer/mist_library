@@ -32,9 +32,9 @@ def define_privileges(org_id):
     '''
     role = ""
     while role not in roles:
-        role = input("Which level of privilege at the org level (\"s\" for Super Admin, \"n\" for Network Admin,\"o\" for observer,\"h\" for helpdesk)")    
+        role = input("Which level of privilege at the org level (\"s\" for Super Admin, \"n\" for Network Admin,\"o\" for observer,\"h\" for helpdesk)? ")    
     while True:
-        all_sites = input("Do you want to select specific sites (y/N)?")
+        all_sites = input("Do you want to select specific sites (y/N)? ")
         if all_sites.lower()=="y": 
             site_ids = cli.select_site(mist, org_id, True)
             for site_id in site_ids:
