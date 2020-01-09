@@ -1,7 +1,7 @@
 secret.*
 config.py
 session.py
-
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
