@@ -86,8 +86,6 @@ class Req:
             try: 
                 url = self._url(uri)
                 console.info("Request > POST %s" % url)
-                print("--")
-                print(type(body))
                 if type(body) == str:
                     resp = self.session.post(url, data=body)
                 elif type(body) == dict:
