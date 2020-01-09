@@ -95,18 +95,17 @@ def select_site(mist_session, org_id=None, allow_many=False):
             print("Only numbers are allowed.")
             return select_site(mist_session, org_id, allow_many)
 
-def show(response):
+def show(response, fields=None):
     if "result" in response:
         data = response["result"]
     else:
         data = response
     print("")
-    print(type(data))
-    if type(data) == list:       
-        print("list") 
-        print(tabulate(data, headers="keys"))
+    if type(data) == list:  
+        if fields == None:
+            fields = "keys" 
+        print(tabulate(data, headers=fields))
     elif type(data) == dict:
-        print("dict")
         print(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
     else:
         print(data)    
