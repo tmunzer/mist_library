@@ -77,6 +77,6 @@ if privileges == []:
     define_privileges(org_id)
 import_admins(file_path, org_id)
 
-admins = mist_lib.requests.org.admins.get(mist, org_id)['result']
-print(tabulate(admins))
+admins = mist_lib.requests.org.admins.get(mist, org_id)
+cli.show(admins)
 exit(0)

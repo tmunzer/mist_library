@@ -1,6 +1,6 @@
 import mlib as mist_lib
 import json
-
+from tabulate import tabulate
 
 def _search_org(orgs, org_id):
     i = 0
@@ -95,6 +95,23 @@ def select_site(mist_session, org_id=None, allow_many=False):
             print("Only numbers are allowed.")
             return select_site(mist_session, org_id, allow_many)
 
+def show(response):
+    if "result" in response:
+        data = response["result"]
+    else:
+        data = response
+    print("")
+    print(type(data))
+    if type(data) == list:       
+        print("list") 
+        print(tabulate(data, headers="keys"))
+    elif type(data) == dict:
+        print("dict")
+        print(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
+    else:
+        print(data)    
+    print("")
+    
 
 def display_json(data):
     print(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
