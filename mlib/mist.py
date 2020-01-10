@@ -20,7 +20,7 @@ finally:
 class Mist_Session(Req):
     """Class managing REST login and requests"""
 
-    def __init__(self, session_file=None):    
+    def __init__(self, session_file="./session.py"):    
 
         # user and https session parameters
         self.host = ""
