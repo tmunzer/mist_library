@@ -17,3 +17,4 @@ from . import webhooks
 from . import wlans
 from . import zones
 from . import devices
+from . import info
