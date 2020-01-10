@@ -15,14 +15,14 @@ def select_org(mist_session, allow_many=False):
     org_ids = []
     print("\r\nAvailable organizations:")
     for privilege in mist_session.privileges:
-        if privilege["scope"] == "org":
+        if privilege["scope"] == "org" and not privilege["org_id"] in org_ids:
             i+=1
             org_ids.append(privilege["org_id"])
             print("%s) %s (id: %s)" % (i, privilege["name"], privilege["org_id"]))
 
     orgs_with_sites = []
     for privilege in mist_session.privileges:
-        if privilege["scope"] == "site":
+        if privilege["scope"] == "site" and not privilege["org_id"] in org_ids:
             index = _search_org(orgs_with_sites, privilege["org_id"])
             if index == None:
                 i+=1
@@ -38,17 +38,20 @@ def select_org(mist_session, allow_many=False):
             else:
                 orgs_with_sites[index]["sites"].append({"site_id": privilege["site_id"], "name": privilege["name"]})
 
-    string = "\r\nSelect an Org (0 to %s," % i
-    if allow_many == True:
-        string += ""
-    resp = input(" %s or q to exit): " % string)
+    if allow_many: resp = input("\r\nSelect a Org (0 to %s, \"0,1\" for sites 0 and 1, \"a\" for all, or q to exit): " %i)
+    else: resp = input("\r\nSelect a Org (0 to %s, or q to exit): " %i)
     if resp == "q":
         exit(0)
+    elif resp.lower() == "a" and allow_many:
+        return org_ids
     else:
         try:
             resp_num = int(resp)
             if resp_num >= 0 and resp_num <= i:
-                return org_ids[resp_num]
+                if allow_many:
+                    return [org_ids[resp_num]]
+                else:
+                    return org_ids[resp_num]
             else:
                 print("Please enter a number between 0 and %s." %i)
                 return select_org(mist_session)
