@@ -32,8 +32,7 @@ def bssids_from_sites(mist_session, sites, org_info, site_ids):
         if len(org_ids) > 1 or site["id"] in site_ids:     
             site_devices = mist_lib.requests.sites.devices.get(mist_session, site["id"])["result"]
             for site_device in site_devices:
-                device_stat_response = mist_lib.requests.sites.devices.get_stats_devices(mist_session, site["id"], site_device["id"])["result"]
-                print(device_stat_response)
+                device_stat_response = mist_lib.requests.sites.devices.get_stats_devices(mist_session, site["id"], site_device["id"])["result"]                
                 device_stat = []    
                 device_stat.append(org_info["id"])           
                 device_stat.append(org_info["name"])           
