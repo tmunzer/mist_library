@@ -47,9 +47,12 @@ class Req:
         else:
             return True
 
-    def _response(self, resp, uri=""):
+    def _response(self, resp, uri="", multi_pages_result=None):
         if resp.status_code == 200:
-            result = resp.json()
+            if multi_pages_result == None:
+                result = resp.json()
+            else: 
+                result = multi_pages_result
             error = ""
             console.debug("Response Status Code: %s" % resp.status_code)
         else:
@@ -59,13 +62,20 @@ class Req:
             console.debug("Response: %s" % error)
         return {"result": result, "status_code": resp.status_code, "error": error, "uri":uri}
 
-    def mist_get(self, uri, org_id="", site_id="", query=""):
+    def mist_get(self, uri, org_id="", site_id="", query={}, page=1, limit=100):
         """GET HTTP Request
         Params: uri, HTTP query
         Return: HTTP response"""
         if self._check_authorization("GET", org_id=org_id, site_id=site_id):
             try:
                 url = self._url(uri)
+                html_query = "?"
+                if not query == {}:
+                    for query_param in query:
+                        html_query += "%s=%s&" %(query_param, query[query_param])
+                html_query += "limit=%s&" %limit
+                html_query += "page=%s" %page
+                url += html_query
                 console.info("Request > GET %s" % url)
                 resp = self.session.get(url)
                 resp.raise_for_status()
@@ -74,7 +84,16 @@ class Req:
             except Exception as err:
                 console.error(f'Other error occurred: {err}')  # Python 3.6
             else: 
-                return self._response(resp, uri)
+                if "X-Page-Limit" in resp.headers:
+                    content = resp.json()
+                    x_page_limit = int(resp.headers["X-Page-Limit"])
+                    x_page_page = int(resp.headers["X-Page-Page"])
+                    x_page_total = int(resp.headers["X-Page-Total"])
+                    if x_page_limit * x_page_page < x_page_total:
+                        content+=self.mist_get(uri, org_id, site_id, query, page + 1, limit)["result"]
+                    return self._response(resp, uri, content)
+                else:                
+                    return self._response(resp, uri)
         else:
             console.error("you're not authenticated yet...")
 
@@ -95,12 +114,12 @@ class Req:
                 resp.raise_for_status()
             except HTTPError as http_err:
                 console.error(f'HTTP error occurred: {http_err}')  # Python 3.6
-                print(resp.request.headers)                
-                print(resp.request.body)
+                console.debug(resp.request.headers)                
+                console.debug(resp.request.body)
             except Exception as err:
                 console.error(f'Other error occurred: {err}')  # Python 3.6
-                print(resp.request.headers)                
-                print(resp.request.body)
+                console.debug(resp.request.headers)                
+                console.debug(resp.request.body)
             else: 
                 return self._response(resp, uri)
         else:
