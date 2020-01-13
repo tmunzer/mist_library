@@ -1,9 +1,10 @@
 
-def get(mist_session, site_id, name=""):
+def get(mist_session, site_id, name="", page=1, limit=100):
     uri = "/api/v1/sites/%s/devices" % site_id
+    query={}
     if name != "":
-        uri += "?name=%s" % name
-    resp = mist_session.mist_get(uri, site_id=site_id)
+        query[name] = name
+    resp = mist_session.mist_get(uri, site_id=site_id, query=query, page=page, limit=limit)
     return resp
 
 def get_details(mist_session, site_id, device_id):
@@ -11,14 +12,11 @@ def get_details(mist_session, site_id, device_id):
     resp = mist_session.mist_get(uri, site_id=site_id)
     return resp
 
-def get_stats_devices(mist_session, site_id):
+def get_stats_devices(mist_session, site_id, device_id=None, page=1, limit=100):
     uri = "/api/v1/sites/%s/stats/devices" % site_id
-    resp = mist_session.mist_get(uri, site_id=site_id)
-    return resp
-
-def get_stats_device(mist_session, site_id, device_id):
-    uri = "/api/v1/sites/%s/stats/devices/%s" % (site_id, device_id)
-    resp = mist_session.mist_get(uri, site_id=site_id)
+    if not device_id == None:
+        uri += "/%s" %device_id
+    resp = mist_session.mist_get(uri, site_id=site_id, page=page, limit=limit)
     return resp
 
 def create(mist_session, site_id, devices):

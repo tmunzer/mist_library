@@ -28,13 +28,13 @@ def delete(mist_session, org_id, site_id):
     resp = mist_session.mist_delete(uri)
     return resp
 
-def get(mist_session, org_id):
+def get(mist_session, org_id, page=1, limit=100):
     uri = "/api/v1/orgs/%s/sites" % org_id
-    resp = mist_session.mist_get(uri, org_id=org_id)
+    resp = mist_session.mist_get(uri, org_id=org_id, page=page, limit=limit)
     return resp
 
-def stats(mist_session, site_id):
+def stats(mist_session, site_id, page=1, limit=100):
     uri = "/api/v1/sites/%s/stats" % site_id
-    resp = mist_session.mist_get(uri)
+    resp = mist_session.mist_get(uri, page=page, limit=limit)
     return resp
 

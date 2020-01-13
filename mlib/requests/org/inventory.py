@@ -1,8 +1,8 @@
 ########## INVENTORY ############
 
-def get(mist_session, org_id):
+def get(mist_session, org_id, page=1, limit=100):
     uri = "/api/v1/orgs/%s/inventory" % org_id
-    resp = mist_session.mist_get(uri, org_id=org_id)
+    resp = mist_session.mist_get(uri, org_id=org_id, page=page, limit=limit)
     return resp
 
 def add(mist_session, org_id, serials):

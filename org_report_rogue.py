@@ -9,10 +9,12 @@ You can run the script with the command "python3 org_report_rogue.py"
 '''
 
 import mlib as mist_lib
+from mlib import cli
 from tabulate import tabulate
 
 #### PARAMETERS #####
 csv_separator = ","
+csv_file = "./report_rogues.csv"
 fields = ["ssid", "bssid", "num_aps", "ap_mac", "channel", "avg_rssi", "times_heard" ]
 r_types = [ "honeypot", "lan", "others", "spoof"]
 
@@ -45,15 +47,8 @@ fields.insert(1, "org_id")
 fields.insert(2, "site_name")
 fields.insert(3, "site_id")
 fields.insert(4, "type")
-print(tabulate(rogues_summarized, fields))
 
-print("saving to file...")
-with open("./../report_rogues.csv", "w") as f:
-    for column in fields:
-        f.write("%s," % column)
-    f.write('\r\n')
-    for row in rogues_summarized:
-        for field in row:
-            f.write(field)
-            f.write(csv_separator)
-        f.write('\r\n')
+cli.show(rogues_summarized, fields)
+cli.save_to_csv(csv_file, rogues_summarized, fields, csv_separator)
+
+

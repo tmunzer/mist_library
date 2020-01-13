@@ -26,31 +26,28 @@ def reset(mist_session, site_id):
     resp = mist_session.mist_post(uri, site_id=site_id)
     return resp
 
-def get_events(mist_session, site_id, band, limit="", duration=""):
+def get_events(mist_session, site_id, band, duration="", page=1, limit=100):
     uri ="/api/v1/sites/%s/rrm/events?band=%s" % (site_id, band)
-    if limit != "":
-        uri += "&limit=%s" % limit
+    query ={"band": band}
     if duration != "":
-        uri += "&duration=%s" % duration
-    resp = mist_session.mist_get(uri, site_id=site_id)
+        query["duration"] = duration
+    resp = mist_session.mist_get(uri, site_id=site_id, query=query, page=page, limit=limit)
     return resp
 
-def get_interference_events(mist_session, site_id, limit="", page=1, duration=""):
-    uri = "/api/v1/sites/%s/events/interference?page=%s" % (site_id, page)
-    if limit != "":
-        uri += "&limit=%s" % limit
-    if duration != duration:
-        uri += "&duration=%s" %duration
-    resp = mist_session.mist_get(uri, site_id=site_id)
+def get_interference_events(mist_session, site_id, duration="", page=1, limit=100):
+    uri = "/api/v1/sites/%s/events/interference" %site_id
+    query ={}
+    if duration != "":
+        query["duration"] = duration
+    resp = mist_session.mist_get(uri, site_id=site_id, query=query, page=page, limit=limit)
     return resp
 
-def get_roaming_events(mist_session, site_id, mtype, start="", end="", limit=""):
-    uri = "/api/v1/sites/%s/events/fast_roam?type=%s" % (site_id, mtype)
-    if start != "":
-        uri += "&limit=%s" % start
+def get_roaming_events(mist_session, site_id, mtype, start="", end="", page=1, limit=100):
+    uri = "/api/v1/sites/%s/events/fast_roam" %site_id
+    query={"type": mtype}    
     if end != "":
-        uri += "&duration=%s" % end
+        query["duration"]= end
     if limit != "":
-        uri += "&duration=%s" % limit
-    resp = mist_session.mist_get(uri, site_id=site_id)
+        query["duration"]= limit
+    resp = mist_session.mist_get(uri, site_id=site_id, query=query, page=page, limit=limit)
     return resp

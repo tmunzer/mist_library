@@ -30,16 +30,15 @@ bssid_list = []
 def bssids_from_sites(mist_session, sites, org_info, site_ids):
     for site in sites:
         if len(org_ids) > 1 or site["id"] in site_ids:     
-            site_devices = mist_lib.requests.sites.devices.get(mist_session, site["id"])["result"]
-            for site_device in site_devices:
-                device_stat_response = mist_lib.requests.sites.devices.get_stats_devices(mist_session, site["id"], site_device["id"])["result"]                
+            devices = mist_lib.requests.sites.devices.get_stats_devices(mist_session, site["id"])["result"]                
+            for site_device in devices:
                 device_stat = []    
                 device_stat.append(org_info["id"])           
                 device_stat.append(org_info["name"])           
                 device_stat.append(site["id"])           
                 device_stat.append(site["name"])     
                 for field in fields:
-                    field_data = cli.extract_field(device_stat_response, field)   
+                    field_data = cli.extract_field(site_device, field)   
                     if (field == "radio_stat.band_24.mac" or field == "radio_stat.band_5.mac") and not field_data == "N/A":
                         mac_start = field_data
                         mac_end = field_data[:-1] + "f"
