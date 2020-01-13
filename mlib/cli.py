@@ -114,6 +114,32 @@ def show(response, fields=None):
         print(data)    
     print("")
     
+def extract_field(json_data, field):   
+    split_field = field.split(".")
+    cur_field = split_field[0]
+    next_fields = ".".join(split_field[1:])
+    if cur_field in json_data:
+        if len(split_field) > 1:
+            return extract_field(json_data[cur_field], next_fields)
+        else:
+            return json_data[cur_field] 
+    else:
+        return "N/A"
+
+def save_to_csv(csv_file, array_data, fields, csv_separator=","):
+    print("saving to file...")
+    with open(csv_file, "w") as f:
+        for column in fields:
+            f.write("%s," % column)
+        f.write('\r\n')
+        for row in array_data:
+            for field in row:
+                if field == None:
+                    f.write("")
+                else:
+                    f.write(field)
+                f.write(csv_separator)
+            f.write('\r\n')
 
 def display_json(data):
     print(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
