@@ -11,7 +11,12 @@ def get_details(mist_session, site_id, device_id):
     resp = mist_session.mist_get(uri, site_id=site_id)
     return resp
 
-def get_stats_devices(mist_session, site_id, device_id):
+def get_stats_devices(mist_session, site_id):
+    uri = "/api/v1/sites/%s/stats/devices" % site_id
+    resp = mist_session.mist_get(uri, site_id=site_id)
+    return resp
+
+def get_stats_device(mist_session, site_id, device_id):
     uri = "/api/v1/sites/%s/stats/devices/%s" % (site_id, device_id)
     resp = mist_session.mist_get(uri, site_id=site_id)
     return resp
