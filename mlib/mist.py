@@ -36,7 +36,7 @@ class Mist_Session(Req):
         self.tags = []
         self.authenticated = False
         self.session = requests.session()
-        self.session.headers.update({'Content-Type': "application/json"})
+        #self.session.headers.update({'Content-Type': "application/json"})
         self.csrftoken = ""
         self.apitoken = None
         #Try to log in
