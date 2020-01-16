@@ -105,6 +105,7 @@ class Req:
             try: 
                 url = self._url(uri)
                 console.info("Request > POST %s" % url)
+                console.debug("Request body: \r\n%s" % body)
                 if type(body) == str:
                     resp = self.session.post(url, data=body)
                 elif type(body) == dict:

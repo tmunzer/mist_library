@@ -52,8 +52,8 @@ def bssids_from_orgs(mist_session, org_ids, site_ids):
         org_sites = list(filter(lambda privilege: "org_id" in privilege and privilege["org_id"] == org_id, mist_session.privileges))
         # the admin only has access to the org information if he/she has this privilege 
         if len(org_sites) >= 1 and org_sites[0]["scope"] == "org":
-            org_info = mist_lib.requests.org.info.get(mist_session, org_id)["result"]
-            org_sites = mist_lib.requests.org.sites.get(mist_session, org_id)["result"]
+            org_info = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]
+            org_sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)["result"]
             bssids_from_sites(mist_session, org_sites, org_info, site_ids)        
         # if the admin doesn't have access to the org level, but only the sites
         elif len(org_sites) >= 1:

@@ -49,9 +49,9 @@ def wlans_from_orgs(mist_session, org_ids, site_ids):
         org_sites = list(filter(lambda privilege: "org_id" in privilege and privilege["org_id"] == org_id, mist_session.privileges))
         # the admin only has access to the org information if he/she has this privilege 
         if len(org_sites) >= 1 and org_sites[0]["scope"] == "org":
-            org_info = mist_lib.requests.org.info.get(mist_session, org_id)["result"]
-            org_sites = mist_lib.requests.org.sites.get(mist_session, org_id)["result"]
-            org_wlans = mist_lib.requests.org.wlans.report(mist_session, org_id, fields)        
+            org_info = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]
+            org_sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)["result"]
+            org_wlans = mist_lib.requests.orgs.wlans.report(mist_session, org_id, fields)        
             for org_wlan in org_wlans:
                 if len(org_ids) > 1 or org_wlan[0] in site_ids:     
                     site = list(filter(lambda site: site['id'] == org_wlan[0], org_sites))

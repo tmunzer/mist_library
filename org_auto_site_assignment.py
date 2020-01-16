@@ -71,7 +71,7 @@ def configure_rule(rule_conf):
         # },
         rule_conf['subnet'] = input("Please enter the subnet value (ex: 10.1.2.0/18): ")
         site_id = cli.select_site(mist, org_id=org_id)
-        rule_conf['value'] = mist_lib.requests.org.sites.stats(mist, site_id)['result']['name']             
+        rule_conf['value'] = mist_lib.requests.orgs.sites.stats(mist, site_id)['result']['name']             
     elif rule_conf['src'] == "lldp_system_name":
         # // use LLDP System Name
         # {
@@ -102,7 +102,7 @@ def configure_rule(rule_conf):
         # }       
         rule_conf['model'] = input("Please enter the model of AP: ")
         site_id = cli.select_site(mist, org_id=org_id)
-        rule_conf['value'] = mist_lib.requests.org.sites.stats(mist, site_id)['result']['name'] 
+        rule_conf['value'] = mist_lib.requests.orgs.sites.stats(mist, site_id)['result']['name'] 
     return rule_conf
 
 
@@ -112,7 +112,7 @@ def configure_rule(rule_conf):
 mist = mist_lib.Mist_Session()
 
 org_id = cli.select_org(mist)
-#cli.display_json(mist_lib.requests.org.settings.get(mist, org_id)["result"])
+#cli.display_json(mist_lib.requests.orgs.settings.get(mist, org_id)["result"])
 
 
 while True:
@@ -131,5 +131,5 @@ if auto_site_assignment["enable"] == True:
 cli.display_json(auto_site_assignment)
 
 
-mist_lib.requests.org.settings.update(mist, org_id, {"auto_site_assignment": auto_site_assignment})
-cli.display_json(mist_lib.requests.org.settings.get(mist, org_id)["result"])
+mist_lib.requests.orgs.settings.update(mist, org_id, {"auto_site_assignment": auto_site_assignment})
+cli.display_json(mist_lib.requests.orgs.settings.get(mist, org_id)["result"])

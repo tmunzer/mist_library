@@ -26,7 +26,7 @@ roles = {"s": "admin", "n": "write", "o": "read", "h":"helpdesk"}
 #### FUNCTIONS ####
 def define_privileges(org_id):
     '''
-    Generate the privilege parameters for the specified org.
+    Generate the privilege parameters for the specified orgs.
     Will ask if the privileges have to be applied to the entire org or to a specific site/s, and the privilege level.
     There is no return value, the new privileges are stored into the global "privilege" variable
     '''
@@ -41,7 +41,7 @@ def define_privileges(org_id):
                 privileges.append({"scope": "site", "org_id": org_id, "site_id": site_id, "role":roles[role]})
             break
         elif all_sites.lower() == "n" or all_sites == "":            
-            site_ids = mist_lib.org.sites.get(mist, org_id)
+            site_ids = mist_lib.requests.orgs.sites.get(mist, org_id)
             site_id=""
             for site in site_ids["result"]:
                 if "site_id" in site:
@@ -63,7 +63,7 @@ def import_admins(file_path, org_id):
                 first_name= column[1]
                 last_name = column[2]        
                 print(', '.join(column))
-                mist_lib.requests.org.admins.create_invite(mist, org_id, email, privileges, first_name, last_name)            
+                mist_lib.requests.orgs.admins.create_invite(mist, org_id, email, privileges, first_name, last_name)            
     except:
         print("Error while opening the CSV file... Aborting")
 
@@ -77,6 +77,6 @@ if privileges == []:
     define_privileges(org_id)
 import_admins(file_path, org_id)
 
-admins = mist_lib.requests.org.admins.get(mist, org_id)
+admins = mist_lib.requests.orgs.admins.get(mist, org_id)
 cli.show(admins)
 exit(0)

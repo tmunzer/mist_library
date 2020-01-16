@@ -16,3 +16,8 @@ def update(mist_session, org_id, sitegroup_id, body):
     uri = "/api/v1/orgs/%s/sitegroups/%s" % (org_id, sitegroup_id)    
     resp = mist_session.mist_put(uri, org_id=org_id, body=body)
     return resp
+
+def delete(mist_session, org_id, sitegroup_id):
+    uri = "/api/v1/orgs/%s/sitegroups/%s" % (org_id, sitegroup_id)    
+    resp = mist_session.mist_delete(uri, org_id=org_id)
+    return resp

@@ -34,7 +34,7 @@ def org_select():
 def site_select(org_id):
     i=-1
     site_ids=[]
-    site_choices = mist_lib.requests.org.sites.get(mist, org_id)['result']
+    site_choices = mist_lib.requests.orgs.sites.get(mist, org_id)['result']
     print("\r\nAvailable sites:")
     for site in site_choices:        
         i+=1

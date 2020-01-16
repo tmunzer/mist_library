@@ -65,11 +65,14 @@ def select_site(mist_session, org_id=None, allow_many=False):
     i=-1
     site_ids=[]
     site_choices = []
+    org_access = False
     for privilege in mist_session.privileges:
+        if privilege["scope"] == "org" and privilege["org_id"] == org_id:
+            org_access = True
         if privilege["scope"] == "site" and privilege["org_id"] == org_id:
             site_choices.append({"id": privilege["site_id"], "name": privilege["name"]})
-    if site_choices == []:
-        site_choices = mist_lib.requests.org.sites.get(mist_session, org_id)['result']
+    if site_choices == [] or org_access == True:
+        site_choices = mist_lib.requests.orgs.sites.get(mist_session, org_id)['result']
     print("\r\nAvailable sites:")
     for site in site_choices:        
         i+=1

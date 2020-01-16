@@ -22,7 +22,7 @@ mist = mist_lib.Mist_Session("./session.py")
 org_id = "203d3d02-dbc0-4c1b-9f41-76896a3330f4"#cli.select_org(mist)
 
 def get_site_groups_list():
-    response = mist_lib.org.site_groups.get(mist, org_id)
+    response = mist_lib.orgs.site_groups.get(mist, org_id)
     tmp = {}
     for group in response["result"]:
         if "site_ids" in group:
@@ -33,7 +33,7 @@ def get_site_groups_list():
     return tmp
 
 def create_site_group(group_name):
-    response = mist_lib.org.site_groups.create(mist, org_id, group_name)
+    response = mist_lib.orgs.site_groups.create(mist, org_id, group_name)
     if response['status_code'] == 200:
         name = response["result"]["name"]
         sitegroups_id = response["result"]["id"]
@@ -49,13 +49,13 @@ def assign_site_to_group(site_id, group_name):
         group_id = site_groups[group_name]["id"]
         site_ids = site_groups[group_name]["site_ids"]        
         site_ids.append(site_id)
-    response = mist_lib.org.site_groups.update(mist, org_id, group_id, {"site_ids": site_ids})
+    response = mist_lib.orgs.site_groups.update(mist, org_id, group_id, {"site_ids": site_ids})
     if response["status_code"] == 200:
         console.notice("Site succesfully added to group %s (id %s)" % (group_name, group_id))
         return group_id
     
 def assign_groups_to_site(site_id, site_name, group_ids):
-    response = mist_lib.org.sites.update(mist, org_id, site_id, {"sitegroup_ids": group_ids})
+    response = mist_lib.orgs.sites.update(mist, org_id, site_id, {"sitegroup_ids": group_ids})
     if response["status_code"] == 200:
         console.notice("Groups succesfully added to site %s (id %s)" % (site_name, site_id))
         return response
@@ -68,7 +68,7 @@ def create_site(name, address):
         console.info("Address found: %s" %location)        
         tz = tzwhere.tzNameAt(location.latitude, location.longitude)
         country_code=str(location.raw["address"]["country_code"]).upper()
-        response = mist_lib.org.sites.create(mist, org_id, name=name, address=location.address, lat=location.latitude, lng=location.longitude, timezone=tz, country_code=country_code)
+        response = mist_lib.orgs.sites.create(mist, org_id, name=name, address=location.address, lat=location.latitude, lng=location.longitude, timezone=tz, country_code=country_code)
         if response["status_code"]==200:
             console.notice("Site %s created succesfully with ID %s" % (name, response["result"]["id"]))
             return response["result"]

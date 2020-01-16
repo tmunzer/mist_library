@@ -1,20 +1,8 @@
 ########## SITES ############
 
-def create(mist_session, org_id, name, timezone="", country_code="", address="", lat="", lng="", sitegroup_ids="", rftemplate_id="", secpolicy_id="", alarmtemplate_id=""):
+def create(mist_session, org_id, site_settings):
     uri = "/api/v1/orgs/%s/sites" % org_id
-    body = {
-        "name": name,
-        "timezone": timezone,
-        "country_code": country_code,
-        "rftemplate_id": rftemplate_id,
-        "secpolicy_id": secpolicy_id,
-        "alarmtemplate_id": alarmtemplate_id,
-        "latlng": {
-            "lat": lat,
-            "lng": lng},
-        "sitegroup_ids": sitegroup_ids,
-        "address": address
-    }
+    body = site_settings
     resp = mist_session.mist_post(uri, org_id=org_id, body=body)
     return resp
 

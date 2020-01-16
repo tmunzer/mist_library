@@ -1,2 +1,2 @@
-from . import org
+from . import orgs
 from . import sites

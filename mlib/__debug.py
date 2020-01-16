@@ -19,7 +19,7 @@ class Console:
     7: debug
     """
 
-    def __init__(self, level=7):
+    def __init__(self, level=6):
         self.level = level
 
     def emergency(self, message):

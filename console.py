@@ -17,7 +17,7 @@ def help():
     You can use it afterward with Mist Library request. For example, you can do:
     The you will be able to use the script to generate and send request to the Mist Cloud. For example, 
     you can do:
-            console.mlib.org.channels.country_codes_get(console.session)
+            console.mlib.orgs.channels.country_codes_get(console.session)
 
     Some API request will ask for an "org_id" or a "site_id". The following commands are here to help
     you to retrieve (and store) this information:

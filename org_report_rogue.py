@@ -26,7 +26,7 @@ rogues_summarized = []
 for r_type in r_types:
     for entry in mist.privileges:    
         if not "site_id" in entry and "org_id" in entry and entry["org_id"] != "":
-            sites = mist_lib.requests.org.sites.get(mist, entry["org_id"])["result"]
+            sites = mist_lib.requests.orgs.sites.get(mist, entry["org_id"])["result"]
             for site in sites:
                 rogues = []
                 site_rogues = mist_lib.requests.sites.rogues.report(mist, site["id"], r_type, fields)
