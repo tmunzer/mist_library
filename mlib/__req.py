@@ -81,6 +81,7 @@ class Req:
                 resp.raise_for_status()
             except HTTPError as http_err:
                 console.error(f'HTTP error occurred: {http_err}')  # Python 3.6
+                console.error(f'HTTP error description: {resp.json()}')
             except Exception as err:
                 console.error(f'Other error occurred: {err}')  # Python 3.6
             else: 
@@ -104,23 +105,21 @@ class Req:
         if self._check_authorization("POST", org_id=org_id, site_id=site_id):
             try: 
                 url = self._url(uri)
+                headers = {'Content-Type': "application/json"}
                 console.info("Request > POST %s" % url)
                 console.debug("Request body: \r\n%s" % body)
                 if type(body) == str:
-                    resp = self.session.post(url, data=body)
+                    resp = self.session.post(url, data=body, headers=headers)
                 elif type(body) == dict:
-                    resp = self.session.post(url, json=body)
+                    resp = self.session.post(url, json=body, headers=headers)
                 else: 
-                    resp = self.session.post(url, json=body)
+                    resp = self.session.post(url, json=body, headers=headers)
                 resp.raise_for_status()
             except HTTPError as http_err:
                 console.error(f'HTTP error occurred: {http_err}')  # Python 3.6
-                console.debug(resp.request.headers)                
-                console.debug(resp.request.body)
+                console.error(f'HTTP error description: {resp.json()}')
             except Exception as err:
                 console.error(f'Other error occurred: {err}')  # Python 3.6
-                console.debug(resp.request.headers)                
-                console.debug(resp.request.body)
             else: 
                 return self._response(resp, uri)
         else:
@@ -144,6 +143,7 @@ class Req:
                 resp.raise_for_status()
             except HTTPError as http_err:
                 console.error(f'HTTP error occurred: {http_err}')  # Python 3.6
+                console.error(f'HTTP error description: {resp.json()}')
             except Exception as err:
                 console.error(f'Other error occurred: {err}')  # Python 3.6
             else: 
@@ -164,6 +164,27 @@ class Req:
                 resp.raise_for_status()
             except HTTPError as http_err:
                 console.error(f'HTTP error occurred: {http_err}')  # Python 3.6
+            except Exception as err:
+                console.error(f'Other error occurred: {err}')  # Python 3.6
+            else: 
+                return self._response(resp, uri)
+        else:
+            console.error("you're not authenticated yet...")
+
+
+    def mist_post_file(self, uri, org_id="", site_id="", files=None):
+        """POST HTTP Request
+        Params: uri, HTTP body
+        Return: HTTP response"""
+        if self._check_authorization("POST", org_id=org_id, site_id=site_id):
+            try:                 
+                url = self._url(uri)
+                resp = self.session.post(url, files=files)
+                resp.raise_for_status()
+            except HTTPError as http_err:
+                console.error(f'HTTP error occurred: {http_err}')  # Python 3.6
+                console.error(f'HTTP error description: {resp.json()}')
+                return resp
             except Exception as err:
                 console.error(f'Other error occurred: {err}')  # Python 3.6
             else: 
