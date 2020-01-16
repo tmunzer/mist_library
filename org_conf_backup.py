@@ -1,10 +1,13 @@
 import mlib as mist_lib
+import urllib.request
 from mlib import cli
 from tabulate import tabulate
 import json
 
-backup_file = "./org_backup.json"
+backup_file = "./org_conf_file.json"
 session_file = "./session.py"
+
+image_prefix = ".".join(backup_file.split(".")[:-1])
 
 mist_session = mist_lib.Mist_Session(session_file)
 org_id = cli.select_org(mist_session)
@@ -23,7 +26,7 @@ backup["org"]["mxtunnels"] = mist_lib.requests.orgs.mxtunnels.get(mist_session, 
 backup["org"]["psks"] = mist_lib.requests.orgs.psks.get(mist_session, org_id)["result"]
 backup["org"]["rftemplates"] = mist_lib.requests.orgs.rftemplates.get(mist_session, org_id)["result"]
 backup["org"]["secpolicies"] = mist_lib.requests.orgs.secpolicies.get(mist_session, org_id)["result"]
-backup["org"]["sitegroups"] = mist_lib.requests.orgs.site_groups.get(mist_session, org_id)["result"]
+backup["org"]["sitegroups"] = mist_lib.requests.orgs.sitegroups.get(mist_session, org_id)["result"]
 backup["org"]["templates"] = mist_lib.requests.orgs.templates.get(mist_session, org_id)["result"]
 backup["org"]["wlans"] = mist_lib.requests.orgs.wlans.get(mist_session, org_id)["result"]
 backup["org"]["wxrules"] = mist_lib.requests.orgs.wxrules.get(mist_session, org_id)["result"]
@@ -65,6 +68,12 @@ for site in sites:
         "wxtunnels": wxtunnels,
         "zones": zones
         })
+    for xmap in maps:
+        if 'url' in xmap:
+            url = xmap["url"]
+            image_name = "%s_org_%s_site_%s_map_%s.png" %(image_prefix, org_id, site["id"], xmap["id"])
+            urllib.request.urlretrieve(url, image_name)
+
 
 
 

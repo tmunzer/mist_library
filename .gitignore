@@ -2,6 +2,7 @@ secret.*
 config.py
 session.py
 .DS_Store
+*.png
 *.csv
 org_conf_file.json
 launch.json
