@@ -13,7 +13,7 @@ from . import psks
 from . import rftemplates
 from . import secpolicies
 from . import settings
-from . import site_groups
+from . import sitegroups
 from . import sites
 from . import stats
 from . import templates

@@ -8,7 +8,7 @@ def get(mist_session, org_id, page=1, limit=100):
 
 def create(mist_session, org_id, group_name):
     uri = "/api/v1/orgs/%s/sitegroups" % org_id
-    body = {"name": group_name}
+    body = group_name
     resp = mist_session.mist_post(uri, org_id=org_id, body=body)
     return resp
 

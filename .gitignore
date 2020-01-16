@@ -6,6 +6,7 @@ session.py
 *.csv
 org_conf_file.json
 launch.json
+test.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
