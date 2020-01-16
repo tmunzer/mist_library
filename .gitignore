@@ -4,6 +4,7 @@ session.py
 .DS_Store
 *.csv
 org_conf_file.json
+launch.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
