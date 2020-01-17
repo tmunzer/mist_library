@@ -179,6 +179,7 @@ class Req:
         if self._check_authorization("POST", org_id=org_id, site_id=site_id):
             try:                 
                 url = self._url(uri)
+                console.info("Request > POST %s" % url)
                 resp = self.session.post(url, files=files)
                 resp.raise_for_status()
             except HTTPError as http_err:
