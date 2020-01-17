@@ -87,6 +87,17 @@ def replace_id(old_ids_list, new_ids_dict):
     else:
         console.error("Unable to replace ids: %s" % old_ids_list)
 
+def clean_ssorole_privileges(user):
+    cleaned_privileges = []
+    for privilege in user["privileges"]:
+        if "org_id" in privilege: 
+            privilege["org_id"] = org_id
+        if "site_id" in privilege: 
+            privilege["site_id"] = replace_id(privilege["site_id"], site_id_dict)
+        if "sitegroup_id" in privilege: 
+            privilege["sitegroup_id"] = replace_id(privilege["sitegroup_id"], sitegroup_id_dict)
+        cleaned_privileges.append(privilege)
+    return cleaned_privileges
 
 def clean_ids(data):
     if "id" in data:
@@ -137,10 +148,9 @@ def restore_org(org):
     if "msp_name" in data:
         del data["msp_name"]
     mist_lib.requests.orgs.info.update(mist_session, org_id, data)
-    
+
     ####  ORG SETTINGS  ####
     data = clean_ids(org["settings"])
-    # console.debug(json.dumps(data))
     mist_lib.requests.orgs.settings.update(mist_session, org_id, data)
     
     ####  ORG OBJECTS  ####
@@ -182,7 +192,7 @@ def restore_org(org):
     for data in org["sitegroups"]:
         del data["site_ids"]
         ids = common_restore('orgs', org_id, 'sitegroups', data)
-        sitegroup_id_dict.update(ids)
+        sitegroup_id_dict.update(ids)    
 
     for data in org["wxtags"]:
         if data["match"] == "wlan_id":
@@ -323,6 +333,14 @@ def restore_org(org):
 
     for data in org["wlans"]:
         wlan_restore('orgs', org_id, data)
+
+    for data in org["ssos"]: common_restore('orgs', org_id, 'ssos', data)
+
+    for data in org["ssoroles"]:
+        cleaned_data = []
+        for ssorole in data:
+            cleaned_data.append(clean_ssorole_privileges(ssorole))
+        common_restore('orgs', org_id, 'ssoroles', cleaned_data)    
 
 
 #### SCRIPT ENTRYPOINT ####
