@@ -7,10 +7,25 @@ import json
 backup_file = "./org_conf_file.json"
 session_file = "./session.py"
 
-image_prefix = ".".join(backup_file.split(".")[:-1])
+file_prefix = ".".join(backup_file.split(".")[:-1])
 
 mist_session = mist_lib.Mist_Session(session_file)
 org_id = cli.select_org(mist_session)
+
+
+def backup_wlan_portal(site_id, wlans):  
+    for wlan in wlans:     
+        if site_id == None:
+            portal_file_name = "%s_org_%s_wlan_%s.json" %(file_prefix, org_id, wlan["id"])
+            portal_image = "%s_org_%s_wlan_%s.png" %(file_prefix, org_id, wlan["id"])
+        else:
+            portal_file_name = "%s_org_%s_site_%s_wlan_%s.json" %(file_prefix, org_id, site_id, wlan["id"]) 
+            portal_image = "%s_org_%s_site_%s_wlan_%s.png" %(file_prefix, org_id, site_id, wlan["id"])
+        urllib.request.urlretrieve(wlan["portal_template_url"], portal_file_name)
+        if "portal_image" in wlan: urllib.request.urlretrieve(wlan["portal_image"], portal_image)
+    
+
+
 
 backup = {}
 
@@ -31,6 +46,7 @@ backup["org"]["ssos"] = mist_lib.requests.orgs.ssos.get(mist_session, org_id)["r
 backup["org"]["ssoroles"] = mist_lib.requests.orgs.ssoroles.get(mist_session, org_id)["result"]
 backup["org"]["templates"] = mist_lib.requests.orgs.templates.get(mist_session, org_id)["result"]
 backup["org"]["wlans"] = mist_lib.requests.orgs.wlans.get(mist_session, org_id)["result"]
+backup_wlan_portal(None, backup["org"]["wlans"])
 backup["org"]["wxrules"] = mist_lib.requests.orgs.wxrules.get(mist_session, org_id)["result"]
 backup["org"]["wxtags"] = mist_lib.requests.orgs.wxtags.get(mist_session, org_id)["result"]
 backup["org"]["wxtunnels"] = mist_lib.requests.orgs.wxtunnels.get(mist_session, org_id)["result"]
@@ -49,6 +65,7 @@ for site in sites:
     vbeacons = mist_lib.requests.sites.vbeacons.get(mist_session, site["id"])["result"]
     webhooks = mist_lib.requests.sites.webhooks.get(mist_session, site["id"])["result"]
     wlans = mist_lib.requests.sites.wlans.get(mist_session, site["id"])["result"]
+    backup_wlan_portal(site["id"], wlans)
     wxrules = mist_lib.requests.sites.wxrules.get(mist_session, site["id"])["result"]
     wxtags = mist_lib.requests.sites.wxtags.get(mist_session, site["id"])["result"]
     wxtunnels = mist_lib.requests.sites.wxtunnels.get(mist_session, site["id"])["result"]
@@ -73,7 +90,7 @@ for site in sites:
     for xmap in maps:
         if 'url' in xmap:
             url = xmap["url"]
-            image_name = "%s_org_%s_site_%s_map_%s.png" %(image_prefix, org_id, site["id"], xmap["id"])
+            image_name = "%s_org_%s_site_%s_map_%s.png" %(file_prefix, org_id, site["id"], xmap["id"])
             urllib.request.urlretrieve(url, image_name)
 
 
