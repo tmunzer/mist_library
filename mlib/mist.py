@@ -109,7 +109,7 @@ class Mist_Session(Req):
                 else: 
                     self.password = getpass("Password:")
             else:
-                console.error("Credentials invalid... Can't use the information into secret.py...")
+                console.error("Credentials invalid... Can't use the information from config.py...")
                 raise ValueError            
         except:
             console.notice("No login file found. Asking for credentials")
@@ -200,6 +200,7 @@ class Mist_Session(Req):
         resp = self.session.post(self._url(uri), json=body)
         if resp.status_code == 200:
             console.notice("2FA authentication successed")
+            self._set_authenticated(True)
             return True
         else:
             console.error("2FA authentication failed")
