@@ -30,7 +30,7 @@ import json
 import os.path
 console = Console(6)
 backup_file = "./org_conf_file.json"
-image_prefix = ".".join(backup_file.split(".")[:-1])
+file_prefix = ".".join(backup_file.split(".")[:-1])
 session_file = None
 
 org_id = ""
@@ -64,7 +64,7 @@ alarmtemplate_id_dict = {}
 def get_new_id(old_id, new_ids_dict):
     if old_id in new_ids_dict:
         new_id = new_ids_dict[old_id]
-        console.notice("id %s replaced with id %s" %(old_id, new_id))
+        console.notice("Replacing id %s with id %s" %(old_id, new_id))
         return new_id
     else:
         console.notice("Unable to replace id %s" %old_id)
@@ -73,7 +73,6 @@ def get_new_id(old_id, new_ids_dict):
 
 def replace_id(old_ids_list, new_ids_dict):
     if old_ids_list == None:
-        console.notice("Unable to replace id %s" %old_ids_list)
         return None
     if old_ids_list == {}:
         return {}
@@ -112,28 +111,52 @@ def clean_ids(data):
 
 
 def common_restore(level, level_id, object_name, data):
-    # console.debug(json.dumps(data))
+    console.notice("Restoring %s at %s level..." %(object_name, level_id))
     old_id = data["id"]
     data = clean_ids(data)
     module = mist_lib.requests.route(level, object_name)
     new_id = module.create(mist_session, level_id, data)["result"]["id"]
+    console.notice("Restoration done!")
     return {old_id: new_id}
 
 
-def wlan_restore(level, level_id, data):
+def wlan_restore(level, level_id, data, old_org_id, old_site_id):
     if "template_id" in data:
-        data["template_id"] = replace_id(
-            data["template_id"], template_id_dict)
+        data["template_id"] = replace_id(data["template_id"], template_id_dict)
     if "wxtunnel_id" in data:
         data["wxtunnel_id"] = replace_id(data["wxtunnel_id"], wxtags_id_dict)
     if "mxtunnel_id" in data:
         data["mxtunnel_id"] = replace_id(data["mxtunnel_id"], mxtunnel_id_dict)
     if "app_limit" in data and "wxtag_ids" in data["app_limit"]:
-        data["app_limit"]["wxtag_ids"] = replace_id(
-            data["app_limit"]["wxtag_ids"], wxtags_id_dict)
+        data["app_limit"]["wxtag_ids"] = replace_id(data["app_limit"]["wxtag_ids"], wxtags_id_dict)
     ids = common_restore(level, level_id, 'wlans', data)
+    old_wlan_id = next(iter(ids))
+    new_wlan_id = ids[old_wlan_id]
+    wlan_restore_portal(level_id, old_org_id, old_site_id, old_wlan_id, new_wlan_id)
     wlan_id_dict.update(ids)
 
+def wlan_restore_portal(level_id, old_org_id, old_site_id, old_wlan_id, new_wlan_id):  
+        if old_site_id == None:
+            portal_file_name = "%s_org_%s_wlan_%s.json" %(file_prefix, old_org_id, old_wlan_id)
+            portal_image = "%s_org_%s_wlan_%s.png" %(file_prefix, old_org_id, old_wlan_id)
+            module = mist_lib.requests.route("orgs", "wlans")
+        else:
+            portal_file_name = "%s_org_%s_site_%s_wlan_%s.json" %(file_prefix, old_org_id, old_site_id, old_wlan_id) 
+            portal_image = "%s_org_%s_site_%s_wlan_%s.png" %(file_prefix, old_org_id, old_site_id, old_wlan_id)
+            module = mist_lib.requests.route("sites", "wlans")
+        if os.path.isfile(portal_file_name):
+            console.notice("Restoring portal template %s..." %(portal_file_name))
+            template = open(portal_file_name, 'r')
+            template = json.load(template)
+            module.set_portal_template(mist_session, level_id, new_wlan_id, template)
+            console.notice("Restoration done!")
+        else: console.warning("Portal template %s not found" %(portal_file_name))
+        if os.path.isfile(portal_image):
+            console.notice("Restoring portal image %s..." %(portal_image))
+            module.add_portal_image(mist_session, level_id, new_wlan_id, portal_image)
+            console.notice("Restoration done!")
+        else: console.warning("Portal image %s not found" %(portal_image))
+        
 
 def restore_org(org):
     ####  ORG MAIN  ####
@@ -242,8 +265,8 @@ def restore_org(org):
 
                 old_map_id = next(iter(ids))
                 new_map_id = ids[old_map_id]
-                image_name = "%s_url_%s.jpg" %(image_prefix, old_map_id)
-                image_name = "%s_org_%s_site_%s_map_%s.png" %(image_prefix, old_org_id, old_site_id, old_map_id)
+                image_name = "%s_url_%s.jpg" %(file_prefix, old_map_id)
+                image_name = "%s_org_%s_site_%s_map_%s.png" %(file_prefix, old_org_id, old_site_id, old_map_id)
                 if os.path.isfile(image_name):
                     console.info("Image %s will be restored to map %s" %(image_name, new_map_id))
                     mist_lib.requests.sites.maps.add_image(mist_session, new_site_id, new_map_id, image_name)
@@ -294,7 +317,7 @@ def restore_org(org):
         
         if "wlans" in data:
             for sub_data in data["wlans"]:
-                wlan_restore('sites', new_site_id, sub_data)
+                wlan_restore('sites', new_site_id, sub_data, old_org_id, old_site_id)
 
         if "wxtags" in data:
             for sub_data in data["wxtags"]:
@@ -332,7 +355,7 @@ def restore_org(org):
         template_id_dict.update(ids)
 
     for data in org["wlans"]:
-        wlan_restore('orgs', org_id, data)
+        wlan_restore('orgs', org_id, data, old_org_id, None)
 
     for data in org["ssos"]: common_restore('orgs', org_id, 'ssos', data)
 
