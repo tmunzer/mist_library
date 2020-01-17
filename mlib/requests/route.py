@@ -39,8 +39,14 @@ def route(level, object_name):
             return orgs.sitegroups
         elif object_name == "sites":
             return orgs.sites
+        elif object_name == "ssoroles":
+            return orgs.ssoroles
+        elif object_name == "ssos":
+            return orgs.ssos
         elif object_name == "stats":
             return orgs.stats
+        elif object_name == "subscriptions":
+            return orgs.subscriptions
         elif object_name == "templates":
             return orgs.templates
         elif object_name == "webhooks":

@@ -15,7 +15,10 @@ from . import secpolicies
 from . import settings
 from . import sitegroups
 from . import sites
+from . import ssoroles
+from . import ssos
 from . import stats
+from . import subscriptions
 from . import templates
 from . import webhooks
 from . import wlans
