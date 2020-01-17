@@ -16,6 +16,23 @@ def delete(mist_session, org_id, wlan_id):
     resp = mist_session.mist_delete(uri, org_id=org_id)
     return resp
 
+def add_portal_image(mist_session, org_id, wlan_id, image_path):
+    uri = "/api/v1/orgs/%s/wlans/%s/portal_image" %(org_id, wlan_id)
+    files = {'file': open(image_path, 'rb').read()}
+    resp = mist_session.mist_post_file(uri, org_id=org_id, files=files)
+    return resp
+
+def delete_portal_image(mist_session, org_id, wlan_id):
+    uri = "/api/v1/orgs/%s/wlans/%s/portal_image" %(org_id, wlan_id)
+    resp = mist_session.mist_delete(uri, org_id=org_id)
+    return resp
+
+def set_portal_template(mist_session, org_id, wlan_id, portal_template_body):
+    uri = "/api/v1/orgs/%s/wlans/%s/portal_template" %(org_id, wlan_id)
+    body = portal_template_body
+    resp = mist_session.mist_put(uri, org_id=org_id, body=body)
+    return resp
+
 
 def report(mist_session, org_id, fields):
     wlans = get(mist_session, org_id)
