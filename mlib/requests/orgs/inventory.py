@@ -21,17 +21,6 @@ def delete(mist_session, org_id, serials=[], macs=[]):
     resp = mist_session.mist_delete(uri, org_id=org_id, body=body)
     return resp
 
-def assign(mist_session, org_id, site_id, macs):
-    uri = "/api/v1/orgs/%s/inventory" % org_id
-    body = {
-        "op": "assign",
-        "site_id": site_id,
-        "macs": macs,
-        "no_reassign": False
-    }
-    resp = mist_session.mist_put(uri, org_id=org_id, body=body)
-    return resp
-
 def unassign(mist_session, org_id, macs):
     uri = "/api/v1/orgs/%s/inventory" % org_id
     body = {
@@ -41,3 +30,15 @@ def unassign(mist_session, org_id, macs):
     resp = mist_session.mist_put(uri, org_id=org_id, body=body)
     return resp
 
+def assign_macs_to_site(mist_session, org_id, site_id, macs):
+    uri = "/api/v1/orgs/%s/inventory" % org_id
+    if type(macs) == str:
+        macs = [macs]
+    body = {
+        "op": "assign",
+        "site_id": site_id,
+        "macs": macs,
+        "no_reassign": False
+    }
+    resp = mist_session.mist_put(uri, org_id=org_id, body=body)
+    return resp
