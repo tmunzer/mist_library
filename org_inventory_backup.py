@@ -16,6 +16,10 @@ if org_id == "":
 def backup_id_dict(xobject_name, xobject):
     backup["org"]["%s_id_dict" %xobject_name][xobject["name"]] = xobject["id"]
 
+def assign_mac_to_site(site_id, mac):
+    if not site_id in backup["org"]["site_assignment"]:
+        backup["org"]["site_assignment"][site_id] = []
+    backup["org"]["site_assignment"][site_id].append(mac)
 
 backup = {
     "org" : {
@@ -23,7 +27,8 @@ backup = {
         "site_id_dict" : {},
         "map_id_dict" : {},
         "inventory" : [],
-        "devices" : []
+        "devices" : [],
+        "site_assignment": {} 
     }
 }
 
@@ -44,6 +49,7 @@ for site in sites:
     devices = mist_lib.requests.sites.devices.get(mist_session, site["id"])["result"]
     backup["org"]["devices"] += devices
     for device in devices:
+        assign_mac_to_site(device["site_id"], device["mac"])
         i = 1
         while "image%s_url"%i in device:
             url = device["image%s_url"%i]
