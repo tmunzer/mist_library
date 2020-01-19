@@ -35,3 +35,17 @@ def delete(mist_session, site_id, device_id):
     uri = "/api/v1/sites/%s/devices/%s" % (site_id, device_id)
     resp = mist_session.mist_delete(uri, site_id=site_id)
     return resp
+
+def add_image(mist_session, site_id, device_id, image_num, image_path):
+    uri = "/api/v1/sites/%s/devices/%s/image%s" %(site_id, device_id, image_num)
+    files = {'file': open(image_path, 'rb').read()}
+    resp = mist_session.mist_post_file(uri, site_id=site_id, files=files)
+    return resp
+
+def set_device_conf(mist_session, site_id, device_id, conf):
+    uri = "/api/v1/sites/%s/devices/%s" %(site_id, device_id)
+    body = conf
+    resp = mist_session.mist_put(uri, site_id=site_id, body=body)
+    return resp
+
+
