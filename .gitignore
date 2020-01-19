@@ -1,12 +1,20 @@
-secret.*
+# credential files
 config.py
 session.py
-.DS_Store
+
+# script generated files
 *.png
 *.csv
-org_conf_file.json
+org_conf_file*.json
+org_inventory_file.json
+
+# others
 launch.json
+settings.json
 test.py
+
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
