@@ -35,8 +35,6 @@ session_file = None
 
 org_id = ""
 
-with open(backup_file) as f:
-    backup = json.load(f)
 
 #### CONSTANTS ####
 
@@ -265,7 +263,6 @@ def restore_org(org):
 
                 old_map_id = next(iter(ids))
                 new_map_id = ids[old_map_id]
-                image_name = "%s_url_%s.jpg" %(file_prefix, old_map_id)
                 image_name = "%s_org_%s_site_%s_map_%s.png" %(file_prefix, old_org_id, old_site_id, old_map_id)
                 if os.path.isfile(image_name):
                     console.info("Image %s will be restored to map %s" %(image_name, new_map_id))
@@ -391,6 +388,9 @@ while not resp in ["y", "n", ""]:
     resp = input("Do you want to continue to import the configuration into the organization %s (y/N)? " %org_id).lower()
 
 if resp == "y":
+    with open(backup_file) as f:
+        backup = json.load(f)
+    console.info("File %s loaded succesfully." %backup_file)
     restore_org(backup["org"])
     print('')
     console.info("Restoration succeed!")
