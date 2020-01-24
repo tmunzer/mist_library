@@ -29,6 +29,7 @@ from tabulate import tabulate
 import json
 import os.path
 console = Console(6)
+backup_directory = "./backup/ebad74f0-2614-42a8-b400-850a0f98248a"
 backup_file = "./org_conf_file.json"
 file_prefix = ".".join(backup_file.split(".")[:-1])
 session_file = None

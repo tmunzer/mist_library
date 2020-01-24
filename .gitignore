@@ -5,7 +5,8 @@ session.py
 # script generated files
 *.png
 *.csv
-org_conf_file*.json
+backup
+rg_conf_file*.json
 org_inventory_file.json
 
 # others
