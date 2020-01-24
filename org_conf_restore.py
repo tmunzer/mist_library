@@ -20,6 +20,10 @@ The script has 2 different steps:
 
 #### PARAMETERS #####
 
+session_file = ""
+backup_directory = "./backup/"
+
+org_id = ""
 #### IMPORTS ####
 
 import mlib as mist_lib
@@ -28,16 +32,11 @@ from mlib import cli
 from tabulate import tabulate
 import json
 import os.path
-console = Console(6)
-backup_directory = "./backup/ebad74f0-2614-42a8-b400-850a0f98248a"
-backup_file = "./org_conf_file.json"
-file_prefix = ".".join(backup_file.split(".")[:-1])
-session_file = None
-
-org_id = ""
-
 
 #### CONSTANTS ####
+console = Console(6)
+backup_file = "./org_conf_file.json"
+file_prefix = ".".join(backup_file.split(".")[:-1])
 
 
 #### GLOBAL VARS ####
@@ -363,12 +362,49 @@ def restore_org(org):
             cleaned_data.append(clean_ssorole_privileges(ssorole))
         common_restore('orgs', org_id, 'ssoroles', cleaned_data)    
 
+def display_warning(message):
+    resp = "x"
+    while not resp.lower() in ["y", "n", ""]:
+        resp = input(message)
+    if not resp.lower()=="y":
+        console.warning("Interruption... Exiting...")
+        exit(0)
+
+def go_to_backup_folder():
+    os.chdir(backup_directory)
+    i = 0
+    folders = []
+    for entry in os.listdir("./"):
+        if os.path.isdir(os.path.join("./", entry)):
+            folders.append(entry)
+            print("%s) %s" %(i, entry))
+            i+=1
+    folder = None
+    while folder == None:
+        resp = input("Which backup do you want to restore (0-%s, or x or exit)? "  %i)
+        if resp.lower() == "x":
+            console.warning("Interruption... Exiting...")
+        try:
+            respi = int(resp)
+            if respi >= 0 and respi <= i:
+                folder = folders[respi]
+            else:
+                print("The entry value \"%s\" is not valid. Please try again...")
+        except:
+            print("Only numbers are allowed. Please try again...")
+    os.chdir(folder)
+        
+def start_restore():
+    with open(backup_file) as f:
+        backup = json.load(f)
+    console.info("File %s loaded succesfully." %backup_file)
+    restore_org(backup["org"])
+    print('')
+    console.info("Restoration succeed!")
 
 #### SCRIPT ENTRYPOINT ####
 
 mist_session = mist_lib.Mist_Session(session_file)
-if org_id == "":
-    org_id = cli.select_org(mist_session)
 
 print(""" 
 __          __     _____  _   _ _____ _   _  _____ 
@@ -384,17 +420,15 @@ It's your responsability to validate the importation result!
 
 
 """)
-resp = "x"
-while not resp in ["y", "n", ""]:
-    resp = input("Do you want to continue to import the configuration into the organization %s (y/N)? " %org_id).lower()
 
-if resp == "y":
-    with open(backup_file) as f:
-        backup = json.load(f)
-    console.info("File %s loaded succesfully." %backup_file)
-    restore_org(backup["org"])
-    print('')
-    console.info("Restoration succeed!")
-else:
-    console.warning("Interruption... Exiting...")
-exit(0)
+go_to_backup_folder()
+
+if org_id == "":
+    org_id = cli.select_org(mist_session)
+org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
+
+print()
+display_warning("Are you sure about this? Do you want to import the configuration into the organization %s with the id %s (y/N)? " %(org_name, org_id))
+
+start_restore()
+

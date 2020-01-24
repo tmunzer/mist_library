@@ -39,6 +39,8 @@ import mlib as mist_lib
 from mlib import cli
 from tabulate import tabulate
 import json
+from mlib.__debug import Console
+console = Console(6)
 
 #### FUNCTIONS ####
 
@@ -55,6 +57,7 @@ def display_warning(message):
     while not resp.lower() in ["y", "n", ""]:
         resp = input(message)
     if not resp.lower()=="y":
+        console.warning("User Interruption... Exiting...")
         exit(0)
 
 def start_delete(org_id):
@@ -86,6 +89,8 @@ def create_primary_site(org_id):
 
 #### SCRIPT ENTRYPOINT ####
 
+mist_session = mist_lib.Mist_Session()
+
 print(""" 
 __          __     _____  _   _ _____ _   _  _____ 
 \ \        / /\   |  __ \| \ | |_   _| \ | |/ ____|
@@ -101,7 +106,6 @@ __          __     _____  _   _ _____ _   _  _____
 """)
 
 
-mist_session = mist_lib.Mist_Session()
 if org_id == "":
     org_id = cli.select_site(mist_session)
 org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
