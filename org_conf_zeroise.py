@@ -31,7 +31,7 @@ The script has 2 different steps:
 
 #### PARAMETERS #####
 
-org_id = "b9953384-e443-4e71-a1c7-ed26c44f44e9"
+org_id = ""
 ids_to_not_delete = []
 
 #### IMPORTS ####
@@ -45,7 +45,7 @@ console = Console(6)
 #### FUNCTIONS ####
 
 def delete_object(org_id, object_name, ids_to_not_delete):
-    print(object_name)
+    console.notice("Removing all %s objects..." %object_name)
     req = mist_lib.requests.route("orgs", object_name)
     data = req.get(mist_session, org_id)["result"]
     for d in data:
@@ -55,6 +55,7 @@ def delete_object(org_id, object_name, ids_to_not_delete):
 def display_warning(message):
     resp = "x"
     while not resp.lower() in ["y", "n", ""]:
+        print()
         resp = input(message)
     if not resp.lower()=="y":
         console.warning("User Interruption... Exiting...")
@@ -87,6 +88,15 @@ def create_primary_site(org_id):
     primary_site = mist_lib.orgs.sites.create(mist_session, org_id, primary_site)["result"]
     ids_to_not_delete.append(primary_site["id"])
 
+def check_org_name(org_name):
+    while True:
+        print()
+        resp = input("To avoid any error, please confirm the orgnization name you want to reset: ")
+        if resp == org_name:
+            return True
+        else:
+            console.warning("The orgnization names do not match... Please try again...")
+
 #### SCRIPT ENTRYPOINT ####
 
 mist_session = mist_lib.Mist_Session()
@@ -107,11 +117,15 @@ __          __     _____  _   _ _____ _   _  _____
 
 
 if org_id == "":
-    org_id = cli.select_site(mist_session)
+    org_id = cli.select_org(mist_session)
 org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
 
+check_org_name(org_name)
 display_warning("Are you sure about this? Do you want to remove all the objects from the org %s with the id %s (y/N)? " %(org_name, org_id))
 display_warning("Are you REALLY sure about this? Once accepted, you won't be able to revert changes done on the org %s with id %s (y/N)? " %(org_name, org_id))
 
 create_primary_site(org_id)
 start_delete(org_id)
+
+print()
+console.info("All objects removed... Organization %s is back to default..." %org_name)
