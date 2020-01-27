@@ -124,6 +124,7 @@ check_org_name(org_name)
 display_warning("Are you sure about this? Do you want to remove all the objects from the org %s with the id %s (y/N)? " %(org_name, org_id))
 display_warning("Are you REALLY sure about this? Once accepted, you won't be able to revert changes done on the org %s with id %s (y/N)? " %(org_name, org_id))
 
+print()
 create_primary_site(org_id)
 start_delete(org_id)
 

@@ -37,7 +37,7 @@ def backup_wlan_portal(site_id, wlans):
         else:
             portal_file_name = "%s_org_%s_site_%s_wlan_%s.json" %(file_prefix, org_id, site_id, wlan["id"]) 
             portal_image = "%s_org_%s_site_%s_wlan_%s.png" %(file_prefix, org_id, site_id, wlan["id"])
-        urllib.request.urlretrieve(wlan["portal_template_url"], portal_file_name)
+        if "portal_template_url" in wlan: urllib.request.urlretrieve(wlan["portal_template_url"], portal_file_name)
         if "portal_image" in wlan: urllib.request.urlretrieve(wlan["portal_image"], portal_image)
     
 
@@ -127,3 +127,5 @@ backup = bakcup_full_org()
 print("saving to file...")
 with open(backup_file, "w") as f:
     json.dump(backup, f)
+
+print("Organisation with id %s saved!" %org_id)

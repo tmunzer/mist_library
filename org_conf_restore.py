@@ -211,7 +211,7 @@ def restore_org(org):
         rftemplate_id_dict.update(ids)
 
     for data in org["sitegroups"]:
-        del data["site_ids"]
+        if "site_ids" in data: del data["site_ids"]
         ids = common_restore('orgs', org_id, 'sitegroups', data)
         sitegroup_id_dict.update(ids)    
 
@@ -365,6 +365,7 @@ def restore_org(org):
 def display_warning(message):
     resp = "x"
     while not resp.lower() in ["y", "n", ""]:
+        print()
         resp = input(message)
     if not resp.lower()=="y":
         console.warning("Interruption... Exiting...")
@@ -399,8 +400,17 @@ def start_restore():
         backup = json.load(f)
     console.info("File %s loaded succesfully." %backup_file)
     restore_org(backup["org"])
-    print('')
-    console.info("Restoration succeed!")
+    print()
+    console.info("Restoration process finished...")
+
+def check_org_name(org_name):
+    while True:
+        print()
+        resp = input("To avoid any error, please confirm the current destination orgnization name: ")
+        if resp == org_name:
+            return True
+        else:
+            console.warning("The orgnization names do not match... Please try again...")
 
 #### SCRIPT ENTRYPOINT ####
 
@@ -427,8 +437,10 @@ if org_id == "":
     org_id = cli.select_org(mist_session)
 org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
 
-print()
+check_org_name(org_name)
 display_warning("Are you sure about this? Do you want to import the configuration into the organization %s with the id %s (y/N)? " %(org_name, org_id))
 
+print()
 start_restore()
+
 
