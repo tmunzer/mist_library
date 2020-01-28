@@ -1,8 +1,9 @@
+#### IMPORTS #####
 import rlcompleter as __rlcompleter
 import mlib.cli as cli
 from tabulate import tabulate
 
-
+#### FUNCTIONS #####
 def help():
     print('''
     Info:
@@ -50,5 +51,6 @@ def __init():
     session = mlib.Mist_Session()
     return [mlib.requests, session]
 
+#### SCRIPT ENTRYPOINT #####
 help()
 requests, session = __init()
