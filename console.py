@@ -1,5 +1,4 @@
-import rlcompleter
-import mlib
+import rlcompleter as __rlcompleter
 import mlib.cli as cli
 from tabulate import tabulate
 
@@ -44,8 +43,12 @@ def get_site_id():
     return site_id
 
 def show(response):
-    mlib.cli.show(response)
+    cli.show(response)
     
+def __init():
+    import mlib
+    session = mlib.Mist_Session()
+    return [mlib.requests, session]
 
 help()
-session = mlib.Mist_Session()
+requests, session = __init()
