@@ -1,12 +1,14 @@
+
+#### PARAMETERS #####
+csv_separator = ","
+
+#### IMPORTS #####
 import mlib as mist_lib
 from tabulate import tabulate
 import sys
 import csv
-#### PARAMETERS #####
-csv_separator = ","
 
-
-
+#### FUNCTIONS #####
 def org_select():
     i=-1
     org_ids=[]
@@ -58,7 +60,7 @@ def site_select(org_id):
             return site_select(org_id)
 
     
-
+#### SCRIPT ENTRYPOINT #####
 
 mist = mist_lib.Mist_Session()
 org_id = org_select()

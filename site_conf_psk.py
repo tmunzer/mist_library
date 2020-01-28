@@ -1,73 +1,30 @@
-import mlib as mist_lib
-from tabulate import tabulate
+
 
 #### PARAMETERS #####
-csv_separator = ","
+psk = {"name":'myUser', "passphrase":'myBadPassword', "ssid":'mySSID', "usage":'multi'}
 
+#### IMPORTS #####
+import mlib as mist_lib
+from mlib import cli
+from tabulate import tabulate
 
+#### FUNCTIONS #####
 
-def org_select():
-    i=-1
-    org_ids=[]
-    print("\r\nAvailable organizations:")
-    for privilege in mist.privileges:
-        if privilege["scope"] == "org":
-            i+=1
-            org_ids.append(privilege["org_id"])
-            print("%s) %s (id: %s)" % (i, privilege["name"], privilege["org_id"]))
-    resp = input("\r\nSelect an Org (0 to %s, or q to exit): " %i)
-    if resp == "q":
-        exit(0)
-    else:
-        try:
-            resp_num = int(resp)
-            if resp_num >= 0 and resp_num <= i:
-                return org_ids[resp_num]
-            else:
-                print("Please enter a number between 0 and %s." %i)
-                return org_select()
-        except:
-            print("Please enter a number.")
-            return org_select()
-
-def site_select(org_id):
-    i=-1
-    site_ids=[]
-    print("\r\nAvailable sites:")
-    for privilege in mist.privileges:
-        if privilege["scope"] == "site" and privilege["org_id"] == org_id:
-            i+=1
-            site_ids.append(privilege["site_id"])
-            print("%s) %s (id: %s)" % (i, privilege["name"], privilege["site_id"]))
-    resp = input("\r\nSelect a Site (0 to %s, or q to exit): " %i)
-    if resp == "q":
-        exit(0)
-    else:
-        try:
-            resp_num = int(resp)
-            if resp_num >= 0 and resp_num <= i:
-                return site_ids[resp_num]
-            else:
-                print("%s is not part of the possibilities." % resp_num)
-                return site_select(org_id)
-        except:
-            print("Only numbers are allowed.")
-            return site_select(org_id)
-
+#### SCRIPT ENTRYPOINT #####
 mist = mist_lib.Mist_Session()
-#org_id = org_select()
-#site_id = site_select(org_id)
-site_id = 'f46e9b35-9d4e-4c89-bcb1-44870d008b42'
+site_id = cli.select_site(mist)
   
 psk = mist_lib.models.sites.psks.Psk()
-#psk.cli()
-psk.define(name='test', passphrase='fdsgrehgetrzhg', ssid='MlN', usage='multi')
+psk.define(psk)
 print(psk.toJSON())
 
 mist_lib.requests.sites.psks.create(mist, site_id, psk.toJSON())
 psks = mist_lib.requests.sites.psks.get(mist, site_id)['result']
-print(psks)
+cli.show(psks)
+
+exit(0)
+"""
 for psk in psks:
     mist_lib.requests.sites.psks.delete(mist, site_id, psk_id=psk['id'])
 print(mist_lib.requests.sites.psks.get(mist, site_id)['result'])
-exit(0)
+"""

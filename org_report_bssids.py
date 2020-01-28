@@ -1,8 +1,8 @@
 '''
-Python script to list all WLANs from orgs/sites and their parameters, and save it to a CSV file.
+Python script to list all Access Points from orgs/sites and their associated BSSIDs, and save it to a CSV file.
 You can configure which fields you want to retrieve/save, and where the script will save the CSV file.
 
-You can run the script with the command "python3 org_report_wlans.py <path_to_the_csv_file>"
+You can run the script with the command "python3 org_report_bssid.py <path_to_the_csv_file>"
 
 The script has 2 different steps:
 1) admin login

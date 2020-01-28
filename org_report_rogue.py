@@ -8,9 +8,6 @@ The script is requesting information for all the organisation the admin has acce
 You can run the script with the command "python3 org_report_rogue.py"
 '''
 
-import mlib as mist_lib
-from mlib import cli
-from tabulate import tabulate
 
 #### PARAMETERS #####
 csv_separator = ","
@@ -18,11 +15,18 @@ csv_file = "./report_rogues.csv"
 fields = ["ssid", "bssid", "num_aps", "ap_mac", "channel", "avg_rssi", "times_heard" ]
 r_types = [ "honeypot", "lan", "others", "spoof"]
 
-
+#### IMPORTS #####
+import mlib as mist_lib
+from mlib import cli
+from tabulate import tabulate
 mist = mist_lib.Mist_Session("./session.py")
 
+#### GLOBAL VARIABLES ####
 rogues_summarized = []
 
+#### FUNCTIONS ####
+
+#### SCRIPT ENTRYPOINT ####
 for r_type in r_types:
     for entry in mist.privileges:    
         if not "site_id" in entry and "org_id" in entry and entry["org_id"] != "":

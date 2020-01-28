@@ -1,6 +1,4 @@
-import mlib as mist_lib
-from mlib import cli
-from tabulate import tabulate
+
 
 #### PARAMETERS #####
 
@@ -9,11 +7,15 @@ auto_site_assignment = {
     "rules": []
 }
 
+#### IMPORTS #####
+import mlib as mist_lib
+from mlib import cli
+from tabulate import tabulate
+
+#### GLOBAL VARIABLES ####
 auto_assignment_rules = ["name", "subnet", "lldp_system_name", "dns_suffix", "model" ]
 
-
-
-
+#### FUNCTIONS ####
 def create_rule():
     rule_conf = {}
     while True:
@@ -106,14 +108,11 @@ def configure_rule(rule_conf):
     return rule_conf
 
 
-####### ENTRY POINT
+####### ENTRY POINT #######
 
 
 mist = mist_lib.Mist_Session()
-
 org_id = cli.select_org(mist)
-#cli.display_json(mist_lib.requests.orgs.settings.get(mist, org_id)["result"])
-
 
 while True:
     resp = input("Do you want to enable auto site assignement (Y/n)?")

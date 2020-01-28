@@ -2,11 +2,24 @@
 Python script to list all WLANs from orgs/sites and their parameters, and save it to a CSV file.
 You can configure which fields you want to retrieve/save, and where the script will save the CSV file.
 
-You can run the script with the command "python3 org_report_wlans.py <path_to_the_csv_file>"
+You can run the script with the command "python3 org_report_wlans.py"
 
 The script has 2 different steps:
 1) admin login
 2) select the organisation/site from where you want to retrieve the information
+
+
+available fields:
+ssid, enabled, auth, roam_mode, auth_servers_nas_id, auth_servers_nas_ip, auth_servers_timeout, auth_servers_retries, auth_servers, acct_servers,
+acct_interim_interval, dynamic_vlan, band, band_steer, band_steer_force_band5, disable_11ax, interface, vlan_enabled, vlan_id, vlan_pooling, vlan_ids,
+wxtunnel_id, wxtunnel_remote_id, mxtunneL_id, hide_ssid, dtim, disable_wmm, disable_uapsd, use_eapol_v1, legacy_overds, hostname_id, isolation, arp_filter,
+limit_bcast, allow_mdns, allow_ipv6_ndp, no_static_ip, no_static_dns, enable_wireless_bridging, apply_to, wxtag_ids, ap_ids, wlan_limit_up_enabled, 
+wlan_limit_up, wlan_limit_down_enabled, wlan_limit_down, client_limit_up_enabled, client_limit_up, client_limit_down_enabled, client_limit_down, 
+max_idletime, sle_excluded, portal_template_url, portal_image, thumbnail, portal_api_secret, portal_sso_url, portal_allowed_subnets, portal_allowed_hostnames, 
+portal_denied_hostnames
+
+not yet available fields:
+dns_server_rewrite, coa_server, radsec, airwatch, cisco_cwa, rateset, schedule, qos, app_limit, app_qos, portal
 '''
 
 #### PARAMETERS #####
