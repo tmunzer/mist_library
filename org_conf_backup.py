@@ -29,7 +29,7 @@ from tabulate import tabulate
 import json
 
 #### FUNCTIONS ####
-def backup_wlan_portal(site_id, wlans):  
+def _backup_wlan_portal(site_id, wlans):  
     for wlan in wlans:     
         if site_id == None:
             portal_file_name = "%s_org_%s_wlan_%s.json" %(file_prefix, org_id, wlan["id"])
@@ -42,7 +42,7 @@ def backup_wlan_portal(site_id, wlans):
     
 
 
-def bakcup_full_org():
+def _backup_full_org(mist_session, org_id):
     backup = {}
     backup["org"] = {}
     backup["org"]["data"] = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]
@@ -61,7 +61,7 @@ def bakcup_full_org():
     backup["org"]["ssoroles"] = mist_lib.requests.orgs.ssoroles.get(mist_session, org_id)["result"]
     backup["org"]["templates"] = mist_lib.requests.orgs.templates.get(mist_session, org_id)["result"]
     backup["org"]["wlans"] = mist_lib.requests.orgs.wlans.get(mist_session, org_id)["result"]
-    backup_wlan_portal(None, backup["org"]["wlans"])
+    _backup_wlan_portal(None, backup["org"]["wlans"])
     backup["org"]["wxrules"] = mist_lib.requests.orgs.wxrules.get(mist_session, org_id)["result"]
     backup["org"]["wxtags"] = mist_lib.requests.orgs.wxtags.get(mist_session, org_id)["result"]
     backup["org"]["wxtunnels"] = mist_lib.requests.orgs.wxtunnels.get(mist_session, org_id)["result"]
@@ -80,7 +80,7 @@ def bakcup_full_org():
         vbeacons = mist_lib.requests.sites.vbeacons.get(mist_session, site["id"])["result"]
         webhooks = mist_lib.requests.sites.webhooks.get(mist_session, site["id"])["result"]
         wlans = mist_lib.requests.sites.wlans.get(mist_session, site["id"])["result"]
-        backup_wlan_portal(site["id"], wlans)
+        _backup_wlan_portal(site["id"], wlans)
         wxrules = mist_lib.requests.sites.wxrules.get(mist_session, site["id"])["result"]
         wxtags = mist_lib.requests.sites.wxtags.get(mist_session, site["id"])["result"]
         wxtunnels = mist_lib.requests.sites.wxtunnels.get(mist_session, site["id"])["result"]
@@ -110,22 +110,30 @@ def bakcup_full_org():
     cli.show(backup)
     return backup
 
+def _save_to_file(backup_file, backup):
+    print("saving to file...")
+    with open(backup_file, "w") as f:
+        json.dump(backup, f)
+
+def start_org_backup(mist_session, org_id, org_name):
+    if not os.path.exists("backup"):
+        os.mkdir("backup")
+    os.chdir("backup")
+    if not os.path.exists(org_name):
+        os.mkdir(org_name)
+    os.chdir(org_name)
+
+    backup = _backup_full_org(mist_session, org_id)
+    _save_to_file(backup_file, backup)
+
+    print("Organisation %s with id %s saved!" %(org_name, org_id))
+
 
 ##### ENTRY POINT ####
 
-mist_session = mist_lib.Mist_Session(session_file)
-org_id = cli.select_org(mist_session)
 
-if not os.path.exists("backup"):
-    os.mkdir("backup")
-os.chdir("backup")
-if not os.path.exists(org_id):
-    os.mkdir(org_id)
-os.chdir(org_id)
-
-backup = bakcup_full_org()
-print("saving to file...")
-with open(backup_file, "w") as f:
-    json.dump(backup, f)
-
-print("Organisation with id %s saved!" %org_id)
+if __name__ == "__main__":
+    mist_session = mist_lib.Mist_Session(session_file)
+    org_id = cli.select_org(mist_session)
+    org_name = mist_lib.orgs.info.get(mist_session, org_id)["result"]["name"]
+    start_org_backup(mist_session, org_id, org_name)

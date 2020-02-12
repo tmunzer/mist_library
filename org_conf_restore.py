@@ -394,29 +394,10 @@ def go_to_backup_folder():
         except:
             print("Only numbers are allowed. Please try again...")
     os.chdir(folder)
-        
-def start_restore():
-    with open(backup_file) as f:
-        backup = json.load(f)
-    console.info("File %s loaded succesfully." %backup_file)
-    restore_org(backup["org"])
-    print()
-    console.info("Restoration process finished...")
 
-def check_org_name(org_name):
-    while True:
-        print()
-        resp = input("To avoid any error, please confirm the current destination orgnization name: ")
-        if resp == org_name:
-            return True
-        else:
-            console.warning("The orgnization names do not match... Please try again...")
+def _print_warning():
+    print(""" 
 
-#### SCRIPT ENTRYPOINT ####
-
-mist_session = mist_lib.Mist_Session(session_file)
-
-print(""" 
 __          __     _____  _   _ _____ _   _  _____ 
 \ \        / /\   |  __ \| \ | |_   _| \ | |/ ____|
  \ \  /\  / /  \  | |__) |  \| | | | |  \| | |  __ 
@@ -430,17 +411,37 @@ It's your responsability to validate the importation result!
 
 
 """)
+def _check_org_name(org_name):
+    while True:
+        print()
+        resp = input("To avoid any error, please confirm the current destination orgnization name: ")
+        if resp == org_name:
+            return True
+        else:
+            console.warning("The orgnization names do not match... Please try again...")
 
-go_to_backup_folder()
 
-if org_id == "":
-    org_id = cli.select_org(mist_session)
-org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
+def start_restore(mist_session, org_id, org_name):
+    _check_org_name(org_name)
+    go_to_backup_folder()
+    display_warning("Are you sure about this? Do you want to import the configuration into the organization %s with the id %s (y/N)? " %(org_name, org_id))
+    with open(backup_file) as f:
+        backup = json.load(f)
+    console.info("File %s loaded succesfully." %backup_file)
+    restore_org(backup["org"])
+    print()
+    console.info("Restoration process finished...")
 
-check_org_name(org_name)
-display_warning("Are you sure about this? Do you want to import the configuration into the organization %s with the id %s (y/N)? " %(org_name, org_id))
 
-print()
-start_restore()
+
+#### SCRIPT ENTRYPOINT ####
+
+
+if __name__ == "__main__":
+    mist_session = mist_lib.Mist_Session(session_file)
+    if org_id == "":
+        org_id = cli.select_org(mist_session)
+    org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
+    start_restore(mist_session, org_id, org_name)
 
 
