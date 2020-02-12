@@ -53,16 +53,16 @@ deviceprofile_id_dict = {}
 #### FUNCTIONS ####
 
 
-def sync_sites_id():
+def _sync_sites_id():
     old_site_id_dict = backup["org"]["site_id_dict"]
     new_sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)["result"]
     for site in new_sites:
-        sync_maps_id(site["id"])
+        _sync_maps_id(site["id"])
         if site["name"] in old_site_id_dict:
             old_id = old_site_id_dict[site["name"]]
             site_id_dict[old_id] = site["id"]
 
-def sync_maps_id(site_id):
+def _sync_maps_id(site_id):
     old_map_id_dict = backup["org"]["map_id_dict"]
     new_maps = mist_lib.requests.sites.maps.get(mist_session, site_id)["result"]
     for xmap in new_maps:
@@ -70,7 +70,7 @@ def sync_maps_id(site_id):
             old_id = old_map_id_dict[xmap["name"]]
             map_id_dict[old_id] = xmap["id"]
 
-def sync_deviceprofiles_id():
+def _sync_deviceprofiles_id():
     old_deviceprofile_id_dict = backup["org"]["deviceprofile_id_dict"]
     new_deviceprofiles = mist_lib.requests.orgs.deviceprofiles.get(mist_session, org_id)["result"]
     for deviceprofile in new_deviceprofiles:
@@ -78,7 +78,7 @@ def sync_deviceprofiles_id():
             old_id = old_deviceprofile_id_dict[deviceprofile["name"]]
             deviceprofile_id_dict[old_id] = deviceprofile["id"]
 
-def get_new_id(old_id, new_ids_dict):
+def _get_new_id(old_id, new_ids_dict):
     if old_id in new_ids_dict:
         new_id = new_ids_dict[old_id]
         console.notice("Replacing id %s with id %s" %(old_id, new_id))
@@ -87,23 +87,23 @@ def get_new_id(old_id, new_ids_dict):
         console.notice("Unable to replace id %s" %old_id)
         return None
 
-def replace_id(old_ids_list, new_ids_dict):
+def _replace_id(old_ids_list, new_ids_dict):
     if old_ids_list == None:
         return None
     if old_ids_list == {}:
         return {}
     elif type(old_ids_list) == str:
-        return get_new_id(old_ids_list, new_ids_dict)
+        return _get_new_id(old_ids_list, new_ids_dict)
     elif type(old_ids_list) == list:
         new_ids_list = []
         for old_id in old_ids_list:
-            new_ids_list.append(get_new_id(old_id, new_ids_dict))
+            new_ids_list.append(_get_new_id(old_id, new_ids_dict))
         return new_ids_list
     else:
         console.error("Unable to replace ids: %s" % old_ids_list)
 
 
-def clean_ids(data):
+def _clean_ids(data):
     if "org_id" in data:
         del data["org_id"]
     if "modified_time" in data:
@@ -112,7 +112,7 @@ def clean_ids(data):
         del data["created_time"]
     return data
 
-def restore_device_image(org_id, site_id, device_id, i):
+def _restore_device_image(org_id, site_id, device_id, i):
     image_name = "%s_org_%s_device_%s_image_%s.png" %(file_prefix, org_id, device_id, i)    
     if os.path.isfile(image_name):
         console.info("Image %s will be restored to device %s" %(image_name, device_id))
@@ -123,30 +123,30 @@ def restore_device_image(org_id, site_id, device_id, i):
         return False
 
 
-def restore_inventory(inventory):
+def _restore_inventory(inventory):
     mist_lib.requests.orgs.inventory.add(mist_session, org_id, inventory)
 
-def restore_site_assign(site_assignment):
+def _restore_site_assign(site_assignment):
     for old_site_id in site_assignment:
-        new_site_id = replace_id(old_site_id, site_id_dict)
+        new_site_id = _replace_id(old_site_id, site_id_dict)
         macs = site_assignment[new_site_id]
         mist_lib.requests.orgs.inventory.assign_macs_to_site(mist_session, org_id, new_site_id, macs)
 
-def restore_devices(devices):
-    sync_sites_id()
-    sync_deviceprofiles_id()
+def _restore_devices(devices):
+    _sync_sites_id()
+    _sync_deviceprofiles_id()
     for device in devices:
-        device = clean_ids(device)
-        device["deviceprofile_id"] = replace_id(device["deviceprofile_id"], deviceprofile_id_dict) 
+        device = _clean_ids(device)
+        device["deviceprofile_id"] = _replace_id(device["deviceprofile_id"], deviceprofile_id_dict) 
 ## add image
-        device["map_id"] = replace_id(device["map_id"], map_id_dict) 
-        site_id = replace_id(device["site_id"], site_id_dict) 
+        device["map_id"] = _replace_id(device["map_id"], map_id_dict) 
+        site_id = _replace_id(device["site_id"], site_id_dict) 
         device["site_id"] = site_id
         mist_lib.requests.sites.devices.set_device_conf(mist_session, site_id, device["id"], device)
         i=1
         image_exists = True
         while image_exists:
-            image_exists = restore_device_image(org_id, site_id, device["id"], i)
+            image_exists = _restore_device_image(org_id, site_id, device["id"], i)
             i+=1
         
 #### SCRIPT ENTRYPOINT ####
@@ -174,11 +174,11 @@ while not resp in ["y", "n", ""]:
     resp = input("Do you want to continue to import the configuration into the organization %s (y/N)? " %org_id).lower()
 
 if resp == "y":
-    sync_deviceprofiles_id()
-    sync_sites_id()    
-    restore_inventory(backup["org"]["inventory"])
-    restore_site_assign(backup["org"]["site_assignment"])
-    restore_devices(backup["org"]["devices"])
+    _sync_deviceprofiles_id()
+    _sync_sites_id()    
+    _restore_inventory(backup["org"]["inventory"])
+    _restore_site_assign(backup["org"]["site_assignment"])
+    _restore_devices(backup["org"]["devices"])
     print('')
     console.info("Restoration succeed!")
 else:

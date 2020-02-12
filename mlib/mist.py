@@ -21,10 +21,10 @@ finally:
 class Mist_Session(Req):
     """Class managing REST login and requests"""
 
-    def __init__(self, session_file="./session.py"):    
+    def __init__(self, session_file="./session.py", host=None):    
 
         # user and https session parameters
-        self.host = ""
+        self.host = host
         self.email = ""
         self.password = ""
         self.first_name = ""
@@ -36,14 +36,13 @@ class Mist_Session(Req):
         self.tags = []
         self.authenticated = False
         self.session = requests.session()
-        #self.session.headers.update({'Content-Type': "application/json"})
         self.csrftoken = ""
         self.apitoken = None
         #Try to log in
         if session_file != None:
             self._restore_session(session_file)
         if self.authenticated == False:
-            self._credentials()
+            self._credentials(do_not_load=not host == None)
         # if successfuly authenticated
         if (self.get_authenticated()): self.getself()
         # if authentication failed, exit with error code 255
@@ -95,26 +94,30 @@ class Mist_Session(Req):
         except:
             console.error("Unable to load session...")            
 
-    def _credentials(self):
+    def _credentials(self, do_not_load=False):
         self.session = requests.session()
         try:
-            from config import credentials
-            console.notice("Login file found.")
-            if "host" in credentials: self.host = credentials["host"]
-            if "apitoken" in credentials: self._set_apitoken(credentials["apitoken"])
-            elif "email" in credentials: 
-                self.email = credentials["email"]
-                if "password" in credentials:
-                        self.password = credentials["password"]
-                else: 
-                    self.password = getpass("Password:")
+            if do_not_load:
+                self.email = input("Login: ")
+                self.password = getpass("Password: ")
             else:
-                console.error("Credentials invalid... Can't use the information from config.py...")
-                raise ValueError            
+                from config import credentials
+                console.notice("Login file found.")
+                if "host" in credentials: self.host = credentials["host"]
+                if "apitoken" in credentials: self._set_apitoken(credentials["apitoken"])
+                elif "email" in credentials: 
+                    self.email = credentials["email"]
+                    if "password" in credentials:
+                            self.password = credentials["password"]
+                    else: 
+                        self.password = getpass("Password:")
+                else:
+                    console.error("Credentials invalid... Can't use the information from config.py...")
+                    raise ValueError            
         except:
             console.notice("No login file found. Asking for credentials")
-            self.email = input("Login:")
-            self.password = getpass("Password:")
+            self.email = input("Login: ")
+            self.password = getpass("Password: ")
         finally:
             if self.host == "":
                 self.host = "api.mist.com"
