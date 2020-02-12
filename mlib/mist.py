@@ -205,6 +205,7 @@ class Mist_Session(Req):
         else:
             console.error("2FA authentication failed")
             console.error("Error code: %s" % resp.status_code)
+            exit(255)
             return False
 
     def getself(self):
