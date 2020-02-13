@@ -68,7 +68,7 @@ def _backup_inventory(mist_session, org_id):
     inventory = mist_lib.requests.orgs.inventory.get(mist_session, org_id)["result"]
     for data in inventory:
         if not data["magic"] == "":
-            backup["org"]["inventory"].append({data["serial"]: data["magic"]})
+            backup["org"]["inventory"].append({"serial": data["serial"], "magic": data["magic"]})
 
     deviceprofiles = mist_lib.requests.orgs.deviceprofiles.get(mist_session, org_id)["result"]
     for deviceprofile in deviceprofiles:
