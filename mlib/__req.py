@@ -58,7 +58,7 @@ class Req:
         else:
             result = ""
             error = resp.json()
-            console.info("Response Status Code: %s" % resp.status_code)
+            console.debug("Response Status Code: %s" % resp.status_code)
             console.debug("Response: %s" % error)
         return {"result": result, "status_code": resp.status_code, "error": error, "uri":uri}
 
@@ -76,7 +76,7 @@ class Req:
                 html_query += "limit=%s&" %limit
                 html_query += "page=%s" %page
                 url += html_query
-                console.info("Request > GET %s" % url)
+                console.debug("Request > GET %s" % url)
                 resp = self.session.get(url)
                 resp.raise_for_status()
             except HTTPError as http_err:
@@ -106,7 +106,7 @@ class Req:
             try: 
                 url = self._url(uri)
                 headers = {'Content-Type': "application/json"}
-                console.info("Request > POST %s" % url)
+                console.debug("Request > POST %s" % url)
                 console.debug("Request body: \r\n%s" % body)
                 if type(body) == str:
                     resp = self.session.post(url, data=body, headers=headers)
@@ -132,7 +132,7 @@ class Req:
         if self._check_authorization("PUT", org_id=org_id, site_id=site_id):
             try:
                 url = self._url(uri)
-                console.info("Request > PUT %s" % url)
+                console.debug("Request > PUT %s" % url)
                 console.debug("Request body: \r\n%s" % body)
                 if type(body) == str:
                     resp = self.session.put(url, data=body)
@@ -159,7 +159,7 @@ class Req:
         if self._check_authorization("DELETE", org_id=org_id, site_id=site_id):
             try: 
                 url = self._url(uri)
-                console.info("Request > DELETE %s" % url)
+                console.debug("Request > DELETE %s" % url)
                 resp = self.session.delete(url)
                 resp.raise_for_status()
             except HTTPError as http_err:
@@ -179,7 +179,7 @@ class Req:
         if self._check_authorization("POST", org_id=org_id, site_id=site_id):
             try:                 
                 url = self._url(uri)
-                console.info("Request > POST %s" % url)
+                console.debug("Request > POST %s" % url)
                 resp = self.session.post(url, files=files)
                 resp.raise_for_status()
             except HTTPError as http_err:
