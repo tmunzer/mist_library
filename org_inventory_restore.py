@@ -149,6 +149,50 @@ def _restore_devices(devices):
             image_exists = _restore_device_image(org_id, site_id, device["id"], i)
             i+=1
         
+def _select_backup_folder(folders):   
+    i = 0
+    print("Available backups:")
+    while i < len(folders):
+        print("%s) %s" %(i, folders[i]))
+        i += 1
+    folder = None
+    while folder == None:
+        resp = input("Which backup do you want to restore (0-%s, or x or exit)? "  %i)
+        if resp.lower() == "x":
+            console.warning("Interruption... Exiting...")
+        try:
+            respi = int(resp)
+            if respi >= 0 and respi <= i:
+                folder = folders[respi]
+            else:
+                print("The entry value \"%s\" is not valid. Please try again...")
+        except:
+            print("Only numbers are allowed. Please try again...")
+    os.chdir(folder)
+
+def _go_to_backup_folder(source_org_name=None):
+    os.chdir(backup_directory)
+    folders = []
+    for entry in os.listdir("./"):
+        if os.path.isdir(os.path.join("./", entry)):
+            folders.append(entry)
+    if source_org_name in folders:
+        print("Backup found for organization %s." %(source_org_name))
+        loop = True
+        while loop:
+            resp = input("Do you want to use this backup (y/n)? ")
+            if resp.lower == "y":
+                loop = False    
+                try:
+                    os.chdir(source_org_name)
+                except:
+                    _select_backup_folder(folders)
+            else:
+                loop = False    
+                _select_backup_folder(folders)
+    else:
+        print("Backup folder for organization %s not found. Please select a folder in the following list." %(source_org_name))
+        _select_backup_folder(folders)
 #### SCRIPT ENTRYPOINT ####
 
 mist_session = mist_lib.Mist_Session(session_file)

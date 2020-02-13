@@ -60,117 +60,6 @@ def _find_name_by_old_id(object_id_dict, old_object_id):
     for name in object_id_dict:
         if object_id_dict["old_id"] == old_object_id: return name
 
-## site id
-def _link_sites_ids(mist_session, org_id, sites_ids):
-    new_sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)["result"] 
-    for site in new_sites:
-        if site["name"] in sites_ids:
-            sites_ids[site["name"]]["new_id"] = site["id"]
-    return sites_ids            
-
-def _find_new_site_id_by_old_id(site_id_dict, old_id):
-    for site in site_id_dict:
-        if site["old_id"] == old_id:
-            return site["new_id"]
-    add_missing_object_by_old_id("sites", site_id_dict, old_id)
-    return None
-
-def _find_new_site_id_by_name(site_id_dict, site_name):
-    if "new_id" in site_id_dict[site_name]:
-        return site_id_dict[site_name]["new_id"]
-    add_missing_object_by_name("sites", site_id_dict, site_name)
-    return None
-
-## map id
-def _link_maps_id(mist_session, site_id, maps_ids):
-    new_maps = mist_lib.requests.sites.maps.get(mist_session, site_id)["result"]
-    for xmap in new_maps:
-        if xmap["name"] in maps_ids:
-            maps_ids[xmap["name"]]["new_id"] = xmap["id"]
-    return xmap
-
-def _find_new_map_id_by_old_id(map_id_dict, old_id):
-    for xmap in map_id_dict:
-        if xmap["old_id"] == old_id:
-            return xmap["new_id"]
-    add_missing_object_by_old_id("maps", map_id_dict, old_id)
-    return None
-
-def _find_new_site_id_by_name(map_id_dict, map_name):
-    if "new_id" in map_id_dict[map_name]:
-        return map_id_dict[map_name]["new_id"]
-    add_missing_object_by_name("maps", map_id_dict, map_name)
-    return None
-
-## device profiles
-def _link_deviceprofiles_ids(mist_session, org_id, deviceprofiles_ids):
-    new_deviceprofiles = mist_lib.requests.orgs.deviceprofiles.get(mist_session, org_id)["result"]
-    for deviceprofile in new_deviceprofiles:
-        if deviceprofile["name"] in deviceprofiles_ids:
-            deviceprofiles_ids[deviceprofile["name"]]["new_id"] = deviceprofile["id"]
-    return deviceprofiles_ids
-
-def _find_new_deviceprofile_id_by_old_id(deviceprofile_id_dict, old_id, site_name=None):
-    for deviceprofile in deviceprofile_id_dict:
-        if deviceprofile["old_id"] == old_id:
-            return deviceprofile["new_id"]
-    add_missing_object_by_old_id("deviceprofiles", deviceprofile_id_dict, old_id)
-    return None
-
-def _find_new_deviceprofile_id_by_name(deviceprofile_id_dict, deviceprofile_name):
-    if "new_id" in deviceprofile_id_dict[deviceprofile_name]:
-        return deviceprofile_id_dict[deviceprofile_name]["new_id"]
-    add_missing_object_by_name("deviceprofiles", deviceprofile_id_dict, deviceprofile_name)
-    return None
-
-
-## commons
-def add_missing_object_by_old_id(object_name, object_id_dict, old_id):
-    for o in object_id_dict:
-        if o["old_id"] == old_id:
-            missing_ids[object_name].append("%s (old id: %s" %(o, old_id))
-def add_missing_object_by_name(object_name, object_id_dict, name):
-    missing_ids[object_name].append("%s (old id: %s)" %(name, object_id_dict[name]["old_id"]))
-
-def _clean_ids(data):
-    if "org_id" in data:
-        del data["org_id"]
-    if "modified_time" in data:
-        del data["modified_time"]
-    if "created_time" in data:
-        del data["created_time"]
-    return data
-
-## restore
-def _restore_device_image(org_id, site_id, device_id, i):
-    image_name = "%s_org_%s_device_%s_image_%s.png" %(file_prefix, org_id, device_id, i)    
-    if os.path.isfile(image_name):
-        console.info("Image %s will be restored to device %s" %(image_name, device_id))
-        return True
-    else:
-        console.error("Image %s not found for device id %s" %(image_name, device_id))
-        return False
-
-def _restore_devices(new_site_id, deviceprofile_id_dict, map_id_dict, devices):
-    for device in devices:
-        device = _clean_ids(device)
-
-        if device["deviceprofile_id"]:
-            device["deviceprofile_id"] = _find_new_deviceprofile_id_by_old_id(deviceprofile_id_dict, device["deviceprofile_id"]) 
-
-        if device["map_id"]:
-            device["map_id"] = _find_new_map_id_by_old_id(map_id_dict, device["map_id"]) 
-
-        device["site_id"] = new_site_id  
-
-        i=1
-        image_exists = True
-        while image_exists:
-            image_exists = _restore_device_image(org_id, new_site_id, device["id"], i)
-            i+=1
-
-
-#### SCRIPT ENTRYPOINT ####
 def _result(backup):
     print('')
     if len(missing_ids["sites"]) == 0 and len(missing_ids["maps"]) == 0 and len(missing_ids["deviceprofiles"])==0:
@@ -193,6 +82,122 @@ def _result(backup):
             for missing_deviceprofile in missing_ids["deviceprofiles"]:
                 console.error("    - %s" %(missing_deviceprofile))
     print("")
+## site id
+def _link_sites_ids(mist_session, org_id, sites_ids):
+    new_sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)["result"] 
+    return _link_objects_ids(new_sites, sites_ids)
+
+def _find_new_site_id_by_old_id(site_id_dict, old_id):
+    return _find_new_object_id_by_old_id("sites", site_id_dict, old_id)
+
+def _find_new_site_id_by_name(site_id_dict, site_name):
+    if "new_id" in site_id_dict[site_name]:
+        return site_id_dict[site_name]["new_id"]
+    _missing_name_object("sites", site_id_dict, site_name)
+    return None
+
+## map id
+def _link_maps_id(mist_session, site_id, maps_ids):
+    new_maps = mist_lib.requests.sites.maps.get(mist_session, site_id)["result"]
+    return _link_objects_ids(new_maps, maps_ids)
+
+def _find_new_map_id_by_old_id(map_id_dict, old_id):
+    return _find_new_object_id_by_old_id("maps", map_id_dict, old_id)
+
+def _find_new_site_id_by_name(map_id_dict, map_name):
+    if "new_id" in map_id_dict[map_name]:
+        return map_id_dict[map_name]["new_id"]
+    _missing_name_object("maps", map_id_dict, map_name)
+    return None
+
+## device profiles
+def _link_deviceprofiles_ids(mist_session, org_id, deviceprofiles_ids):
+    new_deviceprofiles = mist_lib.requests.orgs.deviceprofiles.get(mist_session, org_id)["result"]
+    return _link_objects_ids(new_deviceprofiles, deviceprofiles_ids)
+
+def _find_new_deviceprofile_id_by_old_id(deviceprofile_id_dict, old_id):
+    return _find_new_object_id_by_old_id("deviceprofiles", deviceprofile_id_dict, old_id)
+
+def _find_new_deviceprofile_id_by_name(deviceprofile_id_dict, deviceprofile_name):
+    if "new_id" in deviceprofile_id_dict[deviceprofile_name]:
+        return deviceprofile_id_dict[deviceprofile_name]["new_id"]
+    _missing_name_object("deviceprofiles", deviceprofile_id_dict, deviceprofile_name)
+    return None
+
+## commons
+def _link_objects_ids(new_object_dict, objects_link_dict):
+    if not objects_link_dict == {}:
+        for obj in new_object_dict:
+            if obj["name"] in objects_link_dict:
+                objects_link_dict[obj["name"]]["new_id"] = obj["id"]
+    return objects_link_dict
+
+def _find_new_object_id_by_old_id(object_name, object_id_dict, old_id):
+    new_id = None
+    for obj in object_id_dict:
+        if object_id_dict[obj]["old_id"] == old_id:
+            if "new_id" in object_id_dict[obj]:
+                new_id = object_id_dict[obj]["new_id"]
+            else:
+                _missing_old_id_object(object_name, object_id_dict, old_id)
+            break
+    return new_id
+
+
+def _missing_old_id_object(object_name, object_id_dict, old_id):
+    for obj in object_id_dict:
+        if object_id_dict[obj]["old_id"] == old_id:
+            console.error("Unable to find the new id for the %s with old id %s" %(obj, old_id))
+            missing_ids[object_name].append("%s (old_id id: %s" %(obj, old_id))
+
+
+def _missing_name_object(object_name, object_id_dict, name):
+    missing_ids[object_name].append("%s (old id: %s)" %(name, object_id_dict[name]["old_id"]))
+
+def _clean_ids(data):
+    if "org_id" in data:
+        del data["org_id"]
+    if "modified_time" in data:
+        del data["modified_time"]
+    if "created_time" in data:
+        del data["created_time"]
+    return data
+
+## restore
+def _restore_device_image(org_id, site_id, device_id, i):
+    image_name = "%s_org_%s_device_%s_image_%s.png" %(file_prefix, org_id, device_id, i)    
+    if os.path.isfile(image_name):
+        console.info("Image %s will be restored to device %s" %(image_name, device_id))
+        return True
+    else:
+        console.debug("Image %s not found for device id %s" %(image_name, device_id))
+        return False
+
+def _restore_devices(new_site_id, site_name, deviceprofile_id_dict, map_id_dict, devices):
+    for device in devices:
+        console.info("SITE %s > DEVICE SERIAL %s > Updating ids" %(site_name, device["serial"]))      
+
+        device = _clean_ids(device)
+
+        if device["deviceprofile_id"]:
+            device["deviceprofile_id"] = _find_new_deviceprofile_id_by_old_id(deviceprofile_id_dict, device["deviceprofile_id"]) 
+
+        if device["map_id"]:
+            device["map_id"] = _find_new_map_id_by_old_id(map_id_dict, device["map_id"]) 
+
+        device["site_id"] = new_site_id  
+
+        console.info("SITE %s > DEVICE SERIAL %s > Restoration in progress" %(site_name, device["serial"]))   
+        i=1
+        image_exists = True
+        console.info("SITE %s > DEVICE SERIAL %s > Images Restoration in progress" %(site_name, device["serial"]))  
+        while image_exists:
+            image_exists = _restore_device_image(org_id, new_site_id, device["id"], i)
+            i+=1
+        console.info("SITE %s > DEVICE SERIAL %s > Restaration finished" %(site_name, device["serial"]))  
+
+#### SCRIPT ENTRYPOINT ####
+
 
 def _precheck(mist_session, dest_org_id, backup, site_name = None):
     print(""" 
@@ -205,61 +210,77 @@ def _precheck(mist_session, dest_org_id, backup, site_name = None):
     """)
     deviceprofile_id_dict = _link_deviceprofiles_ids(mist_session, dest_org_id, backup["deviceprofiles_ids"])
     site_id_dict = _link_sites_ids(mist_session, dest_org_id, backup["sites_ids"])
-
-    for restore_site_name in backup["sites"]:
+    for restore_site_name in backup["sites_names"]:
         if not site_name or restore_site_name == site_name:
             site = backup["sites"][restore_site_name]
-            print("Restoring Site %s" %(restore_site_name))
+            console.notice("Restoring Site %s" %(restore_site_name))
 
             new_site_id = _find_new_site_id_by_name(site_id_dict, restore_site_name) 
-            print(new_site_id)
+            
             if new_site_id == None:
                 if new_site_id in missing_ids["sites"]: 
                     missing_ids["sites"].append(new_site_id)
             else:              
                 map_id_dict = _link_maps_id(mist_session, new_site_id, site["maps_ids"]) 
-                _restore_devices(new_site_id, deviceprofile_id_dict, map_id_dict, site["devices"])
-    
+                print(map_id_dict)
+                _restore_devices(new_site_id, restore_site_name, deviceprofile_id_dict, map_id_dict, site["devices"])
+        console.notice("Site %s restored" %(restore_site_name))
     _result(backup)
 
-
-def _go_to_backup_folder(source_org_name=None):
-    os.chdir(backup_directory)
+def _select_backup_folder(folders):   
     i = 0
+    print("Available backups:")
+    while i < len(folders):
+        print("%s) %s" %(i, folders[i]))
+        i += 1
+    folder = None
+    while folder == None:
+        resp = input("Which backup do you want to restore (0-%s, or x or exit)? "  %i)
+        if resp.lower() == "x":
+            console.warning("Interruption... Exiting...")
+        try:
+            respi = int(resp)
+            if respi >= 0 and respi <= i:
+                folder = folders[respi]
+            else:
+                print("The entry value \"%s\" is not valid. Please try again...")
+        except:
+            print("Only numbers are allowed. Please try again...")
+    os.chdir(folder)
+
+def _go_to_backup_folder(org_name=None):
+    os.chdir(backup_directory)
     folders = []
     for entry in os.listdir("./"):
         if os.path.isdir(os.path.join("./", entry)):
             folders.append(entry)
-            print("%s) %s" %(i, entry))
-            i+=1
-    try:
-        os.chdir(source_org_name)
-    except:
-        print("Backup folder for organization %s not found. Please select a folder in the following list." %(source_org_name))
-        folder = None
-        while folder == None:
-            resp = input("Which backup do you want to restore (0-%s, or x or exit)? "  %i)
-            if resp.lower() == "x":
-                console.warning("Interruption... Exiting...")
-            try:
-                respi = int(resp)
-                if respi >= 0 and respi <= i:
-                    folder = folders[respi]
-                else:
-                    print("The entry value \"%s\" is not valid. Please try again...")
-            except:
-                print("Only numbers are allowed. Please try again...")
-        os.chdir(folder)
+    if org_name in folders:
+        print("Backup found for organization %s." %(org_name))
+        loop = True
+        while loop:
+            resp = input("Do you want to use this backup (y/n)? ")
+            if resp.lower == "y":
+                loop = False    
+                try:
+                    os.chdir(org_name)
+                except:
+                    _select_backup_folder(folders)
+            else:
+                loop = False    
+                _select_backup_folder(folders)
+    else:
+        print("Backup folder for organization %s not found. Please select a folder in the following list." %(org_name))
+        _select_backup_folder(folders)
 
-def start_precheck(mist_session, org_id, org_name, source_org_name=None, site_name=None):
-    try:
-        _go_to_backup_folder(source_org_name)
-        with open(backup_file) as f:
-            backup = json.load(f)
-        console.info("File %s loaded succesfully." %backup_file)
-        _precheck(mist_session, org_id, backup["org"], site_name)
-    except:
-        return 255
+def start_precheck(mist_session, org_id, org_name=None, site_name=None):
+    #try:
+    _go_to_backup_folder(org_name)
+    with open(backup_file) as f:
+        backup = json.load(f)
+    console.info("File %s loaded succesfully." %backup_file)
+    _precheck(mist_session, org_id, backup["org"], site_name)
+    #except:
+    #    return 255
 
 def start(mist_session, org_id=None, site_name=None):
     if org_id == "":

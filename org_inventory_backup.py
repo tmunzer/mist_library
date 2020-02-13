@@ -14,10 +14,16 @@ backup = {
     "org" : {
         "sites" : {},
         "sites_ids": {},
+        "sites_names": [],
         "deviceprofiles_ids": {},
         "inventory" : []
     }
 }
+
+def _save_site_info(site):
+    backup["org"]["sites"][site["name"]] = {"id": site["id"],  "maps_ids": {}, "devices": []}
+    backup["org"]["sites_ids"][site["name"]] = {"old_id": site["id"]}
+    backup["org"]["sites_names"].append(site["name"])
 
 def _backup_site_id_dict(site):
     if site["name"] in backup["org"]["sites"]:
@@ -29,14 +35,12 @@ def _backup_site_id_dict(site):
             resp = input("Do you want to continur anyway (y/N)? ")
             if resp.lower == "y": 
                 loop = False
-                backup["org"]["sites"][site["name"]] = {"id": site["id"], "maps_ids": {}, "devices": []}
-                backup["org"]["sites_ids"][site["name"]] = {"old_id": site["id"]}
+                _save_site_info(site)
             elif resp.lower == "n" or resp == "":
                 loop = False
                 exit(200)
     else:
-        backup["org"]["sites"][site["name"]] = {"id": site["id"],  "maps_ids": {}, "devices": []}
-        backup["org"]["sites_ids"][site["name"]] = {"old_id": site["id"]}
+        _save_site_info(site)
 
 def _backup_site_maps(site):
     backup_maps = mist_lib.requests.sites.maps.get(mist_session, site["id"])["result"]
