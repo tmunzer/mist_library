@@ -3,16 +3,16 @@ import json
 from tabulate import tabulate
 
 
-clouds = {
-    0: {
+clouds = [
+    {
         "short": "US", 
         "host": "api.mist.com"
     }, 
-    1: {
+    {
         "short": "EU", 
         "host": "api.eu.mist.com"
     }
-}
+]
 
 
 def _search_org(orgs, org_id):
@@ -115,10 +115,10 @@ def select_site(mist_session, org_id=None, allow_many=False):
             return select_site(mist_session, org_id, allow_many)
 
 def select_cloud():
-    i=-1
+    i=0
     print("\r\nAvailable Clouds:")
     for cloud in clouds:
-        print("%s) %s (host: %s)" % (i, clouds[i]["short"], clouds[i]["host"]))
+        print("%s) %s (host: %s)" % (i, cloud["short"], cloud["host"]))
         i+=1
     resp = input("\r\nSelect a Cloud (0 to %s, or q to exit): " %i)
     if resp == "q":
