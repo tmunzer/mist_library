@@ -16,17 +16,28 @@ finally:
     console = Console(log_level)
     
 
+clouds = [
+    {
+        "short": "US", 
+        "host": "api.mist.com"
+    }, 
+    {
+        "short": "EU", 
+        "host": "api.eu.mist.com"
+    }
+]
+
 #### PARAMETERS #####
 
 class Mist_Session(Req):
     """Class managing REST login and requests"""
 
-    def __init__(self, session_file="./session.py", host=None):    
+    def __init__(self, session_file="./session.py", load_settings=True, email="", password=""):    
 
         # user and https session parameters
-        self.host = host
-        self.email = ""
-        self.password = ""
+        self.host = ""
+        self.email = email
+        self.password = password
         self.first_name = ""
         self.last_name = ""
         self.phone = ""
@@ -42,7 +53,7 @@ class Mist_Session(Req):
         if session_file != None:
             self._restore_session(session_file)
         if self.authenticated == False:
-            self._credentials(do_not_load=not host == None)
+            self._credentials(load_settings)
         # if successfuly authenticated
         if (self.get_authenticated()): self.getself()
         # if authentication failed, exit with error code 255
@@ -92,18 +103,42 @@ class Mist_Session(Req):
                 self._set_authenticated(False)
 
         except:
-            console.error("Unable to load session...")            
+            console.error("Unable to load session...")      
 
-    def _credentials(self, do_not_load=False):
+    def _select_cloud(self):
+        loop = True
+        while loop:
+            i=0
+            print("\r\nAvailable Clouds:")
+            for cloud in clouds:
+                print("%s) %s (host: %s)" % (i, cloud["short"], cloud["host"]))
+                i+=1
+            resp = input("\r\nSelect a Cloud (0 to %s, or q to exit): " %i)
+            if resp == "q":
+                exit(0)    
+            else:
+                try:
+                    resp_num = int(resp)
+                    if resp_num >= 0 and resp_num <= i:
+                        self.host = clouds[resp_num]["host"]
+                        loop = False
+                    else:
+                        print("Please enter a number between 0 and %s." %i)
+                except:
+                    print("Please enter a number.")
+
+    def _credentials(self, load_settings=True):
         self.session = requests.session()
         try:
-            if do_not_load:
-                self.email = input("Login: ")
-                self.password = getpass("Password: ")
+            if not load_settings:
+                if not self.host: self._select_cloud()
+                if not self.email: self.email = input("Login: ")
+                if not self.password: self.password = getpass("Password: ")
             else:
                 from config import credentials
                 console.notice("Login file found.")
                 if "host" in credentials: self.host = credentials["host"]
+                else: self._select_cloud()
                 if "apitoken" in credentials: self._set_apitoken(credentials["apitoken"])
                 elif "email" in credentials: 
                     self.email = credentials["email"]

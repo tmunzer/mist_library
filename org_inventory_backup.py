@@ -42,7 +42,7 @@ def _backup_site_id_dict(site):
     else:
         _save_site_info(site)
 
-def _backup_site_maps(site):
+def _backup_site_maps(mist_session, site):
     backup_maps = mist_lib.requests.sites.maps.get(mist_session, site["id"])["result"]
     maps_ids = {}
     for xmap in backup_maps:
@@ -77,7 +77,7 @@ def _backup_inventory(mist_session, org_id):
     sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)['result']
     for site in sites:
         _backup_site_id_dict(site)
-        maps_ids = _backup_site_maps(site)
+        maps_ids = _backup_site_maps(mist_session, site)
         backup["org"]["sites"][site["name"]]["maps_ids"] = maps_ids
         devices = mist_lib.requests.sites.devices.get(mist_session, site["id"])["result"]
         backup["org"]["sites"][site["name"]]["devices"] = devices
@@ -97,8 +97,8 @@ def _save_to_file(backup_file, backup):
     with open(backup_file, "w") as f:
         json.dump(backup, f)
 
-def start_inventory_backup(mist_session, org_id, org_name):
-    try:
+def start_inventory_backup(mist_session, org_id, org_name, in_backup_folder=False):    
+    if not in_backup_folder:
         if not os.path.exists("backup"):
             os.mkdir("backup")
         os.chdir("backup")
@@ -106,12 +106,11 @@ def start_inventory_backup(mist_session, org_id, org_name):
             os.mkdir(org_name)
         os.chdir(org_name)
 
-        backup = _backup_inventory(mist_session, org_id)
-        _save_to_file(backup_file, backup)
+    backup = _backup_inventory(mist_session, org_id)
+    _save_to_file(backup_file, backup)
 
-        print("Inventory from organisation %s with id %s saved!" %(org_name, org_id))
-    except:
-        return 255
+    print("Inventory from organisation %s with id %s saved!" %(org_name, org_id))
+    
 
 def start(mist_session, org_id):
     if org_id == "":

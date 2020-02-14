@@ -3,18 +3,6 @@ import json
 from tabulate import tabulate
 
 
-clouds = [
-    {
-        "short": "US", 
-        "host": "api.mist.com"
-    }, 
-    {
-        "short": "EU", 
-        "host": "api.eu.mist.com"
-    }
-]
-
-
 def _search_org(orgs, org_id):
     i = 0
     for org in orgs:
@@ -113,28 +101,6 @@ def select_site(mist_session, org_id=None, allow_many=False):
         except:
             print("Only numbers are allowed.")
             return select_site(mist_session, org_id, allow_many)
-
-def select_cloud():
-    i=0
-    print("\r\nAvailable Clouds:")
-    for cloud in clouds:
-        print("%s) %s (host: %s)" % (i, cloud["short"], cloud["host"]))
-        i+=1
-    resp = input("\r\nSelect a Cloud (0 to %s, or q to exit): " %i)
-    if resp == "q":
-        exit(0)    
-    else:
-        try:
-            resp_num = int(resp)
-            if resp_num >= 0 and resp_num <= i:
-                return clouds[resp_num]["host"]
-            else:
-                print("Please enter a number between 0 and %s." %i)
-                return select_cloud()
-        except:
-            print("Please enter a number.")
-            return select_cloud()
-
 
 def show(response, fields=None):
     if "result" in response:

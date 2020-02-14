@@ -248,33 +248,35 @@ def _select_backup_folder(folders):
             print("Only numbers are allowed. Please try again...")
     os.chdir(folder)
 
-def _go_to_backup_folder(org_name=None):
+def _go_to_backup_folder(source_org_name=None):
+    os.chdir(os.getcwd())
     os.chdir(backup_directory)
     folders = []
     for entry in os.listdir("./"):
         if os.path.isdir(os.path.join("./", entry)):
             folders.append(entry)
-    if org_name in folders:
-        print("Backup found for organization %s." %(org_name))
+    if source_org_name in folders:
+        print("Backup found for organization %s." %(source_org_name))
         loop = True
         while loop:
             resp = input("Do you want to use this backup (y/n)? ")
             if resp.lower == "y":
                 loop = False    
                 try:
-                    os.chdir(org_name)
+                    os.chdir(source_org_name)
                 except:
                     _select_backup_folder(folders)
             else:
                 loop = False    
                 _select_backup_folder(folders)
     else:
-        print("Backup folder for organization %s not found. Please select a folder in the following list." %(org_name))
+        print("Backup folder for organization %s not found. Please select a folder in the following list." %(source_org_name))
         _select_backup_folder(folders)
 
-def start_precheck(mist_session, org_id, org_name=None, site_name=None):
+def start_precheck(mist_session, org_id, org_name=None, source_org_name=None, site_name=None, in_backup_folder=False): 
+    print(os.getcwd())  
+    if not in_backup_folder: _go_to_backup_folder(source_org_name)
     #try:
-    _go_to_backup_folder(org_name)
     with open(backup_file) as f:
         backup = json.load(f)
     console.info("File %s loaded succesfully." %backup_file)
@@ -282,11 +284,11 @@ def start_precheck(mist_session, org_id, org_name=None, site_name=None):
     #except:
     #    return 255
 
-def start(mist_session, org_id=None, site_name=None):
+def start(mist_session, org_id=None, source_org_name=None, site_name=None):
     if org_id == "":
         org_id = cli.select_org(mist_session)
     org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
-    start_precheck(mist_session, org_id, org_name, site_name)
+    start_precheck(mist_session, org_id, org_name, source_org_name, site_name)
 
 
 #### SCRIPT ENTRYPOINT ####
