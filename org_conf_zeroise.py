@@ -45,7 +45,7 @@ console = Console(6)
 #### FUNCTIONS ####
 
 def delete_object(org_id, object_name, ids_to_not_delete):
-    console.notice("Removing all %s objects..." %object_name)
+    console.info("Removing all %s objects..." %object_name)
     req = mist_lib.requests.route("orgs", object_name)
     data = req.get(mist_session, org_id)["result"]
     for d in data:
@@ -129,4 +129,4 @@ create_primary_site(org_id)
 start_delete(org_id)
 
 print()
-console.info("All objects removed... Organization %s is back to default..." %org_name)
+console.notice("All objects removed... Organization %s is back to default..." %org_name)
