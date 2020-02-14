@@ -250,7 +250,7 @@ def _select_backup_folder(folders):
         i += 1
     folder = None
     while folder == None:
-        resp = input("Which backup do you want to restore (0-%s, or x or exit)? "  %i)
+        resp = input("Which backup do you want to restore (0-%s, or x to exit)? "  %i)
         if resp.lower() == "x":
             console.warning("Interruption... Exiting...")
         try:
@@ -379,20 +379,22 @@ def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mis
     finally:
         if backup:
             console.info("File %s loaded succesfully." %backup_file)
-            if sites_list == None:
-                sites_list = _select_sites(backup["org"]["sites_names"])
-            _display_warning("Are you sure about this? Do you want to import the inventory into the organization %s with the id %s (y/N)? " %(dest_org_name, dest_org_id))
-
-            if source_mist_session: auto_unclaim = _y_or_n_question("Do you want to automatically unclaim devices from the source organization %s (y/N)? "%(source_org_name))
-            else: auto_unclaim = False
+            
+            auto_unclaim = _y_or_n_question("Do you want to automatically unclaim devices from the source organization %s (y/N)? "%(source_org_name))            
             if auto_unclaim:
                 if not source_mist_session:
-                    print("")
+                    print("***                                       ***")
+                    print("*** Please select the source organization ***")
+                    print("***                                       ***")
                     source_mist_session = mist_lib.Mist_Session()
                 if not source_org_id:
                     source_org_id = cli.select_org(source_mist_session)
                     source_org_name = mist_lib.requests.orgs.info.get(source_mist_session, source_org_id)["result"]["name"]
 
+
+            if sites_list == None:
+                sites_list = _select_sites(backup["org"]["sites_names"])
+            _display_warning("Are you sure about this? Do you want to import the inventory into the organization %s with the id %s (y/N)? " %(dest_org_name, dest_org_id))
 
             _restore_inventory(mist_session, dest_org_id, backup["org"], sites_list, auto_unclaim, source_org_id, source_mist_session)
             print()
@@ -401,7 +403,10 @@ def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mis
 
 
 def start(mist_session, org_id=None, source_org_name=None, sites_list=None):
-    if org_id == "":
+    if not org_id:
+        print("***                                            ***")
+        print("*** Please select the destination organization ***")
+        print("***                                            ***")
         org_id = cli.select_org(mist_session)
     org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
     start_restore_inventory(mist_session, org_id, org_name, source_org_name, sites_list)
@@ -412,6 +417,6 @@ def start(mist_session, org_id=None, source_org_name=None, sites_list=None):
 
 if __name__ == "__main__":
     mist_session = mist_lib.Mist_Session(session_file)
-    start(mist_session, org_id)
+    start(mist_session)
 
 

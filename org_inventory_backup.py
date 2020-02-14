@@ -1,3 +1,12 @@
+
+
+#### PARAMETERS #####
+backup_file = "./org_inventory_file.json"
+file_prefix = ".".join(backup_file.split(".")[:-1])
+session_file = "./session.py"
+org_id = "" #optional
+
+#### IMPORTS ####
 import mlib as mist_lib
 import urllib.request
 from mlib import cli
@@ -5,10 +14,10 @@ from tabulate import tabulate
 import json
 import os
 
-backup_file = "./org_inventory_file.json"
-file_prefix = ".".join(backup_file.split(".")[:-1])
-session_file = "./session.py"
-org_id = "" #optional
+from mlib.__debug import Console
+console = Console(6)
+
+#### VARIABLES ####
 
 backup = {
     "org" : {
@@ -20,6 +29,7 @@ backup = {
     }
 }
 
+#### FUNCTIONS ####
 def _save_site_info(site):
     backup["org"]["sites"][site["name"]] = {"id": site["id"],  "maps_ids": {}, "devices": []}
     backup["org"]["sites_ids"][site["name"]] = {"old_id": site["id"]}
@@ -64,18 +74,24 @@ def _backup_site_maps(mist_session, site):
             maps_ids[xmap["name"]] = {"old_id": xmap["id"]}
     return maps_ids
 
-def _backup_inventory(mist_session, org_id):
+def _backup_inventory(mist_session, org_id, org_name=None):
+    console.notice("ORG %s > Backup processing..." %(org_name))
+
+    console.info("ORG %s > Backuping inventory" %(org_name))
     inventory = mist_lib.requests.orgs.inventory.get(mist_session, org_id)["result"]
     for data in inventory:
         if not data["magic"] == "":
             backup["org"]["inventory"].append({"serial": data["serial"], "magic": data["magic"]})
 
+    console.info("ORG %s > Backuping device profiles ids" %(org_name))
     deviceprofiles = mist_lib.requests.orgs.deviceprofiles.get(mist_session, org_id)["result"]
     for deviceprofile in deviceprofiles:
        backup["org"]["deviceprofiles_ids"][deviceprofile["name"]] = {"old_id": deviceprofile["id"]}
 
+    console.info("ORG %s > Backuping devices" %(org_name))
     sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)['result']
     for site in sites:
+        console.info("ORG %s > SITE %s > Backuping devices" %(org_name, site["name"]))
         _backup_site_id_dict(site)
         maps_ids = _backup_site_maps(mist_session, site)
         backup["org"]["sites"][site["name"]]["maps_ids"] = maps_ids
@@ -89,8 +105,8 @@ def _backup_inventory(mist_session, org_id):
                 urllib.request.urlretrieve(url, image_name)
                 i+=1
 
-    cli.show(backup)
-    return backup
+    
+    console.notice("ORG %s > Backup done" %(org_name))
 
 def _save_to_file(backup_file, backup):
     print("saving to file...")
@@ -106,7 +122,7 @@ def start_inventory_backup(mist_session, org_id, org_name, in_backup_folder=Fals
             os.mkdir(org_name)
         os.chdir(org_name)
 
-    backup = _backup_inventory(mist_session, org_id)
+    _backup_inventory(mist_session, org_id, org_name)
     _save_to_file(backup_file, backup)
 
     print("Inventory from organisation %s with id %s saved!" %(org_name, org_id))
