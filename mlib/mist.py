@@ -202,9 +202,9 @@ class Mist_Session(Req):
     def _set_authenticated(self, value):
         if value == True:
             self.authenticated = True
-            self.csrftoken = self.session.cookies['csrftoken']
-            self.session.headers.update({'X-CSRFToken': self.csrftoken})
-
+            if not self.apitoken: 
+                self.csrftoken = self.session.cookies['csrftoken']
+                self.session.headers.update({'X-CSRFToken': self.csrftoken})
         elif value == False:
             self.authenticated = False
             self.csrftoken = ""
@@ -246,6 +246,20 @@ class Mist_Session(Req):
             exit(255)
             return False
 
+    def two_factor_authentication_token(self, two_factor):        
+        uri = "/api/v1/login/two_factor"
+        body = { "two_factor": two_factor }
+        resp = self.session.post(self._url(uri), json=body)
+        if resp.status_code == 200:
+            console.notice("2FA authentication successed")
+            self._set_authenticated(True)
+            return True
+        else:
+            console.error("2FA authentication failed")
+            console.error("Error code: %s" % resp.status_code)
+            exit(255)
+            return False        
+    
     def getself(self):
         """Retrieve information about the current user and store them in the current object.
         Params: password (optional. Only needed for 2FA processing)
@@ -256,12 +270,15 @@ class Mist_Session(Req):
             # Deal with 2FA if needed
             if (
                 "two_factor_required" in resp['result']
-                and "two_factor_passed" in resp['result']
                 and resp['result']['two_factor_required'] == True
+                and "two_factor_passed" in resp['result']
                 and resp['result']['two_factor_passed'] == False
             ):
                 two_factor = input("Two Factor Authentication code:")
-                if (self.two_factor_authentication(two_factor) == True):
+                if (self.apitoken):
+                    if (self.two_factor_authentication_token(two_factor) == True):
+                        self.getself()
+                elif (self.two_factor_authentication(two_factor) == True):
                     self.getself()
             # Get details of the account 
             else:
