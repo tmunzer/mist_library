@@ -20,6 +20,7 @@ from . import rogues
 from . import rrm
 from . import rssizones
 from . import settings
+from . import stats
 from . import system_events
 from . import vbeacons
 from . import webhooks
