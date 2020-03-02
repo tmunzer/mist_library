@@ -32,10 +32,10 @@ clouds = [
 class Mist_Session(Req):
     """Class managing REST login and requests"""
 
-    def __init__(self, session_file="./session.py", load_settings=True, email="", password=""):    
+    def __init__(self, session_file="./session.py", load_settings=True, email="", password="", apitoken=None, host=None):    
 
         # user and https session parameters
-        self.host = ""
+        self.host = host
         self.email = email
         self.password = password
         self.first_name = ""
@@ -48,7 +48,7 @@ class Mist_Session(Req):
         self.authenticated = False
         self.session = requests.session()
         self.csrftoken = ""
-        self.apitoken = None
+        self.apitoken = apitoken
         #Try to log in
         if session_file != None:
             self._restore_session(session_file)
@@ -155,7 +155,7 @@ class Mist_Session(Req):
             self.password = getpass("Password: ")
         finally:
             if self.host == "":
-                self.host = "api.mist.com"
+                self.host = _select_cloud
             if self.email != "" and self.password != "":
                 self._set_login_password()
 
