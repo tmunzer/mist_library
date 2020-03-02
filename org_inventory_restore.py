@@ -175,20 +175,22 @@ def _restore_device_image(mist_session, org_id, site_id, device_id, i):
         console.debug("Image %s not found for device id %s" %(image_name, device_id))
         return False
 
-def _auto_unclaim_devices(source_mist_session, source_org_id, site_name, devices):
+def _auto_unclaim_devices(source_mist_session, source_org_id, site_name, devices, ap_mac_filter):
     mac_addresses = []
     for device in devices:
-        mac_addresses.append(device["mac"])
+        if not ap_mac_filter or device["mac"] in ap_mac_filter:
+            mac_addresses.append(device["mac"])
     console.notice("SITE %s > Unclaiming devices from source organization" %(site_name))
     _unclaim_devices(source_mist_session, source_org_id, mac_addresses)
 
-def _restore_devices(mist_session, dest_org_id, new_site_id, site_name, deviceprofile_id_dict, map_id_dict, devices, inventory):
+def _restore_devices(mist_session, dest_org_id, new_site_id, site_name, deviceprofile_id_dict, map_id_dict, devices, inventory, ap_mac_filter):
     magics = []
     mac_addresses = []
     
-    for device in devices:    
-        magics.append(list(filter(lambda inv: inv["serial"] == device["serial"], inventory))[0]["magic"])
-        mac_addresses.append(device["mac"])
+    for device in devices:   
+        if not ap_mac_filter or device["mac"] in ap_mac_filter:
+            magics.append(list(filter(lambda inv: inv["serial"] == device["serial"], inventory))[0]["magic"])
+            mac_addresses.append(device["mac"])
 
     console.info("SITE %s > Claiming devices magics" %(site_name))
     _add_magic(mist_session, dest_org_id, magics)
@@ -197,32 +199,33 @@ def _restore_devices(mist_session, dest_org_id, new_site_id, site_name, devicepr
     _restore_device_to_site_assignment(mist_session, dest_org_id, new_site_id, mac_addresses)
 
     for device in devices:
+        if not ap_mac_filter or device["mac"] in ap_mac_filter:
 
-        console.info("SITE %s > DEVICE SERIAL %s > Updating ids" %(site_name, device["serial"]))      
+            console.info("SITE %s > DEVICE SERIAL %s > Updating ids" %(site_name, device["serial"]))      
 
-        device = _clean_ids(device)
+            device = _clean_ids(device)
 
-        if device["deviceprofile_id"]:
-            device["deviceprofile_id"] = _find_new_deviceprofile_id_by_old_id(deviceprofile_id_dict, device["deviceprofile_id"]) 
+            if device["deviceprofile_id"]:
+                device["deviceprofile_id"] = _find_new_deviceprofile_id_by_old_id(deviceprofile_id_dict, device["deviceprofile_id"]) 
 
-        if device["map_id"]:
-            device["map_id"] = _find_new_map_id_by_old_id(map_id_dict, device["map_id"]) 
+            if device["map_id"]:
+                device["map_id"] = _find_new_map_id_by_old_id(map_id_dict, device["map_id"]) 
 
-        device["site_id"] = new_site_id  
+            device["site_id"] = new_site_id  
 
-        console.info("SITE %s > DEVICE SERIAL %s > Restoration in progress" %(site_name, device["serial"]))   
-        mist_lib.requests.sites.devices.set_device_conf(mist_session, new_site_id, device["id"], device)
-        i=1
-        image_exists = True
-        console.info("SITE %s > DEVICE SERIAL %s > Images Restoration in progress" %(site_name, device["serial"]))  
-        while image_exists:
-            image_exists = _restore_device_image(mist_session, org_id, new_site_id, device["id"], i)
-            i+=1
-        console.info("SITE %s > DEVICE SERIAL %s > Restoration finished" %(site_name, device["serial"]))  
+            console.info("SITE %s > DEVICE SERIAL %s > Restoration in progress" %(site_name, device["serial"]))   
+            mist_lib.requests.sites.devices.set_device_conf(mist_session, new_site_id, device["id"], device)
+            i=1
+            image_exists = True
+            console.info("SITE %s > DEVICE SERIAL %s > Images Restoration in progress" %(site_name, device["serial"]))  
+            while image_exists:
+                image_exists = _restore_device_image(mist_session, org_id, new_site_id, device["id"], i)
+                i+=1
+            console.info("SITE %s > DEVICE SERIAL %s > Restoration finished" %(site_name, device["serial"]))  
 
 
 #TODO
-def _restore_inventory(mist_session, dest_org_id, backup, sites_list, auto_unclaim=False, source_org_id=None, source_mist_session=None):
+def _restore_inventory(mist_session, dest_org_id, backup, sites_list, auto_unclaim=False, source_org_id=None, source_mist_session=None, ap_mac_filter=None):
     deviceprofile_id_dict = _link_deviceprofiles_ids(mist_session, dest_org_id, backup["deviceprofiles_ids"])
     site_id_dict = _link_sites_ids(mist_session, dest_org_id, backup["sites_ids"])
     for restore_site_name in sites_list:
@@ -236,8 +239,8 @@ def _restore_inventory(mist_session, dest_org_id, backup, sites_list, auto_uncla
                 missing_ids["sites"].append(new_site_id)
         else:              
             map_id_dict = _link_maps_id(mist_session, new_site_id, site["maps_ids"]) 
-            if auto_unclaim and source_org_id and source_mist_session: _auto_unclaim_devices(source_mist_session, source_org_id, restore_site_name, site["devices"])
-            _restore_devices(mist_session, dest_org_id, new_site_id, restore_site_name, deviceprofile_id_dict, map_id_dict, site["devices"], backup["inventory"])
+            if auto_unclaim and source_org_id and source_mist_session: _auto_unclaim_devices(source_mist_session, source_org_id, restore_site_name, site["devices"], ap_mac_filter)
+            _restore_devices(mist_session, dest_org_id, new_site_id, restore_site_name, deviceprofile_id_dict, map_id_dict, site["devices"], backup["inventory"], ap_mac_filter)
         console.notice("Site %s restored" %(restore_site_name))
     _result(backup)
 
@@ -368,7 +371,7 @@ def _check_org_name(org_name):
         else:
             console.warning("The orgnization names do not match... Please try again...")
 
-def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mist_session=None, source_org_name=None, source_org_id=None, sites_list=None, check_org_name=True, in_backup_folder=False):
+def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mist_session=None, source_org_name=None, source_org_id=None, sites_list=None, check_org_name=True, in_backup_folder=False, ap_mac=None):
     if check_org_name: _check_org_name(dest_org_name)
     if not in_backup_folder: _go_to_backup_folder(source_org_name)
     try:
@@ -396,20 +399,20 @@ def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mis
                 sites_list = _select_sites(backup["org"]["sites_names"])
             _display_warning("Are you sure about this? Do you want to import the inventory into the organization %s with the id %s (y/N)? " %(dest_org_name, dest_org_id))
 
-            _restore_inventory(mist_session, dest_org_id, backup["org"], sites_list, auto_unclaim, source_org_id, source_mist_session)
+            _restore_inventory(mist_session, dest_org_id, backup["org"], sites_list, auto_unclaim, source_org_id, source_mist_session, ap_mac)
             print()
             console.notice("Restoration process finished...")
 
 
 
-def start(mist_session, org_id=None, source_org_name=None, sites_list=None):
+def start(mist_session, org_id=None, source_org_name=None, sites_list=None, ap_mac=None):
     if not org_id:
         print("***                                            ***")
         print("*** Please select the destination organization ***")
         print("***                                            ***")
         org_id = cli.select_org(mist_session)
     org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
-    start_restore_inventory(mist_session, org_id, org_name, source_org_name, sites_list)
+    start_restore_inventory(mist_session, org_id, org_name, source_org_name, sites_list, ap_mac)
 
 
 #### SCRIPT ENTRYPOINT ####
