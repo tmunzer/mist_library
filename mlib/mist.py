@@ -32,10 +32,11 @@ clouds = [
 class Mist_Session(Req):
     """Class managing REST login and requests"""
 
-    def __init__(self, session_file="./session.py", load_settings=True, email="", password="", apitoken=None, host=None):    
+    def __init__(self, session_file=None, load_settings=True, email="", password="", apitoken=None, host=None):    
 
         # user and https session parameters
-        self.host = host
+        if host: self.host = host
+        else: host = self._select_cloud()
         self.email = email
         self.password = password
         self.first_name = ""
@@ -107,6 +108,7 @@ class Mist_Session(Req):
 
     def _select_cloud(self):
         loop = True
+        resp = "x"
         while loop:
             i=0
             print("\r\nAvailable Clouds:")
