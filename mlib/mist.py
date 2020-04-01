@@ -122,7 +122,7 @@ class Mist_Session(Req):
                 try:
                     resp_num = int(resp)
                     if resp_num >= 0 and resp_num <= i:
-                        self.host = clouds[resp_num]["host"]
+                        return clouds[resp_num]["host"]                        
                         loop = False
                     else:
                         print("Please enter a number between 0 and %s." %i)
