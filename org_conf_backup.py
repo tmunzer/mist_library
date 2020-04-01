@@ -47,7 +47,7 @@ def _backup_wlan_portal(org_id, site_id, wlans):
 def _backup_full_org(mist_session, org_id, org_name):
     console.notice("ORG %s > Backup processing..." %(org_name))
     backup = {}
-    backup["org"] = {}
+    backup["org"] = { "id": org_id}
     console.info("ORG %s > Backuping info" %(org_name))
     backup["org"]["data"] = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]
     console.info("ORG %s > Backuping settings" %(org_name))
