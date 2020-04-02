@@ -118,7 +118,13 @@ def _find_new_deviceprofile_id_by_name(deviceprofile_id_dict, deviceprofile_name
 
 ## devices
 def _add_magic(mist_session, org_id, magics):
-    mist_lib.requests.orgs.inventory.add(mist_session, org_id, magics)
+    num_magics = 50
+    current_magics = magics[:num_magics]
+    remain_magics = magics[num_magics:]
+    while not current_magics == []:
+        mist_lib.requests.orgs.inventory.add(mist_session, org_id, current_magics)
+        current_magics = remain_magics[:num_magics]
+        remain_magics = current_magics[num_magics:]
 
 def _restore_device_to_site_assignment(mist_session, org_id, new_site_id, devices_mac):
     mist_lib.requests.orgs.inventory.assign_macs_to_site(mist_session, org_id, new_site_id, devices_mac)
