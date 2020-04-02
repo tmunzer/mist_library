@@ -35,8 +35,8 @@ class Mist_Session(Req):
     def __init__(self, session_file=None, load_settings=True, email="", password="", apitoken=None, host=None):    
 
         # user and https session parameters
-        if host: self.host = host
-        else: host = self._select_cloud()
+        self.host = host
+        if not self.host: self.host = self._select_cloud()
         self.email = email
         self.password = password
         self.first_name = ""
@@ -157,7 +157,7 @@ class Mist_Session(Req):
             self.password = getpass("Password: ")
         finally:
             if self.host == "":
-                self.host = _select_cloud
+                self.host = self._select_cloud()
             if self.email != "" and self.password != "":
                 self._set_login_password()
 
