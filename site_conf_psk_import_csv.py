@@ -1,90 +1,73 @@
+'''
+This script will import PSKs from a CSV file to one or multiple sites.
+Usage:
+python3 site_conf_psk_import_csv.py path_to_the_csv_file.csv
 
+CSV file format:
+
+pskName1,pskValue1,Wlan1
+pskName2,pskValue2,Wlan2
+
+'''
 #### PARAMETERS #####
 csv_separator = ","
 
 #### IMPORTS #####
 import mlib as mist_lib
+from mlib import cli
 from tabulate import tabulate
 import sys
 import csv
 
+
 #### FUNCTIONS #####
-def org_select():
-    i=-1
-    org_ids=[]
-    print("\r\nAvailable organizations:")
-    for privilege in mist.privileges:
-        if privilege["scope"] == "org":
-            i+=1
-            org_ids.append(privilege["org_id"])
-            print("%s) %s (id: %s)" % (i, privilege["name"], privilege["org_id"]))
-    resp = input("\r\nSelect an Org (0 to %s, or q to exit): " %i)
-    if resp == "q":
-        exit(0)
-    else:
-        try:
-            resp_num = int(resp)
-            if resp_num >= 0 and resp_num <= i:
-                return org_ids[resp_num]
-            else:
-                print("Please enter a number between 0 and %s." %i)
-                return org_select()
-        except:
-            print("Please enter a number.")
-            return org_select()
 
-def site_select(org_id):
-    i=-1
-    site_ids=[]
-    site_choices = mist_lib.requests.orgs.sites.get(mist, org_id)['result']
-    print("\r\nAvailable sites:")
-    for site in site_choices:        
-        i+=1
-        site_ids.append(site["id"])
-        print("%s) %s (id: %s)" % (i, site["name"], site["id"]))
-    resp = input("\r\nSelect a Site (0 to %s, \"0,1\" for sites 0 and 1, or q to exit): " %i)
-    if resp == "q":
-        exit(0)
-    else:
-        try:
-            resp = resp.split(",")
-            for num in resp:
-                resp_num = int(num)
-                if resp_num >= 0 and resp_num <= i:
-                    return site_choices[resp_num]["id"]
-                else:
-                    print("%s is not part of the possibilities." % resp_num)
-                    return site_select(org_id)
-        except:
-            print("Only numbers are allowed.")
-            return site_select(org_id)
+def import_psk(site_id, psks):
+    print("")
+    print("________________________________________")
+    print("Starting PSKs import for site %s" %(site_id))
+    for psk in psks:     
+        print('PSK %s' %(psk["username"]))
+        pskObj = mist_lib.models.sites.psks.Psk()
+        pskObj.define(name=psk["username"], passphrase=psk["passphrase"], ssid=psk["ssid"])
+        mist_lib.requests.sites.psks.create(mist, site_id, pskObj.toJSON())
+        print(pskObj.toJSON())
 
-    
+def read_csv(csv_file): 
+    print("")   
+    print("________________________________________")
+    print("Opening CSV file %s" %(csv_file))
+    psks = []
+    try:
+        with open(sys.argv[1], 'r') as my_file:
+            ppsk_file = csv.reader(my_file, delimiter=',')
+            for row in ppsk_file:
+                username = row[0]
+                passphrase = row[1]
+                ssid = row[2]
+                psks.append({"username": username,"passphrase": passphrase,"ssid": ssid})    
+        return psks 
+    except:
+        print("Error while opening the CSV file... Aborting")
+
+def list_psks(site_id):
+    print("")
+    print("________________________________________")
+    print("List of current PSKs for site %s" %(site_id))
+    psks = mist_lib.requests.sites.psks.get(mist, site_id)['result']
+    cli.show(psks)
+
 #### SCRIPT ENTRYPOINT #####
 
 mist = mist_lib.Mist_Session()
-org_id = org_select()
-site_id = site_select(org_id)
-  
-psk = mist_lib.models.sites.psks.Psk()
-print("Opening CSV file %s" % sys.argv[1])
-try:
-    with open(sys.argv[1], 'r') as my_file:
-        ppsk_file = csv.reader(my_file, delimiter=',')
-        for row in ppsk_file:
-            username = row[0]
-            passphrase = row[1]
-            ssid = "test"            
-            print(', '.join(row))
-            psk.define(name=username, passphrase=passphrase, ssid=ssid)
-            mist_lib.requests.sites.psks.create(mist, site_id, psk.toJSON())
-            print(psk.toJSON())
-except:
-    print("Error while opening the CSV file... Aborting")
+site_ids = cli.select_site(mist, allow_many=True)
+print("__________________")
+print(site_ids)
 
-psks = mist_lib.requests.sites.psks.get(mist, site_id)['result']
-print(psks)
-exit(0)
-for psk in psks:
-    mist_lib.requests.sites.psks.delete(mist, site_id, psk_id=psk['id'])
-print(mist_lib.requests.sites.psks.get(mist, site_id)['result'])
+psks = read_csv(sys.argv[1])
+
+for site_id in site_ids:
+    import_psk(site_id, psks)
+
+for site_id in site_ids:
+    list_psks(site_id)
