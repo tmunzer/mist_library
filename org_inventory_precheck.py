@@ -194,7 +194,7 @@ def _restore_devices(new_site_id, site_name, deviceprofile_id_dict, map_id_dict,
         while image_exists:
             image_exists = _restore_device_image(org_id, new_site_id, device["id"], i)
             i+=1
-        console.info("SITE %s > DEVICE SERIAL %s > Restaration finished" %(site_name, device["serial"]))  
+        console.info("SITE %s > DEVICE SERIAL %s > Restoration finished" %(site_name, device["serial"]))  
 
 #### SCRIPT ENTRYPOINT ####
 
