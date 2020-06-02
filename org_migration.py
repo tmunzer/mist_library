@@ -8,8 +8,7 @@ import org_inventory_backup
 import org_inventory_precheck
 import org_inventory_restore
 
-source_host = "api.mist.com"
-dest_host = "api.eu.mist.com"
+
 
 
 def _backup_org(source_mist_session, source_org_id, source_org_name):
@@ -49,15 +48,15 @@ def _print_new_step(message):
 
 def _select_org(mist_session=None, host=None):
     mist_session = mist_lib.Mist_Session(host=host)
-    org_id = cli.select_org(mist_session)
+    org_id = cli.select_org(mist_session)[0]
     org_name = mist_lib.orgs.info.get(mist_session, org_id)["result"]["name"]
     return (mist_session, org_id, org_name)
 
 if __name__ == "__main__":
     _print_new_step("Please select the SOURCE organization")
-    source_mist_session, source_org_id, source_org_name = _select_org(host=source_host)
+    source_mist_session, source_org_id, source_org_name = _select_org()
     _print_new_step("Please select the DESTINATION organization")
-    dest_mist_session, dest_org_id, dest_org_name = _select_org(source_mist_session, host=dest_host)
+    dest_mist_session, dest_org_id, dest_org_name = _select_org()
 
     _backup_org(source_mist_session, source_org_id, source_org_name)
     _backup_inventory(source_mist_session, source_org_id, source_org_name, in_backup_folder=True)
