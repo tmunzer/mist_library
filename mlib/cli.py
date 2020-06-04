@@ -63,7 +63,7 @@ def select_org(mist_session, allow_many=False):
             return select_org(mist_session, allow_many)
         for num in resp:
             tested_val = _test_choice(num, i)
-            if tested_val > 0:
+            if tested_val >= 0:
                 resp_ids.append(org_ids[tested_val])
             if tested_val == -1:
                 print("%s is not part of the possibilities." % num)
@@ -112,7 +112,7 @@ def select_site(mist_session, org_id=None, allow_many=False):
             return select_site(mist_session, org_id, allow_many)
         for num in resp:
             tested_val = _test_choice(num, i)
-            if tested_val > 0:
+            if tested_val >= 0:
                 resp_ids.append(site_choices[tested_val]["id"])
             if tested_val == -1:
                 print("%s is not part of the possibilities." % num)
