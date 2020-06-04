@@ -174,7 +174,7 @@ def start_org_backup(mist_session, org_id, org_name):
 
 
 def start(mist_session):
-    org_id = cli.select_org(mist_session)
+    org_id = cli.select_org(mist_session)[0]
     org_name = mist_lib.orgs.info.get(mist_session, org_id)["result"]["name"]
     start_org_backup(mist_session, org_id, org_name)
 

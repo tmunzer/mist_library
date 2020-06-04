@@ -286,7 +286,7 @@ def start_precheck(mist_session, org_id, org_name=None, source_org_name=None, si
 
 def start(mist_session, org_id=None, source_org_name=None, site_name=None):
     if org_id == "":
-        org_id = cli.select_org(mist_session)
+        org_id = cli.select_org(mist_session)[0]
     org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
     start_precheck(mist_session, org_id, org_name, source_org_name, site_name)
 

@@ -47,7 +47,7 @@ def _print_new_step(message):
 
 
 def _select_org(mist_session=None, host=None):
-    mist_session = mist_lib.Mist_Session(host=host)
+    mist_session = mist_lib.Mist_Session(host=host)    
     org_id = cli.select_org(mist_session)[0]
     org_name = mist_lib.orgs.info.get(mist_session, org_id)["result"]["name"]
     return (mist_session, org_id, org_name)

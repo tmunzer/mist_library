@@ -463,7 +463,7 @@ def start_restore_org(mist_session, org_id, org_name, source_org_name, check_org
 
 def start(mist_session, org_id=None):
     if org_id == "":
-        org_id = cli.select_org(mist_session)
+        org_id = cli.select_org(mist_session)[0]
     org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
     start_restore_org(mist_session, org_id, org_name, None)
 

@@ -21,6 +21,7 @@ console = Console(6)
 
 backup = {
     "org" : {
+        "id": "",
         "sites" : {},
         "sites_ids": {},
         "sites_names": [],
@@ -75,6 +76,7 @@ def _backup_site_maps(mist_session, site):
     return maps_ids
 
 def _backup_inventory(mist_session, org_id, org_name=None):
+    backup["org"]["id"] = org_id
     console.notice("ORG %s > Backup processing..." %(org_name))
 
     console.info("ORG %s > Backuping inventory" %(org_name))
@@ -130,7 +132,7 @@ def start_inventory_backup(mist_session, org_id, org_name, in_backup_folder=Fals
 
 def start(mist_session, org_id):
     if org_id == "":
-        org_id = cli.select_org(mist_session)
+        org_id = cli.select_org(mist_session)[0]
     org_name = mist_lib.orgs.info.get(mist_session, org_id)["result"]["name"]
     start_inventory_backup(mist_session, org_id, org_name)
 

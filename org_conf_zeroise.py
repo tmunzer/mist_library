@@ -117,7 +117,7 @@ __          __     _____  _   _ _____ _   _  _____
 
 
 if org_id == "":
-    org_id = cli.select_org(mist_session)
+    org_id = cli.select_org(mist_session)[0]
 org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
 
 check_org_name(org_name)

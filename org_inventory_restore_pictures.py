@@ -346,7 +346,7 @@ def start(mist_session, org_id=None, source_org_name=None, sites_list=None, ap_m
         print("***                                            ***")
         print("*** Please select the destination organization ***")
         print("***                                            ***")
-        org_id = cli.select_org(mist_session)
+        org_id = cli.select_org(mist_session)[0]
     org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
     start_restore_inventory(mist_session, org_id, org_name, source_org_name, sites_list, ap_mac)
 
