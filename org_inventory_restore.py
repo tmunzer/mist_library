@@ -397,7 +397,7 @@ def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mis
                     print("***                                       ***")
                     source_mist_session = mist_lib.Mist_Session()
                 if not source_org_id:
-                    source_org_id = cli.select_org(source_mist_session)
+                    source_org_id = cli.select_org(source_mist_session)[0]
                     source_org_name = mist_lib.requests.orgs.info.get(source_mist_session, source_org_id)["result"]["name"]
 
             if source_org_id == None:
