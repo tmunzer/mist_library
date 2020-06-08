@@ -84,17 +84,14 @@ def _replace_id(old_ids_list, new_ids_dict):
     else:
         console.error("Unable to replace ids: %s" % old_ids_list)
 
-def _clean_ssorole_privileges(user):
-    cleaned_privileges = []
-    for privilege in user["privileges"]:
-        if "org_id" in privilege: 
-            privilege["org_id"] = org_id
-        if "site_id" in privilege: 
-            privilege["site_id"] = _replace_id(privilege["site_id"], site_id_dict)
-        if "sitegroup_id" in privilege: 
-            privilege["sitegroup_id"] = _replace_id(privilege["sitegroup_id"], sitegroup_id_dict)
-        cleaned_privileges.append(privilege)
-    return cleaned_privileges
+def _clean_ssorole_privileges(privilege, org_id):
+    if "org_id" in privilege: 
+        privilege["org_id"] = org_id
+    if "site_id" in privilege: 
+        privilege["site_id"] = _replace_id(privilege["site_id"], site_id_dict)
+    if "sitegroup_id" in privilege: 
+        privilege["sitegroup_id"] = _replace_id(privilege["sitegroup_id"], sitegroup_id_dict)
+    return privilege
 
 def _clean_ids(data):
     if "id" in data:
@@ -112,10 +109,15 @@ def _common_restore(mist_session, org_name, site_name, level, level_id, object_n
     if site_name: site_text = " SITE %s >" %(site_name)
     else: site_text = ""
     console.info("ORG %s >%s Restoring %s..." %(org_name, site_text, object_name))
-    old_id = data["id"]
+    if "id" in data:
+        old_id = data["id"]
+    else: 
+        old_id = None
     data = _clean_ids(data)
     module = mist_lib.requests.route(level, object_name)
-    new_id = module.create(mist_session, level_id, data)["result"]["id"]
+    result = module.create(mist_session, level_id, data)["result"]
+    if "id" in result:
+        new_id = result["id"]
     return {old_id: new_id}
 
 
@@ -358,10 +360,14 @@ def _restore_org(mist_session, org_id, org_name, org):
     for data in org["ssos"]: _common_restore(mist_session, org_name, None, 'orgs', org_id, 'ssos', data)
 
     for data in org["ssoroles"]:
-        cleaned_data = []
-        for ssorole in data:
-            cleaned_data.append(_clean_ssorole_privileges(ssorole))
-        _common_restore(mist_session, org_name, None, 'orgs', org_id, 'ssoroles', cleaned_data)    
+        cleaned_privileges = {
+            "privileges": [],
+            "org_id": org_id,
+            "name": data["name"]
+        }
+        for privilege in data["privileges"]: 
+            cleaned_privileges["privileges"].append(_clean_ssorole_privileges(privilege, org_id))
+        _common_restore(mist_session, org_name, None, 'orgs', org_id, 'ssoroles', cleaned_privileges)    
 
 def _display_warning(message):
     resp = "x"
