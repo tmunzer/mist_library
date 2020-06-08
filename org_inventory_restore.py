@@ -365,6 +365,12 @@ organization, but the restoration may partially fail.
 It's your responsability to validate the importation result!
 
 
+*******     IMPORTANT INFORMATION     *********
+
+The current version of the script will not migrate APs
+that are not assigned to a site!
+
+*******     IMPORTANT INFORMATION     *********
 """)
 
 def _check_org_name(org_name):
@@ -406,6 +412,7 @@ def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mis
                 sites_list = _select_sites(backup["org"]["sites_names"])
             _display_warning("Are you sure about this? Do you want to import the inventory into the organization %s with the id %s (y/N)? " %(dest_org_name, dest_org_id))
 
+#TODO: Migrate magics for APs not assigned to sites
             _restore_inventory(mist_session, dest_org_id, backup["org"], sites_list, auto_unclaim, source_org_id, source_mist_session, ap_mac)
             print()
             console.notice("Restoration process finished...")
