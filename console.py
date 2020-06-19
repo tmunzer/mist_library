@@ -37,8 +37,8 @@ def get_org_id():
     print("Selected org id: %s" %org_id)
     return org_id
 
-def get_site_id():
-    site_id = cli.select_site(session)
+def get_site_id(org_id=None):
+    site_id = cli.select_site(session, org_id=org_id)
     print("")
     print("Selected site id: %s" %site_id)
     return site_id
