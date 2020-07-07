@@ -218,8 +218,11 @@ class Mist_Session(Req):
     def _set_authenticated(self, value):
         if value == True:
             self.authenticated = True
-            if not self.apitoken: 
-                cookies_ext = next(item["cookies_ext"] for item in clouds if item["host"] == self.host)
+            if not self.apitoken:
+                try: 
+                    cookies_ext = next(item["cookies_ext"] for item in clouds if item["host"] == self.host)
+                except:
+                    cookies_ext = ""
                 self.csrftoken = self.session.cookies['csrftoken' + cookies_ext]
                 self.session.headers.update({'X-CSRFToken': self.csrftoken})
         elif value == False:
