@@ -24,14 +24,18 @@ finally:
 clouds = [
     {
         "short": "US", 
-        "host": "api.mist.com"
+        "host": "api.mist.com",
+        "cookies_ext": ""
     }, 
     {
         "short": "EU", 
-        "host": "api.eu.mist.com"
-    },    {
+        "host": "api.eu.mist.com",
+        "cookies_ext": ".eu"
+    },    
+    {
         "short": "GCP", 
-        "host": "api.gc1.mist.com"
+        "host": "api.gc1.mist.com",
+        "cookies_ext": ".gc1"
     }
 ]
 
@@ -56,6 +60,7 @@ class Mist_Session(Req):
         self.authenticated = False
         self.session = requests.session()
         self.csrftoken = ""
+        self.cookies_ext = ""
         self.apitoken = apitoken
         #Try to log in
         if session_file != None:
@@ -125,12 +130,13 @@ class Mist_Session(Req):
             resp = input("\r\nSelect a Cloud (0 to %s, or q to exit): " %i)
             if resp == "q":
                 exit(0)    
-            if resp == "i":
+            elif resp == "i":
                 return "api.mistsys.com"
             else:
                 try:
                     resp_num = int(resp)
                     if resp_num >= 0 and resp_num <= i:
+                        self.cookies_ext = clouds[resp_num]["cookies_ext"]
                         return clouds[resp_num]["host"]                        
                         loop = False
                     else:
@@ -142,14 +148,14 @@ class Mist_Session(Req):
         self.session = requests.session()
         try:
             if not load_settings:
-                if not self.host: self._select_cloud()
+                if not self.host: self.host = self._select_cloud()
                 if not self.email: self.email = input("Login: ")
                 if not self.password: self.password = getpass("Password: ")
             else:
                 from config import credentials
                 console.notice("Login file found.")
                 if "host" in credentials: self.host = credentials["host"]
-                else: self._select_cloud()
+                else: self.host = self._select_cloud()
                 if "apitoken" in credentials: self._set_apitoken(credentials["apitoken"])
                 elif "email" in credentials: 
                     self.email = credentials["email"]
@@ -162,7 +168,7 @@ class Mist_Session(Req):
                     raise ValueError            
         except:
             console.notice("No login file found. Asking for credentials")
-            if not self.host: self._select_cloud()
+            if not self.host: self.host = self._select_cloud()
             self.email = input("Login: ")
             self.password = getpass("Password: ")
         finally:
@@ -215,7 +221,7 @@ class Mist_Session(Req):
         if value == True:
             self.authenticated = True
             if not self.apitoken: 
-                self.csrftoken = self.session.cookies['csrftoken']
+                self.csrftoken = self.session.cookies['csrftoken' + self.cookies_ext]
                 self.session.headers.update({'X-CSRFToken': self.csrftoken})
         elif value == False:
             self.authenticated = False
