@@ -262,9 +262,10 @@ def _select_backup_folder(folders):
         i += 1
     folder = None
     while folder == None:
-        resp = input("Which backup do you want to restore (0-%s, or x to exit)? "  %i)
-        if resp.lower() == "x":
+        resp = input("Which backup do you want to restore (0-%s, or q to quit)? "  %i)
+        if resp.lower() == "q":
             console.warning("Interruption... Exiting...")
+            exit(0)
         try:
             respi = int(resp)
             if respi >= 0 and respi <= i:
