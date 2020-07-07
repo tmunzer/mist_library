@@ -58,11 +58,11 @@ def import_admins(file_path, org_id):
     try:
         with open(file_path, 'r') as my_file:
             invite_file = csv.reader(my_file, delimiter=csv_separator)
-            for column in invite_file:  
-                email= column[0]
-                first_name= column[1]
-                last_name = column[2]        
-                print(', '.join(column))
+            for row in invite_file:  
+                email= row[0]
+                first_name= row[1]
+                last_name = row[2]        
+                print(', '.join(row))
                 mist_lib.requests.orgs.admins.create_invite(mist, org_id, email, privileges, first_name, last_name)            
     except:
         print("Error while opening the CSV file... Aborting")
