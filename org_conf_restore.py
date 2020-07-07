@@ -55,7 +55,7 @@ wxtags_id_dict = {}
 mxcluster_id_dict = {}
 wlan_id_dict = {}
 alarmtemplate_id_dict = {}
-
+networktemplate_id_dict = {}
 
 #### FUNCTIONS ####
 
@@ -214,6 +214,10 @@ def _restore_org(mist_session, org_id, org_name, org):
         ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'rftemplates', data)
         rftemplate_id_dict.update(ids)
 
+    for data in org["networktemplates"]:
+        ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'networktemplates', data)
+        networktemplate_id_dict.update(ids)
+
     for data in org["sitegroups"]:
         if "site_ids" in data: del data["site_ids"]
         ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'sitegroups', data)
@@ -243,6 +247,9 @@ def _restore_org(mist_session, org_id, org_name, org):
         old_site_id = site["id"]
         if "rftemplate_id" in site:
             site["rftemplate_id"] = _replace_id(site["rftemplate_id"], rftemplate_id_dict)
+        old_site_id = site["id"]
+        if "networktemplate_id" in site:
+            site["networktemplate_id"] = _replace_id(site["networktemplate_id"], networktemplate_id_dict)
         if "secpolicy_id" in site:
             site["secpolicy_id"] = _replace_id(site["secpolicy_id"], secpolicy_id_dict)
         if "alarmtemplate_id" in site:
