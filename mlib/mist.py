@@ -1,3 +1,8 @@
+'''
+Written by: Thomas Munzer (tmunzer@juniper.net)
+Github repository: https://github.com/tmunzer/Mist_library/
+'''
+
 import requests
 import json
 import weakref
@@ -27,10 +32,7 @@ clouds = [
     },    {
         "short": "GCP", 
         "host": "api.gc1.mist.com"
-    },
-    {   "short": "integration",
-        "host": "api.mistsys.com"
-        }
+    }
 ]
 
 #### PARAMETERS #####
@@ -61,7 +63,6 @@ class Mist_Session(Req):
         if self.authenticated == False:
             self._credentials(load_settings)
         # if successfuly authenticated
-        if not self.host: self.host = self._select_cloud()
         if (self.get_authenticated()): self.getself()
         # if authentication failed, exit with error code 255
         else:
@@ -124,6 +125,8 @@ class Mist_Session(Req):
             resp = input("\r\nSelect a Cloud (0 to %s, or q to exit): " %i)
             if resp == "q":
                 exit(0)    
+            if resp == "i":
+                return "api.mistsys.com"
             else:
                 try:
                     resp_num = int(resp)
@@ -159,6 +162,7 @@ class Mist_Session(Req):
                     raise ValueError            
         except:
             console.notice("No login file found. Asking for credentials")
+            if not self.host: self._select_cloud()
             self.email = input("Login: ")
             self.password = getpass("Password: ")
         finally:
@@ -301,7 +305,13 @@ class Mist_Session(Req):
                 return True
         else:
             console.error("Authentication not valid...")
-            return False
+            print()
+            resp = input("Do you want to try with new credentials for %s (y/N)? " %(self.host))
+            if resp.lower() == "y":
+                self._credentials(load_settings=False)
+                return self.getself()
+            else:
+                exit(0)
 
     def save(self, file_path="./session.py"):
         if self.apitoken != None:
