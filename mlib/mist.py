@@ -42,7 +42,6 @@ class Mist_Session(Req):
 
         # user and https session parameters
         self.host = host
-        if not self.host: self.host = self._select_cloud()
         self.email = email
         self.password = password
         self.first_name = ""
@@ -62,6 +61,7 @@ class Mist_Session(Req):
         if self.authenticated == False:
             self._credentials(load_settings)
         # if successfuly authenticated
+        if not self.host: self.host = self._select_cloud()
         if (self.get_authenticated()): self.getself()
         # if authentication failed, exit with error code 255
         else:
