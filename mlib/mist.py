@@ -60,7 +60,6 @@ class Mist_Session(Req):
         self.authenticated = False
         self.session = requests.session()
         self.csrftoken = ""
-        self.cookies_ext = ""
         self.apitoken = apitoken
         #Try to log in
         if session_file != None:
@@ -136,7 +135,6 @@ class Mist_Session(Req):
                 try:
                     resp_num = int(resp)
                     if resp_num >= 0 and resp_num <= i:
-                        self.cookies_ext = clouds[resp_num]["cookies_ext"]
                         return clouds[resp_num]["host"]                        
                         loop = False
                     else:
@@ -221,7 +219,8 @@ class Mist_Session(Req):
         if value == True:
             self.authenticated = True
             if not self.apitoken: 
-                self.csrftoken = self.session.cookies['csrftoken' + self.cookies_ext]
+                cookies_ext = next(item["cookies_ext"] for item in clouds if item["host"] == self.host)
+                self.csrftoken = self.session.cookies['csrftoken' + cookies_ext]
                 self.session.headers.update({'X-CSRFToken': self.csrftoken})
         elif value == False:
             self.authenticated = False
