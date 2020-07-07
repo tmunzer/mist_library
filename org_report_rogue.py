@@ -1,4 +1,7 @@
 '''
+Written by Thomas Munzer (tmunzer@juniper.net)
+Github repository: https://github.com/tmunzer/Mist_library/
+
 Python script gerenates a Rogue AP report.
 It will list all the Rogue APs based on the selected types ("r_type" variable), 
 and generate a CSV file based on the selected fields ("fields" variable).

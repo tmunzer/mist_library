@@ -1,4 +1,7 @@
 '''
+Written by Thomas Munzer (tmunzer@juniper.net)
+Github repository: https://github.com/tmunzer/Mist_library/
+
 Python script to list all Access Points from orgs/sites and their associated BSSIDs, and save it to a CSV file.
 You can configure which fields you want to retrieve/save, and where the script will save the CSV file.
 

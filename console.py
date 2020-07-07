@@ -1,3 +1,8 @@
+'''
+Written by Thomas Munzer (tmunzer@juniper.net)
+Github repository: https://github.com/tmunzer/Mist_library/
+'''
+
 #### IMPORTS #####
 import rlcompleter as __rlcompleter
 import mlib.cli as cli

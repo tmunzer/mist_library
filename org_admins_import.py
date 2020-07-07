@@ -1,4 +1,7 @@
 '''
+Written by Thomas Munzer (tmunzer@juniper.net)
+Github repository: https://github.com/tmunzer/Mist_library/
+
 Python script to invite/add adminsitrators from a CSV file.
 The CSV file must have 3 columns: email, first name, last name
 

@@ -1,4 +1,7 @@
-
+'''
+Written by: Thomas Munzer (tmunzer@juniper.net)
+Github repository: https://github.com/tmunzer/Mist_library/
+'''
 
 #### PARAMETERS #####
 backup_file = "./org_inventory_file.json"

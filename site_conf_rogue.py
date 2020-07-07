@@ -1,3 +1,8 @@
+'''
+Github repository: https://github.com/tmunzer/Mist_library/
+Written by Thomas Munzer (tmunzer@juniper.net)
+'''
+
 import mlib as mist_lib
 from tabulate import tabulate
 

@@ -1,4 +1,7 @@
 '''
+Written by Thomas Munzer (tmunzer@juniper.net)
+Github repository: https://github.com/tmunzer/Mist_library/
+
 This script will import PSKs from a CSV file to one or multiple sites.
 Usage:
 python3 site_conf_psk_import_csv.py path_to_the_csv_file.csv

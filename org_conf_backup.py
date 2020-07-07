@@ -1,4 +1,7 @@
 '''
+Written by Thomas Munzer (tmunzer@juniper.net)
+Github repository: https://github.com/tmunzer/Mist_library/
+
 Python script to backup a whole organization to file/s.
 You can use the script "org_conf_restore.py" to restore the generated backup file to an
 existing organization (the organization can be empty, but it must exist).
@@ -13,7 +16,7 @@ You can run the script with the command "python3 org_conf_backup.py"
 The script has 2 different steps:
 1) admin login
 2) choose the  org
-3) nackup all the objects to the json file. 
+3) backup all the objects to the json file. 
 '''
 #### PARAMETERS #####
 backup_file = "./org_conf_file.json"

@@ -1,3 +1,8 @@
+'''
+Written by Thomas Munzer (tmunzer@juniper.net)
+Github repository: https://github.com/tmunzer/Mist_library/
+'''
+
 import mlib as mist_lib
 from mlib import cli
 from geopy import Nominatim

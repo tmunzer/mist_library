@@ -1,4 +1,7 @@
 '''
+Written by: Thomas Munzer (tmunzer@juniper.net)
+Github repository: https://github.com/tmunzer/Mist_library/
+
 Python script to restore organization backup file.
 You can use the script "org_conf_backup.py" to generate the backup file from an
 existing organization.
