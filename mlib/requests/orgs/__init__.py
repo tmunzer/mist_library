@@ -9,6 +9,7 @@ from . import licenses
 from . import mxclusters
 from . import mxedges
 from . import mxtunnels
+from . import networktemplates
 from . import psks
 from . import rftemplates
 from . import secpolicies
