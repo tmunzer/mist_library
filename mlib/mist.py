@@ -24,7 +24,13 @@ clouds = [
     {
         "short": "EU", 
         "host": "api.eu.mist.com"
-    }
+    },    {
+        "short": "GCP", 
+        "host": "api.gc1.mist.com"
+    },
+    {   "short": "integration",
+        "host": "api.mistsys.com"
+        }
 ]
 
 #### PARAMETERS #####
