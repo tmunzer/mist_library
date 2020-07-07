@@ -2,23 +2,24 @@
 Written by: Thomas Munzer (tmunzer@juniper.net)
 Github repository: https://github.com/tmunzer/Mist_library/
 
-Python script to restore organization backup file.
-You can use the script "org_conf_backup.py" to generate the backup file from an
+Python script to restore site template/backup file.
+You can use the script "org_site_backup.py" to generate the backup file from an
 existing organization.
 
 This script will not overide existing objects. If you already configured objects in the 
-destination organisation, new objects will be created. If you want to "reset" the 
+destination organisation, new objects will be reused or created. If you want to "reset" the 
 destination organization, you can use the script "org_conf_zeroise.py".
 This script is trying to maintain objects integrity as much as possible. To do so, when 
 an object is referencing another object by its ID, the script will replace be ID from 
 the original organization by the corresponding ID from the destination org.
 
-You can run the script with the command "python3 org_admins_import.py <path_to_the_json_file>"
+You can run the script with the command "python3 site_conf_import.py"
 
-The script has 2 different steps:
+The script has 3 different steps:
 1) admin login
 2) choose the destination org
-3) restore all the objects from the json file. 
+3) choose the backup/template to restore
+all the objects will be created from the json file. 
 '''
 
 #### PARAMETERS #####

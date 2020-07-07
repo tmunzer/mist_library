@@ -11,7 +11,7 @@ get every single object from the organization, and save it into a file
 
 You can configure some parameters at the beginning of the script if you want
 to change the default settings.
-You can run the script with the command "python3 org_conf_backup.py"
+You can run the script with the command "python3 site_conf_backup.py"
 
 The script has 3 different steps:
 1) admin login
