@@ -21,7 +21,7 @@ The script has 2 different steps:
 #### PARAMETERS #####
 
 session_file = ""
-backup_directory = "./backup/"
+backup_directory = "./org_backup/"
 
 org_id = ""
 #### IMPORTS ####

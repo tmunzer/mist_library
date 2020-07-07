@@ -117,9 +117,9 @@ def _save_to_file(backup_file, backup):
 
 def start_inventory_backup(mist_session, org_id, org_name, in_backup_folder=False):    
     if not in_backup_folder:
-        if not os.path.exists("backup"):
-            os.mkdir("backup")
-        os.chdir("backup")
+        if not os.path.exists("org_backup"):
+            os.mkdir("org_backup")
+        os.chdir("org_backup")
         if not os.path.exists(org_name):
             os.mkdir(org_name)
         os.chdir(org_name)

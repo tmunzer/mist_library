@@ -35,7 +35,7 @@ console = Console(6)
 #### CONSTANTS ####
 backup_file = "./org_inventory_file.json"
 file_prefix = ".".join(backup_file.split(".")[:-1])
-backup_directory = "./backup/"
+backup_directory = "./org_backup/"
 
 #### GLOBAL VARS ####
 
