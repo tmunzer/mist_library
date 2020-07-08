@@ -36,6 +36,19 @@ from mlib.__debug import Console
 console = Console(6)
 
 #### FUNCTIONS ####
+
+def _backup_obj(m_func, obj_name):
+    print("Backuping %s" %(obj_name), end="")
+    try: 
+        res = m_func["result"]
+        print('\033[92m \u2714 \033[0m')
+    except:
+        res = None
+        print('\033[31m \u2716 \033[0m')
+    finally:
+        return res
+
+
 def _backup_wlan_portal(org_id, site_id, wlans):  
     for wlan in wlans:     
         if site_id == None:
@@ -44,13 +57,27 @@ def _backup_wlan_portal(org_id, site_id, wlans):
         else:
             portal_file_name = "%s_site_%s_wlan_%s.json" %(file_prefix, site_id, wlan["id"]) 
             portal_image = "%s_site_%s_wlan_%s.png" %(file_prefix, site_id, wlan["id"])
-        if "portal_template_url" in wlan: urllib.request.urlretrieve(wlan["portal_template_url"], portal_file_name)
-        if "portal_image" in wlan: urllib.request.urlretrieve(wlan["portal_image"], portal_image)
+        
+        if "portal_template_url" in wlan: 
+            print("Backuping portal template for WLAN %s" %(wlan["ssid"]), end="")
+            try:
+                urllib.request.urlretrieve(wlan["portal_template_url"], portal_file_name)
+                print('\033[92m \u2714 \033[0m')
+            except:
+                print('\033[31m \u2716 \033[0m')
+        if "portal_image" in wlan: 
+            print("Backuping portal image for WLAN %s" %(wlan["ssid"]), end="")
+            try:
+                urllib.request.urlretrieve(wlan["portal_image"], portal_image)
+                print('\033[92m \u2714 \033[0m')
+            except:
+                print('\033[31m \u2716 \033[0m')
     
 
-
 def _backup_site(mist_session, site_id, site_name, org_id):
-    console.notice("Backup: processing site %s..." %(site_name))
+    print()
+    console.info("Backup: processing site %s..." %(site_name))
+    print()
     site_backup = {
         "site": {
             "info": {},
@@ -77,65 +104,49 @@ def _backup_site(mist_session, site_id, site_name, org_id):
         "sitegroup_names": []   
     } 
 
-    console.info("SITE %s > Backup processing..." %(site_name))
-    console.info("SITE %s > Backuping assets" %(site_name))
-    site_backup["site"]["assets"] = mist_lib.requests.sites.assets.get(mist_session, site_id)["result"]
+    site_backup["site"]["settings"] = _backup_obj(mist_lib.requests.sites.settings.get(mist_session, site_id), "site settings")
 
-    console.info("SITE %s > Backuping assetfilters" %(site_name))
-    site_backup["site"]["assetfilters"] = mist_lib.requests.sites.assetfilters.get(mist_session, site_id)["result"]
+    site_backup["site"]["info"] = _backup_obj(mist_lib.requests.sites.info.get(mist_session, site_id), "site info")
 
-    console.info("SITE %s > Backuping beacons" %(site_name))
-    site_backup["site"]["beacons"] = mist_lib.requests.sites.beacons.get(mist_session, site_id)["result"]
+    site_backup["site"]["assets"] = _backup_obj(mist_lib.requests.sites.assets.get(mist_session, site_id), "assets")
+    
+    site_backup["site"]["assetfilters"] = _backup_obj(mist_lib.requests.sites.assetfilters.get(mist_session, site_id), "assetfilters")
 
-    console.info("SITE %s > Backuping maps" %(site_name))
-    site_backup["site"]["maps"] = mist_lib.requests.sites.maps.get(mist_session, site_id)["result"]
+    site_backup["site"]["beacons"] = _backup_obj(mist_lib.requests.sites.beacons.get(mist_session, site_id), "beacons")
 
-    console.info("SITE %s > Backuping psks" %(site_name))
-    site_backup["site"]["psks"] = mist_lib.requests.sites.psks.get(mist_session, site_id)["result"]
+    site_backup["site"]["maps"] = _backup_obj(mist_lib.requests.sites.maps.get(mist_session, site_id), "maps")
 
-    console.info("SITE %s > Backuping rssizones" %(site_name))
-    site_backup["site"]["rssizones"] = mist_lib.requests.sites.rssizones.get(mist_session, site_id)["result"]
+    site_backup["site"]["psks"] = _backup_obj(mist_lib.requests.sites.psks.get(mist_session, site_id), "psks")
 
-    console.info("SITE %s > Backuping vbeacons" %(site_name))
-    site_backup["site"]["vbeacons"] = mist_lib.requests.sites.vbeacons.get(mist_session, site_id)["result"]
+    site_backup["site"]["rssizones"] = _backup_obj(mist_lib.requests.sites.rssizones.get(mist_session, site_id), "rssizones")
 
-    console.info("SITE %s > Backuping webhooks" %(site_name))
-    site_backup["site"]["webhooks"] = mist_lib.requests.sites.webhooks.get(mist_session, site_id)["result"]
+    site_backup["site"]["vbeacons"] = _backup_obj(mist_lib.requests.sites.vbeacons.get(mist_session, site_id), "vbeacons")
 
-    console.info("SITE %s > Backuping wlans" %(site_name))
-    site_backup["site"]["wlans"] = mist_lib.requests.sites.wlans.get(mist_session, site_id)["result"]
+    site_backup["site"]["webhooks"] = _backup_obj(mist_lib.requests.sites.webhooks.get(mist_session, site_id), "webhooks")
 
-    console.info("SITE %s > Backuping captive web prortals" %(site_name))
+    site_backup["site"]["wlans"] = _backup_obj(mist_lib.requests.sites.wlans.get(mist_session, site_id), "wlans")
+
     _backup_wlan_portal(org_id, site_id, site_backup["site"]["wlans"])
 
-    console.info("SITE %s > Backuping wxrules" %(site_name))
-    site_backup["site"]["wxrules"] = mist_lib.requests.sites.wxrules.get(mist_session, site_id)["result"]
+    site_backup["site"]["wxrules"] = _backup_obj(mist_lib.requests.sites.wxrules.get(mist_session, site_id), "wxrules")
 
-    console.info("SITE %s > Backuping wxtags" %(site_name))
-    site_backup["site"]["wxtags"] = mist_lib.requests.sites.wxtags.get(mist_session, site_id)["result"]
+    site_backup["site"]["wxtags"] = _backup_obj(mist_lib.requests.sites.wxtags.get(mist_session, site_id), "wxtags")
 
-    console.info("SITE %s > Backuping wxtunnels" %(site_name))
-    site_backup["site"]["wxtunnels"] = mist_lib.requests.sites.wxtunnels.get(mist_session, site_id)["result"]
+    site_backup["site"]["wxtunnels"] = _backup_obj(mist_lib.requests.sites.wxtunnels.get(mist_session, site_id), "wxtunnels")
 
-    console.info("SITE %s > Backuping zones" %(site_name))
-    site_backup["site"]["zones"] = mist_lib.requests.sites.zones.get(mist_session, site_id)["result"]
+    site_backup["site"]["zones"] = _backup_obj(mist_lib.requests.sites.zones.get(mist_session, site_id), "zones")
 
-    console.info("SITE %s > Backuping settings" %(site_name))
-    site_backup["site"]["settings"] = mist_lib.requests.sites.settings.get(mist_session, site_id)["result"]
-
-    console.info("SITE %s > Backuping info" %(site_name))
-    site_backup["site"]["info"] = mist_lib.requests.sites.info.get(mist_session, site_id)["result"]
     if "rftemplate_id" in site_backup["site"]["info"] and site_backup["site"]["info"]["rftemplate_id"]:
-        site_backup["rftemplate"] = mist_lib.requests.orgs.rftemplates.get_by_id(mist_session, org_id, site_backup["site"]["info"]["rftemplate_id"])["result"]
+        site_backup["rftemplate"] = _backup_obj(mist_lib.requests.orgs.rftemplates.get_by_id(mist_session, org_id, site_backup["site"]["info"]["rftemplate_id"]), "RF Template")
         
     if "secpolicy_id" in site_backup["site"]["info"] and site_backup["site"]["info"]["secpolicy_id"]:
-        site_backup["secpolicy"] = mist_lib.requests.orgs.secpolicies.get_by_id(mist_session, org_id, site_backup["site"]["info"]["secpolicy_id"])["result"]
+        site_backup["secpolicy"] = _backup_obj(mist_lib.requests.orgs.secpolicies.get_by_id(mist_session, org_id, site_backup["site"]["info"]["secpolicy_id"]), "Security Policy")
 
     if "alarmtemplate_id" in site_backup["site"]["info"] and site_backup["site"]["info"]["alarmtemplate_id"]:
-        site_backup["alarmtemplate"] = mist_lib.requests.orgs.alarmtemplates.get_by_id(mist_session, org_id, site_backup["site"]["info"]["alarmtemplate_id"])["result"]
+        site_backup["alarmtemplate"] = _backup_obj(mist_lib.requests.orgs.alarmtemplates.get_by_id(mist_session, org_id, site_backup["site"]["info"]["alarmtemplate_id"]), "Alarm Template")
 
     if "networktemplate_id" in site_backup["site"]["info"] and site_backup["site"]["info"]["networktemplate_id"]:
-        site_backup["networktemplate"] = mist_lib.requests.orgs.networktemplates.get_by_id(mist_session, org_id, site_backup["site"]["info"]["networktemplate_id"])["result"]
+        site_backup["networktemplate"] = _backup_obj(mist_lib.requests.orgs.networktemplates.get_by_id(mist_session, org_id, site_backup["site"]["info"]["networktemplate_id"]), "Network Tempalte")
 
     if "sitegroup_ids" in site_backup["site"]["info"] and site_backup["site"]["info"]["sitegroup_ids"]:
         for sitegroup_id in site_backup["site"]["info"]["sitegroup_ids"]:
@@ -143,21 +154,28 @@ def _backup_site(mist_session, site_id, site_name, org_id):
             if "name" in sitegroup_info:
                 site_backup["sitegroup_names"].append(sitegroup_info["name"])
 
-    console.info("SITE %s > Backuping map images" %(site_name))
     for xmap in site_backup["site"]["maps"]:
         if 'url' in xmap:
-            url = xmap["url"]
-            image_name = "%s_site_%s_map_%s.png" %(file_prefix, site_id, xmap["id"])
-            urllib.request.urlretrieve(url, image_name)
-    console.notice("SITE %s > Backup done" %(site_name))
+            print("Backuping image for map %s" %(xmap["name"]), end="") 
+            try:           
+                url = xmap["url"]
+                image_name = "%s_site_%s_map_%s.png" %(file_prefix, site_id, xmap["id"])
+                urllib.request.urlretrieve(url, image_name)
+                print('\033[92m \u2714 \033[0m')
+            except:
+                print('\033[31m \u2716 \033[0m')
 
-    console.notice("Backup done")
+    console.info("Backup done for site %s" %(site_name))
     return site_backup
 
 def _save_to_file(backup_file, backup):
-    print("saving to file...")
-    with open(backup_file, "w") as f:
-        json.dump(backup, f)
+    print("saving backup to %s file..." %(backup_file), end='')
+    try:
+        with open(backup_file, "w") as f:
+            json.dump(backup, f)
+        print('\033[92m \u2714 \033[0m')
+    except:
+        print('\033[31m \u2716 \033[0m')
 
 def _goto_folder(folder_name):
     if not os.path.exists(folder_name):
