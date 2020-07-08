@@ -158,6 +158,8 @@ def _common_restore(mist_session, site_name, site_id, obj_type, data):
         obj_name = data["name"]
     elif "ssid" in data:
         obj_name = data["ssid"]
+    elif "order" in data:
+        obj_name = "#%s" %(data["order"])
     else:
         obj_name = None
     
