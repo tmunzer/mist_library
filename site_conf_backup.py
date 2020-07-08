@@ -38,13 +38,13 @@ console = Console(6)
 #### FUNCTIONS ####
 
 def _backup_obj(m_func, obj_type):
-    print("Backuping %s" %(obj_type), end="", flush=True)
+    print("Backuping {0} ".format(obj_type).ljust(79, "."), end="", flush=True)
     try: 
         res = m_func["result"]
-        print('\033[92m \u2714 \033[0m')
+        print('\033[92m\u2714\033[0m')
     except:
         res = None
-        print('\033[31m \u2716 \033[0m')
+        print('\033[31m\u2716\033[0m')
     finally:
         return res
 
@@ -52,31 +52,31 @@ def _backup_obj(m_func, obj_type):
 def _backup_wlan_portal(org_id, site_id, wlans):  
     for wlan in wlans:     
         if site_id == None:
-            portal_file_name = "%s_wlan_%s.json" %(file_prefix, wlan["id"])
-            portal_image = "%s_wlan_%s.png" %(file_prefix, wlan["id"])
+            portal_file_name = "{0}_wlan_{1}.json".format(file_prefix, wlan["id"])
+            portal_image = "{0}_wlan_{1}.png".format(file_prefix, wlan["id"])
         else:
-            portal_file_name = "%s_site_%s_wlan_%s.json" %(file_prefix, site_id, wlan["id"]) 
-            portal_image = "%s_site_%s_wlan_%s.png" %(file_prefix, site_id, wlan["id"])
+            portal_file_name = "{0}_site_{1}_wlan_{2}.json".format(file_prefix, site_id, wlan["id"]) 
+            portal_image = "{0]_site_{1}_wlan_{2}.png".format(file_prefix, site_id, wlan["id"])
         
         if "portal_template_url" in wlan: 
-            print("Backuping portal template for WLAN %s" %(wlan["ssid"]), end="", flush=True)
+            print("Backuping portal template for WLAN {0} ".format(wlan["ssid"]).ljust(79, "."), end="", flush=True)
             try:
                 urllib.request.urlretrieve(wlan["portal_template_url"], portal_file_name)
-                print('\033[92m \u2714 \033[0m')
+                print('\033[92m\u2714\033[0m')
             except:
-                print('\033[31m \u2716 \033[0m')
+                print('\033[31m\u2716\033[0m')
         if "portal_image" in wlan: 
-            print("Backuping portal image for WLAN %s" %(wlan["ssid"]), end="", flush=True)
+            print("Backuping portal image for WLAN {0} ".format(wlan["ssid"]).ljust(79, "."), end="", flush=True)
             try:
                 urllib.request.urlretrieve(wlan["portal_image"], portal_image)
-                print('\033[92m \u2714 \033[0m')
+                print('\033[92m\u2714\033[0m')
             except:
-                print('\033[31m \u2716 \033[0m')
+                print('\033[31m\u2716\033[0m')
     
 
 def _backup_site(mist_session, site_id, site_name, org_id):
     print()
-    console.info("Backup: processing site %s..." %(site_name))
+    console.info("Backup: processing site {0} ...".format(site_name))
     print()
     site_backup = {
         "site": {
@@ -156,26 +156,26 @@ def _backup_site(mist_session, site_id, site_name, org_id):
 
     for xmap in site_backup["site"]["maps"]:
         if 'url' in xmap:
-            print("Backuping image for map %s" %(xmap["name"]), end="", flush=True) 
+            print("Backuping image for map {0} ".format(xmap["name"]).ljust(79, "."), end="", flush=True) 
             try:           
                 url = xmap["url"]
-                image_name = "%s_site_%s_map_%s.png" %(file_prefix, site_id, xmap["id"])
+                image_name = "{0}_site_{1}_map_{2}.png".format(file_prefix, site_id, xmap["id"])
                 urllib.request.urlretrieve(url, image_name)
-                print('\033[92m \u2714 \033[0m')
+                print('\033[92m\u2714\033[0m')
             except:
-                print('\033[31m \u2716 \033[0m')
+                print('\033[31m\u2716\033[0m')
 
     return site_backup
 
 def _save_to_file(backup_file, backup):
-    print("saving backup to %s file..." %(backup_file), end="", flush=True)
+    print("Saving backup to {0} file...".format(backup_file).ljust(79, "."), end="", flush=True)
     try:
         
         with open(backup_file, "w") as f:
             json.dump(backup, f)
-        print('\033[92m \u2714 \033[0m')
+        print('\033[92m\u2714\033[0m')
     except:
-        print('\033[31m \u2716 \033[0m')
+        print('\033[31m\u2716\033[0m')
 
 def _goto_folder(folder_name):
     if not os.path.exists(folder_name):
@@ -193,7 +193,9 @@ def start_site_backup(mist_session, org_id, org_name, site_ids):
 
         backup = _backup_site(mist_session, site_id, site_name, org_id)
         _save_to_file(backup_file, backup)
-        console.info("Backup done for site %s" %(site_name))
+        print()
+        console.info("Backup done for site {0}".format(site_name))
+        print()
 
         os.chdir("..")
 
