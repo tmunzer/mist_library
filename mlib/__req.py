@@ -62,7 +62,7 @@ class Req:
             console.debug("Response: %s" % error)
         return {"result": result, "status_code": resp.status_code, "error": error, "uri":uri}
 
-    def mist_get(self, uri, org_id="", site_id="", query={}, page=1, limit=100):
+    def mist_get(self, uri, org_id="", site_id="", query={}, page=None, limit=None):
         """GET HTTP Request
         Params: uri, HTTP query
         Return: HTTP response"""
@@ -73,8 +73,8 @@ class Req:
                 if not query == {}:
                     for query_param in query:
                         html_query += "%s=%s&" %(query_param, query[query_param])
-                html_query += "limit=%s&" %limit
-                html_query += "page=%s" %page
+                if limit: html_query += "limit=%s&" %limit
+                if page: html_query += "page=%s" %page
                 url += html_query
                 console.debug("Request > GET %s" % url)
                 resp = self.session.get(url)
