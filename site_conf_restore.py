@@ -96,18 +96,7 @@ def _clean_ids(data):
     return data
 
 
-def _common_restore(mist_session, site_name, site_id, object_name, data):
-    console.info("SITE %s > Creating %s..." %(site_name, object_name))    
-    if "id" in data:
-        old_id = data["id"]
-    else: 
-        old_id = None
-    data = _clean_ids(data)
-    module = mist_lib.requests.route("sites", object_name)
-    result = module.create(mist_session, site_id, data)["result"]    
-    if "id" in result:
-        new_id = result["id"]
-    return {old_id: new_id}
+
 
 
 def _wlan_restore(mist_session, site_name, new_site_id, data, old_site_id):
@@ -118,32 +107,95 @@ def _wlan_restore(mist_session, site_name, new_site_id, data, old_site_id):
     ids = _common_restore(mist_session, site_name, new_site_id, 'wlans', data)
     old_wlan_id = next(iter(ids))
     new_wlan_id = ids[old_wlan_id]
-    _wlan_restore_portal(mist_session, site_name, new_site_id, old_site_id, old_wlan_id, new_wlan_id)
+    _wlan_restore_portal(mist_session, site_name, new_site_id, old_site_id, old_wlan_id, new_wlan_id, data["ssid"])
     wlan_id_dict.update(ids)
 
-def _wlan_restore_portal(mist_session, site_name,level_id, old_site_id, old_wlan_id, new_wlan_id): 
-        if old_site_id == None:
-            portal_file_name = "%s_wlan_%s.json" %(file_prefix, old_wlan_id)
-            portal_image = "%s_wlan_%s.png" %(file_prefix, old_wlan_id)
-            module = mist_lib.requests.route("orgs", "wlans")
-        else:
-            portal_file_name = "%s_site_%s_wlan_%s.json" %(file_prefix, old_site_id, old_wlan_id) 
-            portal_image = "%s_site_%s_wlan_%s.png" %(file_prefix, old_site_id, old_wlan_id)
-            module = mist_lib.requests.route("sites", "wlans")
 
-        if site_name: site_text = " SITE %s >" %(site_name)
-        else: site_text = "" 
-        if os.path.isfile(portal_file_name):
-            console.info("SITE %s >%s Creating portal template %s..." %(site_name, site_text, portal_file_name))
+def _wlan_restore_portal_template(mist_session, site_id, wlan_id, portal_file_name, wlan_name):
+    if os.path.isfile(portal_file_name):
+        print("Creating Portal Template for WLAN %s..." %(wlan_name), end="", flush=True)
+        try:
             template = open(portal_file_name, 'r')
+        except:
+            print("Unable to open the template file %s..." %(portal_file_name))
+            print('\033[31m \u2716 \033[0m')
+            return
+        try:
             template = json.load(template)
-            module.set_portal_template(mist_session, level_id, new_wlan_id, template)
-        else: console.warning("SITE %s > %s Portal template %s not found" %(site_name, site_text, portal_file_name))
-        if os.path.isfile(portal_image):
-            console.info("SITE %s > %s Creating portal image %s..." %(site_name, site_text, portal_image))
-            module.add_portal_image(mist_session, level_id, new_wlan_id, portal_image)
-        else: console.warning("SITE %s > %s Portal image %s not found" %(site_name, site_text, portal_image))
+        except:
+            print("Unable to read the template file %s..." %(portal_file_name))
+            print('\033[31m \u2716 \033[0m')
+            return
+        try:
+            mist_lib.requests.sites.wlans.set_portal_template(mist_session, site_id, wlan_id, template)
+            print("\033[92m \u2714 \033[0m")
+        except:
+            print("Unable to uploade the template..." %(portal_file_name))
+            print('\033[31m \u2716 \033[0m')
+    else: print("No Portal Template found... \033[33m ! \033[0m")
+
+
+def _wlan_restore_portal(mist_session, site_name, new_site_id, old_site_id, old_wlan_id, new_wlan_id, wlan_name): 
+    portal_file_name = "%s_site_%s_wlan_%s.json" %(file_prefix, old_site_id, old_wlan_id) 
+    portal_image = "%s_site_%s_wlan_%s.png" %(file_prefix, old_site_id, old_wlan_id)
+    module = mist_lib.requests.route("sites", "wlans")
+
+    _wlan_restore_portal_template(mist_session, new_site_id, new_wlan_id, portal_file_name, wlan_name)       
+
+    if os.path.isfile(portal_image):
+        print("Uploading Portal image for WLAN %s..." %(wlan_name), end="", flush=True)
+        try:            
+            module.add_portal_image(mist_session, new_site_id, new_wlan_id, portal_image)
+            print('\033[31m \u2716 \033[0m')
+        except:
+            print('\033[31m \u2716 \033[0m')
+    else: print("No Portal Template image found... \033[33m ! \033[0m")
         
+
+def _common_restore(mist_session, site_name, site_id, obj_type, data):       
+    old_id = data["id"] if "id" in data else None
+    if "name" in data:
+        obj_name = data["name"]
+    elif "ssid" in data:
+        obj_name = data["ssid"]
+    else:
+        obj_name = None
+    
+    data = _clean_ids(data)
+    
+    module = mist_lib.requests.route("sites", obj_type)
+    new_id = _create_obj(module.create(mist_session, site_id, data), obj_type, obj_name)        
+    
+    return {old_id: new_id}
+
+
+def _create_obj(m_func_create, obj_type, obj_name=None):
+    try:        
+        if obj_name: print("Creating %s \"%s\"..." %(obj_type, obj_name), end="", flush=True)
+        else: print("Creating %s..." %(obj_type), end="", flush=True)
+        response = m_func_create
+        if "result" in response and "id" in response["result"]: new_id = response["result"]["id"]
+        elif "id" in response: new_id = response["id"]
+        else: new_id = None
+        print("\033[92m \u2714 \033[0m")
+    except:
+        new_id = None
+        print('\033[31m \u2716 \033[0m')
+    finally:
+        return new_id
+
+
+def _process_org_obj(m_func_create, available_obj, obj_type, obj_name):
+    print("Processsing %s \"%s\"..." %(obj_type, obj_name), end="", flush=True)
+    try:
+        new_id = next(item["id"] for item in available_obj if item["name"]==obj_name)
+        print(" Reusing existing %s... \033[92m \u2714 \033[0m" %(obj_type))
+    except: 
+        print(" Not Found... \033[33m ! \033[0m" %(obj_type))
+        new_id = _create_obj(m_func_create, obj_type, obj_name)        
+    finally:
+        return new_id
+
 
 def _restore_site(mist_session, org_id, org_name, site_name, backup):
     old_site_id = backup["site"]["info"]["id"]
@@ -155,77 +207,38 @@ def _restore_site(mist_session, org_id, org_name, site_name, backup):
     assigned_networktemplate_id = None
 
     ### lookup for site groups ###
-    console.info("ORG %s > Processing site groups..." %(org_name))
-    if not backup["sitegroup_names"] == []:
+    if not backup["sitegroup_names"] == []:        
         available_sitegroups = mist_lib.requests.orgs.sitegroups.get(mist_session, org_id)["result"]
         for sitegroup_name in backup["sitegroup_names"]:
-            try:
-                new_sitegroup_id = next(item["id"] for item in available_sitegroups if item["name"]==sitegroup_name)
-                console.info("ORG %s > Site group \"%s\" found in the new org..." %(org_name, sitegroup_name))
-            except: 
-                console.notice("ORG %s > Site group \"%s\" not found in the new org... Creating it..." %(org_name, sitegroup_name))
-                new_sitegroup_id = mist_lib.requests.orgs.sitegroups.create(mist_session, org_id, {"name":sitegroup_name})
-                console.info("ORG %s > Site group \"%s\" created" %(org_name, sitegroup_name))
-            finally:
-                assigned_sitegroup_ids.append(new_sitegroup_id)
+            new_sitegroup_id= _process_org_obj(mist_lib.requests.orgs.sitegroups.create(mist_session, org_id, {"name":sitegroup_name}), available_sitegroups, "Site Group", sitegroup_name)            
+            assigned_sitegroup_ids.append(new_sitegroup_id)
 
     ### lookup for RF templates ###
-    console.info("ORG %s > Processing RF Template..." %(org_name))
     if not backup["rftemplate"] == {}:
         available_rftemplates = mist_lib.requests.orgs.rftemplates.get(mist_session, org_id)["result"]
-        try:
-            new_rftemplate_id = next(item["id"] for item in available_rftemplates if item["name"]==backup["rftemplate"]["name"])
-            console.info("ORG %s > RF Template \"%s\" found in the new org..." %(org_name, backup["rftemplate"]["name"]))
-        except: 
-            console.notice("ORG %s > RF Template \"%s\" not found in the new org... Creating it..." %(org_name, backup["rftemplate"]["name"]))
-            new_rftemplate_id = mist_lib.requests.orgs.rftemplates.create(mist_session, org_id, backup["rftemplate"])
-            console.info("ORG %s > RF Template \"%s\" created" %(org_name, backup["rftemplate"]["name"]))
-        finally:
-            assigned_rftempate_id = new_rftemplate_id
+        new_rftemplate_id = _process_org_obj(mist_lib.requests.orgs.rftemplates.create(mist_session, org_id, backup["rftemplate"]), available_rftemplates, "RF Template", backup["rftemplate"]["name"])   
+        assigned_rftempate_id = new_rftemplate_id
 
     ### lookup for security policy ###
-    console.info("ORG %s > Processing Security Policy..." %(org_name))
     if not backup["secpolicy"] == {}:
         available_secpolicies = mist_lib.requests.orgs.secpolicies.get(mist_session, org_id)["result"]
-        try:
-            new_secpolicy_id = next(item["id"] for item in available_secpolicies if item["name"]==backup["secpolicy"]["name"])
-            console.info("ORG %s > Security Policy \"%s\" found in the new org..." %(org_name, backup["secpolicy"]["name"]))
-        except: 
-            console.notice("ORG %s > Security Policy \"%s\" not found in the new org... Creating it..." %(org_name, backup["secpolicy"]["name"]))
-            new_secpolicy_id = mist_lib.requests.orgs.secpolicies.create(mist_session, org_id, backup["secpolicy"])
-            console.info("ORG %s > Security Policy \"%s\" created" %(org_name, backup["secpolicy"]["name"]))
-        finally:
-            assigned_secpolicy_id = new_secpolicy_id
+        new_secpolicy_id = _process_org_obj(mist_lib.requests.orgs.secpolicies.create(mist_session, org_id, backup["secpolicy"]), available_secpolicies, "Security Policy", backup["secpolicy"]["name"])   
+        assigned_secpolicy_id = new_secpolicy_id
 
     ### lookup for Alarm templates ###
-    console.info("ORG %s > Processing Alarm Template..." %(org_name))
     if not backup["alarmtemplate"] == {}:
         available_alarmtemplates = mist_lib.requests.orgs.alarmtemplates.get(mist_session, org_id)["result"]
-        try:
-            new_alarmtemplate_id = next(item["id"] for item in available_alarmtemplates if item["name"]==backup["alarmtemplate"]["name"])
-            console.info("ORG %s > Alarm Template \"%s\" found in the new org..." %(org_name, backup["alarmtemplate"]["name"]))
-        except: 
-            console.notice("ORG %s > Alarm Template \"%s\" not found in the new org... Creating it..." %(org_name, backup["alarmtemplate"]["name"]))
-            new_alarmtemplate_id = mist_lib.requests.orgs.alarmtemplates.create(mist_session, org_id, backup["alarmtemplate"])
-            console.info("ORG %s > Alarm Template \"%s\" created" %(org_name, backup["alarmtemplate"]["name"]))
-        finally:
-            assigned_alarmtemplate_id = new_alarmtemplate_id
+        new_alarmtemplate_id = _process_org_obj(mist_lib.requests.orgs.alarmtemplates.create(mist_session, org_id, backup["alarmtemplate"]), available_alarmtemplates, "Alarm Template", backup["alarmtemplate"]["name"])   
+        assigned_alarmtemplate_id = new_alarmtemplate_id
 
     ### lookup for network templates ###
-    console.info("ORG %s > Processing Network Template..." %(org_name))
     if not backup["networktemplate"] == {}:
         available_networktemplates = mist_lib.requests.orgs.networktemplates.get(mist_session, org_id)["result"]
-        try:
-            new_networktemplate_id = next(item["id"] for item in available_networktemplates if item["name"]==backup["networktemplate"]["name"])
-            console.info("ORG %s > Network Template \"%s\" found in the new org..." %(org_name, backup["networktemplate"]["name"]))
-        except: 
-            console.notice("ORG %s > Network Template \"%s\" not found in the new org... Creating it..." %(org_name, backup["networktemplate"]["name"]))
-            new_networktemplate_id = mist_lib.requests.orgs.networktemplates.create(mist_session, org_id, backup["networktemplate"])
-            console.info("ORG %s > Network Template \"%s\" created" %(org_name, backup["networktemplate"]["name"]))
-        finally:
-            assigned_networktemplate_id = new_networktemplate_id
+        new_networktemplate_id = _process_org_obj(mist_lib.requests.orgs.networktemplates.create(mist_session, org_id, backup["networktemplate"]), available_networktemplates, "Network Template", backup["networktemplate"]["name"])  
+        assigned_networktemplate_id = new_networktemplate_id
 
     ### restore site ###
+    print("Updating site info with new IDs...", end="", flush=True)
     new_site = backup["site"]["info"]
     new_site["name"] = site_name
     new_site["sitegroup_ids"] = assigned_sitegroup_ids
@@ -233,13 +246,22 @@ def _restore_site(mist_session, org_id, org_name, site_name, backup):
     new_site["secpolicy_id"] = assigned_secpolicy_id
     new_site["alarmtemplate_id"] = assigned_alarmtemplate_id
     new_site["networktemplate_id"] = assigned_networktemplate_id
-    console.info("ORG %s > Creating site %s in the new org..." %(org_name, site_name))
-    new_site_id = mist_lib.requests.orgs.sites.create(mist_session, org_id, new_site)["result"]["id"]
+    print("\033[92m \u2714 \033[0m")
+
+    ### create site ### 
+    new_site_id = _create_obj(mist_lib.requests.orgs.sites.create(mist_session, org_id, new_site), "Site", site_name)
+    if not new_site_id:
+        console.error("Unable to create the new site... Exiting...")
+        exit(1)
 
     ### set site settings ###
-    console.info("ORG %s > SITE %s > Configuring site settings..." %(org_name, site_name))
-    mist_lib.requests.sites.settings.update(mist_session, new_site_id, backup["site"]["settings"])
-
+    try:        
+        print("Configuring Site Settings...", end="", flush=True)
+        mist_lib.requests.sites.settings.update(mist_session, new_site_id, backup["site"]["settings"])
+        print("\033[92m \u2714 \033[0m")
+    except:    
+        print('\033[31m \u2716 \033[0m')
+    
     ####  SITES MAIN  ####
     data = backup["site"]
     if "maps" in data:
@@ -253,10 +275,15 @@ def _restore_site(mist_session, org_id, org_name, site_name, backup):
 
             image_name = "%s_site_%s_map_%s.png" %(file_prefix, old_site_id, old_map_id)
             if os.path.isfile(image_name):
-                console.info("Image %s will be restored to map %s" %(image_name, new_map_id))
-                mist_lib.requests.sites.maps.add_image(mist_session, new_site_id, new_map_id, image_name)
+                print("Uploading image floorplan for the map %s..." %(sub_data["name"]), end="", flush=True)
+                try:                
+                    mist_lib.requests.sites.maps.add_image(mist_session, new_site_id, new_map_id, image_name)
+                    print("\033[92m \u2714 \033[0m")
+                except:
+                    print('\033[31m \u2716 \033[0m')
             else:
-                console.info("No image found for old map id %s" % old_map_id)
+                print("No image found for map %s" %(sub_data["name"]), end="", flush=True)
+                print("\033[33m ! \033[0m")
 
 
     if "assetfilters" in data:
@@ -409,7 +436,7 @@ def _check_site_exists(org_id, backup):
         while True:
             print()
             console.warning("Site \"%s\" already exists in the destination org! " %(site_name_to_create))
-            response = input("What do you want to do: (r)eplace, re(n)ame, (a)bort?")
+            response = input("What do you want to do: (r)eplace, set a (n)ew name or (a)bort?")
             if response.lower() == "a":
                 console.warning("Interruption... Exiting...")
                 exit(0)
@@ -425,22 +452,24 @@ def _check_site_exists(org_id, backup):
 def start_restore_org(mist_session, org_id, org_name, check_org_name=True, in_backup_folder=False):
     if check_org_name: _check_org_name(org_name)
     if not in_backup_folder: _go_to_backup_folder()    
+    print("Loading template/backup file %s..." %(backup_file), end="", flush=True)
     try:
         with open(backup_file) as f:
             backup = json.load(f)
+        print("\033[92m \u2714 \033[0m")
     except: 
-        console.error("unable to load the file backup %s" %(backup_file))
+        print("Unable to load the template/bakup!", end="", flush=True)
+        print('\033[31m \u2716 \033[0m')
         exit(1)
     finally:
         if backup:
-            console.info("File %s loaded succesfully." %backup_file)
             site_name_to_create = _check_site_exists(org_id, backup)
 
             _display_warning("Are you sure about this? Do you want to import the site configuration into the organization %s with the id %s (y/N)? " %(org_name, org_id))
             _restore_site(mist_session, org_id, org_name, site_name_to_create, backup)
         
             print()
-            console.notice("Restoration process finished...")
+            console.info("Importation process finished...")
 
 def start(mist_session, org_id=None):
     if org_id == "":
