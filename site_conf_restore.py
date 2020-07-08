@@ -275,7 +275,7 @@ def _restore_site(mist_session, org_id, org_name, site_name, backup):
             old_map_id = next(iter(ids))
             new_map_id = ids[old_map_id]
 
-            image_name = "{0}_site_{0}_map_{0}.png".format(file_prefix, old_site_id, old_map_id)
+            image_name = "{0}_site_{1}_map_{2}.png".format(file_prefix, old_site_id, old_map_id)
             if os.path.isfile(image_name):
                 print("Uploading image floorplan for the map {0} ".format(sub_data["name"]).ljust(79, "."), end="", flush=True)
                 try:                
@@ -430,30 +430,33 @@ def _check_org_name(org_name):
         print()
 
 
-def _check_site_exists(org_id, backup):
-    site_name_to_create = backup["site"]["info"]["name"]
+def _check_site_exists(org_id, site_name_to_create):    
     existing_sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)["result"]
     try:
         site_id = next(item["id"] for item in existing_sites if item["name"] == site_name_to_create)
         while True:
             print()
             console.warning("Site \"{0}\" already exists in the destination org! ".format(site_name_to_create))
-            response = input("What do you want to do: (r)eplace, set a (n)ew name or (a)bort?")
+            response = input("What do you want to do: (r)eplace, set a (n)ew name or (a)bort? ")
             if response.lower() == "a":
                 console.warning("Interruption... Exiting...")
                 exit(0)
             elif response.lower() == "r":
                 console.warning("I'm still working on this part... Please try with a later version...")
             elif response.lower() == "n":
-                new_name = input("New name: ")
-                return new_name
+                site_name_to_create = input("Name of the site to create: ")
+                _check_site_exists(org_id, site_name_to_create)  
+                break              
     except:
+        pass
+    finally:
         return site_name_to_create
 
 
 def start_restore_org(mist_session, org_id, org_name, check_org_name=True, in_backup_folder=False):
     if check_org_name: _check_org_name(org_name)
     if not in_backup_folder: _go_to_backup_folder()    
+    print()
     print("Loading template/backup file {0}...".format(backup_file).ljust(79, "."), end="", flush=True)
     try:
         with open(backup_file) as f:
@@ -465,7 +468,9 @@ def start_restore_org(mist_session, org_id, org_name, check_org_name=True, in_ba
         exit(1)
     finally:
         if backup:
-            site_name_to_create = _check_site_exists(org_id, backup)
+            print()
+            site_name_to_create = input("Name of the site to create: ")
+            site_name_to_create = _check_site_exists(org_id, site_name_to_create)
 
             _display_warning("Are you sure about this? Do you want to import the site configuration into the organization {0} with the id {1} (y/N)? ".format(org_name, org_id))
             _restore_site(mist_session, org_id, org_name, site_name_to_create, backup)
