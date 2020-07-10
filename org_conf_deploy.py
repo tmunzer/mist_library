@@ -182,55 +182,71 @@ def _restore_org(mist_session, org_id, org_name, org):
     mist_lib.requests.orgs.settings.update(mist_session, org_id, data)
     
     ####  ORG OBJECTS  ####
-    for data in org["webhooks"]:
-        _common_restore(mist_session, org_name, None, 'orgs', org_id, 'webhooks', data)
 
-    for data in org["assetfilters"]:
-        _common_restore(mist_session, org_name, None, 'orgs',  org_id, 'assetfilters', data)
+    if "webhooks" in org:
+        for data in org["webhooks"]:
+            _common_restore(mist_session, org_name, None, 'orgs', org_id, 'webhooks', data)
 
-    for data in org["deviceprofiles"]:
-        ids = _common_restore(mist_session, org_name, None, 'orgs',  org_id, 'deviceprofiles', data)
-        deviceprofile_id_dict.update(ids)
+    if "assetfilters" in org:
+        for data in org["assetfilters"]:
+            _common_restore(mist_session, org_name, None, 'orgs',  org_id, 'assetfilters', data)
 
-    for data in org["alarmtemplates"]:
-        ids = _common_restore(mist_session, org_name, None, 'orgs',  org_id, 'alarmtemplates', data)
-        deviceprofile_id_dict.update(ids)
+    if "deviceprofiles" in org:
+        for data in org["deviceprofiles"]:
+            ids = _common_restore(mist_session, org_name, None, 'orgs',  org_id, 'deviceprofiles', data)
+            deviceprofile_id_dict.update(ids)
 
-    for data in org["mxclusters"]:
-        ids = _common_restore(mist_session, org_name, None, 'orgs',  org_id, 'mxclusters', data)
-        mxcluster_id_dict.update(ids)
+    if "alarmtemplates" in org:
+        for data in org["alarmtemplates"]:
+            ids = _common_restore(mist_session, org_name, None, 'orgs',  org_id, 'alarmtemplates', data)
+            deviceprofile_id_dict.update(ids)
 
-    for data in org["mxtunnels"]:
-        data["mxcluster_ids"] = _replace_id(
-            data["mxcluster_ids"], mxcluster_id_dict)
-        ids = _common_restore(mist_session, org_name, None, 'orgs',  org_id, 'mxtunnels', data)
-        mxtunnel_id_dict.update(ids)
 
-    for data in org["psks"]:
-        _common_restore(mist_session, org_name, None, 'orgs', org_id, 'psks', data)
+    if "mxclusters" in org:
+        for data in org["mxclusters"]:
+            ids = _common_restore(mist_session, org_name, None, 'orgs',  org_id, 'mxclusters', data)
+            mxcluster_id_dict.update(ids)
 
-    for data in org["secpolicies"]:
-        ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'secpolicies', data)
-        secpolicy_id_dict.update(ids)
 
-    for data in org["rftemplates"]:
-        ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'rftemplates', data)
-        rftemplate_id_dict.update(ids)
+    if "mxtunnels" in org:
+        for data in org["mxtunnels"]:
+            data["mxcluster_ids"] = _replace_id(
+                data["mxcluster_ids"], mxcluster_id_dict)
+            ids = _common_restore(mist_session, org_name, None, 'orgs',  org_id, 'mxtunnels', data)
+            mxtunnel_id_dict.update(ids)
 
-    for data in org["networktemplates"]:
-        ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'networktemplates', data)
-        networktemplate_id_dict.update(ids)
+    if "psks" in org:
+        for data in org["psks"]:
+            _common_restore(mist_session, org_name, None, 'orgs', org_id, 'psks', data)
 
-    for data in org["sitegroups"]:
-        if "site_ids" in data: del data["site_ids"]
-        ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'sitegroups', data)
-        sitegroup_id_dict.update(ids)    
 
-    for data in org["wxtags"]:
-        if data["match"] == "wlan_id":
-            _replace_id(data["values"], wlan_id_dict)
-        ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'wxtags', data)
-        wxtags_id_dict.update(ids)
+    if "secpolicies" in org:
+        for data in org["secpolicies"]:
+            ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'secpolicies', data)
+            secpolicy_id_dict.update(ids)
+
+    if "rftemplates" in org:
+        for data in org["rftemplates"]:
+            ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'rftemplates', data)
+            rftemplate_id_dict.update(ids)
+
+    if "networktemplates" in org:
+        for data in org["networktemplates"]:
+            ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'networktemplates', data)
+            networktemplate_id_dict.update(ids)
+
+    if "sitegroups" in org:
+        for data in org["sitegroups"]:
+            if "site_ids" in data: del data["site_ids"]
+            ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'sitegroups', data)
+            sitegroup_id_dict.update(ids)    
+
+    if "wxtags" in org:
+        for data in org["wxtags"]:
+            if data["match"] == "wlan_id":
+                _replace_id(data["values"], wlan_id_dict)
+            ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'wxtags', data)
+            wxtags_id_dict.update(ids)
 
     for data in org["wxrules"]:
         data["src_wxtags"] = _replace_id(data["src_wxtags"], wxtags_id_dict)
@@ -480,7 +496,21 @@ def start_restore_org(mist_session, org_id, org_name, source_org_name, check_org
 
 def start(mist_session, org_id=None):
     if org_id == "":
-        org_id = cli.select_org(mist_session)[0]
+        while True:
+            res = input("Do you want to create a (n)ew organisation or (r)estore to an existing one? ")
+            if res.lower()=="r":
+               org_id = cli.select_org(mist_session)[0]
+               break
+            elif res.lower()=="n":
+                while True:
+                    res = input("What is the new Organization name? ")
+                    if res:
+                        org = {
+                            "name": res
+                        }
+                        org_id = mist_lib.requests.orgs.orgs.create(mist_session, org)["result"]["id"]
+                        break
+                break
     org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
     start_restore_org(mist_session, org_id, org_name, None)
 

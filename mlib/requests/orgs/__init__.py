@@ -26,3 +26,4 @@ from . import wlans
 from . import wxrules
 from . import wxtags
 from . import wxtunnels
+from . import orgs

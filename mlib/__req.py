@@ -102,28 +102,28 @@ class Req:
         """POST HTTP Request
         Params: uri, HTTP body
         Return: HTTP response"""
-        if self._check_authorization("POST", org_id=org_id, site_id=site_id):
-            try: 
-                url = self._url(uri)
-                headers = {'Content-Type': "application/json"}
-                console.debug("Request > POST %s" % url)
-                console.debug("Request body: \r\n%s" % body)
-                if type(body) == str:
-                    resp = self.session.post(url, data=body, headers=headers)
-                elif type(body) == dict:
-                    resp = self.session.post(url, json=body, headers=headers)
-                else: 
-                    resp = self.session.post(url, json=body, headers=headers)
-                resp.raise_for_status()
-            except HTTPError as http_err:
-                console.error(f'HTTP error occurred: {http_err}')  # Python 3.6
-                console.error(f'HTTP error description: {resp.json()}')
-            except Exception as err:
-                console.error(f'Other error occurred: {err}')  # Python 3.6
+        #if self._check_authorization("POST", org_id=org_id, site_id=site_id):
+        try: 
+            url = self._url(uri)
+            headers = {'Content-Type': "application/json"}
+            console.debug("Request > POST %s" % url)
+            console.debug("Request body: \r\n%s" % body)
+            if type(body) == str:
+                resp = self.session.post(url, data=body, headers=headers)
+            elif type(body) == dict:
+                resp = self.session.post(url, json=body, headers=headers)
             else: 
-                return self._response(resp, uri)
-        else:
-            console.error("you're not authenticated yet...")
+                resp = self.session.post(url, json=body, headers=headers)
+            resp.raise_for_status()
+        except HTTPError as http_err:
+            console.error(f'HTTP error occurred: {http_err}')  # Python 3.6
+            console.error(f'HTTP error description: {resp.json()}')
+        except Exception as err:
+            console.error(f'Other error occurred: {err}')  # Python 3.6
+        else: 
+            return self._response(resp, uri)
+        #else:
+        #    console.error("you're not authenticated yet...")
 
     def mist_put(self, uri, org_id="", site_id="", body={}):
         """PUT HTTP Request
