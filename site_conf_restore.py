@@ -117,22 +117,22 @@ def _wlan_restore_portal_template(mist_session, site_id, wlan_id, portal_file_na
         try:
             template = open(portal_file_name, 'r')
         except:
-            print("Unable to open the template file {0} ".format(portal_file_name).ljust(79, "."))
             print('\033[31m\u2716\033[0m')
+            print("Unable to open the template file {0} ".format(portal_file_name).ljust(79, ".") +'\033[31m\u2716\033[0m')
             return
         try:
             template = json.load(template)
         except:
-            print("Unable to read the template file {0}".format(portal_file_name).ljust(79, "."))
             print('\033[31m\u2716\033[0m')
+            print("Unable to read the template file {0}".format(portal_file_name).ljust(79, ".") +'\033[31m\u2716\033[0m')
             return
         try:
             mist_lib.requests.sites.wlans.set_portal_template(mist_session, site_id, wlan_id, template)
             print("\033[92m\u2714\033[0m")
         except:
-            print("Unable to uploade the template..." %(portal_file_name))
             print('\033[31m\u2716\033[0m')
-    else: print("No Portal Template found ".ljust(79, ".") + "\033[33m\u2731\033[0m")
+            print("Unable to upload the template {0}...".format(portal_file_name).ljust(79, ".") +'\033[31m\u2716\033[0m')
+    else: print("No Portal Template image found for WLAN {0} ".format(wlan_name).ljust(79, ".") + "\033[33m\u2731\033[0m")
 
 
 def _wlan_restore_portal(mist_session, site_name, new_site_id, old_site_id, old_wlan_id, new_wlan_id, wlan_name): 
