@@ -1,31 +1,36 @@
 
-def create(mist_session, org):
+def create(mist_session, data):
     uri = "/api/v1/orgs"
-    resp = mist_session.mist_post(uri, org_id=None, body=org)
+    resp = mist_session.mist_post(uri, org_id=None, body=data)
     return resp
 
 
-def get(mist_session, org_id, psk_id="", name="", ssid="", page=1, limit=100):
-    uri = "/api/v1/orgs/%s/psks" % org_id
-    query={}
-    if psk_id != "":
-        uri +="/%s" % psk_id
-    if name != "":
-        query["name"] = name
-    if  ssid != "":
-        query["ssid"] = ssid
-    resp = mist_session.mist_get(uri, org_id=org_id, query=query, page=page, limit=limit)
+def update(mist_session, org_id, data):
+    uri = "/api/v1/orgs/{0}".format(org_id)
+    resp = mist_session.mist_put(uri, org_id=org_id, body=data)
     return resp 
 
-def delete(mist_session, org_id, psk_id="", name="", ssid=""):
-    uri = "/api/v1/orgs/%s/psks" % org_id
-    if psk_id != "":
-        uri +="/%s" % psk_id
-    if org_id != "" and ssid != "":
-        uri += "?name=%s&ssid=%s" % (name, ssid)
-    elif name != "":
-        uri += "?name=%s" % name
-    elif  ssid != "":
-        uri += "?ssid=%s" % ssid
+def delete(mist_session, org_id):
+    uri = "/api/v1/orgs/{0}".format(org_id)
     resp = mist_session.mist_delete(uri, org_id=org_id)
     return resp 
+
+def get_stats(mist_session, org_id):
+    uri = "/api/v1/orgs/{0}/stats".format(org_id)
+    resp = mist_session.mist_get(uri, org_id=org_id)
+    return resp
+
+def get_settings(mist_session, org_id):
+    uri = "/api/v1/orgs/{0}/setting".format(org_id)
+    resp = mist_session.mist_get(uri, org_id=org_id)
+    return resp
+
+def update_settings(mist_session, org_id, data):
+    uri = "/api/v1/orgs/{0}/setting".format(org_id)
+    resp = mist_session.mist_put(uri, org_id=org_id, body=data)
+    return resp
+
+def clone(mist_session, org_id, new_name):
+    uri = "/api/v1/orgs/{0}/clone"
+    resp = mist_session.mist_post(uri, org_id=org_id, body={"name": new_name})
+    return resp
