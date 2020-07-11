@@ -72,7 +72,7 @@ def _backup_full_org(mist_session, org_id, org_name):
     console.info("ORG %s > Backuping rftemplates" %(org_name))
     backup["org"]["rftemplates"] = mist_lib.requests.orgs.rftemplates.get(mist_session, org_id)["result"]
     console.info("ORG %s > Backuping networktemplates" %(org_name))
-    backup["org"]["rftemplates"] = mist_lib.requests.orgs.networktemplates.get(mist_session, org_id)["result"]
+    backup["org"]["networktemplates"] = mist_lib.requests.orgs.networktemplates.get(mist_session, org_id)["result"]
     console.info("ORG %s > Backuping secpolicies" %(org_name))
     backup["org"]["secpolicies"] = mist_lib.requests.orgs.secpolicies.get(mist_session, org_id)["result"]
     console.info("ORG %s > Backuping sitegroups" %(org_name))
