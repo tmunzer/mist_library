@@ -27,6 +27,8 @@ def route(level, object_name):
             return orgs.mxedges
         elif object_name == "mxtunnels":
             return orgs.mxtunnels
+        elif object_name == "networktemplates":
+            return orgs.networktemplates
         elif object_name == "psks":
             return orgs.psks
         elif object_name == "rftemplates":
