@@ -459,13 +459,13 @@ def _display_warning(message):
 
 def _select_backup_folder(folders):   
     i = 0
-    print("Available backups:")
+    print("Available Templates/Backups:")
     while i < len(folders):
         print("%s) %s" %(i, folders[i]))
         i += 1
     folder = None
     while folder == None:
-        resp = input("Which backup do you want to restore (0-%s, or q to quit)? "  %i)
+        resp = input("Which template/backup do you want to restore (0-%s, or q to quit)? "  %i)
         if resp.lower() == "q":
             console.warning("Interruption... Exiting...")
             exit(0)
@@ -487,10 +487,10 @@ def _go_to_backup_folder(source_org_name=None):
         if os.path.isdir(os.path.join("./", entry)):
             folders.append(entry)
     if source_org_name in folders:
-        print("Backup found for organization %s." %(source_org_name))
+        print("Tempalte/Backup found for organization %s." %(source_org_name))
         loop = True
         while loop:
-            resp = input("Do you want to use this backup (y/n)? ")
+            resp = input("Do you want to use this template/backup (y/n)? ")
             if resp.lower == "y":
                 loop = False    
                 try:
@@ -501,7 +501,7 @@ def _go_to_backup_folder(source_org_name=None):
                 loop = False    
                 _select_backup_folder(folders)
     else:
-        print("Backup folder for organization %s not found. Please select a folder in the following list." %(source_org_name))
+        print("Template/Backup folder for organization %s not found. Please select a folder in the following list." %(source_org_name))
         _select_backup_folder(folders)
 
 def _print_warning():
