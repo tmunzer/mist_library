@@ -49,7 +49,7 @@ read a CSV file to automatically generate admin invitations
 use APIs to enable autoprovisionning feature
 - ***`org_conf_backup.py`***
 backup all the organisation object, maps, ... to files
-- ***`org_conf_restore.py`***
+- ***`org_conf_deploy.py`***
 restore a backup (done with org_conf_backup.py) to an organisation
 - ***`org_inventoy_backup.py`***
 backup all the devices and their configuration, pictures, ... from an organisation to files
