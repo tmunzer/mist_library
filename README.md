@@ -1,5 +1,11 @@
-## WORK IN PROGRESS ##
-This repository will continue to evolve in the future, as I will continue to maintin the Mist Library to reflect Mist API changes and add new demo scripts.
+## DEPRECATED ##
+This library is now deprecated. It's still working, but a new library is available [here](https://github.com/tmunzer/mistsystems), and is available in the Pypi repository ([here](https://pypi.org/project/mistsystems/))
+
+**Warning**
+The script from this repository are not yet adapted to work with the new library. You still have to download the whole repository to get them working. 
+
+This is a work in progress...
+
 
 # Mist_library
  Python library to use [Mist APIs](https://www.mist.com)
