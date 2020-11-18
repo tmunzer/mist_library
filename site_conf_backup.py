@@ -56,7 +56,7 @@ def _backup_wlan_portal(org_id, site_id, wlans):
             portal_image = "{0}_wlan_{1}.png".format(file_prefix, wlan["id"])
         else:
             portal_file_name = "{0}_site_{1}_wlan_{2}.json".format(file_prefix, site_id, wlan["id"]) 
-            portal_image = "{0]_site_{1}_wlan_{2}.png".format(file_prefix, site_id, wlan["id"])
+            portal_image = "{0}_site_{1}_wlan_{2}.png".format(file_prefix, site_id, wlan["id"])
         
         if "portal_template_url" in wlan: 
             print("Backuping portal template for WLAN {0} ".format(wlan["ssid"]).ljust(79, "."), end="", flush=True)
