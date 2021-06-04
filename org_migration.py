@@ -7,7 +7,7 @@ import mlib as mist_lib
 from mlib import cli
 
 import org_conf_backup
-import org_conf_restore
+import org_conf_deploy
 import org_inventory_backup
 import org_inventory_backup
 import org_inventory_precheck
