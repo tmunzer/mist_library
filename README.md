@@ -1,6 +1,3 @@
-## DEPRECATED ##
-This library is now deprecated. It's still working, but a new library is available [here](https://github.com/tmunzer/mistsystems), and is available in the Pypi repository ([here](https://pypi.org/project/mistsystems/))
-
 **Warning**
 The script from this repository are not yet adapted to work with the new library. You still have to download the whole repository to get them working. 
 
