@@ -109,8 +109,6 @@ def _clean_ids(data):
 
 
 def _common_restore(mist_session, org_name, site_name, level, level_id, object_type, data):
-    if site_name: site_text = " SITE \"{0}\" >".format(site_name)
-    else: site_text = ""
     if "name" in data: object_name = "\"{0}\" ".format(data["name"])
     elif "ssid" in data: object_name = "\"{0}\" ".format(data["ssid"])
     else: object_name = ""
@@ -120,7 +118,7 @@ def _common_restore(mist_session, org_name, site_name, level, level_id, object_t
         old_id = None
     data = _clean_ids(data)
     new_id = None
-    print("ORG \"{0}\" >{1} Creating {2} \"{3}\"".format(org_name, site_text, object_type, object_name).ljust(79, "."), end="", flush=True)
+    print("Creating {0} {1}".format(object_type, object_name).ljust(79, "."), end="", flush=True)
     try:
         module = mist_lib.requests.route(level, object_type)
         result = module.create(mist_session, level_id, data)["result"]
@@ -194,6 +192,8 @@ def _wlan_restore_portal(mist_session, org_name, site_name,level_id, old_org_id,
 
 
 def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None):
+    print()
+    print(" Deploying Org {0} Settings ".format(org_name).center(80, "_"))
     ####  ORG MAIN  ####
     data = org["data"]
     old_org_id = data["id"]
@@ -208,7 +208,7 @@ def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None)
     if custom_dest_org_name:
         data["name"] = custom_dest_org_name
     
-    print("Configuring org Info with ".ljust(79, "."), end="", flush=True)
+    print("Org Info ".ljust(79, "."), end="", flush=True)
     try:
         mist_lib.requests.orgs.info.update(mist_session, org_id, data)
         print("\033[92m\u2714\033[0m")
@@ -216,7 +216,7 @@ def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None)
         print('\033[31m\u2716\033[0m')
 
     ####  ORG SETTINGS  ####
-    print("Configuring org Settings with ".ljust(79, "."), end="", flush=True)
+    print("Org Settings ".ljust(79, "."), end="", flush=True)
     try:
         data = _clean_ids(org["settings"])
         mist_lib.requests.orgs.settings.update(mist_session, org_id, data)
@@ -465,7 +465,7 @@ def _select_backup_folder(folders):
         i += 1
     folder = None
     while folder == None:
-        resp = input("Which template/backup do you want to restore (0-%s, or q to quit)? "  %i)
+        resp = input("Which template/backup do you want to restore (0-{0}, or q to quit)? " .format(i - 1))
         if resp.lower() == "q":
             console.warning("Interruption... Exiting...")
             exit(0)
@@ -487,7 +487,7 @@ def _go_to_backup_folder(source_org_name=None):
         if os.path.isdir(os.path.join("./", entry)):
             folders.append(entry)
     if source_org_name in folders:
-        print("Tempalte/Backup found for organization %s." %(source_org_name))
+        print("Template/Backup found for organization %s." %(source_org_name))
         loop = True
         while loop:
             resp = input("Do you want to use this template/backup (y/n)? ")
