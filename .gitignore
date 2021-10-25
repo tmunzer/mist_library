@@ -141,4 +141,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+*.py~
 test2.py
