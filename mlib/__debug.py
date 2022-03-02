@@ -28,28 +28,28 @@ class Console:
 
     def alert(self, message):
         if self.level >= 1:
-            print(magenta('ALERT: ') + message)
+            print(magenta('ALERT    : ') + message)
 
     def critical(self, message):
         if self.level >= 2:
-            print(magenta('CRITICAL: ') + message)
+            print(magenta('CRITICAL : ') + message)
 
     def error(self, message):
         if self.level >= 3:
-            print(red('ERROR: ') + message)
+            print(red('ERROR    : ') + message)
 
     def warning(self, message):
         if self.level >= 4:
-            print(yellow('WARNING: ') + message)
+            print(yellow('WARNING  : ') + message)
 
     def notice(self, message):
         if self.level >= 5:
-            print(blue('NOTICE: ') + message)
+            print(blue('NOTICE   : ') + message)
 
     def info(self, message):
         if self.level >= 6:
-            print(green('INFO: ') + message)
+            print(green('INFO     : ') + message)
 
     def debug(self, message):
         if self.level >= 7:
-            print(white('DEBUG: ') + message)
+            print(white('DEBUG    : ') + message)
