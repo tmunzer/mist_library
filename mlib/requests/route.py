@@ -15,6 +15,10 @@ def route(level, object_name):
             return orgs.channels
         elif object_name == "deviceprofiles":
             return orgs.deviceprofiles
+        elif object_name == "evpn_topologies":
+            return orgs.evpn_topologies
+        elif object_name == "gatewaytemplates":
+            return orgs.gatewaytemplates
         elif object_name == "info":
             return orgs.info
         elif object_name == "inventory":
@@ -27,6 +31,8 @@ def route(level, object_name):
             return orgs.mxedges
         elif object_name == "mxtunnels":
             return orgs.mxtunnels
+        elif object_name == "networks":
+            return orgs.networks
         elif object_name == "networktemplates":
             return orgs.networktemplates
         elif object_name == "psks":
@@ -35,6 +41,8 @@ def route(level, object_name):
             return orgs.rftemplates
         elif object_name == "secpolicies":
             return orgs.secpolicies
+        elif object_name == "services":
+            return orgs.services
         elif object_name == "settings":
             return orgs.settings
         elif object_name == "sitegroups":
@@ -51,6 +59,8 @@ def route(level, object_name):
             return orgs.subscriptions
         elif object_name == "templates":
             return orgs.templates
+        elif object_name == "vpns":
+            return orgs.vpns
         elif object_name == "webhooks":
             return orgs.webhooks
         elif object_name == "wlans":
