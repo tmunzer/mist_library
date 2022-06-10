@@ -46,133 +46,128 @@ def _backup_wlan_portal(org_id, site_id, wlans):
         wlan_id = wlan["id"]
         # wlan_id = wlan.id
         if site_id == None:
-            portal_file_name = "{0}_org_{1}_wlan_{2}.json".format(file_prefix, org_id, wlan_id)
-            portal_image = "{0}_org_{1}_wlan_{2}.png".format(file_prefix, org_id, wlan_id)
+            portal_file_name = f"{file_prefix}_org_{org_id}_wlan_{wlan_id}.json"
+            portal_image = f"{file_prefix}_org_{org_id}_wlan_{wlan_id}.png"
         else:
-            portal_file_name = "{0}_org_{1}_site_{2}_wlan_{3}.json".format(file_prefix, org_id, site_id, wlan_id)
-            portal_image = "{0}_org_{1}_site_{2}_wlan_{3}.png".format(file_prefix, org_id, site_id, wlan_id)
+            portal_file_name = f"{file_prefix}_org_{org_id}_site_{site_id}_wlan_{wlan_id}.json"
+            portal_image = f"{file_prefix}_org_{org_id}_site_{site_id}_wlan_{wlan_id}.png"
         if hasattr(wlan, "portal_template_url") and wlan.portal_template_url:
             try:
-                print("portal template for wlan {0} ".format(wlan_id).ljust(79, '.'), end="", flush=True)
+                print(f"portal template for wlan {wlan_id} ".ljust(79, '.'), end="", flush=True)
                 urllib.request.urlretrieve(wlan.portal_template_url, portal_file_name)
                 print("\033[92m\u2714\033[0m")
-                logging.info("{0}: Success".format(message))
+                logging.info(f"portal template for wlan {wlan_id}: Success")
             except:
-                logging.exception("{0}: Failure".format(message))
+                logging.exception(f"portal template for wlan {wlan_id}: Failure")
                 print('\033[31m\u2716\033[0m')
         if hasattr(wlan, "portal_image") and wlan.portal_image:
             try:
-                print("portal image for wlan {0} ".format(wlan_id).ljust(79, '.'), end="", flush=True)
+                print(f"portal image for wlan {wlan_id} ".ljust(79, '.'), end="", flush=True)
                 urllib.request.urlretrieve(wlan.portal_image, portal_image)
                 print("\033[92m\u2714\033[0m")
-                logging.info("{0}: Success".format(message))
+                logging.info("f{message}: Success")
             except:
-                logging.exception("{0}: Failure".format(message))
+                logging.exception(f"portal image for wlan {wlan_id}: Failure")
                 print('\033[31m\u2716\033[0m')
 
 
 def _do_backup(mist_session, backup_function, scope_id, message):
     try:
-        print("{0} ".format(message).ljust(79, '.'), end="", flush=True)
+        print(f"{message} ".ljust(79, '.'), end="", flush=True)
         data = backup_function(mist_session, scope_id)
         #data = backup_function(scope_id)
         if hasattr(data, "result") or "result" in data: 
             data = data["result"]
         print("\033[92m\u2714\033[0m")
-        logging.info("{0}: Success".format(message))
+        logging.info(f"{message}: Success")
         return data
     except:
-        logging.exception("{0}: Failure".format(message))
+        logging.exception(f"{message}: Failure")
         print('\033[31m\u2716\033[0m')
         return None
 
 
 def _backup_full_org(mist_session, org_id, org_name):
     print()
-    print(" Backuping Org {0} ".format(org_name).center(80, "_"))
+    print(f" Backuping Org {org_name} ".center(80, "_"))
     backup = {}
     backup["org"] = {"id": org_id}
 
     backup_function = mist_lib.requests.orgs.info.get
-    # backup_function = mist.orgs_api.get_org_info
     backup["org"]["data"] = _do_backup(mist_session, backup_function, org_id, "Org info")
 
     backup_function = mist_lib.requests.orgs.settings.get
-    # backup_function = mist.orgs_setting_api.get_org_settings
     backup["org"]["settings"] = _do_backup(mist_session, backup_function, org_id, "Org settings")
 
     backup_function = mist_lib.requests.orgs.webhooks.get
-    #backup_function = mist.orgs_webhooks_api.get_org_webhooks
     backup["org"]["webhooks"] = _do_backup(mist_session, backup_function, org_id, "Org webhooks")
 
     backup_function = mist_lib.requests.orgs.assetfilters.get
-    # backup_function = mist.orgs_asset_filters_api.get_org_asset_filters
     backup["org"]["assetfilters"] = _do_backup(mist_session, backup_function, org_id, "Org assetfilters")
 
     backup_function = mist_lib.requests.orgs.alarmtemplates.get
-    # backup_function = mist.orgs_alarm_templates_api.get_org_alarm_templates
     backup["org"]["alarmtemplates"] = _do_backup(mist_session, backup_function, org_id, "Org alarmtemplates")
 
     backup_function = mist_lib.requests.orgs.deviceprofiles.get
-    # backup_function = mist.orgs_device_profiles_api.get_org_device_profiles
     backup["org"]["deviceprofiles"] = _do_backup(mist_session, backup_function, org_id, "Org deviceprofiles" )
 
     backup_function = mist_lib.requests.orgs.mxclusters.get
-    # backup_function = mist.orgs_mx_clusters_api.get_org_mx_edge_clusters
     backup["org"]["mxclusters"] = _do_backup(mist_session, backup_function, org_id, "Org mxclusters")
 
     backup_function =  mist_lib.requests.orgs.mxtunnels.get
-    # backup_function = mist.orgs_mx_tunnels_api.get_org_mx_tunnels
     backup["org"]["mxtunnels"] = _do_backup(mist_session, backup_function, org_id, "Org mxtunnels")
 
     backup_function = mist_lib.requests.orgs.psks.get
-    #backup_function = mist.orgs_psks_api.get_org_psks
     backup["org"]["psks"] = _do_backup(mist_session, backup_function, org_id, "Org psks")
 
     backup_function = mist_lib.requests.orgs.rftemplates.get
-    # backup_function = mist.orgs_rf_templates_api.get_org_rf_templates
     backup["org"]["rftemplates"] = _do_backup(mist_session, backup_function, org_id, "Org rftemplates")
 
     backup_function = mist_lib.requests.orgs.networktemplates.get
-    # backup_function = mist.orgs_network_templates_api.get_org_network_templates
     backup["org"]["networktemplates"] = _do_backup(mist_session, backup_function, org_id, "Org networktemplates")
 
+    backup_function = mist_lib.requests.orgs.evpn_topologies.get
+    backup["org"]["evpn_topologies"] = _do_backup(mist_session, backup_function, org_id, "Org evpn_topologies")
+
+    backup_function = mist_lib.requests.orgs.services.get
+    backup["org"]["services"] = _do_backup(mist_session, backup_function, org_id, "Org services")
+
+    backup_function = mist_lib.requests.orgs.networks.get
+    backup["org"]["networks"] = _do_backup(mist_session, backup_function, org_id, "Org networks")
+
+    backup_function = mist_lib.requests.orgs.gatewaytemplates.get
+    backup["org"]["gatewaytemplates"] = _do_backup(mist_session, backup_function, org_id, "Org gatewaytemplates")
+
+    backup_function = mist_lib.requests.orgs.vpns.get
+    backup["org"]["vpns"] = _do_backup(mist_session, backup_function, org_id, "Org vpns")
+
     backup_function = mist_lib.requests.orgs.secpolicies.get
-    # backup_function = mist.orgs_secpolicies_api.get_org_sec_policies
     backup["org"]["secpolicies"] = _do_backup(mist_session, backup_function, org_id, "Org secpolicies")
 
     backup_function = mist_lib.requests.orgs.sitegroups.get
-    # backup_function = mist.orgs_sitegroups_api.get_org_site_groups
     backup["org"]["sitegroups"] = _do_backup(mist_session, backup_function, org_id, "Org sitegroups")
 
     backup_function = mist_lib.requests.orgs.ssos.get
-    # backup_function = mist.orgs_ssos_api.get_org_ssos
     backup["org"]["ssos"] = _do_backup(mist_session, backup_function, org_id, "Org ssos")
 
     backup_function = mist_lib.requests.orgs.ssoroles.get
-    # backup_function = mist.orgs_sso_roles_api.get_org_sso_roles
     backup["org"]["ssoroles"] = _do_backup(mist_session, backup_function, org_id, "Org ssoroles")
 
     backup_function = mist_lib.requests.orgs.templates.get
-    # backup_function = mist.orgs_templates_api.get_org_templates
     backup["org"]["templates"] = _do_backup(mist_session, backup_function, org_id, "Org templates")
 
     backup_function = mist_lib.requests.orgs.wlans.get
-    # backup_function = mist.orgs_wlans_api.get_org_wlans
     backup["org"]["wlans"] = _do_backup(mist_session, backup_function, org_id, "Org wlans")
 
     _backup_wlan_portal(org_id, None, backup["org"]["wlans"])
 
     backup_function = mist_lib.requests.orgs.wxrules.get
-    # backup_function = mist.orgs_wx_rules_api.get_org_wx_rules
     backup["org"]["wxrules"] = _do_backup(mist_session, backup_function, org_id, "Org wxrules")
 
     backup_function = mist_lib.requests.orgs.wxtags.get
-    # backup_function = mist.orgs_wx_tags_api.get_org_wx_tags
     backup["org"]["wxtags"] = _do_backup(mist_session, backup_function, org_id, "Org wxtags")
 
     backup_function = mist_lib.requests.orgs.wxtunnels.get
-    #backup_function = mist.orgs_wx_tunnels_api.get_org_wx_tunnels
     backup["org"]["wxtunnels"] = _do_backup(mist_session, backup_function, org_id, "Org wxtunnels")
 
 
@@ -184,7 +179,7 @@ def _backup_full_org(mist_session, org_id, org_name):
         site_name = site["name"]
         # site_id = site.id
         # site_name = site.name
-        print(" Backuping Site {0} ".format(site_name).center(80, "_"))
+        print(f" Backuping Site {site_name} ".center(80, "_"))
         backup_function = mist_lib.requests.sites.assets.get
         # backup_function = mist.sites_assets_api.get_site_assets
         assets = _do_backup(mist_session, backup_function, site_id, "Site assets")
@@ -275,14 +270,14 @@ def _backup_full_org(mist_session, org_id, org_name):
                     image_name = "%s_org_%s_site_%s_map_%s.png" % (file_prefix, org_id, site_id, xmap_id)
                     urllib.request.urlretrieve(url, image_name)
             print("\033[92m\u2714\033[0m")
-            logging.info("ORG {0} > SITE {1} > Backuping map images: Success".format(org_name, site_name))
+            logging.info(f"ORG {org_name} > SITE {site_name} > Backuping map images: Success")
         except:
-            logging.exception("ORG {0} > SITE {1} > Backuping map images: Failure".format(org_name, site_name))
+            logging.exception(f"ORG {org_name} > SITE {site_name} > Backuping map images: Failure")
             print('\033[31m\u2716\033[0m')
 
 
     print(" Backup Done ".center(80, "_"))
-    logger.info("ORG {0} > Backup done".format(org_name))
+    logger.info(f"ORG {org_name} > Backup done")
     return backup
 
 
@@ -292,9 +287,9 @@ def _save_to_file(backup_file, backup):
         with open(backup_file, "w") as f:
             json.dump(backup, f)
         print("\033[92m\u2714\033[0m")
-        logging.info("Backup saved to file {0} with success".format(backup_file))
+        logging.info(f"Backup saved to file {backup_file} with success")
     except:
-        logging.exception("Unable to save Backup to file {0}".format(backup_file))
+        logging.exception(f"Unable to save Backup to file {backup_file}")
         print('\033[31m\u2716\033[0m')
 
 
