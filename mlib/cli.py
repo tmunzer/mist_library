@@ -1,6 +1,7 @@
 import mlib as mist_lib
 import json
 from tabulate import tabulate
+import sys
 
 
 def _search_org(orgs, org_id):
@@ -36,7 +37,7 @@ def select_org(mist_session, allow_many=False):
     for privilege in mist_session.privileges:
         if privilege["scope"] == "site" and not privilege["org_id"] in org_ids:
             index = _search_org(orgs_with_sites, privilege["org_id"])
-            if index == None:
+            if index is None:
                 i+=1
                 org_ids.append(privilege["org_id"])
                 print("%s) %s (id: %s)" % (i, privilege["org_name"], privilege["org_id"]))
@@ -53,7 +54,7 @@ def select_org(mist_session, allow_many=False):
     if allow_many: resp = input("\r\nSelect a Org (0 to %s, \"0,1\" for sites 0 and 1, \"a\" for all, or q to exit): " %i)
     else: resp = input("\r\nSelect a Org (0 to %s, or q to exit): " %i)
     if resp == "q":
-        exit(0)
+        sys.exit(0)
     elif resp.lower() == "a" and allow_many:
         return org_ids
     else:            
@@ -81,7 +82,7 @@ def select_site(mist_session, org_id=None, allow_many=False):
     resp_ids=[]
     org_access = False
 
-    if org_id == None:
+    if org_id is None:
         org_id = select_org(mist_session)[0]
 
     for privilege in mist_session.privileges:
@@ -102,7 +103,7 @@ def select_site(mist_session, org_id=None, allow_many=False):
     else: resp = input("\r\nSelect a Site (0 to %s, or q to exit): " %i)
 
     if resp.lower() == "q":
-        exit(0)
+        sys.exit(0)
     elif resp.lower() == "a" and allow_many:
         return site_ids
     else:                
@@ -128,8 +129,8 @@ def show(response, fields=None):
     else:
         data = response
     print("")
-    if type(data) == list:  
-        if fields == None:
+    if type(data) is list:  
+        if fields is None:
             fields = "keys" 
         print(tabulate(data, headers=fields))
     elif type(data) == dict:
@@ -158,7 +159,7 @@ def save_to_csv(csv_file, array_data, fields, csv_separator=","):
         f.write('\r\n')
         for row in array_data:
             for field in row:
-                if field == None:
+                if field is None:
                     f.write("")
                 else:
                     f.write(field)

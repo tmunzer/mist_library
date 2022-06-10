@@ -17,8 +17,10 @@ def create(mist_session, site_id, map_settings):
 
 def add_image(mist_session, site_id, map_id, image_path):
     uri = "/api/v1/sites/%s/maps/%s/image" %(site_id, map_id)
-    files = {'file': open(image_path, 'rb').read()}
+    f= open(image_path, 'rb')
+    files = {'file': f.read()}
     resp = mist_session.mist_post_file(uri, site_id=site_id, files=files)
+    f.close()
     return resp
 
 def delete_image(mist_session, site_id, map_id):

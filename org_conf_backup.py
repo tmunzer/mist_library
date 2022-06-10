@@ -45,7 +45,7 @@ def _backup_wlan_portal(org_id, site_id, wlans):
     for wlan in wlans:
         wlan_id = wlan["id"]
         # wlan_id = wlan.id
-        if site_id == None:
+        if site_id is None:
             portal_file_name = f"{file_prefix}_org_{org_id}_wlan_{wlan_id}.json"
             portal_image = f"{file_prefix}_org_{org_id}_wlan_{wlan_id}.png"
         else:
@@ -300,7 +300,7 @@ def start_org_backup(mist_session, org_id, org_name):
             os.mkdir("org_backup")
         os.chdir("org_backup")
         if not os.path.exists(org_name):
-            os.mkdir(org_name)
+            os.makedirs(org_name)
         os.chdir(org_name)
 
         backup = _backup_full_org(mist_session, org_id, org_name)

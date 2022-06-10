@@ -17,10 +17,9 @@ csv_separator = ","
 privileges = []
 
 #### IMPORTS ####
-import mlib as mist_lib
-from tabulate import tabulate
-import mlib.cli as cli
 import sys
+import mlib as mist_lib
+import mlib.cli as cli
 import csv
 
 #### CONSTANTS ####
@@ -76,10 +75,9 @@ mist = mist_lib.Mist_Session("./session.py")
 
 org_id = cli.select_org(mist)
 
-if privileges == []:
-    define_privileges(org_id)
+define_privileges(org_id)
 import_admins(file_path, org_id)
 
 admins = mist_lib.requests.orgs.admins.get(mist, org_id)
 cli.show(admins)
-exit(0)
+sys.exit(0)

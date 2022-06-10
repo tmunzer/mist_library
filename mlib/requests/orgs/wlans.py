@@ -18,8 +18,10 @@ def delete(mist_session, org_id, wlan_id):
 
 def add_portal_image(mist_session, org_id, wlan_id, image_path):
     uri = "/api/v1/orgs/%s/wlans/%s/portal_image" %(org_id, wlan_id)
-    files = {'file': open(image_path, 'rb').read()}
+    f = open(image_path, 'rb')
+    files = {'file': f.read()}
     resp = mist_session.mist_post_file(uri, org_id=org_id, files=files)
+    f.close()
     return resp
 
 def delete_portal_image(mist_session, org_id, wlan_id):
@@ -73,13 +75,13 @@ def report(mist_session, org_id, fields):
                     temp.append(string)
                 elif field == "dynamic_vlan":
                     string = "Disabled"
-                    if wlan["dynamic_vlan"] != None and wlan["dynamic_vlan"]["enabled"] == True:
+                    if wlan.get("dynamic_vlan", {"enabled": False})["enabled"] == True:
                         string = "default: "
                         if "default_vlan_id" in wlan["dynamic_vlan"]:
                             string += "%s | others: " % wlan["dynamic_vlan"]["default_vlan_id"]
                         else:
                             string += "N/A | others: "
-                        if wlan["dynamic_vlan"]["vlans"] != None:
+                        if wlan["dynamic_vlan"]["vlans"]:
                             for vlan_num, vlan_val in enumerate(wlan["dynamic_vlan"]["vlans"]):
                                 string += "%s" % vlan_val
                                 if vlan_num < len(wlan["dynamic_vlan"]["vlans"]) - 1:

@@ -74,7 +74,7 @@ class Site:
             self.set_address(site_settings.address)
         
     def set_name(self, name):
-        if name != None:
+        if name is not None:
             self.name = name
             return None
         else: 

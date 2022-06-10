@@ -125,7 +125,7 @@ def get_google_tz(location):
 
 def use_google(address):
     data = get_google_geocoding(address)
-    if data["location"] != None:
+    if data["location"] is not None:
         data["tz"] = get_google_tz(data["location"])
         return data
     else:
@@ -199,7 +199,7 @@ def create_site(name, address):
     console.info("> Retrieving additional data")
     if google_api_key:
         data = use_google(site["address"])
-    if not google_api_key or data == None:
+    if not google_api_key or data is None:
         data = use_open(site["address"])
         payload = {
             "name": name,

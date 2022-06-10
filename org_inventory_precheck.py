@@ -30,7 +30,6 @@ org_id = ""
 import mlib as mist_lib
 from mlib.__debug import Console
 from mlib import cli
-from tabulate import tabulate
 import json
 import os.path
 console = Console(6)
@@ -220,7 +219,7 @@ def _precheck(mist_session, dest_org_id, backup, site_name = None):
 
             new_site_id = _find_new_site_id_by_name(site_id_dict, restore_site_name) 
             
-            if new_site_id == None:
+            if new_site_id is None:
                 if new_site_id in missing_ids["sites"]: 
                     missing_ids["sites"].append(new_site_id)
             else:              
@@ -237,7 +236,7 @@ def _select_backup_folder(folders):
         print(f"{i}) {folders[i]}")
         i += 1
     folder = None
-    while folder == None:
+    while folder is None:
         resp = input(f"Which backup do you want to restore (0-{i}, or x or exit)? ")
         if resp.lower() == "x":
             console.warning("Interruption... Exiting...")

@@ -21,7 +21,6 @@ r_types = [ "honeypot", "lan", "others", "spoof"]
 #### IMPORTS #####
 import mlib as mist_lib
 from mlib import cli
-from tabulate import tabulate
 mist = mist_lib.Mist_Session("./session.py")
 
 #### GLOBAL VARIABLES ####

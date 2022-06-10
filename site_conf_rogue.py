@@ -4,8 +4,7 @@ Written by Thomas Munzer (tmunzer@juniper.net)
 '''
 
 import mlib as mist_lib
-from tabulate import tabulate
-
+import sys
 #### PARAMETERS #####
 csv_separator = ","
 
@@ -22,7 +21,7 @@ def org_select():
             print("%s) %s (id: %s)" % (i, privilege["name"], privilege["org_id"]))
     resp = input("\r\nSelect an Org (0 to %s, or q to exit): " %i)
     if resp == "q":
-        exit(0)
+        sys.exit(0)
     else:
         try:
             resp_num = int(resp)
@@ -46,7 +45,7 @@ def site_select(org_id):
             print("%s) %s (id: %s)" % (i, privilege["name"], privilege["site_id"]))
     resp = input("\r\nSelect a Site (0 to %s, \"0,1\" for sites 0 and 1, a for all, or q to exit): " %i)
     if resp == "q":
-        exit(0)
+        sys.exit(0)
     elif resp == "a":
         return site_ids
     else:
@@ -76,4 +75,4 @@ settings.rogue.cli()
 for site_id in site_ids:
     mist_lib.requests.sites.settings.update(mist, site_id, settings.toJSON())
     print(mist_lib.requests.sites.settings.get(mist, site_id)['result']["rogue"])
-exit(0)
+sys.exit(0)

@@ -28,11 +28,10 @@ backup_directory = "./org_backup/"
 
 org_id = ""
 #### IMPORTS ####
-
+import sys
 import mlib as mist_lib
 from mlib.__debug import Console
 from mlib import cli
-from tabulate import tabulate
 import json
 import os.path
 
@@ -73,7 +72,7 @@ def _get_new_id(old_id, new_ids_dict):
 
 
 def _replace_id(old_ids_list, new_ids_dict):
-    if old_ids_list == None:
+    if old_ids_list is None:
         return None
     if old_ids_list == {}:
         return {}
@@ -109,8 +108,8 @@ def _clean_ids(data):
 
 
 def _common_restore(mist_session, org_name, site_name, level, level_id, object_type, data):
-    if "name" in data: object_name = "\"{0}\" ".format(data["name"])
-    elif "ssid" in data: object_name = "\"{0}\" ".format(data["ssid"])
+    if "name" in data: object_name = f"\"{data['name']}\" "
+    elif "ssid" in data: object_name = f"\"{data['ssid']}\" "
     else: object_name = ""
     if "id" in data:
         old_id = data["id"]
@@ -118,7 +117,7 @@ def _common_restore(mist_session, org_name, site_name, level, level_id, object_t
         old_id = None
     data = _clean_ids(data)
     new_id = None
-    print("Creating {0} {1}".format(object_type, object_name).ljust(79, "."), end="", flush=True)
+    print(f"Creating {object_type} {object_name}".ljust(79, "."), end="", flush=True)
     try:
         module = mist_lib.requests.route(level, object_type)
         result = module.create(mist_session, level_id, data)["result"]
@@ -147,7 +146,7 @@ def _wlan_restore(mist_session, org_name, site_name, level, level_id, data, old_
     wlan_id_dict.update(ids)
 
 def _wlan_restore_portal(mist_session, org_name, site_name,level_id, old_org_id, old_site_id, old_wlan_id, new_wlan_id, wlan_name): 
-        if old_site_id == None:
+        if old_site_id is None:
             portal_file_name = "%s_org_%s_wlan_%s.json" %(file_prefix, old_org_id, old_wlan_id)
             portal_image = "%s_org_%s_wlan_%s.png" %(file_prefix, old_org_id, old_wlan_id)
             module = mist_lib.requests.route("orgs", "wlans")
@@ -156,44 +155,44 @@ def _wlan_restore_portal(mist_session, org_name, site_name,level_id, old_org_id,
             portal_image = "%s_org_%s_site_%s_wlan_%s.png" %(file_prefix, old_org_id, old_site_id, old_wlan_id)
             module = mist_lib.requests.route("sites", "wlans")
 
-        if site_name: site_text = " SITE \"{0}\" >".format(site_name)
+        if site_name: site_text = f" SITE \"{site_name}\" >"
         else: site_text = "" 
         if os.path.isfile(portal_file_name):
-            print("ORG \"{0}\" >{1} Creating Portal Template for WLAN \"{2}\" ".format(org_name, site_text, wlan_name).ljust(79, "."), end="", flush=True)
+            print(f"ORG \"{org_name}\" >{site_text} Creating Portal Template for WLAN \"{wlan_name}\" ".ljust(79, "."), end="", flush=True)
             try:
                 template = open(portal_file_name, 'r')
             except:
                 print('\033[31m\u2716\033[0m')
-                print("Unable to open the template file \"{0}\" ".format(portal_file_name).ljust(79, ".") +'\033[31m\u2716\033[0m')
+                print(f"Unable to open the template file \"{portal_file_name}\" ".ljust(79, ".") +'\033[31m\u2716\033[0m')
                 return
             try:
                 template = json.load(template)
             except:
                 print('\033[31m\u2716\033[0m')
-                print("Unable to read the template file \"{0}\" ".format(portal_file_name).ljust(79, ".") +'\033[31m\u2716\033[0m')
+                print(f"Unable to read the template file \"{portal_file_name}\" ".ljust(79, ".") +'\033[31m\u2716\033[0m')
                 return
             try:
                 module.set_portal_template(mist_session, level_id, new_wlan_id, template)
                 print("\033[92m\u2714\033[0m")
             except:
                 print('\033[31m\u2716\033[0m')
-                print("Unable to upload the template \"{0}\" ".format(portal_file_name).ljust(79, ".") +'\033[31m\u2716\033[0m')
+                print(f"Unable to upload the template \"{portal_file_name}\" ".ljust(79, ".") +'\033[31m\u2716\033[0m')
                 
-        else: print("ORG \"{0}\" >{1} No Portal template found for WLAN \"{2}\" ".format(org_name, site_text, wlan_name).ljust(79, ".") + "\033[33m\u2731\033[0m")
+        else: print(f"ORG \"{org_name}\" >{site_text} No Portal template found for WLAN \"{wlan_name}\" ".ljust(79, ".") + "\033[33m\u2731\033[0m")
 
         if os.path.isfile(portal_image):
-            print("ORG \"{0}\" >{1} Uploading Portal image for WLAN \"{2}\" ".format(org_name, site_text, wlan_name).ljust(79, "."), end="", flush=True)
+            print(f"ORG \"{org_name}\" >{site_text} Uploading Portal image for WLAN \"{wlan_name}\" ".ljust(79, "."), end="", flush=True)
             try:            
                 module.add_portal_image(mist_session, level_id, new_wlan_id, portal_image)
                 print('\033[31m\u2716\033[0m')
             except:
                 print('\033[31m\u2716\033[0m')
-        else: print("No Portal Template image found for WLAN {0} ".format(wlan_name).ljust(79, ".") + "\033[33m\u2731\033[0m")
+        else: print(f"No Portal Template image found for WLAN {wlan_name} ".ljust(79, ".") + "\033[33m\u2731\033[0m")
 
 
 def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None):
     print()
-    print(" Deploying Org {0} Settings ".format(org_name).center(80, "_"))
+    print(f" Deploying Org {org_name} Settings ".center(80, "_"))
     ####  ORG MAIN  ####
     data = org["data"]
     old_org_id = data["id"]
@@ -326,7 +325,7 @@ def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None)
         settings = _clean_ids(data["settings"])
         if "site_id" in settings: del settings["site_id"]
         try:
-            print("ORG \"{0}\" > SITE {1} > Updating settings ".format(org_name, site["name"]).ljust(79, "."), end="", flush=True)
+            print(f"ORG \"{org_name}\" > SITE {site['name']} > Updating settings ".ljust(79, "."), end="", flush=True)
             mist_lib.requests.sites.settings.update(mist_session, new_site_id, settings)
             print("\033[92m\u2714\033[0m")
         except:
@@ -340,16 +339,16 @@ def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None)
 
                 old_map_id = next(iter(ids))
                 new_map_id = ids[old_map_id]
-                image_name = "%s_org_%s_site_%s_map_%s.png" %(file_prefix, old_org_id, old_site_id, old_map_id)
+                image_name = f"{file_prefix}_org_{old_org_id}_site_{old_site_id}_map_{old_map_id}.png"
                 if os.path.isfile(image_name):
-                    print("ORG \"{0}\" > SITE \"{1}\" > MAP \"{2}\" > Uploading image floorplan ".format(org_name, site["name"], sub_data["name"]).ljust(79, "."), end="", flush=True)
+                    print(f"ORG \"{org_name}\" > SITE \"{site['name']}\" > MAP \"{sub_data['name']}\" > Uploading image floorplan ".ljust(79, "."), end="", flush=True)
                     try:                
                         mist_lib.requests.sites.maps.add_image(mist_session, new_site_id, new_map_id, image_name)
                         print("\033[92m\u2714\033[0m")
                     except:
                         print('\033[31m\u2716\033[0m')
                 else:
-                    print("ORG \"{0}\" > SITE \"{1}\" > MAP \"{2}\" > No image found ".format(org_name, site["name"], sub_data["name"]).ljust(79, "."), end="", flush=True)
+                    print(f"ORG \"{org_name}\" > SITE \"{site['name']}\" > MAP \"{sub_data['name']}\" > No image found ".ljust(79, "."), end="", flush=True)
                     print("\033[33m\u2731\033[0m")
 
 
@@ -455,7 +454,7 @@ def _display_warning(message):
         resp = input(message)
     if not resp.lower()=="y":
         console.warning("Interruption... Exiting...")
-        exit(0)
+        sys.exit(0)
 
 def _select_backup_folder(folders):   
     i = 0
@@ -464,11 +463,11 @@ def _select_backup_folder(folders):
         print("%s) %s" %(i, folders[i]))
         i += 1
     folder = None
-    while folder == None:
-        resp = input("Which template/backup do you want to restore (0-{0}, or q to quit)? " .format(i - 1))
+    while folder is None:
+        resp = input(f"Which template/backup do you want to restore (0-{i - 1}, or q to quit)? " )
         if resp.lower() == "q":
             console.warning("Interruption... Exiting...")
-            exit(0)
+            sys.exit(0)
         try:
             respi = int(resp)
             if respi >= 0 and respi <= i:
@@ -535,7 +534,7 @@ def start_restore_org(mist_session, org_id, org_name, source_org_name, check_org
     if check_org_name and not custom_dest_org_name: _check_org_name(org_name)
     if not in_backup_folder: _go_to_backup_folder(source_org_name)
     print()
-    print("Loading template/backup file {0} ".format(backup_file).ljust(79, "."), end="", flush=True)
+    print(f"Loading template/backup file {backup_file} ".ljust(79, "."), end="", flush=True)
     try:
         with open(backup_file) as f:
             backup = json.load(f)
@@ -543,7 +542,7 @@ def start_restore_org(mist_session, org_id, org_name, source_org_name, check_org
     except: 
         print("Unable to load the template/bakup ".ljust(79, "."), end="", flush=True)
         print('\033[31m\u2716\033[0m')
-        exit(1)
+        sys.exit(1)
     finally:
         if backup:
             _display_warning("Are you sure about this? Do you want to import the configuration into the organization %s with the id %s (y/N)? " %(org_name, org_id))
@@ -560,12 +559,12 @@ def _create_org(mist_session):
             }
             try:
                 print()
-                print("Creating the organisation \"{0}\" in {1} ".format(custom_dest_org_name, mist_session.host).ljust(79, "."), end="", flush=True)
+                print(f"Creating the organisation \"{custom_dest_org_name}\" in {mist_session.host} ".ljust(79, "."), end="", flush=True)
                 print("\033[92m\u2714\033[0m")
                 print()
             except:
                 print('\033[31m\u2716\033[0m')
-                exit(10)
+                sys.exit(10)
             org_id = mist_lib.requests.orgs.orgs.create(mist_session, org)["result"]["id"]
             start_restore_org(mist_session, org_id, custom_dest_org_name, None, check_org_name=False, custom_dest_org_name=custom_dest_org_name)        
             break

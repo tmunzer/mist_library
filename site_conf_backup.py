@@ -30,7 +30,6 @@ import mlib as mist_lib
 import os
 import urllib.request
 from mlib import cli
-from tabulate import tabulate
 import json
 from mlib.__debug import Console
 console = Console(6)
@@ -38,7 +37,7 @@ console = Console(6)
 #### FUNCTIONS ####
 
 def _backup_obj(m_func, obj_type):
-    print("Backuping {0} ".format(obj_type).ljust(79, "."), end="", flush=True)
+    print(f"Backuping {obj_type} ".ljust(79, "."), end="", flush=True)
     try: 
         res = m_func["result"]
         print('\033[92m\u2714\033[0m')
@@ -51,22 +50,22 @@ def _backup_obj(m_func, obj_type):
 
 def _backup_wlan_portal(org_id, site_id, wlans):  
     for wlan in wlans:     
-        if site_id == None:
-            portal_file_name = "{0}_wlan_{1}.json".format(file_prefix, wlan["id"])
-            portal_image = "{0}_wlan_{1}.png".format(file_prefix, wlan["id"])
+        if not site_id:
+            portal_file_name = f"{file_prefix}_wlan_{wlan['id']}.json"
+            portal_image = f"{file_prefix}_wlan_{wlan['id']}.png"
         else:
-            portal_file_name = "{0}_site_{1}_wlan_{2}.json".format(file_prefix, site_id, wlan["id"]) 
-            portal_image = "{0}_site_{1}_wlan_{2}.png".format(file_prefix, site_id, wlan["id"])
+            portal_file_name = f"{file_prefix}_site_{site_id}_wlan_{wlan['id']}.json"
+            portal_image = f"{file_prefix}_site_{site_id}_wlan_{wlan['id']}.png"
         
         if "portal_template_url" in wlan: 
-            print("Backuping portal template for WLAN {0} ".format(wlan["ssid"]).ljust(79, "."), end="", flush=True)
+            print(f"Backuping portal template for WLAN {wlan['ssid']} ".ljust(79, "."), end="", flush=True)
             try:
                 urllib.request.urlretrieve(wlan["portal_template_url"], portal_file_name)
                 print('\033[92m\u2714\033[0m')
             except:
                 print('\033[31m\u2716\033[0m')
         if "portal_image" in wlan: 
-            print("Backuping portal image for WLAN {0} ".format(wlan["ssid"]).ljust(79, "."), end="", flush=True)
+            print(f"Backuping portal image for WLAN {wlan['ssid']} ".ljust(79, "."), end="", flush=True)
             try:
                 urllib.request.urlretrieve(wlan["portal_image"], portal_image)
                 print('\033[92m\u2714\033[0m')
@@ -76,7 +75,7 @@ def _backup_wlan_portal(org_id, site_id, wlans):
 
 def _backup_site(mist_session, site_id, site_name, org_id):
     print()
-    console.info("Backup: processing site {0} ...".format(site_name))
+    console.info(f"Backup: processing site {site_name} ...")
     print()
     site_backup = {
         "site": {
@@ -88,7 +87,6 @@ def _backup_site(mist_session, site_id, site_name, org_id):
             "maps": {}, 
             "psks": {}, 
             "rssizones":{},
-            "settings": {},
             "vbeacons": {}, 
             "webhooks": {},
             "wlans": {}, 
@@ -156,10 +154,10 @@ def _backup_site(mist_session, site_id, site_name, org_id):
 
     for xmap in site_backup["site"]["maps"]:
         if 'url' in xmap:
-            print("Backuping image for map {0} ".format(xmap["name"]).ljust(79, "."), end="", flush=True) 
+            print(f"Backuping image for map {xmap['name']} ".ljust(79, "."), end="", flush=True) 
             try:           
                 url = xmap["url"]
-                image_name = "{0}_site_{1}_map_{2}.png".format(file_prefix, site_id, xmap["id"])
+                image_name = f"{file_prefix}_site_{site_id}_map_{xmap['id']}.png"
                 urllib.request.urlretrieve(url, image_name)
                 print('\033[92m\u2714\033[0m')
             except:
@@ -168,7 +166,7 @@ def _backup_site(mist_session, site_id, site_name, org_id):
     return site_backup
 
 def _save_to_file(backup_file, backup):
-    print("Saving backup to {0} file...".format(backup_file).ljust(79, "."), end="", flush=True)
+    print(f"Saving backup to {backup_file} file...".ljust(79, "."), end="", flush=True)
     try:
         
         with open(backup_file, "w") as f:
@@ -179,7 +177,7 @@ def _save_to_file(backup_file, backup):
 
 def _goto_folder(folder_name):
     if not os.path.exists(folder_name):
-        os.mkdir(folder_name)
+        os.makedirs(folder_name)
     os.chdir(folder_name)
     
 
@@ -194,7 +192,7 @@ def start_site_backup(mist_session, org_id, org_name, site_ids):
         backup = _backup_site(mist_session, site_id, site_name, org_id)
         _save_to_file(backup_file, backup)
         print()
-        console.info("Backup done for site {0}".format(site_name))
+        console.info(f"Backup done for site {site_name}")
         print()
 
         os.chdir("..")

@@ -5,7 +5,7 @@ Github repository: https://github.com/tmunzer/Mist_library/
 
 import requests
 import json
-import weakref
+import sys
 from getpass import getpass
 
 from .__req import Req
@@ -52,7 +52,6 @@ class Mist_Session(Req):
         self.password = password
         self.first_name = ""
         self.last_name = ""
-        self.phone = ""
         self.via_sso = False
         self.privileges = Privileges([])
         self.session_expiry = ""
@@ -62,16 +61,17 @@ class Mist_Session(Req):
         self.csrftoken = ""
         self.apitoken = apitoken
         #Try to log in
-        if session_file != None:
+        if session_file is not None:
             self._restore_session(session_file)
-        if self.authenticated == False:
+        # deepcode ignore PythonSameEvalBinaryExpressiontrue: self.authenticated is updated by self._restore_session()
+        if self.authenticated is False:
             self._credentials(load_settings)
         # if successfuly authenticated
         if (self.get_authenticated()): self.getself()
         # if authentication failed, exit with error code 255
         else:
             console.alert("Authentication failed... Exiting...") 
-            exit(255)
+            sys.exit(255)
 
     def __str__(self):
         fields = ["email", "first_name", "last_name", "phone", "via_sso",
@@ -79,17 +79,17 @@ class Mist_Session(Req):
         string = ""
         for field in fields:
             if hasattr(self, field) and getattr(self, field) != "":
-                string += "%s:\r\n" % field
+                string += f"{field}:\r\n"
                 if field == "privileges":
                     string += Privileges(self.privileges).display()
                     string += "\r\n"
                 elif field == "tags":
                     for tag in self.tags:
-                        string += "  -  %s\r\n" % tag
+                        string += f"  -  {tag}\r\n"
                 elif field == "authenticated":
-                    string += "%s\r\n" % self.get_authenticated()
+                    string += f"{self.get_authenticated()}\r\n"
                 else:
-                    string += "%s\r\n" % (getattr(self, field))
+                    string += f"{getattr(self, field)}\r\n"
                 string += "\r\n"
         return string
 
@@ -106,8 +106,8 @@ class Mist_Session(Req):
                     elif "host" in line:
                         self.host = line["host"]
             console.info("Session restored.")
-            console.debug("Cookies > %s" % self.session.cookies)
-            console.debug("Host > %s" % self.host) 
+            console.debug(f"Cookies > {self.session.cookies}")
+            console.debug(f"Host > {self.host}") 
             self._set_authenticated(True)
             valid = self.getself()
             if valid == False:
@@ -124,21 +124,21 @@ class Mist_Session(Req):
             i=0
             print("\r\nAvailable Clouds:")
             for cloud in clouds:
-                print("%s) %s (host: %s)" % (i, cloud["short"], cloud["host"]))
+                print(f"{i}) {cloud['short']} (host: {cloud['host']})")
                 i+=1
-            resp = input("\r\nSelect a Cloud (0 to %s, or q to exit): " %i)
+            resp = input(f"\r\nSelect a Cloud (0 to {i}, or q to exit): ")
             if resp == "q":
-                exit(0)    
+                sys.exit(0)    
             elif resp == "i":
                 return "api.mistsys.com"
             else:
                 try:
                     resp_num = int(resp)
                     if resp_num >= 0 and resp_num <= i:
-                        return clouds[resp_num]["host"]                        
                         loop = False
+                        return clouds[resp_num]["host"]                        
                     else:
-                        print("Please enter a number between 0 and %s." %i)
+                        print(f"Please enter a number between 0 and {i}.")
                 except:
                     print("Please enter a number.")
 
@@ -231,20 +231,20 @@ class Mist_Session(Req):
             del self.session
 
     def get_authenticated(self):
-        return self.authenticated or self.apitoken != None
+        return self.authenticated or self.apitoken is not None
 
     def list_api_token(self):
-        uri = "https://%s/api/v1/self/apitokens" % self.host
+        uri = f"https://{self.host}/api/v1/self/apitokens"
         resp = self.session.get(uri)
         return resp
 
     def create_api_token(self):
-        uri = "https://%s/api/v1/self/apitokens" % self.host
+        uri = f"https://{self.host}/api/v1/self/apitokens"
         resp = self.session.post(uri)
         return resp
 
     def delete_api_token(self, token_id):
-        uri = "https://%s/api/v1/self/apitokens/%s" % (self.host, token_id)
+        uri = f"https://{self.host}/api/v1/self/apitokens/{token_id}"
         resp = self.session.delete(uri)
         return resp
 
@@ -262,23 +262,9 @@ class Mist_Session(Req):
             return True
         else:
             console.error("2FA authentication failed")
-            console.error("Error code: %s" % resp.status_code)
-            exit(255)
-            return False
-
-    def two_factor_authentication_token(self, two_factor):        
-        uri = "/api/v1/login/two_factor"
-        body = { "two_factor": two_factor }
-        resp = self.session.post(self._url(uri), json=body)
-        if resp.status_code == 200:
-            console.notice("2FA authentication successed")
-            self._set_authenticated(True)
-            return True
-        else:
-            console.error("2FA authentication failed")
-            console.error("Error code: %s" % resp.status_code)
-            exit(255)
-            return False        
+            console.error(f"Error code: {resp.status_code}")
+            sys.exit(255)
+            return False   
     
     def getself(self):
         """Retrieve information about the current user and store them in the current object.
@@ -286,20 +272,17 @@ class Mist_Session(Req):
         Return: none"""
         uri = "/api/v1/self"
         resp = self.mist_get(uri)
-        if resp != None and 'result' in resp:
+        if resp is not None and 'result' in resp:
             # Deal with 2FA if needed
             if (
-                "two_factor_required" in resp['result']
-                and resp['result']['two_factor_required'] == True
-                and "two_factor_passed" in resp['result']
-                and resp['result']['two_factor_passed'] == False
+                resp['result'].get('two_factor_required') is True
+                and resp['result'].get('two_factor_passed') is False
             ):
                 two_factor = input("Two Factor Authentication code:")
-                if (self.apitoken):
-                    if (self.two_factor_authentication_token(two_factor) == True):
-                        self.getself()
-                elif (self.two_factor_authentication(two_factor) == True):
-                    self.getself()
+                two_factor_ok = False
+                while not two_factor_ok:
+                    two_factor_ok = self.two_factor_authentication(two_factor)
+                self.getself()
             # Get details of the account 
             else:
                 for key, val in resp['result'].items():
@@ -314,15 +297,15 @@ class Mist_Session(Req):
         else:
             console.error("Authentication not valid...")
             print()
-            resp = input("Do you want to try with new credentials for %s (y/N)? " %(self.host))
+            resp = input(f"Do you want to try with new credentials for {self.host} (y/N)? " %())
             if resp.lower() == "y":
                 self._credentials(load_settings=False)
                 return self.getself()
             else:
-                exit(0)
+                sys.exit(0)
 
     def save(self, file_path="./session.py"):
-        if self.apitoken != None:
+        if self.apitoken is not None:
             console.error("API Token used. There is no cookies to save...")
         else:
             console.warning("This will save in clear text your session cookies!")
@@ -331,9 +314,9 @@ class Mist_Session(Req):
                 with open(file_path, 'w') as f:
                     for cookie in self.session.cookies:
                         cookie_json = json.dumps({"cookie":{"domain": cookie.domain, "name": cookie.name, "value": cookie.value}})
-                        f.write("%s\r\n" % cookie_json)
+                        f.write(f"{cookie_json}\r\n")
                     host = json.dumps({"host": self.host})
-                    f.write("%s\r\n" % host)
+                    f.write(f"{host}\r\n")
                 console.info("session saved.")
 
 def disp(data):

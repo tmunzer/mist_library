@@ -13,9 +13,9 @@ org_id = "" #optional
 import mlib as mist_lib
 import urllib.request
 from mlib import cli
-from tabulate import tabulate
 import json
 import os
+import sys
 
 from mlib.__debug import Console
 console = Console(6)
@@ -52,7 +52,7 @@ def _backup_site_id_dict(site):
                 _save_site_info(site)
             elif resp.lower == "n" or resp == "":
                 loop = False
-                exit(200)
+                sys.exit(200)
     else:
         _save_site_info(site)
 
@@ -73,7 +73,7 @@ def _backup_site_maps(mist_session, site):
                     ["maps_ids"][xmap["name"]] = xmap["id"]
                 elif resp.lower == "n" or resp == "":
                     loop = False
-                    exit(200)
+                    sys.exit(200)
         else:            
             maps_ids[xmap["name"]] = {"old_id": xmap["id"]}
     return maps_ids
@@ -124,7 +124,7 @@ def start_inventory_backup(mist_session, org_id, org_name, in_backup_folder=Fals
             os.mkdir("org_backup")
         os.chdir("org_backup")
         if not os.path.exists(org_name):
-            os.mkdir(org_name)
+            os.makedirs(org_name)
         os.chdir(org_name)
 
     _backup_inventory(mist_session, org_id, org_name)

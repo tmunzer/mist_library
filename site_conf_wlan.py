@@ -6,6 +6,7 @@ Github repository: https://github.com/tmunzer/Mist_library/
 import mlib as mist_lib
 from mlib import cli
 import json
+import sys
 from tabulate import tabulate
 #### PARAMETERS #####
 csv_separator = ","
@@ -20,12 +21,12 @@ def add_wlan():
             wlan  = json.load(f)       
     except:
         print("Error while loading the configuration file... exiting...")
-        exit(255)
+        sys.exit(255)
     try:
         wlan_json = json.dumps(wlan)
     except:
         print("Error while loading the wlan settings from the file... exiting...")
-        exit(255)
+        sys.exit(255)
     mist_lib.requests.sites.wlans.create(mist, site_id, wlan_json)
 
 def remove_wlan(site_id):
@@ -41,7 +42,7 @@ def remove_wlan(site_id):
         print()        
         resp = input("Which WLAN do you want to delete (0-%s, or q to quit)? " %i)
         if resp.lower() == "q":
-            exit(0)
+            sys.exit(0)
         else:
             try:
                 resp_num = int(resp)
@@ -84,7 +85,7 @@ while True:
     print()    
     resp = input("Choice (0-%s, q to quit): " %i)
     if resp.lower() == "q":
-        exit(0)
+        sys.exit(0)
     else:
         try:
             resp_num = int(resp)

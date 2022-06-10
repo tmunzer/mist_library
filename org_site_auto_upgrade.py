@@ -5,7 +5,7 @@ Github repository: https://github.com/tmunzer/Mist_library/
 
 #### PARAMETERS #####
 
-from tabulate import tabulate
+import sys
 from mlib import cli
 import mlib as mist_lib
 auto_site_assignment = {
@@ -64,7 +64,7 @@ def confirm_action(mist, site_ids):
         resp = input(
             "Are you sure you want to update the selected sites with the configuration above (y/N)?")
         if resp.lower() == 'n' or resp == "":
-            exit(0)
+            sys.exit(0)
         elif resp.lower() == "y":
             for site_id in site_ids:
                 get_site_setting(mist, site_id)

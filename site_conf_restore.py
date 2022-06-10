@@ -29,11 +29,10 @@ backup_directory = "./site_backup/"
 
 org_id = ""
 #### IMPORTS ####
-
+import sys
 import mlib as mist_lib
 from mlib.__debug import Console
 from mlib import cli
-from tabulate import tabulate
 import json
 import os.path
 
@@ -68,7 +67,7 @@ def _get_new_id(old_id, new_ids_dict):
 
 
 def _replace_id(old_ids_list, new_ids_dict):
-    if old_ids_list == None:
+    if not old_ids_list:
         return None
     if old_ids_list == {}:
         return {}
@@ -115,13 +114,13 @@ def _wlan_restore_portal_template(mist_session, site_id, wlan_id, portal_file_na
     if os.path.isfile(portal_file_name):
         print("Creating Portal Template for WLAN {0}".format(wlan_name).ljust(79, "."), end="", flush=True)
         try:
-            template = open(portal_file_name, 'r')
+            f = open(portal_file_name, 'r')
         except:
             print('\033[31m\u2716\033[0m')
             print("Unable to open the template file {0} ".format(portal_file_name).ljust(79, ".") +'\033[31m\u2716\033[0m')
             return
         try:
-            template = json.load(template)
+            template = json.load(f)            
         except:
             print('\033[31m\u2716\033[0m')
             print("Unable to read the template file {0}".format(portal_file_name).ljust(79, ".") +'\033[31m\u2716\033[0m')
@@ -254,7 +253,7 @@ def _restore_site(mist_session, org_id, org_name, site_name, backup):
     new_site_id = _create_obj(mist_lib.requests.orgs.sites.create(mist_session, org_id, new_site), "Site", site_name)
     if not new_site_id:
         console.error("Unable to create the new site... Exiting...")
-        exit(1)
+        sys.exit(1)
 
     ### set site settings ###
     try:        
@@ -358,7 +357,7 @@ def _display_warning(message):
         resp = input(message)
     if not resp.lower()=="y":
         console.warning("Interruption... Exiting...")
-        exit(0)
+        sys.exit(0)
 
 def _select_backup_folder(folders):   
     i = 0
@@ -366,11 +365,11 @@ def _select_backup_folder(folders):
         print("{0}) {1}".format(i, folders[i]))
         i += 1
     folder = None
-    while folder == None:
+    while folder is None:
         resp = input("Please select a folder (0-{0}, or q to quit)? ".format(i))
         if resp.lower() == "q":
             console.warning("Interruption... Exiting...")
-            exit(0)
+            sys.exit(0)
         try:
             respi = int(resp)
             if respi >= 0 and respi <= i:
@@ -440,7 +439,7 @@ def _check_site_exists(org_id, site_name_to_create):
             response = input("What do you want to do: (r)eplace, set a (n)ew name or (a)bort? ")
             if response.lower() == "a":
                 console.warning("Interruption... Exiting...")
-                exit(0)
+                sys.exit(0)
             elif response.lower() == "r":
                 console.warning("I'm still working on this part... Please try with a later version...")
             elif response.lower() == "n":
@@ -465,7 +464,7 @@ def start_restore_org(mist_session, org_id, org_name, check_org_name=True, in_ba
     except: 
         print("Unable to load the template/bakup!", end="", flush=True)
         print('\033[31m\u2716\033[0m')
-        exit(1)
+        sys.exit(1)
     finally:
         if backup:
             print()

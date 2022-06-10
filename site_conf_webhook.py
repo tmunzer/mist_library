@@ -4,8 +4,7 @@ Github repository: https://github.com/tmunzer/Mist_library/
 '''
 
 import mlib as mist_lib
-from tabulate import tabulate
-
+import sys
 #### PARAMETERS #####
 csv_separator = ","
 
@@ -21,7 +20,7 @@ def multichoices(list_title="", entries_list="", allow_all=False):
         print("%s) %s (id: %s)" % (i, entry["name"], entry["id"]))
     resp = input("\r\nSelect a Site (0 to %s, \"0,1\" for sites 0 and 1, a for all, or q to exit): " %i)
     if resp == "q":
-        exit(0)
+        sys.exit(0)
     elif resp == "a":
         return site_ids
     else:
@@ -51,7 +50,7 @@ def org_select():
             print("%s) %s (id: %s)" % (i, privilege["name"], privilege["org_id"]))
     resp = input("\r\nSelect an Org (0 to %s, or q to exit): " %i)
     if resp == "q":
-        exit(0)
+        sys.exit(0)
     else:
         try:
             resp_num = int(resp)
@@ -75,7 +74,7 @@ def site_select(org_id):
         print("%s) %s (id: %s)" % (i, site["name"], site["id"]))
     resp = input("\r\nSelect a Site (0 to %s, \"0,1\" for sites 0 and 1, a for all, or q to exit): " %i)
     if resp == "q":
-        exit(0)
+        sys.exit(0)
     elif resp == "a":
         return site_ids
     else:

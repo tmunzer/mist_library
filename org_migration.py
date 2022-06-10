@@ -9,7 +9,6 @@ from mlib import cli
 import org_conf_backup
 import org_conf_deploy
 import org_inventory_backup
-import org_inventory_backup
 import org_inventory_precheck
 import org_inventory_restore
 
@@ -68,7 +67,7 @@ def _create_org(mist_session):
                 print()
             except:
                 print('\033[31m\u2716\033[0m')
-                exit(10)
+                sys.exit(10)
             org_id = mist_lib.requests.orgs.orgs.create(mist_session, org)["result"]["id"]
             return (mist_session, org_id, custom_dest_org_name)
 

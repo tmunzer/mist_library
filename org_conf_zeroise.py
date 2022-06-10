@@ -40,9 +40,8 @@ ids_to_not_delete = []
 #### IMPORTS ####
 import mlib as mist_lib
 from mlib import cli
-from tabulate import tabulate
-import json
 from mlib.__debug import Console
+import sys
 console = Console(6)
 
 #### FUNCTIONS ####
@@ -62,7 +61,7 @@ def display_warning(message):
         resp = input(message)
     if not resp.lower()=="y":
         console.warning("User Interruption... Exiting...")
-        exit(0)
+        sys.exit(0)
 
 def start_delete(org_id):
     object_names = [
