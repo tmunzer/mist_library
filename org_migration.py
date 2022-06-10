@@ -2,7 +2,7 @@
 Written by Thomas Munzer (tmunzer@juniper.net)
 Github repository: https://github.com/tmunzer/Mist_library/
 '''
-
+import sys
 import mlib as mist_lib
 from mlib import cli
 
@@ -21,7 +21,7 @@ def _backup_org(source_mist_session, source_org_id, source_org_name):
         _print_new_step("Backuping SOURCE Org Configuration")
         org_conf_backup.start_org_backup(source_mist_session, source_org_id, source_org_name)    
     except: 
-        exit(255)
+        sys.exit(255)
 
 def _restore_org(dest_mist_session, dest_org_id, dest_org_name, source_org_name, check_org_name=False, in_backup_folder=False):
     _print_new_step("Deploying Configuration to the DESTINATION Org")
@@ -48,7 +48,7 @@ def _restore_inventory(dest_mist_session, dest_org_id, dest_org_name, source_mis
 def _print_new_step(message):
     print()
     print("".center(80,"#"))
-    print("#", "{0} ".format(message).center(76), "#")
+    print("#", f"{message} ".center(76), "#")
     print("".center(80,"#"))
     print()
 
@@ -63,7 +63,7 @@ def _create_org(mist_session):
             }
             try:
                 print()
-                print("Creating the organisation \"{0}\" in {1} ".format(custom_dest_org_name, mist_session.host).ljust(79, "."), end="", flush=True)
+                print(f"Creating the organisation \"{custom_dest_org_name}\" in {mist_session.host} ".ljust(79, "."), end="", flush=True)
                 print("\033[92m\u2714\033[0m")
                 print()
             except:

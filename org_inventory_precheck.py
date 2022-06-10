@@ -75,15 +75,15 @@ def _result(backup):
         if len(missing_ids["sites"]) > 0:
             console.error("Missing sites:")
             for missing_site in missing_ids["sites"]:
-                console.error("    - %s" %(missing_site))
+                console.error(f"    - {missing_site}")
         if len(missing_ids["maps"]) > 0:
             console.error("Missing maps:")
             for missing_map in missing_ids["maps"]:
-                console.error("    - %s" %(missing_map))
+                console.error(f"    - {missing_map}" )
         if len(missing_ids["deviceprofiles"]) > 0:
             console.error("Missing deviceprofiles:")
             for missing_deviceprofile in missing_ids["deviceprofiles"]:
-                console.error("    - %s" %(missing_deviceprofile))
+                console.error(f"    - {missing_deviceprofile}" )
     print("")
 ## site id
 def _link_sites_ids(mist_session, org_id, sites_ids):
@@ -150,12 +150,12 @@ def _find_new_object_id_by_old_id(object_name, object_id_dict, old_id):
 def _missing_old_id_object(object_name, object_id_dict, old_id):
     for obj in object_id_dict:
         if object_id_dict[obj]["old_id"] == old_id:
-            console.error("Unable to find the new id for the %s with old id %s" %(obj, old_id))
-            missing_ids[object_name].append("%s (old_id id: %s" %(obj, old_id))
+            console.error(f"Unable to find the new id for the {obj} with old id {old_id}")
+            missing_ids[object_name].append(f"{obj} (old_id id: {old_id}")
 
 
 def _missing_name_object(object_name, object_id_dict, name):
-    missing_ids[object_name].append("%s (old id: %s)" %(name, object_id_dict[name]["old_id"]))
+    missing_ids[object_name].append(f"{name} (old id: {object_id_dict[name]['old_id']})")
 
 def _clean_ids(data):
     if "org_id" in data:
@@ -168,17 +168,17 @@ def _clean_ids(data):
 
 ## restore
 def _restore_device_image(org_id, site_id, device_id, i):
-    image_name = "%s_org_%s_device_%s_image_%s.png" %(file_prefix, org_id, device_id, i)    
+    image_name = f"{file_prefix}_org_{org_id}_device_{device_id}_image_{i}.png"
     if os.path.isfile(image_name):
-        console.info("Image %s will be restored to device %s" %(image_name, device_id))
+        console.info(f"Image {image_name} will be restored to device {device_id}")
         return True
     else:
-        console.debug("Image %s not found for device id %s" %(image_name, device_id))
+        console.debug(f"Image {image_name} not found for device id {device_id}")
         return False
 
 def _restore_devices(new_site_id, site_name, deviceprofile_id_dict, map_id_dict, devices):
     for device in devices:
-        console.info("SITE %s > DEVICE SERIAL %s > Updating ids" %(site_name, device["serial"]))      
+        console.info(f"SITE {site_name} > DEVICE SERIAL {device['serial']} > Updating ids")      
 
         device = _clean_ids(device)
 
@@ -190,14 +190,14 @@ def _restore_devices(new_site_id, site_name, deviceprofile_id_dict, map_id_dict,
 
         device["site_id"] = new_site_id  
 
-        console.info("SITE %s > DEVICE SERIAL %s > Restoration in progress" %(site_name, device["serial"]))   
+        console.info(f"SITE {site_name} > DEVICE SERIAL {device['serial']} > Restoration in progress")   
         i=1
         image_exists = True
-        console.info("SITE %s > DEVICE SERIAL %s > Images Restoration in progress" %(site_name, device["serial"]))  
+        console.info(f"SITE {site_name} > DEVICE SERIAL {device['serial']} > Images Restoration in progress")  
         while image_exists:
             image_exists = _restore_device_image(org_id, new_site_id, device["id"], i)
             i+=1
-        console.info("SITE %s > DEVICE SERIAL %s > Restoration finished" %(site_name, device["serial"]))  
+        console.info(f"SITE {site_name} > DEVICE SERIAL {device['serial']} > Restoration finished")
 
 #### SCRIPT ENTRYPOINT ####
 
@@ -216,7 +216,7 @@ def _precheck(mist_session, dest_org_id, backup, site_name = None):
     for restore_site_name in backup["sites_names"]:
         if not site_name or restore_site_name == site_name:
             site = backup["sites"][restore_site_name]
-            console.notice("Restoring Site %s" %(restore_site_name))
+            console.notice(f"Restoring Site {restore_site_name}")
 
             new_site_id = _find_new_site_id_by_name(site_id_dict, restore_site_name) 
             
@@ -227,18 +227,18 @@ def _precheck(mist_session, dest_org_id, backup, site_name = None):
                 map_id_dict = _link_maps_id(mist_session, new_site_id, site["maps_ids"]) 
                 print(map_id_dict)
                 _restore_devices(new_site_id, restore_site_name, deviceprofile_id_dict, map_id_dict, site["devices"])
-        console.notice("Site %s restored" %(restore_site_name))
+        console.notice(f"Site {restore_site_name} restored")
     _result(backup)
 
 def _select_backup_folder(folders):   
     i = 0
     print("Available backups:")
     while i < len(folders):
-        print("%s) %s" %(i, folders[i]))
+        print(f"{i}) {folders[i]}")
         i += 1
     folder = None
     while folder == None:
-        resp = input("Which backup do you want to restore (0-%s, or x or exit)? "  %i)
+        resp = input(f"Which backup do you want to restore (0-{i}, or x or exit)? ")
         if resp.lower() == "x":
             console.warning("Interruption... Exiting...")
         try:
@@ -246,7 +246,7 @@ def _select_backup_folder(folders):
             if respi >= 0 and respi <= i:
                 folder = folders[respi]
             else:
-                print("The entry value \"%s\" is not valid. Please try again...")
+                print(f"The entry value \"{respi}\" is not valid. Please try again...")
         except:
             print("Only numbers are allowed. Please try again...")
     os.chdir(folder)
@@ -259,7 +259,7 @@ def _go_to_backup_folder(source_org_name=None):
         if os.path.isdir(os.path.join("./", entry)):
             folders.append(entry)
     if source_org_name in folders:
-        print("Backup found for organization %s." %(source_org_name))
+        print(f"Backup found for organization {source_org_name}.")
         loop = True
         while loop:
             resp = input("Do you want to use this backup (y/n)? ")
@@ -273,7 +273,7 @@ def _go_to_backup_folder(source_org_name=None):
                 loop = False    
                 _select_backup_folder(folders)
     else:
-        print("Backup folder for organization %s not found. Please select a folder in the following list." %(source_org_name))
+        print(f"Backup folder for organization {source_org_name} not found. Please select a folder in the following list.")
         _select_backup_folder(folders)
 
 def start_precheck(mist_session, org_id, org_name=None, source_org_name=None, site_name=None, in_backup_folder=False): 
@@ -282,7 +282,7 @@ def start_precheck(mist_session, org_id, org_name=None, source_org_name=None, si
     #try:
     with open(backup_file) as f:
         backup = json.load(f)
-    console.info("File %s loaded succesfully." %backup_file)
+    console.info(f"File {backup_file} loaded succesfully.")
     _precheck(mist_session, org_id, backup["org"], site_name)
     #except:
     #    return 255

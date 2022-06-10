@@ -41,7 +41,7 @@ def _save_site_info(site):
 
 def _backup_site_id_dict(site):
     if site["name"] in backup["org"]["sites"]:
-        print("Two sites are using the same name %s!" %(site["name"]))
+        print(f"Two sites are using the same name {site['name']}!")
         print("This will cause issue during the backup and the restore process.")
         print("I recommand you to rename one of the two sites.")
         loop = True
@@ -61,7 +61,7 @@ def _backup_site_maps(mist_session, site):
     maps_ids = {}
     for xmap in backup_maps:
         if xmap["name"] in maps_ids:
-            print("Two maps are using the same name %s in the same site %s!" %(xmap["name"], site["name"]))
+            print(f"Two maps are using the same name {xmap['name']} in the same site {site['name']}!")
             print("This will cause issue during the backup and the restore process.")
             print("I recommand you to rename one of the two maps.")
             loop = True
@@ -80,23 +80,23 @@ def _backup_site_maps(mist_session, site):
 
 def _backup_inventory(mist_session, org_id, org_name=None):
     backup["org"]["id"] = org_id
-    console.notice("ORG %s > Backup processing..." %(org_name))
+    console.notice(f"ORG {org_name} > Backup processing..." )
 
-    console.info("ORG %s > Backuping inventory" %(org_name))
+    console.info(f"ORG {org_name} > Backuping inventory" )
     inventory = mist_lib.requests.orgs.inventory.get(mist_session, org_id)["result"]
     for data in inventory:
         if not data["magic"] == "":
             backup["org"]["inventory"].append({"serial": data["serial"], "magic": data["magic"]})
 
-    console.info("ORG %s > Backuping device profiles ids" %(org_name))
+    console.info(f"ORG {org_name} > Backuping device profiles ids" )
     deviceprofiles = mist_lib.requests.orgs.deviceprofiles.get(mist_session, org_id)["result"]
     for deviceprofile in deviceprofiles:
        backup["org"]["deviceprofiles_ids"][deviceprofile["name"]] = {"old_id": deviceprofile["id"]}
 
-    console.info("ORG %s > Backuping devices" %(org_name))
+    console.info(f"ORG {org_name} > Backuping devices" )
     sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)['result']
     for site in sites:
-        console.info("ORG %s > SITE %s > Backuping devices" %(org_name, site["name"]))
+        console.info(f"ORG {org_name} > SITE {site['name']} > Backuping devices" )
         _backup_site_id_dict(site)
         maps_ids = _backup_site_maps(mist_session, site)
         backup["org"]["sites"][site["name"]]["maps_ids"] = maps_ids
@@ -104,14 +104,14 @@ def _backup_inventory(mist_session, org_id, org_name=None):
         backup["org"]["sites"][site["name"]]["devices"] = devices
         for device in devices:
             i = 1
-            while "image%s_url"%i in device:
-                url = device["image%s_url"%i]
-                image_name = "%s_org_%s_device_%s_image_%s.png" %(file_prefix, org_id, device["serial"], i)
+            while f"image{i}_url" in device:
+                url = device[f"image{i}_url"]
+                image_name = f"{file_prefix}_org_{org_id}_device_{device['serial']}_image_{i}.png"
                 urllib.request.urlretrieve(url, image_name)
                 i+=1
 
     
-    console.notice("ORG %s > Backup done" %(org_name))
+    console.notice(f"ORG {org_name} > Backup done" )
 
 def _save_to_file(backup_file, backup):
     print("saving to file...")
@@ -130,7 +130,7 @@ def start_inventory_backup(mist_session, org_id, org_name, in_backup_folder=Fals
     _backup_inventory(mist_session, org_id, org_name)
     _save_to_file(backup_file, backup)
 
-    print("Inventory from organisation %s with id %s saved!" %(org_name, org_id))
+    print(f"Inventory from organisation {org_name} with id {org_id} saved!" )
     
 
 def start(mist_session, org_id):
