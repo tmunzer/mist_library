@@ -33,12 +33,12 @@ class Req:
             else: 
                 result = multi_pages_result
             error = ""
-            console.debug("Response Status Code: %s" % resp.status_code)
+            console.debug(f"Response Status Code: {resp.status_code}")
         else:
             result = ""
             error = resp.json()
-            console.debug("Response Status Code: %s" % resp.status_code)
-            console.debug("Response: %s" % error)
+            console.debug(f"Response Status Code: {resp.status_code}")
+            console.debug(f"Response: {error}")
         return {"result": result, "status_code": resp.status_code, "error": error, "uri":uri}
 
     def mist_get(self, uri, org_id="", site_id="", query={}, page=None, limit=None):
@@ -50,11 +50,11 @@ class Req:
             html_query = "?"
             if not query == {}:
                 for query_param in query:
-                    html_query += "%s=%s&" %(query_param, query[query_param])
-            if limit: html_query += "limit=%s&" %limit
-            if page: html_query += "page=%s" %page
+                    html_query += f"{query_param}={query[query_param]}&"
+            if limit: html_query += f"limit={limit}&"
+            if page: html_query += f"page={page}"
             url += html_query
-            console.debug("Request > GET %s" % url)
+            console.debug(f"Request > GET {url}")
             resp = self.session.get(url)
             resp.raise_for_status()
         except HTTPError as http_err:
@@ -82,8 +82,8 @@ class Req:
         try: 
             url = self._url(uri)
             headers = {'Content-Type': "application/json"}
-            console.debug("Request > POST %s" % url)
-            console.debug("Request body: \r\n%s" % body)
+            console.debug(f"Request > POST {url}")
+            console.debug(f"Request body: \r\n{body}")
             if type(body) == str:
                 resp = self.session.post(url, data=body, headers=headers)
             elif type(body) == dict:
@@ -107,8 +107,8 @@ class Req:
         Return: HTTP response"""
         try:
             url = self._url(uri)
-            console.debug("Request > PUT %s" % url)
-            console.debug("Request body: \r\n%s" % body)
+            console.debug(f"Request > PUT {url}")
+            console.debug(f"Request body: \r\n{body}")
             if type(body) == str:
                 resp = self.session.put(url, data=body)
             elif type(body) == dict:
@@ -130,7 +130,7 @@ class Req:
         Return: HTTP response"""
         try: 
             url = self._url(uri)
-            console.debug("Request > DELETE %s" % url)
+            console.debug(f"Request > DELETE {url}")
             resp = self.session.delete(url)
             resp.raise_for_status()
         except HTTPError as http_err:
@@ -147,7 +147,7 @@ class Req:
         Return: HTTP response"""
         try:                 
             url = self._url(uri)
-            console.debug("Request > POST %s" % url)
+            console.debug(f"Request > POST {url}")
             resp = self.session.post(url, files=files)
             resp.raise_for_status()
         except HTTPError as http_err:

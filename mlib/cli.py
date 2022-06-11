@@ -51,8 +51,8 @@ def select_org(mist_session, allow_many=False):
             else:
                 orgs_with_sites[index]["sites"].append({"site_id": privilege["site_id"], "name": privilege["name"]})
 
-    if allow_many: resp = input("\r\nSelect a Org (0 to %s, \"0,1\" for sites 0 and 1, \"a\" for all, or q to exit): " %i)
-    else: resp = input("\r\nSelect a Org (0 to %s, or q to exit): " %i)
+    if allow_many: resp = input("\r\nSelect an Org (0 to %s, \"0,1\" for sites 0 and 1, \"a\" for all, or q to exit): " %i)
+    else: resp = input("\r\nSelect an Org (0 to %s, or q to exit): " %i)
     if resp == "q":
         sys.exit(0)
     elif resp.lower() == "a" and allow_many:

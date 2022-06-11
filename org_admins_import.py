@@ -70,14 +70,15 @@ def import_admins(file_path, org_id):
         print("Error while opening the CSV file... Aborting")
 
 #### SCRIPT ENTRYPOINT ####
-file_path = sys.argv[1]
-mist = mist_lib.Mist_Session("./session.py")
+if __name__ == "__main__":
+    file_path = sys.argv[1]
+    mist = mist_lib.Mist_Session("./session.py")
 
-org_id = cli.select_org(mist)
+    org_id = cli.select_org(mist)
 
-define_privileges(org_id)
-import_admins(file_path, org_id)
+    define_privileges(org_id)
+    import_admins(file_path, org_id)
 
-admins = mist_lib.requests.orgs.admins.get(mist, org_id)
-cli.show(admins)
-sys.exit(0)
+    admins = mist_lib.requests.orgs.admins.get(mist, org_id)
+    cli.show(admins)
+    sys.exit(0)
