@@ -58,16 +58,21 @@ mxcluster_id_dict = {}
 wlan_id_dict = {}
 alarmtemplate_id_dict = {}
 networktemplate_id_dict = {}
+evpn_topology_id_dict = {}
+service_id_dict = {}
+network_id_dict = {}
+gatewaytemplate_id_dict = {}
+vpn_id_dict = {}
 
 #### FUNCTIONS ####
 
 def _get_new_id(old_id, new_ids_dict):
     if old_id in new_ids_dict:
         new_id = new_ids_dict[old_id]
-        console.debug("Replacing id %s with id %s" %(old_id, new_id))
+        console.debug(f"Replacing id {old_id} with id {new_id}")
         return new_id
     else:
-        console.debug("Unable to replace id %s" %old_id)
+        console.debug(f"Unable to replace id {old_id}")
         return None
 
 
@@ -84,7 +89,7 @@ def _replace_id(old_ids_list, new_ids_dict):
             new_ids_list.append(_get_new_id(old_id, new_ids_dict))
         return new_ids_list
     else:
-        console.error("Unable to replace ids: %s" % old_ids_list)
+        console.error(f"Unable to replace ids: {old_ids_list}")
 
 def _clean_ssorole_privileges(privilege, org_id):
     if "org_id" in privilege: 
@@ -147,12 +152,12 @@ def _wlan_restore(mist_session, org_name, site_name, level, level_id, data, old_
 
 def _wlan_restore_portal(mist_session, org_name, site_name,level_id, old_org_id, old_site_id, old_wlan_id, new_wlan_id, wlan_name): 
         if old_site_id is None:
-            portal_file_name = "%s_org_%s_wlan_%s.json" %(file_prefix, old_org_id, old_wlan_id)
-            portal_image = "%s_org_%s_wlan_%s.png" %(file_prefix, old_org_id, old_wlan_id)
+            portal_file_name = f"{file_prefix}_org_{old_org_id}_wlan_{old_wlan_id}.json"
+            portal_image = f"{file_prefix}_org_{old_org_id}_wlan_{old_wlan_id}.png"
             module = mist_lib.requests.route("orgs", "wlans")
         else:
-            portal_file_name = "%s_org_%s_site_%s_wlan_%s.json" %(file_prefix, old_org_id, old_site_id, old_wlan_id) 
-            portal_image = "%s_org_%s_site_%s_wlan_%s.png" %(file_prefix, old_org_id, old_site_id, old_wlan_id)
+            portal_file_name = f"{file_prefix}_org_{old_org_id}_site_{old_site_id}_wlan_{old_wlan_id}.json"
+            portal_image = f"{file_prefix}_org_{old_org_id}_site_{old_site_id}_wlan_{old_wlan_id}.png"
             module = mist_lib.requests.route("sites", "wlans")
 
         if site_name: site_text = f" SITE \"{site_name}\" >"
@@ -278,6 +283,31 @@ def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None)
             ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'networktemplates', data)
             networktemplate_id_dict.update(ids)
 
+    if "evpn_topologies" in org:
+        for data in org["evpn_topologies"]:
+            ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'evpn_topologies', data)
+            evpn_topology_id_dict.update(ids)
+
+    if "services" in org:
+        for data in org["services"]:
+            ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'services', data)
+            service_id_dict.update(ids)
+
+    if "networks" in org:
+        for data in org["networks"]:
+            ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'networks', data)
+            network_id_dict.update(ids)
+
+    if "vpns" in org:
+        for data in org["vpns"]:
+            ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'vpns', data)
+            vpn_id_dict.update(ids)
+
+    if "gatewaytemplates" in org:
+        for data in org["gatewaytemplates"]:
+            ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'gatewaytemplates', data)
+            gatewaytemplate_id_dict.update(ids)
+
     if "sitegroups" in org:
         for data in org["sitegroups"]:
             if "site_ids" in data: del data["site_ids"]
@@ -304,14 +334,17 @@ def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None)
 
     ####  SITES LOOP  ####
     for data in org["sites"]:
-        ####  SITES MAIN  ####
         site = data["data"]
         old_site_id = site["id"]
+        print(f" Deploying Site {site['name']} ".center(80, "_"))
+        ####  SITES MAIN  ####
         if "rftemplate_id" in site:
             site["rftemplate_id"] = _replace_id(site["rftemplate_id"], rftemplate_id_dict)
         old_site_id = site["id"]
         if "networktemplate_id" in site:
             site["networktemplate_id"] = _replace_id(site["networktemplate_id"], networktemplate_id_dict)
+        if "gatewaytemplate_id" in site:
+            site["gatewaytemplate_id"] = _replace_id(site["gatewaytemplate_id"], gatewaytemplate_id_dict)
         if "secpolicy_id" in site:
             site["secpolicy_id"] = _replace_id(site["secpolicy_id"], secpolicy_id_dict)
         if "alarmtemplate_id" in site:
@@ -460,7 +493,7 @@ def _select_backup_folder(folders):
     i = 0
     print("Available Templates/Backups:")
     while i < len(folders):
-        print("%s) %s" %(i, folders[i]))
+        print(f"{i}) {folders[i]}")
         i += 1
     folder = None
     while folder is None:
@@ -473,12 +506,15 @@ def _select_backup_folder(folders):
             if respi >= 0 and respi <= i:
                 folder = folders[respi]
             else:
-                print("The entry value \"%s\" is not valid. Please try again...")
+                print(f"The entry value \"{respi}\" is not valid. Please try again...")
         except:
             print("Only numbers are allowed. Please try again...")
     os.chdir(folder)
 
 def _go_to_backup_folder(source_org_name=None):
+    print()
+    print(" Source Backup/Template ".center(80, "-"))
+    print()
     os.chdir(os.getcwd())
     os.chdir(backup_directory)
     folders = []
@@ -486,7 +522,7 @@ def _go_to_backup_folder(source_org_name=None):
         if os.path.isdir(os.path.join("./", entry)):
             folders.append(entry)
     if source_org_name in folders:
-        print("Template/Backup found for organization %s." %(source_org_name))
+        print(f"Template/Backup found for organization {source_org_name}.")
         loop = True
         while loop:
             resp = input("Do you want to use this template/backup (y/n)? ")
@@ -500,25 +536,8 @@ def _go_to_backup_folder(source_org_name=None):
                 loop = False    
                 _select_backup_folder(folders)
     else:
-        print("Template/Backup folder for organization %s not found. Please select a folder in the following list." %(source_org_name))
+        print(f"No Template/Backup found for organization {source_org_name}. Please select a folder in the following list.")
         _select_backup_folder(folders)
-
-def _print_warning():
-    print(""" 
-
-__          __     _____  _   _ _____ _   _  _____ 
-\ \        / /\   |  __ \| \ | |_   _| \ | |/ ____|
- \ \  /\  / /  \  | |__) |  \| | | | |  \| | |  __ 
-  \ \/  \/ / /\ \ |  _  /| . ` | | | | . ` | | |_ |
-   \  /\  / ____ \| | \ \| |\  |_| |_| |\  | |__| |
-    \/  \/_/    \_\_|  \_\_| \_|_____|_| \_|\_____|
-
-This script is still in BETA. It won't hurt your original
-organization, but the restoration may partially fail. 
-It's your responsability to validate the importation result!
-
-
-""")
 
 def _check_org_name(org_name):
     while True:
@@ -545,7 +564,7 @@ def start_restore_org(mist_session, org_id, org_name, source_org_name, check_org
         sys.exit(1)
     finally:
         if backup:
-            _display_warning("Are you sure about this? Do you want to import the configuration into the organization %s with the id %s (y/N)? " %(org_name, org_id))
+            _display_warning(f"Are you sure about this? Do you want to import the configuration into the organization {org_name} with the id {org_id} (y/N)? ")
             _restore_org(mist_session, org_id, org_name, backup["org"], custom_dest_org_name)
             print()
             console.info("Importation process finished...")
@@ -571,6 +590,9 @@ def _create_org(mist_session):
 
 
 def start(mist_session):
+    print()
+    print(" Destination Org ".center(80, "-"))
+    print()
     while True:
         res = input("Do you want to create a (n)ew organisation or (r)estore to an existing one? ")
         if res.lower()=="r":
