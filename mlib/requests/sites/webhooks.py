@@ -25,3 +25,19 @@ def delete(mist_session, site_id, webhook_id):
     uri = "/api/v1/sites/%s/webhooks/%s" % (site_id, webhook_id)
     resp = mist_session.mist_delete(uri, site_id=site_id)
     return resp
+
+
+def report(mist_session, site_id, fields):
+    webhooks = get(mist_session, site_id)
+    result = []
+    for webhook in webhooks['result']:
+        temp = []
+        for field in fields:
+            if field not in webhook:
+                temp.append("")
+            elif field == "topics":
+                temp.append(", ".join(webhook['topics']))            
+            else:
+                temp.append("%s" % webhook[field])
+        result.append(temp)
+    return result
