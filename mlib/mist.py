@@ -246,7 +246,6 @@ class Mist_Session(Req):
         console.debug("in  > _set_authenticated")
         if value == True:
             self.authenticated = True
-            print(self.session.cookies)
             if not self.apitoken:
                 try: 
                     cookies_ext = next(item["cookies_ext"] for item in clouds if item["host"] == self.host)
