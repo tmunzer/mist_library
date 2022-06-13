@@ -20,3 +20,17 @@ def get(mist_session, org_id, page=1, limit=100):
     return resp
 
 
+def report(mist_session, site_id, fields):
+    webhooks = get(mist_session, site_id)
+    result = []
+    for webhook in webhooks['result']:
+        temp = []
+        for field in fields:
+            if field not in webhook:
+                temp.append("")
+            elif field == "topics":
+                temp.append(", ".join(webhook['topics']))            
+            else:
+                temp.append("%s" % webhook[field])
+        result.append(temp)
+    return result
