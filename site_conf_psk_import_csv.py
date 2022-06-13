@@ -26,8 +26,9 @@ import csv
 
 def import_psk(site_id, psks):
     print("")
-    print("________________________________________")
-    print(f"Starting PSKs import for site {site_id}")
+    print("".center(80, "-"))
+    print(f"Starting PSKs import for site {site_id}".center(80, "-"))
+    print("")
     for psk in psks:     
         print(f'PSK {psk["username"]}')
         pskObj = mist_lib.models.sites.psks.Psk()
@@ -36,9 +37,10 @@ def import_psk(site_id, psks):
         print(pskObj.toJSON())
 
 def read_csv(csv_file): 
-    print("")   
-    print("________________________________________")
-    print(f"Opening CSV file {csv_file}")
+    print("")
+    print("".center(80, "-"))
+    print(f"Opening CSV file {csv_file}".center(80, "-"))
+    print("")
     psks = []
     try:
         with open(sys.argv[1], 'r') as my_file:
@@ -54,8 +56,9 @@ def read_csv(csv_file):
 
 def list_psks(site_id):
     print("")
-    print("________________________________________")
-    print(f"List of current PSKs for site {site_id}")
+    print("".center(80, "-"))
+    print(f"List of current PSKs for site {site_id}".center(80, "-"))
+    print("")
     psks = mist_lib.requests.sites.psks.get(mist, site_id)['result']
     cli.show(psks)
 
@@ -63,7 +66,8 @@ def list_psks(site_id):
 
 mist = mist_lib.Mist_Session()
 site_ids = cli.select_site(mist, allow_many=True)
-print("__________________")
+print("")
+print("".center(80, "-"))
 print(site_ids)
 
 psks = read_csv(sys.argv[1])
