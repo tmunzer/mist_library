@@ -1,112 +1,147 @@
 '''
 Written by Thomas Munzer (tmunzer@juniper.net)
 Github repository: https://github.com/tmunzer/Mist_library/
+
+This script can be used to list/add/delete Webhooks from Org/Site
 '''
 
 import mlib as mist_lib
+from mlib import cli
+import json
+from tabulate import tabulate
 import sys
 #### PARAMETERS #####
 csv_separator = ","
 
 
+def add_webhook(WEBHOOKS, scope_id):
+    webhook_file = input(
+        "Path to the webhook configuration JSON file (default: ./site_conf_webhook_settings.json): ")
+    if webhook_file == "":
+        webhook_file = "./site_conf_webhook_settings.json"
+    try:
+        with open(webhook_file, "r") as f:
+            webhook = json.load(f)
+    except:
+        print("Error while loading the configuration file... exiting...")
+        sys.exit(255)
+    try:
+        webhook_json = json.dumps(webhook)
+    except:
+        print("Error while loading the webhook settings from the file... exiting...")
+        sys.exit(255)
+    WEBHOOKS.create(mist, scope_id, webhook_json)
 
-def multichoices(list_title="", entries_list="", allow_all=False):
-    i=-1
-    ids = []
-    print("\r\n%s" % list_title)
-    for entry in entries_list:        
-        i+=1
-        ids.append(entry["id"])
-        print("%s) %s (id: %s)" % (i, entry["name"], entry["id"]))
-    resp = input("\r\nSelect a Site (0 to %s, \"0,1\" for sites 0 and 1, a for all, or q to exit): " %i)
-    if resp == "q":
-        sys.exit(0)
-    elif resp == "a":
-        return site_ids
-    else:
-        try:
-            resp = resp.split(",")
-            resp_list = []
-            for num in resp:
-                resp_num = int(num)
+
+def remove_webhook(WEBHOOKS, scope_id):
+    webhooks = WEBHOOKS.get(mist, scope_id)['result']
+    resp = -1
+    while True:
+        print()
+        print("Available webhooks:")
+        i = 0
+        for webhook in webhooks:
+            i += 1
+            print(f"{i}) {webhook['ssid']} (id: {webhook['id']})")
+        print()
+        resp = input(
+            f"Which webhook do you want to delete (0-{i-1}, or q to quit)? ")
+        if resp.lower() == "q":
+            sys.exit(0)
+        else:
+            try:
+                resp_num = int(resp)
                 if resp_num >= 0 and resp_num <= i:
-                    resp_list.append(site_ids[resp_num])
+                    webhook = webhooks[resp_num]
+                    print()
+                    confirmation = input(
+                        f"Are you sure you want to delete webhook {webhook['ssid']} (y/N)? ")
+                    if confirmation.lower() == "y":
+                        break
                 else:
-                    print("%s is not part of the possibilities." % resp_num)
-                    return site_select(org_id)
-            return resp_list
-        except:
-            print("Only numbers are allowed.")
-            return site_select(org_id)
+                    print(f"{resp_num} is not part of the possibilities.")
+            except:
+                print("Only numbers are allowed.")
+    WEBHOOKS.delete(mist, scope_id, webhook["id"])
 
-def org_select():
-    i=-1
-    org_ids=[]
-    print("\r\nAvailable organizations:")
-    for privilege in mist.privileges:
-        if privilege["scope"] == "org":
-            i+=1
-            org_ids.append(privilege["org_id"])
-            print("%s) %s (id: %s)" % (i, privilege["name"], privilege["org_id"]))
-    resp = input("\r\nSelect an Org (0 to %s, or q to exit): " %i)
-    if resp == "q":
+
+def display_webhook(WEBHOOKS, scope_id):
+    fields = ["id", "enabled", "name", "url", "type", "topics", "verify_cert"]
+    site_webhooks = WEBHOOKS.report(mist, scope_id, fields)
+    print(tabulate(site_webhooks, fields))
+
+
+def select_action(WEBHOOKS, scope_id):
+    while True:
+        actions = ["ADD Webhook", "DELETE Webhook", "LIST Webhooks"]
+        print("What do you want to do:")
+        i = -1
+        for action in actions:
+            i += 1
+            print(f"{i}) {action}")
+        print()
+        resp = input(f"Choice (0-{i}, q to quit): ")
+        if resp.lower() == "q":
+            sys.exit(0)
+        else:
+            try:
+                resp_num = int(resp)
+                if resp_num >= 0 and resp_num <= len(actions):
+                    print()
+                    print(" CURRENT Webhooks ".center(80, "-"))
+                    display_webhook(WEBHOOKS, scope_id)
+                    print()
+                    if actions[resp_num] == "ADD Webhook":
+                        add_webhook(WEBHOOKS)
+                        print()
+                        print(" Webhooks AFTER change ".center(80, "-"))
+                        display_webhook(WEBHOOKS, scope_id)
+
+                    elif actions[resp_num] == "DELETE Webhook":
+                        remove_webhook(WEBHOOKS, scope_id)
+                        print()
+                        print(" Webhooks AFTER change ".center(80, "-"))
+                        display_webhook(WEBHOOKS, scope_id)
+                    break
+                else:
+                    print(f"{resp_num} is not part of the possibilities.")
+            except:
+                print("Only numbers are allowed.")
+
+
+def site_webhook():
+    site_id = cli.select_site(mist, allow_many=False)[0]
+    select_action(mist_lib.requests.sites.webhooks, site_id)
+
+
+def org_webhook():
+    org_id = cli.select_org(mist)[0]
+    select_action(mist_lib.requests.orgs.webhooks,  org_id)
+
+
+mist = mist_lib.Mist_Session("./session.py")
+while True:
+    actions = ["ORG Webhooks", "SITE Webhooks"]
+    print("What do you want to do:")
+    i = -1
+    for action in actions:
+        i += 1
+        print(f"{i}) {action}")
+    print()
+    resp = input(f"Choice (0-{i}, q to quit): ")
+    if resp.lower() == "q":
         sys.exit(0)
     else:
-        try:
-            resp_num = int(resp)
-            if resp_num >= 0 and resp_num <= i:
-                return org_ids[resp_num]
+        # try:
+        resp_num = int(resp)
+        if resp_num >= 0 and resp_num <= len(actions):
+            if actions[resp_num] == "ORG Webhooks":
+                org_webhook()
+                break
+            elif actions[resp_num] == "SITE Webhooks":
+                site_webhook()
+                break
             else:
-                print("Please enter a number between 0 and %s." %i)
-                return org_select()
-        except:
-            print("Please enter a number.")
-            return org_select()
-
-def site_select(org_id):
-    i=-1
-    site_ids=[]
-    site_choices = mist_lib.requests.orgs.sites.get(mist, org_id)['result']
-    print("\r\nAvailable sites:")
-    for site in site_choices:        
-        i+=1
-        site_ids.append(site["id"])
-        print("%s) %s (id: %s)" % (i, site["name"], site["id"]))
-    resp = input("\r\nSelect a Site (0 to %s, \"0,1\" for sites 0 and 1, a for all, or q to exit): " %i)
-    if resp == "q":
-        sys.exit(0)
-    elif resp == "a":
-        return site_ids
-    else:
-        try:
-            resp = resp.split(",")
-            resp_list = []
-            for num in resp:
-                resp_num = int(num)
-                if resp_num >= 0 and resp_num <= i:
-                    resp_list.append(site_ids[resp_num])
-                else:
-                    print("%s is not part of the possibilities." % resp_num)
-                    return site_select(org_id)
-            return resp_list
-        except:
-            print("Only numbers are allowed.")
-            return site_select(org_id)
-
-mist = mist_lib.Mist_Session()
-
-org_id = org_select()
-site_ids = site_select(org_id)
-
-
-wh = mist_lib.models.sites.webhooks.Webhook()
-#wh.cli()
-#print(wh)
-
-for site_id in site_ids:
-#    mist_lib.requests.sites.webhooks.create(mist, site_id, wh.toJSON())
-#    print(mist_lib.requests.sites.webhooks.get(mist, site_id)['result'])
-
-
-    for webhook in mist_lib.requests.sites.webhooks.get(mist, site_id)["result"]:
-        mist_lib.requests.sites.webhooks.delete(mist, webhook['site_id'], webhook['id'])
+                print(f"{resp_num} is not part of the possibilities.")
+        # except:
+        #     print("Only numbers are allowed.")
