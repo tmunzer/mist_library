@@ -4,9 +4,9 @@ Github repository: https://github.com/tmunzer/Mist_library/
 '''
 
 #### IMPORTS #####
-import rlcompleter as __rlcompleter
+
 import mlib.cli as cli
-from tabulate import tabulate
+import mlib
 
 #### FUNCTIONS #####
 def help():
@@ -40,13 +40,13 @@ def get_org_id():
     org_id = cli.select_org(session)
     print("")
     print("Selected org id: %s" %org_id)
-    return org_id
+    return org_id[0]
 
 def get_site_id(org_id=None):
     site_id = cli.select_site(session, org_id=org_id)
     print("")
     print("Selected site id: %s" %site_id)
-    return site_id
+    return site_id[0]
 
 def show(response):
     cli.show(response)
