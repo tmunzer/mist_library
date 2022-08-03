@@ -65,7 +65,8 @@ class Mist_Session(Req):
     """Class managing REST login and requests"""
 
     def __init__(self, session_file=None, load_settings=True, email="", password="", apitoken=None, host=None):    
-        header()
+        if load_settings:
+            header()
         # user and https session parameters
         self.host = host
         self.email = email
@@ -88,16 +89,17 @@ class Mist_Session(Req):
             self._load_settings()
         
         if not self.host: self.host = self._select_cloud()
-
+        if self.apitoken:
+            self._set_api_token(self.apitoken)
         # deepcode ignore PythonSameEvalBinaryExpressiontrue: self.authenticated is updated by self._restore_session()
-        if not self.authenticated:
+        elif not self.authenticated:
             self._login()
+        
         # if successfuly authenticated
         if self.get_authenticated(): self.getself()
         # if authentication failed, exit with error code 255
         else:
             sys.exit(255)
-        footer()
 
 
     def __str__(self):
@@ -175,18 +177,20 @@ class Mist_Session(Req):
                 print("\r\nPlease enter a number.")
                 return self._select_cloud()
 
+    def _set_api_token(self, apitoken):
+        self.apitoken = apitoken
+        self.session.headers.update({'Authorization': "Token " + self.apitoken})
+        self._set_authenticated(True)
+
     def _load_settings(self):  
         console.debug("in  > _load_settings")
-        self.session = requests.session()
         try:
             from config import credentials
             console.info("Config file loaded")
             self.host = credentials.get("host")
 
             if "apitoken" in credentials: 
-                self.apitoken = credentials["apitoken"]
-                self.session.headers.update({'Authorization': "Token " + self.apitoken})
-                self._set_authenticated(True)
+                self._set_api_token(credentials["apitoken"])
                 console.info("Using API Token from config file")
             elif "email" in credentials: 
                 self.email = credentials["email"]

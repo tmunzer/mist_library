@@ -26,15 +26,17 @@ def select_org(mist_session, allow_many=False):
     i=-1
     org_ids = []
     resp_ids=[]
+    data = mist_session.privileges
+    data=sorted(data, key=lambda x: x["name"].lower())
     print("\r\nAvailable organizations:")
-    for privilege in mist_session.privileges:
+    for privilege in data:
         if privilege["scope"] == "org" and not privilege["org_id"] in org_ids:
             i+=1
             org_ids.append(privilege["org_id"])
             print("%s) %s (id: %s)" % (i, privilege["name"], privilege["org_id"]))
 
     orgs_with_sites = []
-    for privilege in mist_session.privileges:
+    for privilege in data:
         if privilege["scope"] == "site" and not privilege["org_id"] in org_ids:
             index = _search_org(orgs_with_sites, privilege["org_id"])
             if index is None:
@@ -94,6 +96,9 @@ def select_site(mist_session, org_id=None, allow_many=False):
     if site_choices == [] or org_access == True:
         site_choices = mist_lib.requests.orgs.sites.get(mist_session, org_id)['result']
 
+
+    
+    site_choices=sorted(site_choices, key=lambda x: x["name"].lower())
     print("\r\nAvailable sites:")
     for site in site_choices:        
         i+=1
