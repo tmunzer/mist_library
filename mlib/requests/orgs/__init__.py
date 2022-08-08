@@ -5,6 +5,7 @@ from . import channels
 from . import deviceprofiles
 from . import evpn_topologies
 from . import gatewaytemplates
+from . import hubprofiles
 from . import info
 from . import inventory
 from . import licenses

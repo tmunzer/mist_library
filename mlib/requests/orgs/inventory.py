@@ -1,18 +1,18 @@
 ########## INVENTORY ############
 
 def get(mist_session, org_id, page=1, limit=100):
-    uri = "/api/v1/orgs/%s/inventory" % org_id
+    uri = f"/api/v1/orgs/{org_id}/inventory" 
     resp = mist_session.mist_get(uri, org_id=org_id, page=page, limit=limit)
     return resp
 
 def add(mist_session, org_id, serials):
-    uri = "/api/v1/orgs/%s/inventory" % org_id
+    uri = f"/api/v1/orgs/{org_id}/inventory" 
     body = serials
     resp = mist_session.mist_post(uri, org_id=org_id, body=body)
     return resp
 
 def delete_multiple(mist_session, org_id, serials=[], macs=[]):
-    uri = "/api/v1/orgs/%s/inventory" % org_id
+    uri = f"/api/v1/orgs/{org_id}/inventory" 
     body = {
         "op": "delete",
         "serials": serials,
@@ -22,7 +22,7 @@ def delete_multiple(mist_session, org_id, serials=[], macs=[]):
     return resp
 
 def unassign(mist_session, org_id, macs):
-    uri = "/api/v1/orgs/%s/inventory" % org_id
+    uri = f"/api/v1/orgs/{org_id}/inventory" 
     body = {
         "op": "unassign",
         "macs": macs,
@@ -31,7 +31,7 @@ def unassign(mist_session, org_id, macs):
     return resp
 
 def assign_macs_to_site(mist_session, org_id, site_id, macs):
-    uri = "/api/v1/orgs/%s/inventory" % org_id
+    uri = f"/api/v1/orgs/{org_id}/inventory" 
     if type(macs) == str:
         macs = [macs]
     body = {

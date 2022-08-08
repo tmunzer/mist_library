@@ -1,15 +1,15 @@
 
 def create(mist_session, org_id, psk):
-    uri = "/api/v1/orgs/%s/psks" % org_id
+    uri = f"/api/v1/orgs/{org_id}/psks" 
     resp = mist_session.mist_post(uri, org_id=org_id, body=psk)
     return resp
 
 
 def get(mist_session, org_id, psk_id="", name="", ssid="", page=1, limit=100):
-    uri = "/api/v1/orgs/%s/psks" % org_id
+    uri = f"/api/v1/orgs/{org_id}/psks" 
     query={}
     if psk_id != "":
-        uri +="/%s" % psk_id
+        uri +=f"/{psk_id}" 
     if name != "":
         query["name"] = name
     if  ssid != "":
@@ -18,14 +18,14 @@ def get(mist_session, org_id, psk_id="", name="", ssid="", page=1, limit=100):
     return resp 
 
 def delete(mist_session, org_id, psk_id="", name="", ssid=""):
-    uri = "/api/v1/orgs/%s/psks" % org_id
+    uri = f"/api/v1/orgs/{org_id}/psks" 
     if psk_id != "":
-        uri +="/%s" % psk_id
+        uri +=f"/{psk_id}" 
     if org_id != "" and ssid != "":
-        uri += "?name=%s&ssid=%s" % (name, ssid)
+        uri += f"?name={name}&ssid={ssid}" 
     elif name != "":
-        uri += "?name=%s" % name
+        uri += f"?name={name}" 
     elif  ssid != "":
-        uri += "?ssid=%s" % ssid
+        uri += f"?ssid={ssid}" 
     resp = mist_session.mist_delete(uri, org_id=org_id)
     return resp 
