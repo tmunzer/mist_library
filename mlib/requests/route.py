@@ -1,8 +1,26 @@
 from . import sites
 from . import orgs
+from . import const
 
 def route(level, object_name):
-    if level == "orgs":
+    if level == "const":
+        if object_name == "alarms":
+            return const.alarms
+        elif object_name == "applications":
+            return const.applications
+        elif object_name == "aps":
+            return const.aps
+        elif object_name == "channels":
+            return const.channels
+        elif object_name == "events":
+            return const.events
+        elif object_name == "mxedges":
+            return const.mxedges
+        elif object_name == "sites":
+            return const.sites
+        elif object_name == "traffic":
+            return const.traffic
+    elif level == "orgs":
         if object_name == "":
             return orgs
         elif object_name == "admins":
@@ -11,8 +29,6 @@ def route(level, object_name):
             return orgs.alarmtemplates
         elif object_name == "assetfilters":
             return orgs.assetfilters
-        elif object_name == "channels":
-            return orgs.channels
         elif object_name == "deviceprofiles":
             return orgs.deviceprofiles
         elif object_name == "evpn_topologies":
