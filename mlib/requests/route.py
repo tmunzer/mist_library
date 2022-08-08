@@ -19,6 +19,8 @@ def route(level, object_name):
             return orgs.evpn_topologies
         elif object_name == "gatewaytemplates":
             return orgs.gatewaytemplates
+        elif object_name == "hubprofiles":
+            return orgs.hubprofiles
         elif object_name == "info":
             return orgs.info
         elif object_name == "inventory":

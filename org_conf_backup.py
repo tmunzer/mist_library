@@ -138,6 +138,9 @@ def _backup_full_org(mist_session, org_id, org_name):
     backup_function = mist_lib.requests.orgs.gatewaytemplates.get
     backup["org"]["gatewaytemplates"] = _do_backup(mist_session, backup_function, org_id, "Org gatewaytemplates")
 
+    backup_function = mist_lib.requests.orgs.hubprofiles.get
+    backup["org"]["hubprofiles"] = _do_backup(mist_session, backup_function, org_id, "Org hubprofiles")
+
     backup_function = mist_lib.requests.orgs.vpns.get
     backup["org"]["vpns"] = _do_backup(mist_session, backup_function, org_id, "Org vpns")
 

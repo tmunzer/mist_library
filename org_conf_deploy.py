@@ -61,6 +61,7 @@ networktemplate_id_dict = {}
 evpn_topology_id_dict = {}
 service_id_dict = {}
 network_id_dict = {}
+hubprofile_id_dict = {}
 gatewaytemplate_id_dict = {}
 vpn_id_dict = {}
 
@@ -302,6 +303,11 @@ def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None)
         for data in org["vpns"]:
             ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'vpns', data)
             vpn_id_dict.update(ids)
+
+    if "hubprofiles" in org:
+        for data in org["hubprofiles"]:
+            ids = _common_restore(mist_session, org_name, None, 'orgs', org_id, 'hubprofiles', data)
+            hubprofile_id_dict.update(ids)
 
     if "gatewaytemplates" in org:
         for data in org["gatewaytemplates"]:
