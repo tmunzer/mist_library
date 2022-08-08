@@ -19,4 +19,8 @@ def get(mist_session, org_id, page=1, limit=100):
     resp = mist_session.mist_get(uri, org_id=org_id, page=page, limit=limit)
     return resp
 
+def get_by_id(mist_session, org_id, assetfilter_id):
+    uri = f"/api/v1/orgs/{org_id}/assetfilters/{assetfilter_id}" 
+    resp = mist_session.mist_get(uri, org_id=org_id)
+    return resp
 

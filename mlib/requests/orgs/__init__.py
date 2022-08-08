@@ -1,7 +1,6 @@
 from . import admins
 from . import alarmtemplates
 from . import assetfilters
-from . import channels
 from . import deviceprofiles
 from . import evpn_topologies
 from . import gatewaytemplates

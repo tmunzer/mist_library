@@ -21,7 +21,7 @@ def delete(mist_session, org_id, psk_id="", name="", ssid=""):
     uri = f"/api/v1/orgs/{org_id}/psks" 
     if psk_id != "":
         uri +=f"/{psk_id}" 
-    if org_id != "" and ssid != "":
+    elif name != "" and ssid != "":
         uri += f"?name={name}&ssid={ssid}" 
     elif name != "":
         uri += f"?name={name}" 
@@ -29,3 +29,9 @@ def delete(mist_session, org_id, psk_id="", name="", ssid=""):
         uri += f"?ssid={ssid}" 
     resp = mist_session.mist_delete(uri, org_id=org_id)
     return resp 
+
+
+def get_by_id(mist_session, org_id, psk_id):
+    uri = f"/api/v1/orgs/{org_id}/psks/{psk_id}" 
+    resp = mist_session.mist_get(uri, org_id=org_id)
+    return resp

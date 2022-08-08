@@ -13,6 +13,11 @@ def update(mist_session, org_id, admin_id, privileges=""):
     resp = mist_session.mist_put(uri, org_id=org_id, body=body)
     return resp
 
+def get_by_id(mist_session, org_id, admin_id):
+    uri = f"/api/v1/orgs/{org_id}/admins/{admin_id}" 
+    resp = mist_session.mist_get(uri, org_id=org_id)
+    return resp
+
 def revoke(mist_session, org_id, admin_id):
     uri = f"/api/v1/orgs/{org_id}/admins/{admin_id}" 
     resp = mist_session.mist_delete(uri, org_id=org_id)

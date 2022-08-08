@@ -19,3 +19,7 @@ def delete(mist_session, org_id, template_id):
     resp = mist_session.mist_delete(uri, org_id=org_id)
     return resp
 
+def get_by_id(mist_session, org_id, template_id):
+    uri = f"/api/v1/orgs/{org_id}/templates/{template_id}" 
+    resp = mist_session.mist_get(uri, org_id=org_id)
+    return resp
