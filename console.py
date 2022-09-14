@@ -5,8 +5,11 @@ Github repository: https://github.com/tmunzer/Mist_library/
 
 #### IMPORTS #####
 
-import mlib.cli as cli
-import mlib
+import mlib.cli as _cli
+import mlib.requests.const as const
+import mlib.requests.orgs as orgs
+import mlib.requests.sites as sites
+import json
 
 #### FUNCTIONS #####
 def help():
@@ -36,26 +39,29 @@ def help():
     console.show(data)        Nicely display API call response. Where "data" is is the API response
     ''')
 
-def get_org_id():
-    org_id = cli.select_org(session)
+def find_org_id():
+    org_id = _cli.select_org(session)
     print("")
     print("Selected org id: %s" %org_id)
     return org_id[0]
 
-def get_site_id(org_id=None):
-    site_id = cli.select_site(session, org_id=org_id)
+def find_site_id(org_id=None):
+    site_id = _cli.select_site(session, org_id=org_id)
     print("")
     print("Selected site id: %s" %site_id)
     return site_id[0]
 
-def show(response):
-    cli.show(response)
+def table(response):
+    _cli.show(response)
+    
+def pretty(response):
+    print(json.dumps(response, indent=2))
     
 def __init():
     import mlib
     session = mlib.Mist_Session()
-    return [mlib.requests, session]
+    return session
 
 #### SCRIPT ENTRYPOINT #####
 help()
-requests, session = __init()
+session = __init()
