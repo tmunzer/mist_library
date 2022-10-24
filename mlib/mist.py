@@ -231,7 +231,7 @@ class Mist_Session(Req):
             self.email = None
             self.password = None
             print()
-            self._set_login_password()
+            self._login()
 
     def logout(self):  
         console.debug("in  > logout")
@@ -344,7 +344,7 @@ class Mist_Session(Req):
             print()
             resp = input(f"Do you want to try with new credentials for {self.host} (y/N)? " %())
             if resp.lower() == "y":
-                self._set_login_password()
+                self._login()
                 return self.getself()
             else:
                 sys.exit(0)
