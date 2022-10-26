@@ -547,7 +547,10 @@ def _check_org_name(org_name):
             print("The orgnization names do not match... Please try again...")
 
 
-def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mist_session=None, source_org_name=None, source_org_id=None, sites_list=None, check_org_name=True, in_backup_folder=False, ap_mac=None):
+def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mist_session=None, source_org_name=None, source_org_id=None, sites_list=None, check_org_name=True, in_backup_folder=False, ap_mac=None, parent_logger=None):
+    global logger
+    if parent_logger:
+        logger=parent_logger
     if check_org_name:
         _check_org_name(dest_org_name)
     if not in_backup_folder:

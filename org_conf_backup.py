@@ -343,7 +343,10 @@ def _save_to_file(backup_file, backup, org_name):
         log_failure(message)
 
 
-def start_org_backup(mist_session, org_id, org_name):
+def start_org_backup(mist_session, org_id, org_name, parent_logger=None):
+    global logger
+    if parent_logger:
+        logger=parent_logger
     try:
         if not os.path.exists("org_backup"):
             os.mkdir("org_backup")

@@ -5,6 +5,7 @@ Github repository: https://github.com/tmunzer/Mist_library/
 import sys
 import mlib as mist_lib
 from mlib import cli
+import logging
 
 import org_conf_backup
 import org_conf_deploy
@@ -12,34 +13,37 @@ import org_inventory_backup
 import org_inventory_precheck
 import org_inventory_restore
 
-
-
+log_file = "./org_migration.log"
+logging.basicConfig(filename=log_file, filemode='w')
+# logging.basicConfig()
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 def _backup_org(source_mist_session, source_org_id, source_org_name):
     try:
         _print_new_step("Backuping SOURCE Org Configuration")
-        org_conf_backup.start_org_backup(source_mist_session, source_org_id, source_org_name)    
+        org_conf_backup.start_org_backup(source_mist_session, source_org_id, source_org_name, logger)    
     except: 
         sys.exit(255)
 
 def _restore_org(dest_mist_session, dest_org_id, dest_org_name, source_org_name, check_org_name=False, in_backup_folder=False):
     _print_new_step("Deploying Configuration to the DESTINATION Org")
-    org_conf_deploy.start_restore_org(dest_mist_session, dest_org_id, dest_org_name, source_org_name, check_org_name, in_backup_folder)
+    org_conf_deploy.start_restore_org(dest_mist_session, dest_org_id, dest_org_name, source_org_name, check_org_name, in_backup_folder, dest_org_name, logger)    
 
 #######
 #######
 
 def _backup_inventory(source_mist_session, source_org_id, source_org_name, in_backup_folder=False):
     _print_new_step("Backuping SOURCE Org Inventory")
-    org_inventory_backup.start_inventory_backup(source_mist_session, source_org_id, source_org_name, in_backup_folder)
+    org_inventory_backup.start_inventory_backup(source_mist_session, source_org_id, source_org_name, in_backup_folder, logger)    
 
 def _precheck_inventory(dest_mist_session, dest_org_id, dest_org_name, source_org_name, in_backup_folder=False):
     _print_new_step("Pre-check for INVENTORY restoration")
-    org_inventory_precheck.start_precheck(dest_mist_session, dest_org_id, dest_org_name,source_org_name, None, in_backup_folder)
+    org_inventory_precheck.start_precheck(dest_mist_session, dest_org_id, dest_org_name,source_org_name, None, in_backup_folder, logger)    
 
 def _restore_inventory(dest_mist_session, dest_org_id, dest_org_name, source_mist_session, source_org_name, source_org_id, check_org_name=False, in_backup_folder=False):
     _print_new_step("Deploying Inventory to the DESTINATION Org")
-    org_inventory_restore.start_restore_inventory(dest_mist_session, dest_org_id, dest_org_name, source_mist_session, source_org_name, source_org_id, None, check_org_name, in_backup_folder)
+    org_inventory_restore.start_restore_inventory(dest_mist_session, dest_org_id, dest_org_name, source_mist_session, source_org_name, source_org_id, None, check_org_name, in_backup_folder, None, logger)    
 
 #######
 #######
@@ -50,6 +54,7 @@ def _print_new_step(message):
     print("#", f"{message} ".center(76), "#")
     print("".center(80,"#"))
     print()
+    logger.info(f"{message}")
 
 #######
 #######

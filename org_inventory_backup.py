@@ -199,7 +199,10 @@ def _save_to_file(backup_file, org_name, backup):
         log_failure(message)
 
 
-def start_inventory_backup(mist_session, org_id, org_name, in_backup_folder=False):
+def start_inventory_backup(mist_session, org_id, org_name, in_backup_folder=False, parent_logger=None):
+    global logger
+    if parent_logger:
+        logger=parent_logger
     if not in_backup_folder:
         if not os.path.exists("org_backup"):
             os.mkdir("org_backup")

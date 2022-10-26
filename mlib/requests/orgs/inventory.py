@@ -1,8 +1,11 @@
 ########## INVENTORY ############
 
-def get(mist_session, org_id, page=1, limit=100):
+def get(mist_session, org_id, page=1, limit=100, device_type=None):
     uri = f"/api/v1/orgs/{org_id}/inventory" 
-    resp = mist_session.mist_get(uri, org_id=org_id, page=page, limit=limit)
+    query = {}
+    if type in  ["ap", "switch", "gateway"]:
+        query["type"] = device_type
+    resp = mist_session.mist_get(uri, org_id=org_id, query=query, page=page, limit=limit)
     return resp
 
 def add(mist_session, org_id, serials):

@@ -75,7 +75,8 @@ def report(mist_session, org_id, fields):
                     temp.append(string)
                 elif field == "dynamic_vlan":
                     string = "Disabled"
-                    if wlan.get("dynamic_vlan", {"enabled": False})["enabled"] == True:
+                    dynamic_vlan = wlan.get("dynamic_vlan", {"enabled": False})
+                    if dynamic_vlan and dynamic_vlan.get("enabled", False) == True:
                         string = "default: "
                         if "default_vlan_id" in wlan["dynamic_vlan"]:
                             string += f"{wlan['dynamic_vlan']['default_vlan_id']} | others: " 

@@ -235,7 +235,7 @@ def _wlan_restore_portal(mist_session, level_id, old_org_id, old_site_id, old_wl
 
 ##########################################################################################
 ################## RESTORE SITE
-def _restore_site(data, org_id, old_org_id):
+def _restore_site(mist_session, data, org_id, old_org_id):
     site = data["data"]
     old_site_id = site["id"]
     print(f" Deploying Site {site['name']} ".center(80, "_"))
@@ -515,7 +515,7 @@ def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None)
     ######################
     ####  SITES LOOP  ####
     for data in org["sites"]:
-        _restore_site(data, org_id, old_org_id)
+        _restore_site(mist_session, data, org_id, old_org_id)
         
 
     #######################
@@ -641,7 +641,10 @@ def _check_org_name(org_name):
             print("The orgnization names do not match... Please try again...")
 
 
-def start_restore_org(mist_session, org_id, org_name, source_org_name, check_org_name=True, in_backup_folder=False, custom_dest_org_name=None):
+def start_restore_org(mist_session, org_id, org_name, source_org_name, check_org_name=True, in_backup_folder=False, custom_dest_org_name=None, parent_logger=None):
+    global logger
+    if parent_logger:
+        logger=parent_logger
     if check_org_name and not custom_dest_org_name:
         _check_org_name(org_name)
     if not in_backup_folder:
