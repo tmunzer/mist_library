@@ -4,7 +4,7 @@ def get(mist_session, site_id, name=None, device_type=None, page=1, limit=100):
     query={}
     if name:
         query[name] = name
-    if device_type:
+    if device_type in ["ap", "switch", "gateway", "all"]:
         query["type"] = device_type
     resp = mist_session.mist_get(uri, site_id=site_id, query=query, page=page, limit=limit)
     return resp

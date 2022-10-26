@@ -26,33 +26,38 @@ dns_server_rewrite, coa_server, radsec, airwatch, cisco_cwa, rateset, schedule, 
 '''
 
 #### PARAMETERS #####
+from mlib import cli
+import mlib as mist_lib
 csv_separator = ","
-fields = ["id","ssid", "enabled", "auth", "auth_servers", "acct_servers", "band", "interface", "vlan_id", "dynamic_vlan", "hide_ssid" ]
+fields = ["id", "ssid", "enabled", "auth", "auth_servers", "acct_servers",
+          "band", "interface", "vlan_id", "dynamic_vlan", "hide_ssid"]
 csv_file = "./report.csv"
 
 org_ids = []
 site_ids = []
 
 #### IMPORTS ####
-import mlib as mist_lib
-from mlib import cli
 
 #### GLOBAL VARIABLES ####
 wlans_summarized = []
 
 #### FUNCTIONS ####
+
+
 def country_code(site):
     if "country_code" in site:
         return site["country_code"]
     else:
         return "N/A"
 
+
 def wlans_from_sites(mist_session, sites, org_info, site_ids):
     for site in sites:
-        if len(org_ids) > 1 or site["id"] in site_ids:     
-            site_wlans = mist_lib.requests.sites.wlans.report(mist_session, site["id"], fields)            
-            for site_wlan in site_wlans:     
-                site_wlan.insert(0, "site")           
+        if len(org_ids) > 1 or site["id"] in site_ids:
+            site_wlans = mist_lib.requests.sites.wlans.report(
+                mist_session, site["id"], fields)
+            for site_wlan in site_wlans:
+                site_wlan.insert(0, "site")
                 site_wlan.insert(1, org_info["name"])
                 site_wlan.insert(2, org_info["id"])
                 site_wlan.insert(3, site["name"])
@@ -60,17 +65,24 @@ def wlans_from_sites(mist_session, sites, org_info, site_ids):
                 site_wlan.insert(5, country_code(site))
                 wlans_summarized.append(site_wlan)
 
+
 def wlans_from_orgs(mist_session, org_ids, site_ids):
     for org_id in org_ids:
-        org_sites = list(filter(lambda privilege: "org_id" in privilege and privilege["org_id"] == org_id, mist_session.privileges))
-        # the admin only has access to the org information if he/she has this privilege 
+        # org_sites = list(filter(lambda privilege: "org_id" in privilege and privilege["org_id"] == org_id, mist_session.privileges))
+        org_sites = [
+            p for p in mist_session.privileges if "org_id" in p and p["org_id"] == org_id]
+        # the admin only has access to the org information if he/she has this privilege
         if len(org_sites) >= 1 and org_sites[0]["scope"] == "org":
-            org_info = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]
-            org_sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)["result"]
-            org_wlans = mist_lib.requests.orgs.wlans.report(mist_session, org_id, fields)        
+            org_info = mist_lib.requests.orgs.info.get(
+                mist_session, org_id)["result"]
+            org_sites = mist_lib.requests.orgs.sites.get(
+                mist_session, org_id)["result"]
+            org_wlans = mist_lib.requests.orgs.wlans.report(
+                mist_session, org_id, fields)
             for org_wlan in org_wlans:
-                if len(org_ids) > 1 or org_wlan[0] in site_ids:     
-                    site = list(filter(lambda site: site['id'] == org_wlan[0], org_sites))
+                if len(org_ids) > 1 or org_wlan[0] in site_ids:
+                    # site = list(filter(lambda site: site['id'] == org_wlan[0], org_sites))
+                    site = [s for s in org_sites if s['id'] == org_wlan[0]]
                     if len(site) == 1:
                         site_name = site[0]["name"]
                         site_country_code = country_code(site[0])
@@ -83,16 +95,17 @@ def wlans_from_orgs(mist_session, org_ids, site_ids):
                     org_wlan.insert(3, site_name)
                     org_wlan.insert(5, site_country_code)
                     wlans_summarized.append(org_wlan)
-            wlans_from_sites(mist_session, org_sites, org_info, site_ids)        
+            wlans_from_sites(mist_session, org_sites, org_info, site_ids)
         else:
             org_info = {
-                "name":org_sites[0]["org_name"],
-                "id":org_sites[0]["org_id"]
+                "name": org_sites[0]["org_name"],
+                "id": org_sites[0]["org_id"]
             }
             org_sites = []
             for site_id in site_ids:
-                org_sites.append(mist_lib.requests.sites.info.get(mist_session, site_id)["result"])
-            wlans_from_sites(mist_session, org_sites, org_info, site_ids)        
+                org_sites.append(mist_lib.requests.sites.info.get(
+                    mist_session, site_id)["result"])
+            wlans_from_sites(mist_session, org_sites, org_info, site_ids)
 
 
 #### SCRIPT ENTRYPOINT ####
@@ -105,9 +118,9 @@ if len(org_ids) == 1:
 
 wlans_from_orgs(mist, org_ids, site_ids)
 
-            
-fields.insert(0, "origin")   
-fields.insert(1, "org_name")   
+
+fields.insert(0, "origin")
+fields.insert(1, "org_name")
 fields.insert(2, "org_id")
 fields.insert(3, "site_name")
 fields.insert(4, "site_id")
