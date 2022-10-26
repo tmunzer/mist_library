@@ -23,10 +23,8 @@ org_id = ""  # optional
 
 
 #### LOGS ####
-logging.basicConfig(filename=log_file, filemode='w')
-# logging.basicConfig()
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 
 #### VARIABLES ####
 
@@ -122,8 +120,9 @@ def _backup_inventory(mist_session, org_id, org_name=None):
                 backup["org"]["inventory"].append(
                     {"serial": data["serial"], "magic": data["magic"]})
         log_success(message)
-    except:
+    except Exception as e:
         log_failure(message)
+        logger.error("Exception occurred", exc_info=True)
 
     ################################################
     ##  Retrieving device profiles
@@ -136,8 +135,9 @@ def _backup_inventory(mist_session, org_id, org_name=None):
             backup["org"]["deviceprofiles_ids"][deviceprofile["name"]] = {
                 "old_id": deviceprofile["id"]}
         log_success(message)
-    except:
+    except Exception as e:
         log_failure(message)
+        logger.error("Exception occurred", exc_info=True)
 
     ################################################
     ##  Retrieving Sites list
@@ -146,8 +146,9 @@ def _backup_inventory(mist_session, org_id, org_name=None):
     try:
         sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)['result']
         log_success(message)
-    except:
+    except Exception as e:
         log_failure(message)
+        logger.error("Exception occurred", exc_info=True)
 
     ################################################
     ## Backuping Sites Devices
@@ -163,8 +164,9 @@ def _backup_inventory(mist_session, org_id, org_name=None):
                 mist_session, site["id"], device_type="all")["result"]
             backup["org"]["sites"][site["name"]]["devices"] = devices
             log_success(message)
-        except:
+        except Exception as e:
             log_failure(message)
+            logger.error("Exception occurred", exc_info=True)
         ################################################
         ## Backuping Site Devices Images
         for device in devices:
@@ -178,8 +180,9 @@ def _backup_inventory(mist_session, org_id, org_name=None):
                     urllib.request.urlretrieve(url, image_name)
                     i += 1
                 log_success(message)
-            except:
+            except Exception as e:
                 log_failure(message)
+                logger.error("Exception occurred", exc_info=True)
     
     ################################################
     ## End
@@ -195,14 +198,15 @@ def _save_to_file(backup_file, org_name, backup):
         with open(backup_file, "w") as f:
             json.dump(backup, f)
         log_success(message)
-    except:
+    except Exception as e:
         log_failure(message)
+        logger.error("Exception occurred", exc_info=True)
 
 
-def start_inventory_backup(mist_session, org_id, org_name, in_backup_folder=False, parent_logger=None):
-    global logger
-    if parent_logger:
-        logger=parent_logger
+def start_inventory_backup(mist_session, org_id, org_name, in_backup_folder=False, parent_log_file=None):
+    if parent_log_file:
+        logging.basicConfig(filename=log_file, filemode='a')
+        logger.setLevel(logging.DEBUG)
     if not in_backup_folder:
         if not os.path.exists("org_backup"):
             os.mkdir("org_backup")
@@ -223,5 +227,9 @@ def start(mist_session, org_id):
 
 
 if __name__ == "__main__":
+    #### LOGS ####
+    logging.basicConfig(filename=log_file, filemode='w')
+    logger.setLevel(logging.DEBUG)
+
     mist_session = mist_lib.Mist_Session(session_file)
     start(mist_session, org_id)

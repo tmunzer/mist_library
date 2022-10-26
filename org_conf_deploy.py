@@ -38,13 +38,9 @@ session_file = ""
 backup_directory = "./org_backup/"
 org_id = ""
 
+
 #### LOGS ####
-logging.basicConfig(filename=log_file, filemode='w')
-# logging.basicConfig()
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-
+logger = logging.getLogger(__name__)
 
 
 #### GLOBAL VARS ####
@@ -203,21 +199,23 @@ def _wlan_restore_portal(mist_session, level_id, old_org_id, old_site_id, old_wl
         log_message(message)
         try:
             template = open(portal_file_name, 'r')
-        except:
+        except Exception as e:
             log_failure(f"Unable to open the template file \"{portal_file_name}\" ")
+            logger.error("Exception occurred", exc_info=True)
             return
         try:
             template = json.load(template)
-        except:
-            
+        except Exception as e:            
             log_failure(f"Unable to read the template file \"{portal_file_name}\" ")
+            logger.error("Exception occurred", exc_info=True)
             return
         try:
             module.set_portal_template(
                 mist_session, level_id, new_wlan_id, template)
             log_success(message)
-        except:
+        except Exception as e:
             log_failure(f"Unable to upload the template \"{portal_file_name}\" ")
+            logger.error("Exception occurred", exc_info=True)
 
     else:
         log_debug(f"No Portal template found for WLAN \"{wlan_name}\"")
@@ -228,8 +226,9 @@ def _wlan_restore_portal(mist_session, level_id, old_org_id, old_site_id, old_wl
             module.add_portal_image(
                 mist_session, level_id, new_wlan_id, portal_image)
             log_success(message)
-        except:
+        except Exception as e:
             log_failure(message)
+            logger.error("Exception occurred", exc_info=True)
     else:
         log_debug(f"No Portal Template image found for WLAN {wlan_name} ")
 
@@ -390,8 +389,9 @@ def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None)
     try:
         mist_lib.requests.orgs.info.update(mist_session, org_id, data)
         log_success(message)
-    except:
+    except Exception as e:
         log_failure(message)
+        logger.error("Exception occurred", exc_info=True)
     
     ########################
     ####  ORG SETTINGS  ####
@@ -401,8 +401,9 @@ def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None)
         data = _clean_ids(org["settings"])
         mist_lib.requests.orgs.settings.update(mist_session, org_id, data)
         log_success(message)
-    except:
+    except Exception as e:
         log_failure(message)
+        logger.error("Exception occurred", exc_info=True)
 
     #######################
     ####  ORG OBJECTS  ####
@@ -641,10 +642,10 @@ def _check_org_name(org_name):
             print("The orgnization names do not match... Please try again...")
 
 
-def start_restore_org(mist_session, org_id, org_name, source_org_name, check_org_name=True, in_backup_folder=False, custom_dest_org_name=None, parent_logger=None):
-    global logger
-    if parent_logger:
-        logger=parent_logger
+def start_deploy_org(mist_session, org_id, org_name, source_org_name, check_org_name=True, in_backup_folder=False, custom_dest_org_name=None, parent_log_file=None):
+    if parent_log_file:
+        logging.basicConfig(filename=log_file, filemode='a')
+        logger.setLevel(logging.DEBUG)
     if check_org_name and not custom_dest_org_name:
         _check_org_name(org_name)
     if not in_backup_folder:
@@ -681,12 +682,13 @@ def _create_org(mist_session):
             log_message(message)
             try:
                 log_success(message)
-            except:
+            except Exception as e:
                 log_failure(message)
+                logger.error("Exception occurred", exc_info=True)
                 sys.exit(10)
             org_id = mist_lib.requests.orgs.orgs.create(mist_session, org)[
                 "result"]["id"]
-            start_restore_org(mist_session, org_id, custom_dest_org_name, None,
+            start_deploy_org(mist_session, org_id, custom_dest_org_name, None,
                               check_org_name=False, custom_dest_org_name=custom_dest_org_name)
             break
 
@@ -702,7 +704,7 @@ def start(mist_session):
             org_id = cli.select_org(mist_session)[0]
             org_name = mist_lib.requests.orgs.info.get(
                 mist_session, org_id)["result"]["name"]
-            start_restore_org(mist_session, org_id, org_name,
+            start_deploy_org(mist_session, org_id, org_name,
                               None, check_org_name=True)
             break
         elif res.lower() == "n":
@@ -712,5 +714,8 @@ def start(mist_session):
 
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
+    #### LOGS ####
+    logging.basicConfig(filename=log_file, filemode='w')
+    logger.setLevel(logging.DEBUG)
     mist_session = mist_lib.Mist_Session(session_file)
     start(mist_session)

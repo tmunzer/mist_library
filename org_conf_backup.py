@@ -24,6 +24,7 @@ import json
 from mlib import cli
 import urllib.request
 import os
+import sys
 import mlib as mist_lib
 
 
@@ -33,13 +34,8 @@ log_file = "./org_conf_backup.log"
 file_prefix = ".".join(backup_file.split(".")[:-1])
 session_file = "./session.py"
 
-
 #### LOGS ####
-logging.basicConfig(filename=log_file, filemode='w')
-# logging.basicConfig()
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
+logger = logging.getLogger(__name__)
 
 #### FUNCTIONS ####
 
@@ -72,16 +68,18 @@ def _backup_wlan_portal(org_id, site_id, wlans):
                 urllib.request.urlretrieve(
                     wlan.portal_template_url, portal_file_name)
                 log_success(message)
-            except:
+            except Exception as e:
                 log_failure(message)
+                logger.error("Exception occurred", exc_info=True)
         if hasattr(wlan, "portal_image") and wlan.portal_image:
             try:
                 message=f"portal image for wlan {wlan_id} "
                 log_message(message)
                 urllib.request.urlretrieve(wlan.portal_image, portal_image)
                 log_success(message)
-            except:
+            except Exception as e:
                 log_failure(message)
+                logger.error("Exception occurred", exc_info=True)
 
 
 def _do_backup(mist_session, backup_function, scope_id, message):
@@ -93,8 +91,9 @@ def _do_backup(mist_session, backup_function, scope_id, message):
             data = data["result"]
         log_success(message)
         return data
-    except:
+    except Exception as e:
         log_failure(message)
+        logger.error("Exception occurred", exc_info=True)
         return None
 
 
@@ -323,8 +322,9 @@ def _backup_full_org(mist_session, org_id, org_name):
                         file_prefix, org_id, site_id, xmap_id)
                     urllib.request.urlretrieve(url, image_name)
             log_success(message)
-        except:
+        except Exception as e:
             log_failure(message)
+            logger.error("Exception occurred", exc_info=True)
 
     print(" Backup Done ".center(80, "_"))
     logger.info(f"ORG {org_name} > Backup done")
@@ -339,14 +339,15 @@ def _save_to_file(backup_file, backup, org_name):
         with open(backup_file, "w") as f:
             json.dump(backup, f)
         log_success(message)
-    except:
+    except Exception as e:
         log_failure(message)
+        logger.error("Exception occurred", exc_info=True)
 
 
-def start_org_backup(mist_session, org_id, org_name, parent_logger=None):
-    global logger
-    if parent_logger:
-        logger=parent_logger
+def start_org_backup(mist_session, org_id, org_name, parent_log_file=None):
+    if parent_log_file:
+        logging.basicConfig(filename=log_file, filemode='a')
+        logger.setLevel(logging.DEBUG)
     try:
         if not os.path.exists("org_backup"):
             os.mkdir("org_backup")
@@ -358,7 +359,7 @@ def start_org_backup(mist_session, org_id, org_name, parent_logger=None):
         backup = _backup_full_org(mist_session, org_id, org_name)
         _save_to_file(backup_file, backup, org_name)
     except:
-        return 255
+        sys.exit(255)
 
 
 def start(mist_session):
@@ -370,5 +371,9 @@ def start(mist_session):
 ##### ENTRY POINT ####
 
 if __name__ == "__main__":
+    #### LOGS ####
+    logging.basicConfig(filename=log_file, filemode='w')
+    logger.setLevel(logging.DEBUG)
+
     mist_session = mist_lib.Mist_Session(session_file)
     start(mist_session)

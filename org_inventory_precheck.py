@@ -275,10 +275,7 @@ def _go_to_backup_folder(source_org_name=None):
         print(f"Backup folder for organization {source_org_name} not found. Please select a folder in the following list.")
         _select_backup_folder(folders)
 
-def start_precheck(mist_session, org_id, org_name=None, source_org_name=None, site_name=None, in_backup_folder=False, parent_logger=None):
-    global logger
-    if parent_logger:
-        logger=parent_logger
+def start_precheck(mist_session, org_id, org_name=None, source_org_name=None, site_name=None, in_backup_folder=False): 
     print(os.getcwd())  
     if not in_backup_folder: _go_to_backup_folder(source_org_name)
     #try:

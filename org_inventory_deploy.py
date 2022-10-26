@@ -36,7 +36,7 @@ dry_run = False
 backup_file = "./org_inventory_file.json"
 file_prefix = ".".join(backup_file.split(".")[:-1])
 backup_directory = "./org_backup/"
-log_file = "./org_inventory_restore.log"
+log_file = "./org_inventory_deploy.log"
 session_file = "./session.py"
 
 
@@ -51,11 +51,9 @@ missing_ids = {
     "deviceprofiles": []
 }
 
+
 #### LOGS ####
-logging.basicConfig(filename=log_file, filemode='w')
-# logging.basicConfig()
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 #### FUNCTIONS ####
@@ -197,8 +195,9 @@ def _add_magic(mist_session, org_id, magics):
                 mist_lib.requests.orgs.inventory.add(
                     mist_session, org_id, current_magics)
             log_success(message)
-        except:
+        except Exception as e:
             log_failure(message)
+            logger.error("Exception occurred", exc_info=True)
         i += 1
 
 
@@ -211,8 +210,9 @@ def _restore_device_to_site_assignment(mist_session, org_id, new_site_id, device
             mist_lib.requests.orgs.inventory.assign_macs_to_site(
                 mist_session, org_id, new_site_id, devices_mac)
         log_success(message)
-    except:
+    except Exception as e:
         log_failure(message)
+        logger.error("Exception occurred", exc_info=True)
 
 
 def _unclaim_devices(mist_session, org_id, devices):
@@ -223,8 +223,9 @@ def _unclaim_devices(mist_session, org_id, devices):
             mist_lib.requests.orgs.inventory.delete_multiple(
                 mist_session, org_id, macs=devices)
         log_success(message)
-    except:
+    except Exception as e:
         log_failure(message)
+        logger.error("Exception occurred", exc_info=True)
 
 # commons
 
@@ -285,23 +286,69 @@ def _restore_device_image(mist_session, source_org_id, site_id, device, i):
                     mist_session, site_id, device["id"], i, image_name)
             log_success(message)
             return True
-        except:
+        except Exception as e:
             log_failure(message)
+            logger.error("Exception occurred", exc_info=True)
     else:
         log_debug(
             f"Image {image_name} not found for device id {device['serial']}")
         return False
 
 
-def _auto_unclaim_devices(source_mist_session, source_org_id, devices, ap_mac_filter):
+def _auto_unclaim_devices(source_mist_session, source_org_id, devices, ap_mac_filter, magics):
     mac_addresses = []
     for device in devices:
         if not ap_mac_filter or device["mac"] in ap_mac_filter:
-            mac_addresses.append(device["mac"])
+            if device["serial"] not in missing_magic:
+                mac_addresses.append(device["mac"])
     _unclaim_devices(source_mist_session, source_org_id, mac_addresses)
 
 
-def _restore_devices(mist_session, source_org_id, dest_org_id, new_site_id, deviceprofile_id_dict, map_id_dict, devices, inventory, ap_mac_filter):
+def _restore_device_configuration(mist_session, source_org_id, new_site_id, device, deviceprofile_id_dict, map_id_dict):
+    stop = False
+    ################################
+    # Updating IDs
+    message = f"{device.get('type', 'device').upper()} {device['serial']}: Updating IDs"
+    log_message(message)
+    try:
+        device = _clean_ids(device)
+        if device["deviceprofile_id"]:
+            device["deviceprofile_id"] = _find_new_deviceprofile_id_by_old_id(
+                deviceprofile_id_dict, device["deviceprofile_id"])
+        if device["map_id"]:
+            device["map_id"] = _find_new_map_id_by_old_id(
+                map_id_dict, device["map_id"])
+        device["site_id"] = new_site_id
+        log_success(message)
+    except Exception as e:
+        log_failure(message)
+        logger.error("Exception occurred", exc_info=True)
+
+    if not stop:
+        ################################
+        # Deploy Config
+        message = f"{device.get('type', 'device').upper()} {device['serial']}: Restore Device Configuration"
+        log_message(message)
+        try:
+            if not dry_run:
+                mist_lib.requests.sites.devices.set_device_conf(
+                    mist_session, new_site_id, device["id"], device)
+            log_success(message)
+        except Exception as e:
+            log_failure(message)
+            logger.error("Exception occurred", exc_info=True)
+
+        ################################
+        # Deploy Images
+        i = 1
+        image_exists = True
+        while image_exists:
+            image_exists = _restore_device_image(
+                mist_session, source_org_id, new_site_id, device, i)
+            i += 1
+
+
+def _migrate_devices(mist_session, source_mist_session, auto_unclaim, source_org_id, dest_org_id, new_site_id, deviceprofile_id_dict, map_id_dict, devices, inventory, ap_mac_filter):
     magics = []
     mac_addresses = []
 
@@ -317,54 +364,21 @@ def _restore_devices(mist_session, source_org_id, dest_org_id, new_site_id, devi
                 magics.append(magic[0]["magic"])
                 mac_addresses.append(device["mac"])
 
+    if auto_unclaim and source_org_id and source_mist_session:
+        _auto_unclaim_devices(source_mist_session, source_org_id, devices, ap_mac_filter, magics)
+
     _add_magic(mist_session, dest_org_id, magics)
+
     _restore_device_to_site_assignment(
         mist_session, dest_org_id, new_site_id, mac_addresses)
 
     ################################
     # Devices management
     for device in devices:
-        if not ap_mac_filter or device["mac"] in ap_mac_filter:
-            stop = False
+        if not ap_mac_filter or device["mac"] in ap_mac_filter and not device["serial"] in missing_magic:
+            _restore_device_configuration(mist_session, source_org_id, new_site_id, device, deviceprofile_id_dict, map_id_dict)
 
-            ################################
-            # Updating IDs
-            message = f"{device.get('type', 'device').upper()} {device['serial']}: Updating IDs"
-            log_message(message)
-            try:
-                device = _clean_ids(device)
-                if device["deviceprofile_id"]:
-                    device["deviceprofile_id"] = _find_new_deviceprofile_id_by_old_id(
-                        deviceprofile_id_dict, device["deviceprofile_id"])
-                if device["map_id"]:
-                    device["map_id"] = _find_new_map_id_by_old_id(
-                        map_id_dict, device["map_id"])
-                device["site_id"] = new_site_id
-                log_success(message)
-            except:
-                log_failure(message)
-
-            if not stop:
-                ################################
-                # Deploy Config
-                message = f"{device.get('type', 'device').upper()} {device['serial']}: Restore Device Configuration"
-                log_message(message)
-                try:
-                    if not dry_run:
-                        mist_lib.requests.sites.devices.set_device_conf(
-                            mist_session, new_site_id, device["id"], device)
-                    log_success(message)
-                except:
-                    log_failure(message)
-
-                ################################
-                # Deploy Images
-                i = 1
-                image_exists = True
-                while image_exists:
-                    image_exists = _restore_device_image(
-                        mist_session, source_org_id, new_site_id, device, i)
-                    i += 1
+        
 
 
 # TODO
@@ -386,11 +400,11 @@ def _restore_inventory(mist_session, dest_org_id, backup, sites_list, auto_uncla
         else:
             map_id_dict = _link_maps_id(
                 mist_session, new_site_id, site["maps_ids"])
-            if auto_unclaim and source_org_id and source_mist_session:
-                _auto_unclaim_devices(
-                    source_mist_session, source_org_id, site["devices"], ap_mac_filter)
-            _restore_devices(mist_session, source_org_id, dest_org_id, new_site_id,
-                             deviceprofile_id_dict, map_id_dict, site["devices"], backup["inventory"], ap_mac_filter)
+            _migrate_devices(
+                mist_session, source_mist_session, auto_unclaim,
+                source_org_id, dest_org_id, new_site_id,
+                deviceprofile_id_dict, map_id_dict, site["devices"],
+                backup["inventory"], ap_mac_filter)
     _result(backup)
 
 # backup folder selection
@@ -547,10 +561,10 @@ def _check_org_name(org_name):
             print("The orgnization names do not match... Please try again...")
 
 
-def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mist_session=None, source_org_name=None, source_org_id=None, sites_list=None, check_org_name=True, in_backup_folder=False, ap_mac=None, parent_logger=None):
-    global logger
-    if parent_logger:
-        logger=parent_logger
+def start_deploy_inventory(mist_session, dest_org_id, dest_org_name, source_mist_session=None, source_org_name=None, source_org_id=None, sites_list=None, check_org_name=True, in_backup_folder=False, ap_mac=None, parent_log_file=None):
+    if parent_log_file:
+        logging.basicConfig(filename=log_file, filemode='a')
+        logger.setLevel(logging.DEBUG)
     if check_org_name:
         _check_org_name(dest_org_name)
     if not in_backup_folder:
@@ -560,9 +574,10 @@ def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mis
         log_message(message)
         with open(backup_file) as f:
             backup = json.load(f)
-        log_success(message)
-    except:
+        log_success(message)    
+    except Exception as e:
         log_failure(message)
+        logger.error("Exception occurred", exc_info=True)
         sys.exit(0)
 
     if backup:
@@ -571,14 +586,15 @@ def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mis
             f"Do you want to automatically unclaim devices from the source organization {source_org_name} (y/N)? ", "n")
         if auto_unclaim:
             if not source_mist_session:
-                print("***                                       ***")
-                print("*** Please select the source organization ***")
-                print("***                                       ***")
+                print("".center(80,'*'))
+                print(" Please select the source organization ".center(80,'*'))
+                print("".center(80,'*'))                
                 source_mist_session = mist_lib.Mist_Session()
             if not source_org_id:
                 source_org_id = cli.select_org(source_mist_session)[0]
                 source_org_name = mist_lib.requests.orgs.info.get(
                     source_mist_session, source_org_id)["result"]["name"]
+                _check_org_name(source_org_name)
 
         if source_org_id is None:
             source_org_id = backup["org"]["id"]
@@ -596,13 +612,13 @@ def start_restore_inventory(mist_session, dest_org_id, dest_org_name, source_mis
 
 def start(mist_session, org_id=None, source_org_name=None, sites_list=None, ap_mac=None):
     if not org_id:
-        print("***                                            ***")
-        print("*** Please select the destination organization ***")
-        print("***                                            ***")
+        print("".center(80,'*'))
+        print(" Please select the destination organization ".center(80,'*'))
+        print("".center(80,'*'))
         org_id = cli.select_org(mist_session)[0]
     org_name = mist_lib.requests.orgs.info.get(
         mist_session, org_id)["result"]["name"]
-    start_restore_inventory(mist_session, org_id, org_name,
+    start_deploy_inventory(mist_session, org_id, org_name,
                             source_org_name, sites_list, ap_mac)
 
 
@@ -610,5 +626,9 @@ def start(mist_session, org_id=None, source_org_name=None, sites_list=None, ap_m
 
 
 if __name__ == "__main__":
+    #### LOGS ####
+    logging.basicConfig(filename=log_file, filemode='w')
+    logger.setLevel(logging.DEBUG)
+
     mist_session = mist_lib.Mist_Session(session_file)
     start(mist_session)
