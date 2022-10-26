@@ -11,48 +11,48 @@ import org_conf_backup
 import org_conf_deploy
 import org_inventory_backup
 import org_inventory_precheck
-import org_inventory_restore
+import org_inventory_deploy
 
 log_file = "./org_migration.log"
 logging.basicConfig(filename=log_file, filemode='w')
 # logging.basicConfig()
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 def _backup_org(source_mist_session, source_org_id, source_org_name):
     try:
         _print_new_step("Backuping SOURCE Org Configuration")
-        org_conf_backup.start_org_backup(source_mist_session, source_org_id, source_org_name, logger)    
+        org_conf_backup.start_org_backup(source_mist_session, source_org_id, source_org_name, log_file)    
     except: 
         sys.exit(255)
 
-def _restore_org(dest_mist_session, dest_org_id, dest_org_name, source_org_name, check_org_name=False, in_backup_folder=False):
+def _deploy_org(dest_mist_session, dest_org_id, dest_org_name, source_org_name, check_org_name=False, in_backup_folder=False):
     _print_new_step("Deploying Configuration to the DESTINATION Org")
-    org_conf_deploy.start_restore_org(dest_mist_session, dest_org_id, dest_org_name, source_org_name, check_org_name, in_backup_folder, dest_org_name, logger)    
+    org_conf_deploy.start_deploy_org(dest_mist_session, dest_org_id, dest_org_name, source_org_name, check_org_name, in_backup_folder, dest_org_name, log_file)    
 
 #######
 #######
 
 def _backup_inventory(source_mist_session, source_org_id, source_org_name, in_backup_folder=False):
     _print_new_step("Backuping SOURCE Org Inventory")
-    org_inventory_backup.start_inventory_backup(source_mist_session, source_org_id, source_org_name, in_backup_folder, logger)    
+    org_inventory_backup.start_inventory_backup(source_mist_session, source_org_id, source_org_name, in_backup_folder, log_file)    
 
 def _precheck_inventory(dest_mist_session, dest_org_id, dest_org_name, source_org_name, in_backup_folder=False):
     _print_new_step("Pre-check for INVENTORY restoration")
-    org_inventory_precheck.start_precheck(dest_mist_session, dest_org_id, dest_org_name,source_org_name, None, in_backup_folder, logger)    
+    org_inventory_precheck.start_precheck(dest_mist_session, dest_org_id, dest_org_name,source_org_name, None, in_backup_folder)    
 
 def _restore_inventory(dest_mist_session, dest_org_id, dest_org_name, source_mist_session, source_org_name, source_org_id, check_org_name=False, in_backup_folder=False):
     _print_new_step("Deploying Inventory to the DESTINATION Org")
-    org_inventory_restore.start_restore_inventory(dest_mist_session, dest_org_id, dest_org_name, source_mist_session, source_org_name, source_org_id, None, check_org_name, in_backup_folder, None, logger)    
+    org_inventory_deploy.start_deploy_inventory(dest_mist_session, dest_org_id, dest_org_name, source_mist_session, source_org_name, source_org_id, None, check_org_name, in_backup_folder, None, log_file)    
 
 #######
 #######
 
 def _print_new_step(message):
     print()
-    print("".center(80,"#"))
-    print("#", f"{message} ".center(76), "#")
-    print("".center(80,"#"))
+    print("".center(80,'*'))
+    print(f" {message} ".center(80,'*'))
+    print("".center(80,'*'))
     print()
     logger.info(f"{message}")
 
@@ -82,18 +82,30 @@ def select_or_create_org(mist_session=None):
     while True:
         res = input("Do you want to create a (n)ew organisation or (r)estore to an existing one? ")
         if res.lower()=="r":
-            org_id = cli.select_org(mist_session)[0]
-            org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
-            return (mist_session, org_id, org_name)
+            return _select_org(mist_session)
         elif res.lower()=="n":
             return _create_org(mist_session)
-            
+
+
+def _check_org_name(org_name):
+    while True:
+        print()
+        resp = input(
+            "To avoid any error, please confirm the current destination orgnization name: ")
+        if resp == org_name:
+            return True
+        else:
+            print()            
+            print("The orgnization names do not match... Please try again...")
+
 #######
 #######
 def _select_org(mist_session=None, host=None):
-    mist_session = mist_lib.Mist_Session(host=host)    
+    if not mist_session:
+        mist_session = mist_lib.Mist_Session(host=host)    
     org_id = cli.select_org(mist_session)[0]
     org_name = mist_lib.orgs.info.get(mist_session, org_id)["result"]["name"]
+    _check_org_name(org_name)
     return (mist_session, org_id, org_name)
 
 if __name__ == "__main__":
@@ -104,7 +116,7 @@ if __name__ == "__main__":
 
     _backup_org(source_mist_session, source_org_id, source_org_name)
     _backup_inventory(source_mist_session, source_org_id, source_org_name, in_backup_folder=True)
-    _restore_org(dest_mist_session, dest_org_id, dest_org_name, source_org_name, in_backup_folder=True)
+    _deploy_org(dest_mist_session, dest_org_id, dest_org_name, source_org_name, in_backup_folder=True)
     _precheck_inventory(dest_mist_session, dest_org_id, dest_org_name, source_org_name, in_backup_folder=True)
     _restore_inventory(dest_mist_session, dest_org_id, dest_org_name, source_mist_session, source_org_name, source_org_id, in_backup_folder=True)
     
