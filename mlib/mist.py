@@ -3,7 +3,6 @@ Written by: Thomas Munzer (tmunzer@juniper.net)
 Github repository: https://github.com/tmunzer/Mist_library/
 '''
 
-from xxlimited import foo
 import requests
 import json
 import sys
