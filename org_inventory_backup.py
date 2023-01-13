@@ -4,7 +4,6 @@ Github repository: https://github.com/tmunzer/Mist_library/
 '''
 
 #### IMPORTS ####
-from email import message
 import logging
 import sys
 import os
