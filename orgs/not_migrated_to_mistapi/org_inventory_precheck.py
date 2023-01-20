@@ -86,7 +86,7 @@ def _result(backup):
     print("")
 ## site id
 def _link_sites_ids(mist_session, org_id, sites_ids):
-    new_sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)["result"] 
+    new_sites = mistapi.api.v1.orgs.sites.get(mist_session, org_id)["result"] 
     return _link_objects_ids(new_sites, sites_ids)
 
 def _find_new_site_id_by_old_id(site_id_dict, old_id):
@@ -100,7 +100,7 @@ def _find_new_site_id_by_name(site_id_dict, site_name):
 
 ## map id
 def _link_maps_id(mist_session, site_id, maps_ids):
-    new_maps = mist_lib.requests.sites.maps.get(mist_session, site_id)["result"]
+    new_maps = mistapi.api.v1.sites.maps.get(mist_session, site_id)["result"]
     return _link_objects_ids(new_maps, maps_ids)
 
 def _find_new_map_id_by_old_id(map_id_dict, old_id):
@@ -114,7 +114,7 @@ def _find_new_site_id_by_name(map_id_dict, map_name):
 
 ## device profiles
 def _link_deviceprofiles_ids(mist_session, org_id, deviceprofiles_ids):
-    new_deviceprofiles = mist_lib.requests.orgs.deviceprofiles.get(mist_session, org_id)["result"]
+    new_deviceprofiles = mistapi.api.v1.orgs.deviceprofiles.get(mist_session, org_id)["result"]
     return _link_objects_ids(new_deviceprofiles, deviceprofiles_ids)
 
 def _find_new_deviceprofile_id_by_old_id(deviceprofile_id_dict, old_id):
@@ -289,7 +289,7 @@ def start_precheck(mist_session, org_id, org_name=None, source_org_name=None, si
 def start(mist_session, org_id=None, source_org_name=None, site_name=None):
     if org_id == "":
         org_id = cli.select_org(mist_session)[0]
-    org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
+    org_name = mistapi.api.v1.orgs.info.get(mist_session, org_id)["result"]["name"]
     start_precheck(mist_session, org_id, org_name, source_org_name, site_name)
 
 
@@ -297,6 +297,6 @@ def start(mist_session, org_id=None, source_org_name=None, site_name=None):
 
 
 if __name__ == "__main__":
-    mist_session = mist_lib.Mist_Session(session_file)
+    mist_session = mistapi.APISession(session_file)
     start(mist_session, org_id)
 

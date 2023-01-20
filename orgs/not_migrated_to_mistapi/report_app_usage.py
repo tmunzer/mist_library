@@ -87,7 +87,7 @@ def _ask_period(hours):
 
 
 if __name__ == "__main__":
-    mist_session = mist_lib.Mist_Session()
+    mist_session = mistapi.APISession()
     site_id = cli.select_site(mist_session, allow_many=True)
     time = _ask_period(hours_to_report)
     generate_report(mist_session, site_id, time)

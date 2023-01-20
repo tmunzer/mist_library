@@ -22,22 +22,22 @@ The script has 3 different steps:
 all the objects will be created from the json file. 
 '''
 
-#### PARAMETERS #####
-
-session_file = ""
-backup_directory = "./site_backup/"
-
-org_id = ""
 #### IMPORTS ####
 import sys
-import mlib as mist_lib
-from mlib.__debug import Console
-from mlib import cli
+import mistapi
+from mistapi.__logger import console
+import logging
 import json
 import os.path
+#### PARAMETERS #####
+backup_directory = "./site_backup/"
+log_file = "./sites_scripts.log"
+org_id = ""
+env_file = "./.env"
+#### LOGS ####
+logger = logging.getLogger(__name__)
 
 #### CONSTANTS ####
-console = Console(6)
 backup_file = "./site_conf_file.json"
 file_prefix = ".".join(backup_file.split(".")[:-1])
 
@@ -98,19 +98,19 @@ def _clean_ids(data):
 
 
 
-def _wlan_restore(mist_session, site_name, new_site_id, data, old_site_id):
+def _wlan_restore(apisession, site_name, new_site_id, data, old_site_id):
     if "wxtunnel_id" in data:
         data["wxtunnel_id"] = _replace_id(data["wxtunnel_id"], wxtags_id_dict)
     if "app_limit" in data and "wxtag_ids" in data["app_limit"]:
         data["app_limit"]["wxtag_ids"] = _replace_id(data["app_limit"]["wxtag_ids"], wxtags_id_dict)
-    ids = _common_restore(mist_session, site_name, new_site_id, 'wlans', data)
+    ids = _common_restore(apisession, site_name, new_site_id, 'wlans', data)
     old_wlan_id = next(iter(ids))
     new_wlan_id = ids[old_wlan_id]
-    _wlan_restore_portal(mist_session, site_name, new_site_id, old_site_id, old_wlan_id, new_wlan_id, data["ssid"])
+    _wlan_restore_portal(apisession, site_name, new_site_id, old_site_id, old_wlan_id, new_wlan_id, data["ssid"])
     wlan_id_dict.update(ids)
 
 
-def _wlan_restore_portal_template(mist_session, site_id, wlan_id, portal_file_name, wlan_name):
+def _wlan_restore_portal_template(apisession, site_id, wlan_id, portal_file_name, wlan_name):
     if os.path.isfile(portal_file_name):
         print("Creating Portal Template for WLAN {0}".format(wlan_name).ljust(79, "."), end="", flush=True)
         try:
@@ -126,7 +126,7 @@ def _wlan_restore_portal_template(mist_session, site_id, wlan_id, portal_file_na
             print("Unable to read the template file {0}".format(portal_file_name).ljust(79, ".") +'\033[31m\u2716\033[0m')
             return
         try:
-            mist_lib.requests.sites.wlans.set_portal_template(mist_session, site_id, wlan_id, template)
+            mistapi.api.v1.sites.wlans.set_portal_template(apisession, site_id, wlan_id, template)
             print("\033[92m\u2714\033[0m")
         except:
             print('\033[31m\u2716\033[0m')
@@ -134,24 +134,24 @@ def _wlan_restore_portal_template(mist_session, site_id, wlan_id, portal_file_na
     else: print("No Portal Template image found for WLAN {0} ".format(wlan_name).ljust(79, ".") + "\033[33m\u2731\033[0m")
 
 
-def _wlan_restore_portal(mist_session, site_name, new_site_id, old_site_id, old_wlan_id, new_wlan_id, wlan_name): 
+def _wlan_restore_portal(apisession, site_name, new_site_id, old_site_id, old_wlan_id, new_wlan_id, wlan_name): 
     portal_file_name = "{0}_site_{1}_wlan_{2}.json".format(file_prefix, old_site_id, old_wlan_id) 
     portal_image = "{0}_site_{1}_wlan_{2}.png".format(file_prefix, old_site_id, old_wlan_id)
-    module = mist_lib.requests.route("sites", "wlans")
+    module = mistapi.api.v1.route("sites", "wlans")
 
-    _wlan_restore_portal_template(mist_session, new_site_id, new_wlan_id, portal_file_name, wlan_name)       
+    _wlan_restore_portal_template(apisession, new_site_id, new_wlan_id, portal_file_name, wlan_name)       
 
     if os.path.isfile(portal_image):
         print("Uploading Portal image for WLAN {0} ".format(wlan_name).ljust(79, "."), end="", flush=True)
         try:            
-            module.add_portal_image(mist_session, new_site_id, new_wlan_id, portal_image)
+            module.add_portal_image(apisession, new_site_id, new_wlan_id, portal_image)
             print('\033[31m\u2716\033[0m')
         except:
             print('\033[31m\u2716\033[0m')
     else: print("No Portal Template image found ".ljust(79, ".") + "\033[33m\u2731\033[0m")
         
 
-def _common_restore(mist_session, site_name, site_id, obj_type, data):       
+def _common_restore(apisession, site_name, site_id, obj_type, data):       
     old_id = data["id"] if "id" in data else None
     if "name" in data:
         obj_name = data["name"]
@@ -164,8 +164,8 @@ def _common_restore(mist_session, site_name, site_id, obj_type, data):
     
     data = _clean_ids(data)
     
-    module = mist_lib.requests.route("sites", obj_type)
-    new_id = _create_obj(module.create(mist_session, site_id, data), obj_type, obj_name)        
+    module = mistapi.api.v1.route("sites", obj_type)
+    new_id = _create_obj(module.create(apisession, site_id, data), obj_type, obj_name)        
     
     return {old_id: new_id}
 
@@ -175,7 +175,7 @@ def _create_obj(m_func_create, obj_type, obj_name=None):
         if obj_name: print("Creating {0} \"{1}\" ".format(obj_type, obj_name).ljust(79, "."), end="", flush=True)
         else: print("Creating {0} ".format(obj_type).ljust(79, "."), end="", flush=True)
         response = m_func_create
-        if "result" in response and "id" in response["result"]: new_id = response["result"]["id"]
+        if "result" in response and "id" in response.data: new_id = response.data["id"]
         elif "id" in response: new_id = response["id"]
         else: new_id = None
         print("\033[92m\u2714\033[0m")
@@ -198,7 +198,7 @@ def _process_org_obj(m_func_create, available_obj, obj_type, obj_name):
         return new_id
 
 
-def _restore_site(mist_session, org_id, org_name, site_name, backup):
+def _restore_site(apisession, org_id, org_name, site_name, backup):
     old_site_id = backup["site"]["info"]["id"]
     new_site_id = None
     assigned_sitegroup_ids = []
@@ -209,33 +209,33 @@ def _restore_site(mist_session, org_id, org_name, site_name, backup):
 
     ### lookup for site groups ###
     if not backup["sitegroup_names"] == []:        
-        available_sitegroups = mist_lib.requests.orgs.sitegroups.get(mist_session, org_id)["result"]
+        available_sitegroups = mistapi.api.v1.orgs.sitegroups.getOrgSiteGroups(apisession, org_id).data
         for sitegroup_name in backup["sitegroup_names"]:
-            new_sitegroup_id= _process_org_obj(mist_lib.requests.orgs.sitegroups.create(mist_session, org_id, {"name":sitegroup_name}), available_sitegroups, "Site Group", sitegroup_name)            
+            new_sitegroup_id= _process_org_obj(mistapi.api.v1.orgs.sitegroups.createOrgSiteGroup(apisession, org_id, {"name":sitegroup_name}), available_sitegroups, "Site Group", sitegroup_name)            
             assigned_sitegroup_ids.append(new_sitegroup_id)
 
     ### lookup for RF templates ###
     if not backup["rftemplate"] == {}:
-        available_rftemplates = mist_lib.requests.orgs.rftemplates.get(mist_session, org_id)["result"]
-        new_rftemplate_id = _process_org_obj(mist_lib.requests.orgs.rftemplates.create(mist_session, org_id, backup["rftemplate"]), available_rftemplates, "RF Template", backup["rftemplate"]["name"])   
+        available_rftemplates = mistapi.api.v1.orgs.rftemplates.getOrgRfTemplates(apisession, org_id).data
+        new_rftemplate_id = _process_org_obj(mistapi.api.v1.orgs.rftemplates.createOrgRfTemplate(apisession, org_id, backup["rftemplate"]), available_rftemplates, "RF Template", backup["rftemplate"]["name"])   
         assigned_rftempate_id = new_rftemplate_id
 
     ### lookup for security policy ###
     if not backup["secpolicy"] == {}:
-        available_secpolicies = mist_lib.requests.orgs.secpolicies.get(mist_session, org_id)["result"]
-        new_secpolicy_id = _process_org_obj(mist_lib.requests.orgs.secpolicies.create(mist_session, org_id, backup["secpolicy"]), available_secpolicies, "Security Policy", backup["secpolicy"]["name"])   
+        available_secpolicies = mistapi.api.v1.orgs.secpolicies.getOrgSecPolicies(apisession, org_id).data
+        new_secpolicy_id = _process_org_obj(mistapi.api.v1.orgs.secpolicies.createOrgSecPolicies(apisession, org_id, backup["secpolicy"]), available_secpolicies, "Security Policy", backup["secpolicy"]["name"])   
         assigned_secpolicy_id = new_secpolicy_id
 
     ### lookup for Alarm templates ###
     if not backup["alarmtemplate"] == {}:
-        available_alarmtemplates = mist_lib.requests.orgs.alarmtemplates.get(mist_session, org_id)["result"]
-        new_alarmtemplate_id = _process_org_obj(mist_lib.requests.orgs.alarmtemplates.create(mist_session, org_id, backup["alarmtemplate"]), available_alarmtemplates, "Alarm Template", backup["alarmtemplate"]["name"])   
+        available_alarmtemplates = mistapi.api.v1.orgs.alarmtemplates.getOrgAlarmTemplates(apisession, org_id).data
+        new_alarmtemplate_id = _process_org_obj(mistapi.api.v1.orgs.alarmtemplates.createOrgAlarmTemplate(apisession, org_id, backup["alarmtemplate"]), available_alarmtemplates, "Alarm Template", backup["alarmtemplate"]["name"])   
         assigned_alarmtemplate_id = new_alarmtemplate_id
 
     ### lookup for network templates ###
     if not backup["networktemplate"] == {}:
-        available_networktemplates = mist_lib.requests.orgs.networktemplates.get(mist_session, org_id)["result"]
-        new_networktemplate_id = _process_org_obj(mist_lib.requests.orgs.networktemplates.create(mist_session, org_id, backup["networktemplate"]), available_networktemplates, "Network Template", backup["networktemplate"]["name"])  
+        available_networktemplates = mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplates(apisession, org_id).data
+        new_networktemplate_id = _process_org_obj(mistapi.api.v1.orgs.networktemplates.createOrgNetworkTemplate(apisession, org_id, backup["networktemplate"]), available_networktemplates, "Network Template", backup["networktemplate"]["name"])  
         assigned_networktemplate_id = new_networktemplate_id
 
     ### restore site ###
@@ -250,7 +250,7 @@ def _restore_site(mist_session, org_id, org_name, site_name, backup):
     print("\033[92m\u2714\033[0m")
 
     ### create site ### 
-    new_site_id = _create_obj(mist_lib.requests.orgs.sites.create(mist_session, org_id, new_site), "Site", site_name)
+    new_site_id = _create_obj(mistapi.api.v1.orgs.sites.createOrgSite(apisession, org_id, new_site), "Site", site_name)
     if not new_site_id:
         console.error("Unable to create the new site... Exiting...")
         sys.exit(1)
@@ -258,7 +258,7 @@ def _restore_site(mist_session, org_id, org_name, site_name, backup):
     ### set site settings ###
     try:        
         print("Configuring Site Settings ".ljust(79, "."), end="", flush=True)
-        mist_lib.requests.sites.settings.update(mist_session, new_site_id, backup["site"]["settings"])
+        mistapi.api.v1.sites.setting.updateSiteSettings(apisession, new_site_id, backup["site"]["settings"])
         print("\033[92m\u2714\033[0m")
     except:    
         print('\033[31m\u2716\033[0m')
@@ -268,7 +268,7 @@ def _restore_site(mist_session, org_id, org_name, site_name, backup):
     if "maps" in data:
         for sub_data in data["maps"]:
             sub_data["site_id"] = new_site_id
-            ids = _common_restore(mist_session, site_name, new_site_id, 'maps', sub_data)
+            ids = _common_restore(apisession, site_name, new_site_id, 'maps', sub_data)
             map_id_dict.update(ids)
 
             old_map_id = next(iter(ids))
@@ -278,7 +278,7 @@ def _restore_site(mist_session, org_id, org_name, site_name, backup):
             if os.path.isfile(image_name):
                 print("Uploading image floorplan for the map {0} ".format(sub_data["name"]).ljust(79, "."), end="", flush=True)
                 try:                
-                    mist_lib.requests.sites.maps.add_image(mist_session, new_site_id, new_map_id, image_name)
+                    mistapi.api.v1.sites.maps.add_image(apisession, new_site_id, new_map_id, image_name)
                     print("\033[92m\u2714\033[0m")
                 except:
                     print('\033[31m\u2716\033[0m')
@@ -289,53 +289,53 @@ def _restore_site(mist_session, org_id, org_name, site_name, backup):
 
     if "assetfilters" in data:
         for sub_data in data["assetfilters"]:
-            _common_restore(mist_session, site_name, new_site_id, 'assetfilters', sub_data)
+            _common_restore(apisession, site_name, new_site_id, 'assetfilters', sub_data)
 
     if "assets" in data:
         for sub_data in data["assets"]:
-            _common_restore(mist_session, site_name, new_site_id, 'assets', sub_data)
+            _common_restore(apisession, site_name, new_site_id, 'assets', sub_data)
 
     if "beacons" in data:
         for sub_data in data["beacons"]:
             sub_data["map_id"] = _replace_id(sub_data["map_id"], map_id_dict)
-            _common_restore(mist_session, site_name, new_site_id, 'beacons', sub_data)
+            _common_restore(apisession, site_name, new_site_id, 'beacons', sub_data)
 
     if "psks" in data:
         for sub_data in data["psks"]:
             sub_data["site_id"] = new_site_id
-            _common_restore(mist_session, site_name, new_site_id, 'psks', sub_data)
+            _common_restore(apisession, site_name, new_site_id, 'psks', sub_data)
 
     if "rssizones" in data:
         for sub_data in data["rssizones"]:
-            _common_restore(mist_session, site_name, new_site_id, 'rssizones', sub_data)
+            _common_restore(apisession, site_name, new_site_id, 'rssizones', sub_data)
 
     if "vbeacons" in data:
         for sub_data in data["vbeacons"]:
             sub_data["map_id"] = _replace_id(sub_data["map_id"], map_id_dict)
-            _common_restore(mist_session, site_name, new_site_id, 'vbeacons', sub_data)
+            _common_restore(apisession, site_name, new_site_id, 'vbeacons', sub_data)
 
     if "webhooks" in data:
         for sub_data in data["webhooks"]:
-            _common_restore(mist_session, site_name, new_site_id, 'webhooks', sub_data)
+            _common_restore(apisession, site_name, new_site_id, 'webhooks', sub_data)
 
     if "wxtunnels" in data:
         for sub_data in data["wxtunnels"]:
-            _common_restore(mist_session, site_name, new_site_id, 'wxtunnels', sub_data)
+            _common_restore(apisession, site_name, new_site_id, 'wxtunnels', sub_data)
 
     if "zones" in data:
         for sub_data in data["zones"]:
             sub_data["map_id"] = _replace_id(sub_data["map_id"], map_id_dict)
-            _common_restore(mist_session, site_name, new_site_id,  'zones', sub_data)
+            _common_restore(apisession, site_name, new_site_id,  'zones', sub_data)
     
     if "wlans" in data:
         for sub_data in data["wlans"]:
-            _wlan_restore(mist_session, site_name, new_site_id, sub_data, old_site_id)
+            _wlan_restore(apisession, site_name, new_site_id, sub_data, old_site_id)
 
     if "wxtags" in data:
         for sub_data in data["wxtags"]:
             if sub_data["match"] == "wlan_id":
                 _replace_id(sub_data["values"], wlan_id_dict)
-            ids = _common_restore(mist_session, site_name, new_site_id, 'wxtags', sub_data)
+            ids = _common_restore(apisession, site_name, new_site_id, 'wxtags', sub_data)
             wxtags_id_dict.update(ids)
 
     if "wxrules" in data:
@@ -346,7 +346,7 @@ def _restore_site(mist_session, org_id, org_name, site_name, backup):
                 sub_data["dst_allow_wxtags"] = _replace_id(sub_data["dst_allow_wxtags"], wxtags_id_dict)
             if "dst_deny_wxtags" in sub_data:
                 sub_data["dst_deny_wxtags"] = _replace_id(sub_data["dst_deny_wxtags"], wxtags_id_dict)
-            _common_restore(mist_session, site_name, new_site_id, 'wxrules', sub_data)
+            _common_restore(apisession, site_name, new_site_id, 'wxrules', sub_data)
 
     
 
@@ -430,7 +430,7 @@ def _check_org_name(org_name):
 
 
 def _check_site_exists(org_id, site_name_to_create):    
-    existing_sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)["result"]
+    existing_sites = mistapi.api.v1.orgs.sites.get(apisession, org_id).data
     try:
         site_id = next(item["id"] for item in existing_sites if item["name"] == site_name_to_create)
         while True:
@@ -452,7 +452,7 @@ def _check_site_exists(org_id, site_name_to_create):
         return site_name_to_create
 
 
-def start_restore_org(mist_session, org_id, org_name, check_org_name=True, in_backup_folder=False):
+def start_restore_org(apisession, org_id, org_name, check_org_name=True, in_backup_folder=False):
     if check_org_name: _check_org_name(org_name)
     if not in_backup_folder: _go_to_backup_folder()    
     print()
@@ -472,23 +472,28 @@ def start_restore_org(mist_session, org_id, org_name, check_org_name=True, in_ba
             site_name_to_create = _check_site_exists(org_id, site_name_to_create)
 
             _display_warning("Are you sure about this? Do you want to import the site configuration into the organization {0} with the id {1} (y/N)? ".format(org_name, org_id))
-            _restore_site(mist_session, org_id, org_name, site_name_to_create, backup)
+            _restore_site(apisession, org_id, org_name, site_name_to_create, backup)
         
             print()
             console.info("Importation process finished...")
 
-def start(mist_session, org_id=None):
+def start(apisession, org_id=None):
     if org_id == "":
-        org_id = cli.select_org(mist_session)[0]
-    org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
-    start_restore_org(mist_session, org_id, org_name)
+        org_id = mistapi.cli.select_org(apisession)[0]
+    org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id).data["name"]
+    start_restore_org(apisession, org_id, org_name)
 
 
 #### SCRIPT ENTRYPOINT ####
 
 
 if __name__ == "__main__":
-    mist_session = mist_lib.Mist_Session(session_file)
-    start(mist_session, org_id)
+    #### LOGS ####
+    logging.basicConfig(filename=log_file, filemode='w')
+    logger.setLevel(logging.DEBUG)
+    ### START ###
+    apisession = mistapi.APISession(env_file=env_file)
+    apisession.login()
+    start(apisession, org_id)
 
 

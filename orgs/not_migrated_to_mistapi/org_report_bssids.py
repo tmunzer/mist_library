@@ -33,7 +33,7 @@ bssid_list = []
 def bssids_from_sites(mist_session, sites, org_info, site_ids):
     for site in sites:
         if len(org_ids) > 1 or site["id"] in site_ids:     
-            devices = mist_lib.requests.sites.devices.get_stats_devices(mist_session, site["id"])["result"]                
+            devices = mistapi.api.v1.sites.devices.get_stats_devices(mist_session, site["id"])["result"]                
             for site_device in devices:
                 device_stat = []    
                 device_stat.append(org_info["id"])           
@@ -55,8 +55,8 @@ def bssids_from_orgs(mist_session, org_ids, site_ids):
         org_sites = list(filter(lambda privilege: "org_id" in privilege and privilege["org_id"] == org_id, mist_session.privileges))
         # the admin only has access to the org information if he/she has this privilege 
         if len(org_sites) >= 1 and org_sites[0]["scope"] == "org":
-            org_info = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]
-            org_sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)["result"]
+            org_info = mistapi.api.v1.orgs.info.get(mist_session, org_id)["result"]
+            org_sites = mistapi.api.v1.orgs.sites.get(mist_session, org_id)["result"]
             bssids_from_sites(mist_session, org_sites, org_info, site_ids)        
         # if the admin doesn't have access to the org level, but only the sites
         elif len(org_sites) >= 1:
@@ -67,13 +67,13 @@ def bssids_from_orgs(mist_session, org_ids, site_ids):
             org_sites = []
             # get the sites information
             for site_id in site_ids:
-                org_sites.append(mist_lib.requests.sites.info.get(mist_session, site_id)["result"])
+                org_sites.append(mistapi.api.v1.sites.info.get(mist_session, site_id)["result"])
             bssids_from_sites(mist_session, org_sites, org_info, site_ids)        
 
 
 #### SCRIPT ENTRYPOINT ####
 
-mist = mist_lib.Mist_Session()
+mist = mistapi.APISession()
 
 org_ids = cli.select_org(mist, allow_many=True)
 if len(org_ids) == 1:

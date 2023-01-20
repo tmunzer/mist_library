@@ -12,26 +12,22 @@ The script has 3 different steps:
 3) enter the requried management VLAN ID
 '''
 
-#### PARAMETERS #####
-
-log_file = "./org_set_ap_mgmt_vlan.log"
-org_id = ""
-site_ids = []
-vlan_id = 0
-
 #### IMPORTS ####
 import sys
 import logging
 from datetime import datetime
-import mlib as mist_lib
-from mlib import cli
+import mistapi
+
+#### PARAMETERS #####
+
+log_file = "./script.log"
+env_file = "./../../.env"
+org_id = ""
+site_ids = []
+vlan_id = 0
 
 #### LOGS ####
-logging.basicConfig(filename=log_file, filemode='a')
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-logger.info(f"NEW RUN: {datetime.now()}")
-#### GLOBAL VARIABLES ####
 out=sys.stdout
 
 #### FUNCTIONS ####
@@ -43,7 +39,7 @@ def _get_device_ids(mist, site_name, site_id):
         out.write(f"Retrieving devices list from {site_name}\r")
         out.flush()
         device_ids = []
-        devices = mist_lib.requests.sites.devices.get(mist, site_id=site_id, device_type="ap")["result"]
+        devices = mistapi.api.v1.sites.devices.getSiteDevices(mist, site_id=site_id, type="ap").data
         for device in devices:
             device_ids.append(device["id"])
     except:
@@ -80,14 +76,14 @@ def _update_devices(mist, site_name, site_id, vlan_id):
         for device_id in device_ids:
             logger.info(f"{site_id}: device {device_id} started")
             try:
-                device_settings = mist_lib.requests.sites.devices.get_details(mist, site_id=site_id, device_id=device_id)["result"]
+                device_settings = mistapi.api.v1.sites.devices.getSiteDevice(mist, site_id=site_id, device_id=device_id).data
                 logger.debug(device_settings)
                 ip_config = device_settings.get("ip_config", {})
                 logger.debug(f"ip_config before change: {ip_config}")
                 ip_config = _update_vlan_id(ip_config, vlan_id)
                 logger.debug(f"ip_config after change: {ip_config}")
                 device_settings["ip_config"] = ip_config
-                mist_lib.requests.sites.devices.set_device_conf(mist, site_id, device_id, device_settings)
+                mistapi.api.v1.sites.devices.updateSiteDevice(mist, site_id, device_id, device_settings)
                 logger.info(f"{site_id}: device {device_id} updated")
             except:
                 logger.error(f"{site_id}: device {device_id} failed")
@@ -123,22 +119,32 @@ def process_sites(mist, site_ids, vlan_id):
     print()
     for site_id in site_ids:
         logger.info(f"{site_id}: Processing site")
-        site_info = mist_lib.requests.sites.info.get(mist, site_id)["result"]
+        site_info = mistapi.api.v1.sites.sites.getSiteInfo(mist, site_id).data
         site_name = _split_site_name(site_info["name"])
         logger.info(f"{site_id}: name is {site_name}")
         _update_devices(mist, site_name, site_id, vlan_id)
 
+def start(apisession):
+    org_id = mistapi.cli.select_org(apisession, allow_many=False)[0]
+    logger.info(f"Org ID  : {org_id}")
+    site_ids = mistapi.cli.select_site(apisession, org_id=org_id, allow_many=True)
+    logger.info(f"Site IDs: {site_ids}")
+    vlan_id = _enter_vlan_id()
+    logger.info(f"VLAN ID : {vlan_id}")
+    process_sites(apisession, site_ids, vlan_id)
 
 
 #### SCRIPT ENTRYPOINT ####
 
 if __name__ == "__main__":
-    mist = mist_lib.Mist_Session()
+    #### LOGS ####
+    logging.basicConfig(filename=log_file, filemode='w')
+    logger.setLevel(logging.DEBUG)
+    ### START ###
+    apisession = mistapi.APISession(env_file=env_file)
+    apisession.login()
+    start(apisession)
 
-    org_id = cli.select_org(mist, allow_many=False)[0]
-    logger.info(f"Org ID  : {org_id}")
-    site_ids = cli.select_site(mist, org_id=org_id, allow_many=True)
-    logger.info(f"Site IDs: {site_ids}")
-    vlan_id = _enter_vlan_id()
-    logger.info(f"VLAN ID : {vlan_id}")
-    process_sites(mist, site_ids, vlan_id)
+
+
+

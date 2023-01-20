@@ -103,114 +103,114 @@ def _backup_full_org(mist_session, org_id, org_name):
     backup = {}
     backup["org"] = {"id": org_id}
 
-    backup_function = mist_lib.requests.orgs.info.get
+    backup_function = mistapi.api.v1.orgs.info.get
     backup["org"]["data"] = _do_backup(
         mist_session, backup_function, org_id, "Org info")
 
-    backup_function = mist_lib.requests.orgs.settings.get
+    backup_function = mistapi.api.v1.orgs.settings.get
     backup["org"]["settings"] = _do_backup(
         mist_session, backup_function, org_id, "Org settings")
 
-    backup_function = mist_lib.requests.orgs.webhooks.get
+    backup_function = mistapi.api.v1.orgs.webhooks.get
     backup["org"]["webhooks"] = _do_backup(
         mist_session, backup_function, org_id, "Org webhooks")
 
-    backup_function = mist_lib.requests.orgs.assetfilters.get
+    backup_function = mistapi.api.v1.orgs.assetfilters.get
     backup["org"]["assetfilters"] = _do_backup(
         mist_session, backup_function, org_id, "Org assetfilters")
 
-    backup_function = mist_lib.requests.orgs.alarmtemplates.get
+    backup_function = mistapi.api.v1.orgs.alarmtemplates.get
     backup["org"]["alarmtemplates"] = _do_backup(
         mist_session, backup_function, org_id, "Org alarmtemplates")
 
-    backup_function = mist_lib.requests.orgs.deviceprofiles.get
+    backup_function = mistapi.api.v1.orgs.deviceprofiles.get
     backup["org"]["deviceprofiles"] = _do_backup(
         mist_session, backup_function, org_id, "Org deviceprofiles")
 
-    backup_function = mist_lib.requests.orgs.mxclusters.get
+    backup_function = mistapi.api.v1.orgs.mxclusters.get
     backup["org"]["mxclusters"] = _do_backup(
         mist_session, backup_function, org_id, "Org mxclusters")
 
-    backup_function = mist_lib.requests.orgs.mxtunnels.get
+    backup_function = mistapi.api.v1.orgs.mxtunnels.get
     backup["org"]["mxtunnels"] = _do_backup(
         mist_session, backup_function, org_id, "Org mxtunnels")
 
-    backup_function = mist_lib.requests.orgs.psks.get
+    backup_function = mistapi.api.v1.orgs.psks.get
     backup["org"]["psks"] = _do_backup(
         mist_session, backup_function, org_id, "Org psks")
 
-    backup_function = mist_lib.requests.orgs.rftemplates.get
+    backup_function = mistapi.api.v1.orgs.rftemplates.get
     backup["org"]["rftemplates"] = _do_backup(
         mist_session, backup_function, org_id, "Org rftemplates")
 
-    backup_function = mist_lib.requests.orgs.networktemplates.get
+    backup_function = mistapi.api.v1.orgs.networktemplates.get
     backup["org"]["networktemplates"] = _do_backup(
         mist_session, backup_function, org_id, "Org networktemplates")
 
-    backup_function = mist_lib.requests.orgs.evpn_topologies.get
+    backup_function = mistapi.api.v1.orgs.evpn_topologies.get
     backup["org"]["evpn_topologies"] = _do_backup(
         mist_session, backup_function, org_id, "Org evpn_topologies")
 
-    backup_function = mist_lib.requests.orgs.services.get
+    backup_function = mistapi.api.v1.orgs.services.get
     backup["org"]["services"] = _do_backup(
         mist_session, backup_function, org_id, "Org services")
 
-    backup_function = mist_lib.requests.orgs.networks.get
+    backup_function = mistapi.api.v1.orgs.networks.get
     backup["org"]["networks"] = _do_backup(
         mist_session, backup_function, org_id, "Org networks")
 
-    backup_function = mist_lib.requests.orgs.gatewaytemplates.get
+    backup_function = mistapi.api.v1.orgs.gatewaytemplates.get
     backup["org"]["gatewaytemplates"] = _do_backup(
         mist_session, backup_function, org_id, "Org gatewaytemplates")
 
-    backup_function = mist_lib.requests.orgs.hubprofiles.get
+    backup_function = mistapi.api.v1.orgs.hubprofiles.get
     backup["org"]["hubprofiles"] = _do_backup(
         mist_session, backup_function, org_id, "Org hubprofiles")
 
-    backup_function = mist_lib.requests.orgs.vpns.get
+    backup_function = mistapi.api.v1.orgs.vpns.get
     backup["org"]["vpns"] = _do_backup(
         mist_session, backup_function, org_id, "Org vpns")
 
-    backup_function = mist_lib.requests.orgs.secpolicies.get
+    backup_function = mistapi.api.v1.orgs.secpolicies.get
     backup["org"]["secpolicies"] = _do_backup(
         mist_session, backup_function, org_id, "Org secpolicies")
 
-    backup_function = mist_lib.requests.orgs.sitegroups.get
+    backup_function = mistapi.api.v1.orgs.sitegroups.get
     backup["org"]["sitegroups"] = _do_backup(
         mist_session, backup_function, org_id, "Org sitegroups")
 
-    backup_function = mist_lib.requests.orgs.ssos.get
+    backup_function = mistapi.api.v1.orgs.ssos.get
     backup["org"]["ssos"] = _do_backup(
         mist_session, backup_function, org_id, "Org ssos")
 
-    backup_function = mist_lib.requests.orgs.ssoroles.get
+    backup_function = mistapi.api.v1.orgs.ssoroles.get
     backup["org"]["ssoroles"] = _do_backup(
         mist_session, backup_function, org_id, "Org ssoroles")
 
-    backup_function = mist_lib.requests.orgs.templates.get
+    backup_function = mistapi.api.v1.orgs.templates.get
     backup["org"]["templates"] = _do_backup(
         mist_session, backup_function, org_id, "Org templates")
 
-    backup_function = mist_lib.requests.orgs.wlans.get
+    backup_function = mistapi.api.v1.orgs.wlans.get
     backup["org"]["wlans"] = _do_backup(
         mist_session, backup_function, org_id, "Org wlans")
 
     _backup_wlan_portal(org_id, None, backup["org"]["wlans"])
 
-    backup_function = mist_lib.requests.orgs.wxrules.get
+    backup_function = mistapi.api.v1.orgs.wxrules.get
     backup["org"]["wxrules"] = _do_backup(
         mist_session, backup_function, org_id, "Org wxrules")
 
-    backup_function = mist_lib.requests.orgs.wxtags.get
+    backup_function = mistapi.api.v1.orgs.wxtags.get
     backup["org"]["wxtags"] = _do_backup(
         mist_session, backup_function, org_id, "Org wxtags")
 
-    backup_function = mist_lib.requests.orgs.wxtunnels.get
+    backup_function = mistapi.api.v1.orgs.wxtunnels.get
     backup["org"]["wxtunnels"] = _do_backup(
         mist_session, backup_function, org_id, "Org wxtunnels")
 
     backup["org"]["sites"] = []
-    sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)['result']
+    sites = mistapi.api.v1.orgs.sites.get(mist_session, org_id)['result']
     #sites = mist.orgs_sites_api.get_org_sites(org_id=org_id)
     for site in sites:
         site_id = site["id"]
@@ -218,72 +218,72 @@ def _backup_full_org(mist_session, org_id, org_name):
         # site_id = site.id
         # site_name = site.name
         print(f" Backuping Site {site_name} ".center(80, "_"))
-        backup_function = mist_lib.requests.sites.assets.get
+        backup_function = mistapi.api.v1.sites.assets.get
         # backup_function = mist.sites_assets_api.get_site_assets
         assets = _do_backup(mist_session, backup_function,
                             site_id, "Site assets")
 
-        backup_function = mist_lib.requests.sites.assetfilters.get
+        backup_function = mistapi.api.v1.sites.assetfilters.get
         # backup_function = mist.sites_asset_filters_api.get_site_asset_filters
         assetfilters = _do_backup(
             mist_session, backup_function, site_id, "Site assetfilters")
 
-        backup_function = mist_lib.requests.sites.beacons.get
+        backup_function = mistapi.api.v1.sites.beacons.get
         # backup_function = mist.sites_beacons_api.get_site_beacons
         beacons = _do_backup(mist_session, backup_function,
                              site_id, "Site beacons")
 
-        backup_function = mist_lib.requests.sites.maps.get
+        backup_function = mistapi.api.v1.sites.maps.get
         # backup_function = mist.sites_maps_api.get_site_maps
         maps = _do_backup(mist_session, backup_function, site_id, "Site maps")
 
-        backup_function = mist_lib.requests.sites.psks.get
+        backup_function = mistapi.api.v1.sites.psks.get
         # backup_function = mist.sites_psks_api.get_site_psks
         psks = _do_backup(mist_session, backup_function, site_id, "Site psks")
 
-        backup_function = mist_lib.requests.sites.rssizones.get
+        backup_function = mistapi.api.v1.sites.rssizones.get
         # backup_function = mist.sites_rssizones_api.get_site_rssi_zones
         rssizones = _do_backup(
             mist_session, backup_function, site_id, "Site rssizones")
 
-        backup_function = mist_lib.requests.sites.settings.get
+        backup_function = mistapi.api.v1.sites.settings.get
         # backup_function = mist.sites_setting_api.get_site_setting
         settings = _do_backup(mist_session, backup_function,
                               site_id, "Site settings")
 
-        backup_function = mist_lib.requests.sites.vbeacons.get
+        backup_function = mistapi.api.v1.sites.vbeacons.get
         # backup_function = mist.sites_v_beacons_api.get_site_v_beacons
         vbeacons = _do_backup(mist_session, backup_function,
                               site_id, "Site vbeacons")
 
-        backup_function = mist_lib.requests.sites.webhooks.get
+        backup_function = mistapi.api.v1.sites.webhooks.get
         # backup_function = mist.sites_webhooks_api.get_site_webhooks
         webhooks = _do_backup(mist_session, backup_function,
                               site_id, "Site webhooks")
 
-        backup_function = mist_lib.requests.sites.wlans.get
+        backup_function = mistapi.api.v1.sites.wlans.get
         # backup_function = mist.sites_wlans_api.get_site_wlans
         wlans = _do_backup(mist_session, backup_function,
                            site_id, "Site wlans")
 
         _backup_wlan_portal(org_id, site_id, wlans)
 
-        backup_function = mist_lib.requests.sites.wxrules.get
+        backup_function = mistapi.api.v1.sites.wxrules.get
         # backup_function = mist.sites_wx_rules_api.get_site_wx_rules
         wxrules = _do_backup(mist_session, backup_function,
                              site_id, "Site wxrules")
 
-        backup_function = mist_lib.requests.sites.wxtags.get
+        backup_function = mistapi.api.v1.sites.wxtags.get
         # backup_function = mist.sites_wx_tags_api.get_site_wx_tags
         wxtags = _do_backup(mist_session, backup_function,
                             site_id, "Site wxtags")
 
-        backup_function = mist_lib.requests.sites.wxtunnels.get
+        backup_function = mistapi.api.v1.sites.wxtunnels.get
         # backup_function = mist.sites_wx_tunnels_api.get_site_wx_tunnels
         wxtunnels = _do_backup(
             mist_session, backup_function, site_id, "Site wxtunnels")
 
-        backup_function = mist_lib.requests.sites.zones.get
+        backup_function = mistapi.api.v1.sites.zones.get
         # backup_function = mist.sites_zones_api.get_site_zones
         zones = _do_backup(mist_session, backup_function,
                            site_id, "Site zones")
@@ -375,5 +375,5 @@ if __name__ == "__main__":
     logging.basicConfig(filename=log_file, filemode='w')
     logger.setLevel(logging.DEBUG)
 
-    mist_session = mist_lib.Mist_Session(session_file)
+    mist_session = mistapi.APISession(session_file)
     start(mist_session)

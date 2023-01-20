@@ -78,7 +78,7 @@ def _result(backup):
     print("")
 ## site id
 def _link_sites_ids(mist_session, org_id, sites_ids):
-    new_sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)["result"] 
+    new_sites = mistapi.api.v1.orgs.sites.get(mist_session, org_id)["result"] 
     return _link_objects_ids(new_sites, sites_ids)
 
 def _find_new_site_id_by_old_id(site_id_dict, old_id):
@@ -92,7 +92,7 @@ def _find_new_site_id_by_name(site_id_dict, site_name):
 
 ## map id
 def _link_maps_id(mist_session, site_id, maps_ids):
-    new_maps = mist_lib.requests.sites.maps.get(mist_session, site_id)["result"]
+    new_maps = mistapi.api.v1.sites.maps.get(mist_session, site_id)["result"]
     return _link_objects_ids(new_maps, maps_ids)
 
 def _find_new_map_id_by_old_id(map_id_dict, old_id):
@@ -106,7 +106,7 @@ def _find_new_site_id_by_name(map_id_dict, map_name):
 
 ## device profiles
 def _link_deviceprofiles_ids(mist_session, org_id, deviceprofiles_ids):
-    new_deviceprofiles = mist_lib.requests.orgs.deviceprofiles.get(mist_session, org_id)["result"]
+    new_deviceprofiles = mistapi.api.v1.orgs.deviceprofiles.get(mist_session, org_id)["result"]
     return _link_objects_ids(new_deviceprofiles, deviceprofiles_ids)
 
 def _find_new_deviceprofile_id_by_old_id(deviceprofile_id_dict, old_id):
@@ -156,7 +156,7 @@ def _restore_device_image(mist_session, source_org_id, org_id, site_id, device_s
     image_name = f"{file_prefix}_org_{source_org_id}_device_{device_serial}_image_{i}.png"
     if os.path.isfile(image_name):
         console.info(f"Image {image_name} will be restored to device {device_serial}" )
-        mist_lib.requests.sites.devices.add_image(mist_session, site_id, device_id, i, image_name)
+        mistapi.api.v1.sites.devices.add_image(mist_session, site_id, device_id, i, image_name)
         return True
     else:
         console.debug(f"Image {image_name} not found for device id {device_serial}" )
@@ -349,7 +349,7 @@ def start(mist_session, org_id=None, source_org_name=None, sites_list=None, ap_m
         print("*** Please select the destination organization ***")
         print("***                                            ***")
         org_id = cli.select_org(mist_session)[0]
-    org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
+    org_name = mistapi.api.v1.orgs.info.get(mist_session, org_id)["result"]["name"]
     start_restore_inventory(mist_session, org_id, org_name, source_org_name, sites_list, ap_mac)
 
 
@@ -357,7 +357,7 @@ def start(mist_session, org_id=None, source_org_name=None, sites_list=None, ap_m
 
 
 if __name__ == "__main__":
-    mist_session = mist_lib.Mist_Session(session_file)
+    mist_session = mistapi.APISession(session_file)
     start(mist_session)
 
 

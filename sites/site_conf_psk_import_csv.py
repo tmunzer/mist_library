@@ -12,29 +12,36 @@ pskName1,pskValue1,Wlan1
 pskName2,pskValue2,Wlan2
 
 '''
-#### PARAMETERS #####
-csv_separator = ","
 
 #### IMPORTS #####
-import mlib as mist_lib
-from mlib import cli
+import mistapi
 import sys
 import csv
+import logging
 
+#### PARAMETERS #####
+csv_separator = ","
+log_file = "./sites_scripts.log"
+env_file = "./.env"
+#### LOGS ####
+logger = logging.getLogger(__name__)
 
 #### FUNCTIONS #####
 
-def import_psk(site_id, psks):
+def import_psk(apisession, site_id, psks):
     print("")
     print("".center(80, "-"))
     print(f"Starting PSKs import for site {site_id}".center(80, "-"))
     print("")
     for psk in psks:     
         print(f'PSK {psk["username"]}')
-        pskObj = mist_lib.models.sites.psks.Psk()
-        pskObj.define(name=psk["username"], passphrase=psk["passphrase"], ssid=psk["ssid"])
-        mist_lib.requests.sites.psks.create(mist, site_id, pskObj.toJSON())
-        print(pskObj.toJSON())
+        body = {
+            "username":psk["username"],
+            "passphrase":psk["passphrase"],
+            "ssid":psk["ssid"]
+        }        
+        result = mistapi.api.v1.sites.psks.createSitePsk(apisession, site_id, body=body).data
+        mistapi.cli.pretty_print(result)
 
 def read_csv(csv_file): 
     print("")
@@ -54,26 +61,35 @@ def read_csv(csv_file):
     except:
         print("Error while opening the CSV file... Aborting")
 
-def list_psks(site_id):
+def list_psks(apisession, site_id):
     print("")
     print("".center(80, "-"))
     print(f"List of current PSKs for site {site_id}".center(80, "-"))
     print("")
-    psks = mist_lib.requests.sites.psks.get(mist, site_id)['result']
-    cli.show(psks)
+    psks = mistapi.api.v1.sites.psks.getSitePsks(apisession, site_id).data
+    mistapi.cli.display_list_of_json_as_table(psks)
+
+
+def start(apisession):
+    site_ids = mistapi.cli.select_site(apisession, allow_many=True)
+    print("")
+    print("".center(80, "-"))
+    print(site_ids)
+
+    psks = read_csv(sys.argv[1])
+
+    for site_id in site_ids:
+        import_psk(site_id, psks)
+
+    for site_id in site_ids:
+        list_psks(site_id)
 
 #### SCRIPT ENTRYPOINT #####
-
-mist = mist_lib.Mist_Session()
-site_ids = cli.select_site(mist, allow_many=True)
-print("")
-print("".center(80, "-"))
-print(site_ids)
-
-psks = read_csv(sys.argv[1])
-
-for site_id in site_ids:
-    import_psk(site_id, psks)
-
-for site_id in site_ids:
-    list_psks(site_id)
+if __name__ == "__main__":
+    #### LOGS ####
+    logging.basicConfig(filename=log_file, filemode='w')
+    logger.setLevel(logging.DEBUG)
+    ### START ###
+    apisession = mistapi.APISession(env_file=env_file)
+    apisession.login()
+    start(apisession)

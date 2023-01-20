@@ -1,3 +1,5 @@
+# README NOT UP TO DATE YET
+
 **Warning**
 The script from this repository are not yet adapted to work with the new library. You still have to download the whole repository to get them working. 
 

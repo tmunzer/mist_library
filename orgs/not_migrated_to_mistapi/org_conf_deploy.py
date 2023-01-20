@@ -153,7 +153,7 @@ def _common_restore(mist_session, level, level_id, object_type, data):
     message=f"Creating {object_type} {object_name}"
     log_message(message)
     try:
-        module = mist_lib.requests.route(level, object_type)
+        module = mistapi.api.v1.route(level, object_type)
         result = module.create(mist_session, level_id, data)["result"]
         if "id" in result:
             new_id = result["id"]
@@ -187,11 +187,11 @@ def _wlan_restore_portal(mist_session, level_id, old_org_id, old_site_id, old_wl
     if old_site_id is None:
         portal_file_name = f"{file_prefix}_org_{old_org_id}_wlan_{old_wlan_id}.json"
         portal_image = f"{file_prefix}_org_{old_org_id}_wlan_{old_wlan_id}.png"
-        module = mist_lib.requests.route("orgs", "wlans")
+        module = mistapi.api.v1.route("orgs", "wlans")
     else:
         portal_file_name = f"{file_prefix}_org_{old_org_id}_site_{old_site_id}_wlan_{old_wlan_id}.json"
         portal_image = f"{file_prefix}_org_{old_org_id}_site_{old_site_id}_wlan_{old_wlan_id}.png"
-        module = mist_lib.requests.route("sites", "wlans")
+        module = mistapi.api.v1.route("sites", "wlans")
 
 
     if os.path.isfile(portal_file_name):
@@ -267,7 +267,7 @@ def _restore_site(mist_session, data, org_id, old_org_id):
     try:
         message=f"Updating settings "
         log_message(message)
-        mist_lib.requests.sites.settings.update(
+        mistapi.api.v1.sites.settings.update(
             mist_session, new_site_id, settings)
         log_success(message)
     except:
@@ -286,7 +286,7 @@ def _restore_site(mist_session, data, org_id, old_org_id):
                 message=f"Uploading image floorplan  \"{sub_data['name']}\""
                 log_message(message)
                 try:
-                    mist_lib.requests.sites.maps.add_image(
+                    mistapi.api.v1.sites.maps.add_image(
                         mist_session, new_site_id, new_map_id, image_name)
                     log_success(message)
                 except:
@@ -387,7 +387,7 @@ def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None)
     message="Org Info "
     log_message(message)
     try:
-        mist_lib.requests.orgs.info.update(mist_session, org_id, data)
+        mistapi.api.v1.orgs.info.update(mist_session, org_id, data)
         log_success(message)
     except Exception as e:
         log_failure(message)
@@ -399,7 +399,7 @@ def _restore_org(mist_session, org_id, org_name, org, custom_dest_org_name=None)
     log_message(message)
     try:
         data = _clean_ids(org["settings"])
-        mist_lib.requests.orgs.settings.update(mist_session, org_id, data)
+        mistapi.api.v1.orgs.settings.update(mist_session, org_id, data)
         log_success(message)
     except Exception as e:
         log_failure(message)
@@ -686,7 +686,7 @@ def _create_org(mist_session):
                 log_failure(message)
                 logger.error("Exception occurred", exc_info=True)
                 sys.exit(10)
-            org_id = mist_lib.requests.orgs.orgs.create(mist_session, org)[
+            org_id = mistapi.api.v1.orgs.orgs.create(mist_session, org)[
                 "result"]["id"]
             start_deploy_org(mist_session, org_id, custom_dest_org_name, None,
                               check_org_name=False, custom_dest_org_name=custom_dest_org_name)
@@ -702,7 +702,7 @@ def start(mist_session):
             "Do you want to create a (n)ew organisation or (r)estore to an existing one? ")
         if res.lower() == "r":
             org_id = cli.select_org(mist_session)[0]
-            org_name = mist_lib.requests.orgs.info.get(
+            org_name = mistapi.api.v1.orgs.info.get(
                 mist_session, org_id)["result"]["name"]
             start_deploy_org(mist_session, org_id, org_name,
                               None, check_org_name=True)
@@ -717,5 +717,5 @@ if __name__ == "__main__":
     #### LOGS ####
     logging.basicConfig(filename=log_file, filemode='w')
     logger.setLevel(logging.DEBUG)
-    mist_session = mist_lib.Mist_Session(session_file)
+    mist_session = mistapi.APISession(session_file)
     start(mist_session)

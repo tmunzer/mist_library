@@ -77,7 +77,7 @@ def _backup_site_id_dict(site):
 
 
 def _backup_site_maps(mist_session, site):
-    backup_maps = mist_lib.requests.sites.maps.get(
+    backup_maps = mistapi.api.v1.sites.maps.get(
         mist_session, site["id"])["result"]
     maps_ids = {}
     for xmap in backup_maps:
@@ -112,7 +112,7 @@ def _backup_inventory(mist_session, org_id, org_name=None):
     message=f"Backuping inventory "
     log_message(message)
     try:
-        inventory = mist_lib.requests.orgs.inventory.get(mist_session, org_id)[
+        inventory = mistapi.api.v1.orgs.inventory.get(mist_session, org_id)[
             "result"]
         for data in inventory:
             if not data["magic"] == "":
@@ -128,7 +128,7 @@ def _backup_inventory(mist_session, org_id, org_name=None):
     message=f"Backuping Device Profiles "
     log_message(message)
     try:
-        deviceprofiles = mist_lib.requests.orgs.deviceprofiles.get(mist_session, org_id)[
+        deviceprofiles = mistapi.api.v1.orgs.deviceprofiles.get(mist_session, org_id)[
             "result"]
         for deviceprofile in deviceprofiles:
             backup["org"]["deviceprofiles_ids"][deviceprofile["name"]] = {
@@ -143,7 +143,7 @@ def _backup_inventory(mist_session, org_id, org_name=None):
     message=f"Retrieving Sites list "
     log_message(message)
     try:
-        sites = mist_lib.requests.orgs.sites.get(mist_session, org_id)['result']
+        sites = mistapi.api.v1.orgs.sites.get(mist_session, org_id)['result']
         log_success(message)
     except Exception as e:
         log_failure(message)
@@ -159,7 +159,7 @@ def _backup_inventory(mist_session, org_id, org_name=None):
             _backup_site_id_dict(site)
             maps_ids = _backup_site_maps(mist_session, site)
             backup["org"]["sites"][site["name"]]["maps_ids"] = maps_ids
-            devices = mist_lib.requests.sites.devices.get(
+            devices = mistapi.api.v1.sites.devices.get(
                 mist_session, site["id"], device_type="all")["result"]
             backup["org"]["sites"][site["name"]]["devices"] = devices
             log_success(message)
@@ -230,5 +230,5 @@ if __name__ == "__main__":
     logging.basicConfig(filename=log_file, filemode='w')
     logger.setLevel(logging.DEBUG)
 
-    mist_session = mist_lib.Mist_Session(session_file)
+    mist_session = mistapi.APISession(session_file)
     start(mist_session, org_id)

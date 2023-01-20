@@ -54,7 +54,7 @@ def country_code(site):
 def wlans_from_sites(mist_session, sites, org_info, site_ids):
     for site in sites:
         if len(org_ids) > 1 or site["id"] in site_ids:
-            site_wlans = mist_lib.requests.sites.wlans.report(
+            site_wlans = mistapi.api.v1.sites.wlans.report(
                 mist_session, site["id"], fields)
             for site_wlan in site_wlans:
                 site_wlan.insert(0, "site")
@@ -73,11 +73,11 @@ def wlans_from_orgs(mist_session, org_ids, site_ids):
             p for p in mist_session.privileges if "org_id" in p and p["org_id"] == org_id]
         # the admin only has access to the org information if he/she has this privilege
         if len(org_sites) >= 1 and org_sites[0]["scope"] == "org":
-            org_info = mist_lib.requests.orgs.info.get(
+            org_info = mistapi.api.v1.orgs.info.get(
                 mist_session, org_id)["result"]
-            org_sites = mist_lib.requests.orgs.sites.get(
+            org_sites = mistapi.api.v1.orgs.sites.get(
                 mist_session, org_id)["result"]
-            org_wlans = mist_lib.requests.orgs.wlans.report(
+            org_wlans = mistapi.api.v1.orgs.wlans.report(
                 mist_session, org_id, fields)
             for org_wlan in org_wlans:
                 if len(org_ids) > 1 or org_wlan[0] in site_ids:
@@ -103,14 +103,14 @@ def wlans_from_orgs(mist_session, org_ids, site_ids):
             }
             org_sites = []
             for site_id in site_ids:
-                org_sites.append(mist_lib.requests.sites.info.get(
+                org_sites.append(mistapi.api.v1.sites.info.get(
                     mist_session, site_id)["result"])
             wlans_from_sites(mist_session, org_sites, org_info, site_ids)
 
 
 #### SCRIPT ENTRYPOINT ####
 
-mist = mist_lib.Mist_Session()
+mist = mistapi.APISession()
 
 org_ids = cli.select_org(mist, allow_many=True)
 if len(org_ids) == 1:

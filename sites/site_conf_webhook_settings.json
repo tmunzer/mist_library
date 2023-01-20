@@ -1,0 +1,10 @@
+{
+    "url": "https://myserver.local/webhooks",
+    "enabled": false,
+    "splunk_token": "",
+    "secret": "mprzx74ACMqM",
+    "name": "demo",
+    "type": "http-post",
+    "verify_cert": true,
+    "headers": {}
+}

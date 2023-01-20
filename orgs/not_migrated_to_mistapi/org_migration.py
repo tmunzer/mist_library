@@ -73,12 +73,12 @@ def _create_org(mist_session):
             except:
                 print('\033[31m\u2716\033[0m')
                 sys.exit(10)
-            org_id = mist_lib.requests.orgs.orgs.create(mist_session, org)["result"]["id"]
+            org_id = mistapi.api.v1.orgs.orgs.create(mist_session, org)["result"]["id"]
             return (mist_session, org_id, custom_dest_org_name)
 
 
 def select_or_create_org(mist_session=None):
-    mist_session = mist_lib.Mist_Session()    
+    mist_session = mistapi.APISession()    
     while True:
         res = input("Do you want to create a (n)ew organisation or (r)estore to an existing one? ")
         if res.lower()=="r":
@@ -102,7 +102,7 @@ def _check_org_name(org_name):
 #######
 def _select_org(mist_session=None, host=None):
     if not mist_session:
-        mist_session = mist_lib.Mist_Session(host=host)    
+        mist_session = mistapi.APISession(host=host)    
     org_id = cli.select_org(mist_session)[0]
     org_name = mist_lib.orgs.info.get(mist_session, org_id)["result"]["name"]
     _check_org_name(org_name)

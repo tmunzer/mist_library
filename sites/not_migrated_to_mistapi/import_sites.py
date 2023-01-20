@@ -237,7 +237,7 @@ def new_site(name, address, groups):
 ##### ENTRY POINT #####
 #####################################################################
 if __name__ == "__main__":
-    mist = mist_lib.Mist_Session("./session.py")
+    mist = mistapi.APISession("./session.py")
     # mist.save()
     if not org_id:
         org_id = cli.select_org(mist)[0]

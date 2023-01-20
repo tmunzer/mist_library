@@ -3,16 +3,13 @@ Written by Thomas Munzer (tmunzer@juniper.net)
 Github repository: https://github.com/tmunzer/Mist_library/
 '''
 
-#######################################################################################################################################
-#######################################################################################################################################
-############################################# IMPORTS
-#######################################################################################################################################
-
+#### IMPORTS ####
 import os
 import getopt
 import sys
 import mistapi
 from dotenv import load_dotenv
+
 
 def _load_conf(cloud, org_id, tmpl_id, profile):    
     print("Loading config ".ljust(79, "."), end="", flush=True)
@@ -209,8 +206,9 @@ Github: https://github.com/tmunzer/mist_library
         load_dotenv()
         session = mistapi.APISession()
         
-
     mist_config = _load_conf(cloud, org_id, tmpl_id, profile)
+    
+    session.login()
 
     if not mist_config["org_id"]:
         mist_config["org_id"] = mistapi.cli.select_org(session)[0]
@@ -227,10 +225,7 @@ Github: https://github.com/tmunzer/mist_library
         _display_status(session, mist_config["org_id"], mist_config["tmpl_id"], mist_config["profile"])
 
 
-#######################################################################################################################################
-#######################################################################################################################################
-############################################# ENTRYPOINT
-#######################################################################################################################################
+#### ENTRYPOINT #####
 if __name__=="__main__":
         main()
 

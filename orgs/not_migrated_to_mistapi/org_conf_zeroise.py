@@ -48,7 +48,7 @@ console = Console(6)
 
 def delete_object(org_id, object_name, ids_to_not_delete):
     console.info("Removing all %s objects..." %object_name)
-    req = mist_lib.requests.route("orgs", object_name)
+    req = mistapi.api.v1.route("orgs", object_name)
     data = req.get(mist_session, org_id)["result"]
     for d in data:
         if not d["id"] in ids_to_not_delete:
@@ -107,7 +107,7 @@ def check_org_name(org_name):
 
 #### SCRIPT ENTRYPOINT ####
 
-mist_session = mist_lib.Mist_Session()
+mist_session = mistapi.APISession()
 
 print(""" 
 __          __     _____  _   _ _____ _   _  _____ 
@@ -126,7 +126,7 @@ __          __     _____  _   _ _____ _   _  _____
 
 if org_id == "":
     org_id = cli.select_org(mist_session)[0]
-org_name = mist_lib.requests.orgs.info.get(mist_session, org_id)["result"]["name"]
+org_name = mistapi.api.v1.orgs.info.get(mist_session, org_id)["result"]["name"]
 
 check_org_name(org_name)
 display_warning(f"Are you sure about this? Do you want to remove all the objects from the org {org_name} with the id {org_id} (y/N)? ")

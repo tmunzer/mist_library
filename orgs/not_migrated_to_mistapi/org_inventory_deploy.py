@@ -123,7 +123,7 @@ to the previous org (no known claim code):""")
 
 
 def _link_sites_ids(mist_session, org_id, sites_ids):
-    new_sites = mist_lib.requests.orgs.sites.get(
+    new_sites = mistapi.api.v1.orgs.sites.get(
         mist_session, org_id)["result"]
     return _link_objects_ids(new_sites, sites_ids)
 
@@ -142,7 +142,7 @@ def _find_new_site_id_by_name(site_id_dict, site_name):
 
 
 def _link_maps_id(mist_session, site_id, maps_ids):
-    new_maps = mist_lib.requests.sites.maps.get(
+    new_maps = mistapi.api.v1.sites.maps.get(
         mist_session, site_id)["result"]
     return _link_objects_ids(new_maps, maps_ids)
 
@@ -161,7 +161,7 @@ def _find_new_site_id_by_name(map_id_dict, map_name):
 
 
 def _link_deviceprofiles_ids(mist_session, org_id, deviceprofiles_ids):
-    new_deviceprofiles = mist_lib.requests.orgs.deviceprofiles.get(
+    new_deviceprofiles = mistapi.api.v1.orgs.deviceprofiles.get(
         mist_session, org_id)["result"]
     return _link_objects_ids(new_deviceprofiles, deviceprofiles_ids)
 
@@ -192,7 +192,7 @@ def _add_magic(mist_session, org_id, magics):
         log_message(message)
         try:
             if not dry_run:
-                mist_lib.requests.orgs.inventory.add(
+                mistapi.api.v1.orgs.inventory.add(
                     mist_session, org_id, current_magics)
             log_success(message)
         except Exception as e:
@@ -207,7 +207,7 @@ def _restore_device_to_site_assignment(mist_session, org_id, new_site_id, device
     log_debug(f"MAC Addresse: {devices_mac}")
     try:
         if not dry_run:
-            mist_lib.requests.orgs.inventory.assign_macs_to_site(
+            mistapi.api.v1.orgs.inventory.assign_macs_to_site(
                 mist_session, org_id, new_site_id, devices_mac)
         log_success(message)
     except Exception as e:
@@ -220,7 +220,7 @@ def _unclaim_devices(mist_session, org_id, devices):
     log_message(message)
     try:
         if not dry_run:
-            mist_lib.requests.orgs.inventory.delete_multiple(
+            mistapi.api.v1.orgs.inventory.delete_multiple(
                 mist_session, org_id, macs=devices)
         log_success(message)
     except Exception as e:
@@ -282,7 +282,7 @@ def _restore_device_image(mist_session, source_org_id, site_id, device, i):
         log_message(message)
         try:
             if not dry_run:
-                mist_lib.requests.sites.devices.add_image(
+                mistapi.api.v1.sites.devices.add_image(
                     mist_session, site_id, device["id"], i, image_name)
             log_success(message)
             return True
@@ -331,7 +331,7 @@ def _restore_device_configuration(mist_session, source_org_id, new_site_id, devi
         log_message(message)
         try:
             if not dry_run:
-                mist_lib.requests.sites.devices.set_device_conf(
+                mistapi.api.v1.sites.devices.set_device_conf(
                     mist_session, new_site_id, device["id"], device)
             log_success(message)
         except Exception as e:
@@ -589,10 +589,10 @@ def start_deploy_inventory(mist_session, dest_org_id, dest_org_name, source_mist
                 print("".center(80,'*'))
                 print(" Please select the source organization ".center(80,'*'))
                 print("".center(80,'*'))                
-                source_mist_session = mist_lib.Mist_Session()
+                source_mist_session = mistapi.APISession()
             if not source_org_id:
                 source_org_id = cli.select_org(source_mist_session)[0]
-                source_org_name = mist_lib.requests.orgs.info.get(
+                source_org_name = mistapi.api.v1.orgs.info.get(
                     source_mist_session, source_org_id)["result"]["name"]
                 _check_org_name(source_org_name)
 
@@ -616,7 +616,7 @@ def start(mist_session, org_id=None, source_org_name=None, sites_list=None, ap_m
         print(" Please select the destination organization ".center(80,'*'))
         print("".center(80,'*'))
         org_id = cli.select_org(mist_session)[0]
-    org_name = mist_lib.requests.orgs.info.get(
+    org_name = mistapi.api.v1.orgs.info.get(
         mist_session, org_id)["result"]["name"]
     start_deploy_inventory(mist_session, org_id, org_name,
                             source_org_name, sites_list, ap_mac)
@@ -630,5 +630,5 @@ if __name__ == "__main__":
     logging.basicConfig(filename=log_file, filemode='w')
     logger.setLevel(logging.DEBUG)
 
-    mist_session = mist_lib.Mist_Session(session_file)
+    mist_session = mistapi.APISession(session_file)
     start(mist_session)

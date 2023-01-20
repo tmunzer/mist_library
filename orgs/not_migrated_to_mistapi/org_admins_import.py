@@ -43,7 +43,7 @@ def define_privileges(org_id):
                 privileges.append({"scope": "site", "org_id": org_id, "site_id": site_id, "role":roles[role]})
             break
         elif all_sites.lower() == "n" or all_sites == "":            
-            site_ids = mist_lib.requests.orgs.sites.get(mist, org_id)
+            site_ids = mistapi.api.v1.orgs.sites.get(mist, org_id)
             site_id=""
             for site in site_ids["result"]:
                 if "site_id" in site:
@@ -65,20 +65,20 @@ def import_admins(file_path, org_id):
                 first_name= row[1]
                 last_name = row[2]        
                 print(', '.join(row))
-                mist_lib.requests.orgs.admins.create_invite(mist, org_id, email, privileges, first_name, last_name)            
+                mistapi.api.v1.orgs.admins.create_invite(mist, org_id, email, privileges, first_name, last_name)            
     except:
         print("Error while opening the CSV file... Aborting")
 
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
     file_path = sys.argv[1]
-    mist = mist_lib.Mist_Session("./session.py")
+    mist = mistapi.APISession("./session.py")
 
     org_id = cli.select_org(mist)
 
     define_privileges(org_id)
     import_admins(file_path, org_id)
 
-    admins = mist_lib.requests.orgs.admins.get(mist, org_id)
+    admins = mistapi.api.v1.orgs.admins.get(mist, org_id)
     cli.show(admins)
     sys.exit(0)

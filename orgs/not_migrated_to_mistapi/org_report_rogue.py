@@ -31,8 +31,8 @@ def get_rogues(org_info, site_ids):
         for r_type in r_types:
             print(f"{org_info['name']} > {site_id} > {r_type} ".ljust(79, "."), end='', flush=True)
             rogues = []
-            site_info = mist_lib.requests.sites.info.get(mist, site_id)["result"]
-            site_rogues = mist_lib.requests.sites.rogues.report(mist, site_id, r_type, fields)
+            site_info = mistapi.api.v1.sites.info.get(mist, site_id)["result"]
+            site_rogues = mistapi.api.v1.sites.rogues.report(mist, site_id, r_type, fields)
             for rogue in site_rogues:    
                 rogue.insert(0, org_info["name"])
                 rogue.insert(1, org_info["id"])
@@ -45,7 +45,7 @@ def get_rogues(org_info, site_ids):
 
 
 #### SCRIPT ENTRYPOINT ####
-mist = mist_lib.Mist_Session()
+mist = mistapi.APISession()
 
 org_id = cli.select_org(mist, allow_many=False)
 if len(org_id) == 0:
@@ -56,7 +56,7 @@ else:
         print("No Site selected... Exiting...")
     else:
         print(" Process Started ".center(80, '-'))
-        org_info = mist_lib.requests.orgs.info.get(mist, org_id[0])["result"]
+        org_info = mistapi.api.v1.orgs.info.get(mist, org_id[0])["result"]
         get_rogues(org_info, site_ids)
                     
         fields.insert(0, "org_name")
