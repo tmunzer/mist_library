@@ -9,21 +9,15 @@ Github repository: https://github.com/tmunzer/Mist_library/
 #######################################################################################################################################
 
 import os
-from dotenv import load_dotenv
 import getopt
 import sys
-from mlib import cli, mist, orgs
+import mistapi
+from dotenv import load_dotenv
 
 def _load_conf(cloud, org_id, tmpl_id, profile):    
     print("Loading config ".ljust(79, "."), end="", flush=True)
     mist_config = {}
-    mist_config["api_token"]= os.environ.get("MIST_API_TOKEN", default=None)
-    
-    if cloud:
-        mist_config["host"]=cloud
-    else:
-        mist_config["host"]= os.environ.get("MIST_HOST", default=None)
-    
+   
     if org_id:
         mist_config["org_id"]=org_id
     else:
@@ -55,8 +49,8 @@ def _load_conf(cloud, org_id, tmpl_id, profile):
 def _get_port_usages(session, org_id, tmpl_id):
     print("Retrieving data from Mist ".ljust(79, "."), end="", flush=True)
     try:
-        res = orgs.networktemplates.get_by_id(session, org_id, tmpl_id)
-        disabled = res.get("result", {}).get("port_usages", {})
+        res = mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplate(session, org_id, tmpl_id)
+        disabled = res.data.get("port_usages", {})
         print("\033[92m\u2714\033[0m")
         return disabled
     except:
@@ -66,7 +60,7 @@ def _get_port_usages(session, org_id, tmpl_id):
 def _status(session, org_id, tmpl_id, profile):
     port_usages = _get_port_usages(session, org_id, tmpl_id)
     print("Extracting profile data ".ljust(79, "."), end="", flush=True)
-    profile = port_usages.get(profile)
+    profile = port_usages.get(profile, {})
     if not profile:
         print('\033[31m\u2716\033[0m') 
         print(f"Profile {profile} not found")
@@ -87,8 +81,8 @@ def _display_status(session, org_id, tmpl_id, profile):
 def _update(session, org_id, tmpl_id,port_usages):
     try:
         print("Updating PoE Status ".ljust(79, "."), end="", flush=True)
-        res = orgs.networktemplates.update(session, org_id, tmpl_id, {"port_usages": port_usages})
-        if res.get("status_code") == 200:
+        res = mistapi.api.v1.orgs.networktemplates.updateOrgNetworkTemplates(session, org_id, tmpl_id, {"port_usages": port_usages})
+        if res.status_code == 200:
             print("\033[92m\u2714\033[0m")
         else:
             raise
@@ -207,17 +201,19 @@ Github: https://github.com/tmunzer/mist_library
         
         else:
             assert False, "unhandled option"
-  
+
     if env_file:
+        session = mistapi.APISession(env_file=env_file)
         load_dotenv(dotend_path=env_file)
     else:
         load_dotenv()
+        session = mistapi.APISession()
+        
 
     mist_config = _load_conf(cloud, org_id, tmpl_id, profile)
 
-    session = mist.Mist_Session(load_settings=False, apitoken=mist_config["api_token"], host=mist_config["host"])
     if not mist_config["org_id"]:
-        mist_config["org_id"] = cli.select_org(session)[0]
+        mist_config["org_id"] = mistapi.cli.select_org(session)[0]
     if action == "status":
         _display_status(session, mist_config["org_id"], mist_config["tmpl_id"], mist_config["profile"])
     if action == "off": 
