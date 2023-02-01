@@ -18,15 +18,15 @@ privileges = []
 
 #### IMPORTS ####
 import sys
-import mlib as mist_lib
-import mlib.cli as cli
+import mistapi
+from mistapi.__logger import console
 import csv
 
 #### CONSTANTS ####
 roles = {"s": "admin", "n": "write", "o": "read", "h":"helpdesk"}
 
 #### FUNCTIONS ####
-def define_privileges(org_id):
+def define_privileges(apisession, org_id):
     '''
     Generate the privilege parameters for the specified orgs.
     Will ask if the privileges have to be applied to the entire org or to a specific site/s, and the privilege level.
@@ -38,47 +38,54 @@ def define_privileges(org_id):
     while True:
         all_sites = input("Do you want to select specific sites (y/N)? ")
         if all_sites.lower()=="y": 
-            site_ids = cli.select_site(mist, org_id, True)
+            site_ids = mistapi.cli.select_site(apisession, org_id, True)
             for site_id in site_ids:
                 privileges.append({"scope": "site", "org_id": org_id, "site_id": site_id, "role":roles[role]})
             break
         elif all_sites.lower() == "n" or all_sites == "":            
-            site_ids = mistapi.api.v1.orgs.sites.get(mist, org_id)
+            site_ids = mistapi.api.v1.orgs.sites.getOrgSites(apisession, org_id)
             site_id=""
-            for site in site_ids["result"]:
+            for site in site_ids.data:
                 if "site_id" in site:
                     site_id = site["site_id"]
                     break
             privileges.append({"scope": "org", "org_id": org_id, "site_id":site_id, "role":roles[role]})
             break 
 
-def import_admins(file_path, org_id):
+def import_admins(apisession, file_path, org_id):
     '''
     create all the administrators from the "file_path" file.
     '''
-    print("Opening CSV file %s" % file_path)
+    print(f"Opening CSV file {file_path}")
     try:
         with open(file_path, 'r') as my_file:
             invite_file = csv.reader(my_file, delimiter=csv_separator)
             for row in invite_file:  
-                email= row[0]
-                first_name= row[1]
-                last_name = row[2]        
+                body = {
+                "email": row[0],
+                "first_name":row[1],
+                "last_name": row[2],
+                "privileges": privileges      
+                }
                 print(', '.join(row))
-                mistapi.api.v1.orgs.admins.create_invite(mist, org_id, email, privileges, first_name, last_name)            
-    except:
+                mistapi.api.v1.orgs.invites.inviteOrgAdmin(apisession, org_id, body)
+    except Exception as e:
         print("Error while opening the CSV file... Aborting")
+        print(e)
 
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
     file_path = sys.argv[1]
-    mist = mistapi.APISession("./session.py")
+    apisession = mistapi.APISession()
+    apisession.login()
 
-    org_id = cli.select_org(mist)
+    org_id = mistapi.cli.select_org(apisession)[0]
 
-    define_privileges(org_id)
-    import_admins(file_path, org_id)
+    define_privileges(apisession, org_id)
+    import_admins(apisession, file_path, org_id)
 
-    admins = mistapi.api.v1.orgs.admins.get(mist, org_id)
-    cli.show(admins)
+    admins = mistapi.api.v1.orgs.admins.getOrgAdmins(apisession, org_id).data
+    print(admins)
+    mistapi.cli.display_list_of_json_as_table(admins)
+    mistapi.cli.pretty_print(admins)
     sys.exit(0)

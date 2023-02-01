@@ -3,20 +3,13 @@ Written by Thomas Munzer (tmunzer@juniper.net)
 Github repository: https://github.com/tmunzer/Mist_library/
 '''
 
-import mlib as mist_lib
-from mlib import cli
+import mistapi
+from mistapi.__logger import console
 import requests
 import time
 from geopy import Nominatim
 from tzwhere import tzwhere
 
-try:
-    from config import log_level
-except:
-    log_level = 6
-finally:
-    from mlib.__debug import Console
-    console = Console(log_level)
 
 #####################################################################
 #### SETTINGS #####
@@ -47,16 +40,16 @@ tzwhere = tzwhere.tzwhere()
 
 
 def get_open_geocoding(address):
-    console.notice(">> Retrieving lat/lng from OpenStreetMap API")
+    console.info(">> Retrieving lat/lng from OpenStreetMap API")
     location = geolocator.geocode(address, addressdetails=True)
     if type(location) == "NoneType":
-        console.error("Unable to find the address %s" % address)
+        console.error(f"Unable to find the address {address}")
     else:
         return location
 
 
 def get_open_tz(location):
-    console.notice(">> Retrieving tz and country code with tzwhere")
+    console.info(">> Retrieving tz and country code with tzwhere")
     tz = tzwhere.tzNameAt(location.latitude, location.longitude)
     country_code = str(location.raw["address"]["country_code"]).upper()
     return {"tz": tz, "country_code": country_code}
@@ -80,10 +73,9 @@ def use_open(address):
 
 
 def get_google_geocoding(address):
-    console.notice(">> Retrieving lat/lng and country code from Google API")
+    console.info(">> Retrieving lat/lng and country code from Google API")
     data = {"location": None, "country_code": ""}
-    url = "https://maps.googleapis.com/maps/api/geocode/json?address={0}&key={1}".format(
-        address, google_api_key)
+    url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={google_api_key}"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
@@ -107,10 +99,9 @@ def get_google_geocoding(address):
 
 
 def get_google_tz(location):
-    console.notice(">> Retrieving tz from Google API")
+    console.info(">> Retrieving tz from Google API")
     ts = int(time.time())
-    url = "https://maps.googleapis.com/maps/api/timezone/json?location={0},{1}&timestamp={2}&key={3}".format(
-        location["latitude"], location["longitude"], ts, google_api_key)
+    url = f"https://maps.googleapis.com/maps/api/timezone/json?location={location['latitude']},{location['longitude']}&timestamp={ts}&key={google_api_key}"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
@@ -136,10 +127,10 @@ def use_google(address):
 #####################################################################
 
 
-def get_site_groups_list():
-    response = mist_lib.orgs.sitegroups.get(mist, org_id)
+def get_site_groups_list(apisession):
+    response = mistapi.api.v1.orgs.sitegroups.getOrgSiteGroups(apisession, org_id)
     tmp = {}
-    for group in response["result"]:
+    for group in response.data:
         if "site_ids" in group:
             site_ids = group["site_ids"]
         else:
@@ -148,42 +139,38 @@ def get_site_groups_list():
     return tmp
 
 
-def create_site_group(group_name):
-    response = mist_lib.orgs.sitegroups.create(
-        mist, org_id, {"name": group_name})
-    if response['status_code'] == 200:
-        name = response["result"]["name"]
-        sitegroups_id = response["result"]["id"]
-        console.notice(
-            "> Site Group {0} created with ID {1}".format(name, sitegroups_id))
+def create_site_group(apisession, group_name):
+    response = mistapi.api.v1.orgs.sitegroups.createOrgSiteGroup(apisession, org_id, {"name": group_name})
+    if response.status_code == 200:
+        name = response.data["name"]
+        sitegroups_id = response.data["id"]
+        console.info(
+            f"> Site Group {name} created with ID {sitegroups_id}")
         return sitegroups_id
 
 
-def assign_site_to_group(site_id, group_name):
-    site_groups = get_site_groups_list()
+def assign_site_to_group(apisession, site_id, group_name):
+    site_groups = get_site_groups_list(apisession)
     if site_groups == {} or not group_name in site_groups:
-        group_id = create_site_group(group_name)
+        group_id = create_site_group(apisession, group_name)
         site_ids = [site_id]
     else:
         group_id = site_groups[group_name]["id"]
         site_ids = site_groups[group_name]["site_ids"]
         site_ids.append(site_id)
-    response = mist_lib.orgs.sitegroups.update(
-        mist, org_id, group_id, {"site_ids": site_ids})
-    if response["status_code"] == 200:
-        console.info("> Site succesfully added to group {0} (group_id {1})".format(
-            group_name, group_id))
+    response = mistapi.api.v1.orgs.sitegroups.updateOrgSiteGroup(
+        apisession, org_id, group_id, {"site_ids": site_ids})
+    if response.status_code == 200:
+        console.info(f"> Site succesfully added to group {group_name} (group_id {group_id})")
         return group_id
     else:
-        console.warning("> Unable to add the site to group {0} (group_id {1})".format(
-            group_name, group_id))
+        console.warning(f"> Unable to add the site to group {group_name} (group_id {group_id})")
         return None
 
 
-def assign_groups_to_site(site_id, group_ids):
-    response = mist_lib.orgs.sites.update(
-        mist, org_id, site_id, {"sitegroup_ids": group_ids})
-    if response["status_code"] == 200:
+def assign_groups_to_site(apisession, site_id, group_ids):
+    response = mistapi.api.v1.sites.sites.updateSiteInfo(apisession, site_id, {"sitegroup_ids": group_ids})
+    if response.status_code == 200:
         console.info("> Groups assigned to the site")
         return response
     else:
@@ -195,7 +182,7 @@ def assign_groups_to_site(site_id, group_ids):
 #####################################################################
 
 
-def create_site(name, address):
+def create_site(apisession, name, address):
     console.info("> Retrieving additional data")
     if google_api_key:
         data = use_google(site["address"])
@@ -211,36 +198,34 @@ def create_site(name, address):
             "timezone": data["tz"],
             "country_code": data["country_code"]
         }
-    response = mist_lib.orgs.sites.create(mist, org_id, payload)
-    if response["status_code"] == 200:
-        console.info("> Site created succesfully with ID {0}".format(
-            response["result"]["id"]))
-        return response["result"]
+    response = mistapi.api.v1.orgs.sites.countOrgSites(apisession, org_id, payload)
+    if response.status_code == 200:
+        console.info(f"> Site created succesfully with ID {response.data['id']}")
+        return response.data
     else:
-        console.error("> Unable to create site with the payload: {0}".format(payload))
+        console.error(f"> Unable to create site with the payload: {payload}")
 
 
 
-def new_site(name, address, groups):
-    console.info("Site {0}: Starting process".format(name))
-    site = create_site(name, address)
+def new_site(apisession, name, address, groups):
+    console.info(f"Site {name}: Starting process")
+    site = create_site(apisession, name, address)
     group_ids = []
-    console.notice("> Retrieving site group ids")
+    console.info("> Retrieving site group ids")
     for group in groups:
-        group_id = assign_site_to_group(site["id"], group)
+        group_id = assign_site_to_group(apisession, site["id"], group)
         if group_id:
             group_ids.append(group_id)
-    assign_groups_to_site(site["id"], group_ids)
+    assign_groups_to_site(apisession, site["id"], group_ids)
 
 
 #####################################################################
 ##### ENTRY POINT #####
 #####################################################################
 if __name__ == "__main__":
-    mist = mistapi.APISession("./session.py")
-    # mist.save()
+    apisession = mistapi.APISession("./session.py")
     if not org_id:
-        org_id = cli.select_org(mist)[0]
+        org_id = mistapi.cli.select_org(apisession)[0]
     for site in sites:
-        new_site(name=site["name"], address=site["address"],
+        new_site(apisession, name=site["name"], address=site["address"],
                  groups=site["groups"])
