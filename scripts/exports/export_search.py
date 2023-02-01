@@ -18,6 +18,10 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script.
 
+It is recomended to use an environment file to store the required information
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+information about the available parameters).
+
 Options:
 -h, --help          display this help
 -m, --msp_id=       required for MSP reports. Set the msp_id    
@@ -1147,6 +1151,10 @@ Usage:
 This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script.
+
+It is recomended to use an environment file to store the required information
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+information about the available parameters).
 
 Options:
 -h, --help          display this help
