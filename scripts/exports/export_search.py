@@ -966,6 +966,8 @@ def _search(scope:str,  report:str, apisession:mistapi.APISession, scope_id:str=
         if report=='orgs':
             return _searchMspOrgs(apisession, scope_id, query_params)
 
+####################
+## PROGRESS BAR
 def _progress_bar_update(count:int, total:int, size:int):
     if count > total:
         count = total
@@ -980,6 +982,8 @@ def _progress_bar_end(total:int, size:int):
     out.write("\n")
     out.flush()
 
+####################
+## REQUEST
 def _process_request( apisession:mistapi.APISession, scope:str, scope_id:str, report:str, query_params:dict=None):
     data = []
     start = None
@@ -1031,7 +1035,6 @@ def _save_as_csv( start:float, end:float, data:list, report:str, query_params:di
         _progress_bar_update(i, total, size)
     _progress_bar_end(total, size)
     print()
-
     print("Saving to file ".ljust(80,"."))
     i = 0
     with open(out_file_path, "w", encoding='UTF8', newline='') as f:
@@ -1048,6 +1051,22 @@ def _save_as_csv( start:float, end:float, data:list, report:str, query_params:di
         _progress_bar_end(total, size)
         print()
 
+def _save_as_json( start:float, end:float, data:list, report:str, query_params:dict):
+    print(" Saving Data ".center(80, "-"))
+    print()
+    json_data = {
+        'report': report,
+        'query_params': json.dumps(query_params),
+        'start': start,
+        'end': end,
+        'data': data
+    }
+    with open(out_file_format, 'w') as f:
+        json.dump(json_data, f)
+    print("Done.")
+
+####################
+## MENU
 
 def _show_menu(header:str, menu:list):
     print()
@@ -1127,8 +1146,12 @@ def start(apisession, scope:str=None, scope_id:str=None, report:str=None, query_
     if not scope or not scope_id or not report:
         scope, scope_id, report=_menu(apisession)
     start, end, data=_process_request(apisession, scope, scope_id, report, query_params)
-    _save_as_csv(start, end, data, report, query_params)
-
+    if out_file_format == "csv":
+        _save_as_csv(start, end, data, report, query_params)
+    elif out_file_format == "json":
+        _save_as_json(start, end, data, report, query_params)
+    else:
+        console.error(f"file format {out_file_format} not supported")
 
 def usage():
     print(f"""
