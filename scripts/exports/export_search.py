@@ -310,6 +310,7 @@ def _searchClientWirelessSessions(apisession: mistapi.APISession, func:str, scop
         "client_manufacture":str,
         "client_model": str,
         "client_os": str,
+        "client_username": str,
         "ssid": str,
         "wlan_id": str,
         "psk_id": str,
@@ -329,6 +330,7 @@ def _searchClientWirelessSessions(apisession: mistapi.APISession, func:str, scop
             client_manufacture=query_params.get("client_manufacture"),
             client_model=query_params.get("client_model"),
             client_os=query_params.get("client_os"),
+            client_username=query_params.get("client_username"),
             ssid=query_params.get("ssid"),
             wlan_id=query_params.get("wlan_id"),
             psk_id=query_params.get("psk_id"),
@@ -344,6 +346,7 @@ def _searchClientWirelessSessions(apisession: mistapi.APISession, func:str, scop
             client_manufacture=query_params.get("client_manufacture"),
             client_model=query_params.get("client_model"),
             client_os=query_params.get("client_os"),
+            client_username=query_params.get("client_username"),
             ssid=query_params.get("ssid"),
             wlan_id=query_params.get("wlan_id"),
             psk_id=query_params.get("psk_id"),
@@ -968,7 +971,7 @@ def _search(scope:str,  report:str, apisession:mistapi.APISession, scope_id:str=
 
 ####################
 ## PROGRESS BAR
-def _progress_bar_update(count:int, total:int, size:int):
+def _progress_bar_update(count:int, total:int, size:int):    
     if count > total:
         count = total
     x = int(size*count/total)
@@ -1003,19 +1006,22 @@ def _process_request( apisession:mistapi.APISession, scope:str, scope_id:str, re
     i = 1
     total = response.data["total"]
     limit = response.data["limit"]
-    
-    _progress_bar_update(i*limit, total, size)
-
-    # request the rest of the data
-    while response.next:
-        response = mistapi.get_next(apisession, response)
-        data = data + response.data["results"]
-        i += 1
+    if total:
         _progress_bar_update(i*limit, total, size)
-    # end the progress bar
-    _progress_bar_end(total, size)
-    print()
-    return start, end, data
+
+        # request the rest of the data
+        while response.next:
+            response = mistapi.get_next(apisession, response)
+            data = data + response.data["results"]
+            i += 1
+            _progress_bar_update(i*limit, total, size)
+        # end the progress bar
+        _progress_bar_end(total, size)
+        print()
+        return start, end, data
+    else:
+        console.warning("There is no results for this search...")
+        sys.exit(0)
     
 ####################
 ## SAVE TO FILE
@@ -1061,7 +1067,7 @@ def _save_as_json( start:float, end:float, data:list, report:str, query_params:d
         'end': end,
         'data': data
     }
-    with open(out_file_format, 'w') as f:
+    with open(os.path.abspath(out_file_path), 'w') as f:
         json.dump(json_data, f)
     print("Done.")
 
@@ -1092,7 +1098,7 @@ def _show_menu(header:str, menu:list):
                 console.error("Please enter a number\r\n ")
         
 
-def _menu(apisession):
+def _menu(apisession:mistapi.APISession, scope:str, scope_id:str, report:str):
     menu_1 = ["msp", "org", "site"]
     menu_2 = {
         "org": [
@@ -1134,17 +1140,19 @@ def _menu(apisession):
     menu_2["org"].sort()
     menu_2["site"].sort()
     menu_2["msp"].sort()
-    scope=_show_menu("", menu_1)
-    if scope == "org":
-        scope_id = mistapi.cli.select_org(apisession)[0]
-    elif scope == "site":
-        scope_id = mistapi.cli.select_site(apisession)[0]
-    obj=_show_menu("", menu_2[scope])
-    return scope, scope_id, obj
+    if not scope:
+        scope=_show_menu("", menu_1)
+    if not scope_id:
+        if scope == "org":
+            scope_id = mistapi.cli.select_org(apisession)[0]
+        elif scope == "site":
+            scope_id = mistapi.cli.select_site(apisession)[0]
+    if not report:
+        report=_show_menu("", menu_2[scope])
+    return scope, scope_id, report
 
 def start(apisession, scope:str=None, scope_id:str=None, report:str=None, query_params:dict=None):
-    if not scope or not scope_id or not report:
-        scope, scope_id, report=_menu(apisession)
+    scope, scope_id, report=_menu(apisession, scope, scope_id, report)
     start, end, data=_process_request(apisession, scope, scope_id, report, query_params)
     if out_file_format == "csv":
         _save_as_csv(start, end, data, report, query_params)
