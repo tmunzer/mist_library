@@ -10,9 +10,11 @@
 Python script to export historical data from Mist API and save the result 
 in CDV of JSON format.
 
+-------
 Requireements:
 mistapi: https://pypi.org/project/mistapi/
 
+-------
 Usage:
 This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
@@ -22,6 +24,7 @@ It is recomended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
+-------
 Options:
 -h, --help          display this help
 -m, --msp_id=       required for MSP reports. Set the msp_id    
@@ -54,6 +57,7 @@ Options:
                     here: https://pypi.org/project/mistapi/)
                     default is "~/.mist_env"
 
+-------
 Examples:
 python3 ./export_search.py                  
 python3 ./export_searchs.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --report=client_sessions_wireless --q_params=duration:1w           
@@ -1175,9 +1179,11 @@ def usage():
 Python script to export historical data from Mist API and save the result 
 in CDV of JSON format.
 
+-------
 Requireements:
 mistapi: https://pypi.org/project/mistapi/
 
+-------
 Usage:
 This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
@@ -1187,6 +1193,7 @@ It is recomended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
+-------
 Options:
 -h, --help          display this help
 -m, --msp_id=       required for MSP reports. Set the msp_id    
@@ -1219,6 +1226,7 @@ Options:
                     here: https://pypi.org/project/mistapi/)
                     default is {env_file}
 
+-------
 Examples:
 python3 ./export_search.py                  
 python3 ./export_searchs.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --report=client_sessions_wireless --q_params=duration:1w  
@@ -1228,7 +1236,7 @@ python3 ./export_searchs.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --repo
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hm:o:s:r:f:e:l:q:", ["help", "msp_id=", "org_id=", "site_id=", "report=", "out_format=", "out_file=", "env=", "logfile=", "q_params="])
+        opts, args = getopt.getopt(sys.argv[1:], "hm:o:s:r:f:e:l:q:", ["help", "msp_id=", "org_id=", "site_id=", "report=", "out_format=", "out_file=", "env=", "log_file=", "q_params="])
     except getopt.GetoptError as err:
         console.error(err)
         usage()
@@ -1274,7 +1282,8 @@ if __name__ == "__main__":
             params = a.split(",")
             for p in params:
                 query_params[p.split(":")[0]]=p.split(":")[1]
-        
+        elif o in ["l", "--log_file"]:
+            log_file = a
         else:
             assert False, "unhandled option"
 
