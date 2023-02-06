@@ -1,16 +1,37 @@
 '''
-Written by Thomas Munzer (tmunzer@juniper.net)
-Github repository: https://github.com/tmunzer/Mist_library/
+-------------------------------------------------------------------------------
 
+    Written by Thomas Munzer (tmunzer@juniper.net)
+    Github repository: https://github.com/tmunzer/Mist_library/
+
+    This script is licensed under the MIT License.
+
+-------------------------------------------------------------------------------
 Python script to invite/add adminsitrators from a CSV file.
-The CSV file must have 3 columns: email, first name, last name
 
-You can run the script with the command "python3 org_admins_import.py <path_to_the_csv_file>"
+-------
+Requireements:
+mistapi: https://pypi.org/project/mistapi/
 
-The script has 3 different steps:
-1) admin login
-2) select the organisation where you want to add/invite the admins
-3) choose if you want to give access to the whole organisation, or only to specific sites
+-------
+Usage:
+This script requires one parameters pointing to the CSV file. 
+The CSV file must have 3 columns: email, first name, last name.
+The organization and the admin roles/scopes will be asked by the script.
+
+csv example:
+owkenobi@unknown.com,Obi-Wan,Kenobi
+pamidala@unknown.com,Padme,Amidala
+
+
+It is recomended to use an environment file to store the required information
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+information about the available parameters).
+
+-------
+Example:
+python3 org_admins_import.py <path_to_the_csv_file>"
+
 '''
 #### PARAMETERS #####
 csv_separator = ","
@@ -18,9 +39,23 @@ privileges = []
 
 #### IMPORTS ####
 import sys
-import mistapi
-from mistapi.__logger import console
 import csv
+
+try:
+    import mistapi
+except:
+    print("""
+Critical: 
+\"mistapi\" package is missing. Please use the pip command to install it.
+
+# Linux/macOS
+python3 -m pip install mistapi
+
+# Windows
+py -m pip install mistapi
+    """)
+    sys.exit(2)
+
 
 #### CONSTANTS ####
 roles = {"s": "admin", "n": "write", "o": "read", "h":"helpdesk"}
