@@ -7,7 +7,7 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script gerenates a Rogue AP report.
+Python script to gerenate a Rogue AP report.
 
 -------
 Requireements:
@@ -136,7 +136,7 @@ def _process_sites(mist_session, site_ids):
     return rogues
 
 ### SAVE REPORT
-def _save_as_csv( rogues:list, duration:int):
+def _save_as_csv( data:list, duration:int):
     headers=[]    
     size = 50
     total = len(data)
