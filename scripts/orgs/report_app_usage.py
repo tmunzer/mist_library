@@ -32,9 +32,7 @@ Options:
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
 -f, --out_file=     define the filepath/filename where to save the data
-                    default is "./export.csv"
--c, --csv_del=      CSV delimiter
-                    default is ","                    
+                    default is "./report_app_usage.csv"            
 -e, --env=          define the env file to use (see mistapi env file documentation 
                     here: https://pypi.org/project/mistapi/)
                     default is "~/.mist_env"
@@ -183,7 +181,6 @@ def _ask_period(hours):
 ### USAGE
 def usage():
     print("""
-    '''
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -214,9 +211,7 @@ Options:
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
 -f, --out_file=     define the filepath/filename where to save the data
-                    default is "./export.csv"
--c, --csv_del=      CSV delimiter
-                    default is ","                    
+                    default is "./report_app_usage.csv"                
 -e, --env=          define the env file to use (see mistapi env file documentation 
                     here: https://pypi.org/project/mistapi/)
                     default is "~/.mist_env"
@@ -225,13 +220,13 @@ Examples:
 python3 ./report_app_usage.py                  
 python3 ./report_app_usage.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --duration=48 
 
-    """)
+""")
 
 ###############################################################################
 ### ENTRY POINT
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hs:d:l:f:c:e:", ["help", "site_id=", "duration=", "out_file=", "env=", "log_file="])
+        opts, args = getopt.getopt(sys.argv[1:], "hs:d:f:e:l:", ["help", "site_id=", "duration=", "out_file=", "env=", "log_file="])
     except getopt.GetoptError as err:
         console.error(err)
         usage()
