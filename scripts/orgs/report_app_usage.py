@@ -54,7 +54,6 @@ import sys
 import getopt
 try:
     import mistapi
-    from mistapi.__api_response import APIResponse
     from mistapi.__logger import console
 except:
     print("""
