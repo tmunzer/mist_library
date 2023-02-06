@@ -276,6 +276,7 @@ python3 ./report_switch_snapshot.py
 python3 ./report_switch_snapshot.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
 ''')
+    sys.exit(0)
 
 
 ###############################################################################

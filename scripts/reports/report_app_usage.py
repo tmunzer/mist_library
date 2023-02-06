@@ -221,6 +221,7 @@ python3 ./report_app_usage.py
 python3 ./report_app_usage.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --duration=48 
 
 """)
+    sys.exit(0)
 
 ###############################################################################
 ### ENTRY POINT

@@ -219,6 +219,7 @@ python3 ./report_rogues.py
 python3 ./report_rogues.py --site_ids=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --duration=4d -r lan,spoof
 
 ''')
+    sys.exit(0)
 
 
 ###############################################################################
