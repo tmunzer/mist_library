@@ -24,10 +24,24 @@ portal_denied_hostnames
 not yet available fields:
 dns_server_rewrite, coa_server, radsec, airwatch, cisco_cwa, rateset, schedule, qos, app_limit, app_qos, portal
 '''
+#### IMPORTS ####
+import sys
+try:
+    import mistapi
+except:
+    print("""
+Critical: 
+\"mistapi\" package is missing. Please use the pip command to install it.
+
+# Linux/macOS
+python3 -m pip install mistapi
+
+# Windows
+py -m pip install mistapi
+    """)
+    sys.exit(2)
 
 #### PARAMETERS #####
-from mlib import cli
-import mlib as mist_lib
 csv_separator = ","
 fields = ["id", "ssid", "enabled", "auth", "auth_servers", "acct_servers",
           "band", "interface", "vlan_id", "dynamic_vlan", "hide_ssid"]
@@ -36,7 +50,6 @@ csv_file = "./report.csv"
 org_ids = []
 site_ids = []
 
-#### IMPORTS ####
 
 #### GLOBAL VARIABLES ####
 wlans_summarized = []
@@ -73,10 +86,10 @@ def wlans_from_orgs(mist_session, org_ids, site_ids):
             p for p in mist_session.privileges if "org_id" in p and p["org_id"] == org_id]
         # the admin only has access to the org information if he/she has this privilege
         if len(org_sites) >= 1 and org_sites[0]["scope"] == "org":
-            org_info = mistapi.api.v1.orgs.info.get(
-                mist_session, org_id)["result"]
-            org_sites = mistapi.api.v1.orgs.sites.get(
-                mist_session, org_id)["result"]
+            org_info = mistapi.api.v1.orgs.orgs.getOrgInfo(
+                mist_session, org_id).data
+            org_sites = mistapi.api.v1.orgs.sites.getOrgSites(
+                mist_session, org_id).data
             org_wlans = mistapi.api.v1.orgs.wlans.report(
                 mist_session, org_id, fields)
             for org_wlan in org_wlans:
@@ -103,8 +116,8 @@ def wlans_from_orgs(mist_session, org_ids, site_ids):
             }
             org_sites = []
             for site_id in site_ids:
-                org_sites.append(mistapi.api.v1.sites.info.get(
-                    mist_session, site_id)["result"])
+                org_sites.append(mistapi.api.v1.sites.sites.getSiteInfo(
+                    mist_session, site_id).data)
             wlans_from_sites(mist_session, org_sites, org_info, site_ids)
 
 
@@ -112,9 +125,8 @@ def wlans_from_orgs(mist_session, org_ids, site_ids):
 
 mist = mistapi.APISession()
 
-org_ids = cli.select_org(mist, allow_many=True)
-if len(org_ids) == 1:
-    site_ids = cli.select_site(mist, org_id=org_ids[0], allow_many=True)
+org_id = mistapi.cli.select_org(mist, allow_many=False)[0]
+site_ids = mistapi.cli.select_site(mist, org_id=org_id[0], allow_many=True)
 
 wlans_from_orgs(mist, org_ids, site_ids)
 
@@ -126,7 +138,7 @@ fields.insert(3, "site_name")
 fields.insert(4, "site_id")
 fields.insert(5, "country_code")
 
-cli.show(wlans_summarized, fields)
+mistapi.cli.pretty_print(wlans_summarized, fields)
 
 print("saving to file...")
 with open(csv_file, "w") as f:
