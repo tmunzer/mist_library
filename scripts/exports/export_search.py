@@ -976,7 +976,9 @@ def _search(scope:str,  report:str, apisession:mistapi.APISession, scope_id:str=
 ####################
 ## PROGRESS BAR
 def _progress_bar_update(count:int, total:int, size:int):    
-    if count > total:
+    if total == 0:
+        return
+    elif count > total:
         count = total
     x = int(size*count/total)
     out.write(f"Progress: ".ljust(10))
@@ -985,6 +987,8 @@ def _progress_bar_update(count:int, total:int, size:int):
     out.flush()
 
 def _progress_bar_end(total:int, size:int):
+    if total == 0:
+        return
     _progress_bar_update(total, total, size)
     out.write("\n")
     out.flush()
