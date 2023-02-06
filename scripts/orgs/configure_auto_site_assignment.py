@@ -183,6 +183,50 @@ def configure_rule(apisession, org_id, rule_conf):
 ### USAGE
 def usage():
     print('''
+-------------------------------------------------------------------------------
+
+    Written by Thomas Munzer (tmunzer@juniper.net)
+    Github repository: https://github.com/tmunzer/Mist_library/
+
+    This script is licensed under the MIT License.
+
+-------------------------------------------------------------------------------
+Python script to update the org auto assignement rules. The script is displaying 
+options enable/disable the auto assignement, and to build the rules before 
+udpating the org settings
+
+-------
+Requireements:
+mistapi: https://pypi.org/project/mistapi/
+
+-------
+Usage:
+This script can be run as is (without parameters), or with the options below.
+If no options are defined, or if options are missing, the missing options will
+be asked by the script or the default values will be used.
+
+It is recomended to use an environment file to store the required information
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+information about the available parameters).
+
+-------
+Options:
+-h, --help          display this help
+-o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
+--enable            Enable the auto assignement (addional configuration will be asked
+                    by the script). Only one action enable/disable is allowed
+--disable           Disable the auto assignement Only one action enable/disable is 
+                    allowed              
+-l, --log_file=     define the filepath/filename where to write the logs
+                    default is "./script.log"
+-e, --env=          define the env file to use (see mistapi env file documentation 
+                    here: https://pypi.org/project/mistapi/)
+                    default is "~/.mist_env"
+
+-------
+Examples:
+python3 ./configure_auto_site_assignment.py                  
+python3 ./configure_auto_site_assignment.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --disable
 
 ''')
     sys.exit(0)
