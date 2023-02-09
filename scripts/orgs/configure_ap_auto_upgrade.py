@@ -9,7 +9,7 @@
 -------------------------------------------------------------------------------
 Python script update the Mist AP Auto_upgrade parameters in the site settings
 
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 Usage:

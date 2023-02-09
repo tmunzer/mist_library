@@ -9,8 +9,12 @@
 -------------------------------------------------------------------------------
 Python script to invite/add adminsitrators from a CSV file.
 
+It is recomended to use an environment file to store the required information
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+information about the available parameters).
+
 -------
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 -------
@@ -19,14 +23,12 @@ This script requires one parameters pointing to the CSV file.
 The CSV file must have 3 columns: email, first name, last name.
 The organization and the admin roles/scopes will be asked by the script.
 
-csv example:
+-------
+CSV Example:
 owkenobi@unknown.com,Obi-Wan,Kenobi
 pamidala@unknown.com,Padme,Amidala
 
 
-It is recomended to use an environment file to store the required information
-to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
-information about the available parameters).
 
 -------
 Example:

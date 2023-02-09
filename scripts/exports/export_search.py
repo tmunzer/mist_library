@@ -11,7 +11,7 @@ Python script to export historical data from Mist API and save the result
 in CDV of JSON format.
 
 -------
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 -------
@@ -1184,7 +1184,7 @@ Python script to export historical data from Mist API and save the result
 in CDV of JSON format.
 
 -------
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 -------

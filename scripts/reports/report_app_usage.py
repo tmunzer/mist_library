@@ -10,7 +10,7 @@
 Python script to generate a report of the application usage on a specific site
 
 -------
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 -------
@@ -191,7 +191,7 @@ def usage():
 -------------------------------------------------------------------------------
 Python script to generate a report of the application usage on a specific site
 
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 Usage:

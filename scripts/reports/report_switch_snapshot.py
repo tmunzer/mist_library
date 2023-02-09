@@ -20,7 +20,7 @@ with, for each FPC:
         - FPC Compliance (if the snapshot/backup is up to date)
 
 -------
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 -------
@@ -244,7 +244,7 @@ with, for each FPC:
         - FPC Compliance (if the snapshot/backup is up to date)
 
 -------
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 -------

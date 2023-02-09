@@ -12,7 +12,7 @@ options enable/disable the auto assignement, and to build the rules before
 udpating the org settings
 
 -------
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 -------
@@ -196,7 +196,7 @@ options enable/disable the auto assignement, and to build the rules before
 udpating the org settings
 
 -------
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 -------

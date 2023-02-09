@@ -12,7 +12,7 @@ and save it to a CSV file. You can configure which fields you want to retrieve/s
 and where the script will save the CSV file.
 
 -------
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 -------
@@ -174,7 +174,7 @@ and save it to a CSV file. You can configure which fields you want to retrieve/s
 and where the script will save the CSV file.
 
 -------
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 -------

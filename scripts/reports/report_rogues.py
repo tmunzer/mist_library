@@ -10,7 +10,7 @@
 Python script to gerenate a Rogue AP report.
 
 -------
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 -------
@@ -183,7 +183,7 @@ def usage():
 Python script gerenates a Rogue AP report.
 
 -------
-Requireements:
+Requirements:
 mistapi: https://pypi.org/project/mistapi/
 
 -------
