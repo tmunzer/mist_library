@@ -1,21 +1,19 @@
 # README NOT UP TO DATE YET
 
-**Warning**
-The script from this repository are not yet adapted to work with the new library. You still have to download the whole repository to get them working. 
-
-This is a work in progress...
-
 
 # Mist_library
- Python library to use [Mist APIs](https://www.mist.com)
- 
-Library presentation can be found in the document [Mist_Library_Doc.pdf](https://github.com/tmunzer/Mist_library/blob/master/Mist_Library_Doc.pdf?raw=true)
+Examples of Python scripts using the [Mist APIs](https://www.mist.com)
+These scripts are using the [mistapi Python package](https://pypi.org/project/mistapi/) to simplify the authentication process.
 
-This repository is collection of Python3 files made to simplify the creation of python scripts using Mist APIs.
-It has 3 main parts:
-- The ***mlib folder***: This is the Mist Library that you can import and use into your project. It will deal with different aspects of the API requests, so you can focus on your app.
-- The ***demo scripts***: Python scripts using the Mist Library to generate different kind of actions. These scripts are placed in the root folder, and can be used as is. 
-- the ***console module***: It's a Python module you can import into a Python CLI, so you can quickly and easily test API requests.
+## MIT LICENSE
+ 
+Copyright (c) 2023 Thomas Munzer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the  Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # Description
 ## Configuration
