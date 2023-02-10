@@ -112,23 +112,19 @@ py -m pip install mistapi
     """)
     sys.exit(2)
 
-#### LOGS ####
-logger = logging.getLogger(__name__)
-out = sys.stdout
-
 #####################################################################
 #### PARAMETERS #####
-
-#
-
-
-
+log_file = "./script.log"
+env_file = "~/.mist_env"
 # This Script can use Google APIs (optional) to retrieve lat/lng, tz and country code. To be
 # able to use Google API, you need an API Key first. Mode information available here:
 # https://developers.google.com/maps/documentation/javascript/get-api-key?hl=en
 google_api_key = ""
-log_file = "./script.log"
-env_file = "~/.mist_env"
+
+#####################################################################
+#### LOGS ####
+logger = logging.getLogger(__name__)
+out = sys.stdout
 
 #####################################################################
 #### GLOBALS #####
@@ -145,7 +141,7 @@ geolocator = None
 tzfinder = None
 steps_total = 0
 steps_count = 0
-###############################################################################
+#####################################################################
 # PROGRESS BAR
 def _progress_bar_update(size:int=80):   
     global steps_count, steps_total
@@ -628,7 +624,7 @@ python3 ./import_sites.py -f ./my_new_sites.csv --org_id=203d3d02-xxxx-xxxx-xxxx
 # ENTRY POINT
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:g:f:c:e:", [
+        opts, args = getopt.getopt(sys.argv[1:], "ho:g:f:e:l:", [
                                    "help", "org_id=", "google_api_key=", "file=", "env=", "log_file="])
     except getopt.GetoptError as err:
         console.error(err)
