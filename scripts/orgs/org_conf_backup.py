@@ -150,7 +150,6 @@ site_steps = {
 #####################################################################
 # PROGRESS BAR AND DISPLAY
 class ProgressBar():
-
     def __init__(self):        
         self.steps_total = 0
         self.steps_count = 0
@@ -166,38 +165,37 @@ class ProgressBar():
         print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
         print(f"{int(percent*100)}%".rjust(5), end="")
 
-    def _pb_new_step(self, message:str, result:str, inc:bool=False, size:int=80):
+    def _pb_new_step(self, message:str, result:str, inc:bool=False, size:int=80, display_pbar:bool=True):
         if inc: self.steps_count += 1
-
         text = f"\033[A\033[F{message}"
         print(f"{text} ".ljust(size + 4, "."), result)
         print("".ljust(80))
-        self._pb_update(size)
+        if display_pbar: self._pb_update(size)
 
-    def _pb_title(self, text:str, size:int=80, end:bool=False):
+    def _pb_title(self, text:str, size:int=80, end:bool=False, display_pbar:bool=True):
         print("\033[A")
         print(f" {text} ".center(size, "-"),"\n")
-        if not end: 
+        if not end and display_pbar: 
             print("".ljust(80))
-            self._pb_update(size)
+            self._pb_update(size, display_pbar=display_pbar)
 
     def set_steps_total(self, steps_total:int):
         self.steps_total = steps_total
 
-    def log_message(self, message):
-        self._pb_new_step(message, " ")
+    def log_message(self, message, display_pbar:bool=True):
+        self._pb_new_step(message, " ", display_pbar=display_pbar)
 
-    def log_success(self, message, inc:bool=False):
+    def log_success(self, message, inc:bool=False, display_pbar:bool=True):
         logger.info(f"{message}: Success")
-        self._pb_new_step(message, "\033[92m\u2714\033[0m\n", inc)
+        self._pb_new_step(message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
 
-    def log_failure(self, message, inc:bool=False):
+    def log_failure(self, message, inc:bool=False, display_pbar:bool=True):
         logger.error(f"{message}: Failure")    
-        self._pb_new_step(message, '\033[31m\u2716\033[0m\n', inc)
+        self._pb_new_step(message, '\033[31m\u2716\033[0m\n', inc=inc, display_pbar=display_pbar)
 
-    def log_title(self, message, end:bool=False):
+    def log_title(self, message, end:bool=False, display_pbar:bool=True):
         logger.info(message)
-        self._pb_title(message, end=end)
+        self._pb_title(message, end=end, display_pbar=display_pbar)
 
 pb = ProgressBar()
 #####################################################################
