@@ -8,11 +8,11 @@
 
 -------------------------------------------------------------------------------
 Python script to backup a whole organization.
-You can use the script "org_conf_deploy.py" to restore the generated backup files to an
-existing organization (empty or not) or to a new one.
+You can use the script "org_conf_deploy.py" to restore the generated backup 
+files to an existing organization (empty or not) or to a new one.
 
-This script will not change/create/delete/touch any existing objects. It will just
-retrieve every single object from the organization.
+This script will not change/create/delete/touch any existing objects. It will 
+just retrieve every single object from the organization.
 
 -------
 Requirements:
@@ -32,13 +32,13 @@ information about the available parameters).
 Script Parameters:
 -h, --help              display this help
 -o, --org_id=           Set the org_id
--b, --backup_folder=    Path to the folder where to save the org backup (a subfolder
-                        will be created with the org name)
+-b, --backup_folder=    Path to the folder where to save the org backup (a 
+                        subfolder will be created with the org name)
                         default is "./org_backup"
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
--e, --env=              define the env file to use (see mistapi env file documentation 
-                        here: https://pypi.org/project/mistapi/)
+-e, --env=              define the env file to use (see mistapi env file 
+                        documentation here: https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
 
 -------
@@ -365,11 +365,11 @@ def usage():
 
 -------------------------------------------------------------------------------
 Python script to backup a whole organization.
-You can use the script "org_conf_deploy.py" to restore the generated backup files to an
-existing organization (empty or not) or to a new one.
+You can use the script "org_conf_deploy.py" to restore the generated backup 
+files to an existing organization (empty or not) or to a new one.
 
-This script will not change/create/delete/touch any existing objects. It will just
-retrieve every single object from the organization.
+This script will not change/create/delete/touch any existing objects. It will 
+just retrieve every single object from the organization.
 
 -------
 Requirements:
@@ -389,13 +389,13 @@ information about the available parameters).
 Script Parameters:
 -h, --help              display this help
 -o, --org_id=           Set the org_id
--b, --backup_folder=    Path to the folder where to save the org backup (a subfolder
-                        will be created with the org name)
+-b, --backup_folder=    Path to the folder where to save the org backup (a 
+                        subfolder will be created with the org name)
                         default is "./org_backup"
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
--e, --env=              define the env file to use (see mistapi env file documentation 
-                        here: https://pypi.org/project/mistapi/)
+-e, --env=              define the env file to use (see mistapi env file 
+                        documentation here: https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
 
 -------
