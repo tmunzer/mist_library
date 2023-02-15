@@ -2,7 +2,7 @@
 Written by: Thomas Munzer (tmunzer@juniper.net)
 Github repository: https://github.com/tmunzer/Mist_library/
 
-Python script to restore organization backup file.
+Python script to deploy organization backup file.
 You can use the script "org_conf_backup.py" to generate the backup file from an
 existing organization.
 
@@ -18,7 +18,7 @@ You can run the script with the command "python3 org_admins_import.py <path_to_t
 The script has 2 different steps:
 1) admin login
 2) choose the destination org
-3) restore all the objects from the json file. 
+3) deploy all the objects from the json file. 
 '''
 
 #### IMPORTS ####
@@ -28,6 +28,7 @@ import os
 import sys
 import re
 import getopt
+import signal
 from typing import Callable
 
 
@@ -59,8 +60,17 @@ env_file = "~/.mist_env"
 #### LOGS ####
 logger = logging.getLogger(__name__)
 
-#### GLOBAL VARS ####
+#####################################################################
+#### GLOBALS #####
+sys_exit=False
+def sigint_handler(signal, frame):
+    global sys_exit
+    sys_exit = True
+    ('[Ctrl C],KeyboardInterrupt exception occured.')
+signal.signal(signal.SIGINT, sigint_handler)
 
+#####################################################################
+# DEPLOY OBJECTS REFS
 org_steps = {
     "assetfilters": {"mistapi_function": mistapi.api.v1.orgs.assetfilters.createOrgAssetFilters, "text": "Org assetfilters"},
     "deviceprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfiles, "text": "Org deviceprofiles"},
@@ -88,7 +98,7 @@ org_steps = {
     "wxtags": {"mistapi_function": mistapi.api.v1.orgs.wxtags.createOrgWxTag, "text": "Org wxtags"},
     "wxrules": {"mistapi_function": mistapi.api.v1.orgs.wxrules.createOrgWxRule, "text": "Org wxrules"},
     "pskportals": {"mistapi_function": mistapi.api.v1.orgs.pskportals.createOrgPskPortal, "text": "Org pskportals"},
-    "psks": {"mistapi_function": mistapi.api.v1.orgs.psks.createOrgPsk, "text": "Org psks"},
+    "psks": {"mistapi_function": mistapi.api.v1.orgs.psks.importOrgPsks, "text": "Org psks"},
     "nactags": {"mistapi_function": mistapi.api.v1.orgs.nactags.createOrgNacTag, "text": "Org nactags"},
     "nacrules": {"mistapi_function": mistapi.api.v1.orgs.nacrules.createOrgNacRule, "text": "Org nacrules"},
     "ssos": {"mistapi_function": mistapi.api.v1.orgs.ssos.createOrgSso, "text": "Org ssos"},
@@ -102,7 +112,7 @@ site_steps = {
     "assets": {"mistapi_function": mistapi.api.v1.sites.assets.createSiteAsset, "text": "Site assets"},
     "assetfilters": {"mistapi_function": mistapi.api.v1.sites.assetfilters.createSiteAssetFilters, "text": "Site assetfilters"},
     "beacons": {"mistapi_function": mistapi.api.v1.sites.beacons.createSiteBeacon, "text": "Site beacons"},
-    "psks": {"mistapi_function": mistapi.api.v1.sites.psks.createSitePsk, "text": "Site psks"},
+    "psks": {"mistapi_function": mistapi.api.v1.sites.psks.importSitePsks, "text": "Site psks"},
     "vbeacons": {"mistapi_function": mistapi.api.v1.sites.vbeacons.createSiteVBeacon, "text": "Site vbeacons"},
     "webhooks": {"mistapi_function": mistapi.api.v1.sites.webhooks.createSiteWebhook, "text": "Site webhooks"},
     "wxtunnels": {"mistapi_function": mistapi.api.v1.sites.wxtunnels.createSiteWxTunnel, "text": "Site wxtunnels"},
@@ -111,33 +121,8 @@ site_steps = {
     "wxrules": {"mistapi_function": mistapi.api.v1.sites.wxrules.createSiteWxRule, "text": "Site wxrules"},
 }
 
-#### FUNCTIONS ####
-def log_message(message):
-    print(f"{message}".ljust(79, '.'), end="", flush=True)
-
-
-def log_debug(message):
-    logger.debug(f"{message}")
-
-
-def log_error(message):
-    logger.error(f"{message}")
-
-def log_warning(message):
-    print("\033[93m\u0097\033[0m")
-    logger.warning(f"{message}")
-
-def log_success(message):
-    print("\033[92m\u2714\033[0m")
-    logger.info(f"{message}: Success")
-
-
-def log_failure(message):
-    print('\033[31m\u2716\033[0m')
-    logger.exception(f"{message}: Failure")
-
 ##########################################################################################
-# COMMON FUNCTIONS
+# CLASS TO MANAGE UUIDS UPDATES (replace UUIDs from source org to the newly created ones)
 class UUIDM():
 
     def __init__(self):
@@ -207,9 +192,71 @@ class UUIDM():
 
         return obj, missing_uuids
 
+#####################################################################
+# PROGRESS BAR AND DISPLAY
+class ProgressBar():    
+    def __init__(self):        
+        self.steps_total = 0
+        self.steps_count = 0
 
+    def _pb_update(self, size:int=80):   
+        if self.steps_count > self.steps_total: 
+            self.steps_count = self.steps_total
 
-def _common_restore(apisession: mistapi.APISession, mistapi_function:Callable, scope_id: str, object_type: str, data: dict, retry:bool=False):
+        percent = self.steps_count/self.steps_total
+        delta = 17
+        x = int((size-delta)*percent)
+        print(f"Progress: ", end="")
+        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
+        print(f"{int(percent*100)}%".rjust(5), end="")
+
+    def _pb_new_step(self, message:str, result:str, inc:bool=False, size:int=80, display_pbar:bool=True):
+        if inc: self.steps_count += 1
+        text = f"\033[A\033[F{message}"
+        print(f"{text} ".ljust(size + 4, "."), result)
+        print("".ljust(80))
+        if display_pbar: self._pb_update(size)
+
+    def _pb_title(self, text:str, size:int=80, end:bool=False, display_pbar:bool=True):
+        print("\033[A")
+        print(f" {text} ".center(size, "-"),"\n")
+        if not end and display_pbar: 
+            print("".ljust(80))
+            self._pb_update(size)
+
+    def set_steps_total(self, steps_total:int):
+        self.steps_total = steps_total
+
+    def log_message(self, message, display_pbar:bool=True):
+        self._pb_new_step(message, " ", display_pbar=display_pbar)
+
+    def log_debug(self, message):
+        logger.debug(f"{message}")        
+
+    def log_success(self, message, inc:bool=False, display_pbar:bool=True):
+        logger.info(f"{message}: Success")
+        self._pb_new_step(message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
+
+    def log_warning(self, message, inc:bool=False, display_pbar:bool=True):
+        logger.warning(f"{message}")
+        self._pb_new_step(message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
+
+    def log_failure(self, message, inc:bool=False, display_pbar:bool=True):
+        logger.error(f"{message}: Failure")    
+        self._pb_new_step(message, '\033[31m\u2716\033[0m\n', inc=inc, display_pbar=display_pbar)
+
+    def log_title(self, message, end:bool=False, display_pbar:bool=True):
+        logger.info(message)
+        self._pb_title(message, end=end, display_pbar=display_pbar)
+
+pb = ProgressBar()
+##########################################################################################
+##########################################################################################
+# DEPLOY FUNCTIONS
+##########################################################################################
+# COMMON FUNCTION
+def _common_deploy(apisession: mistapi.APISession, mistapi_function:Callable, scope_id: str, object_type: str, data: dict, retry:bool=False):
+    if sys_exit: sys.exit(0)
     old_id = None
     new_id = None
     if "name" in data: object_name = f"\"{data['name']}\" "
@@ -219,34 +266,36 @@ def _common_restore(apisession: mistapi.APISession, mistapi_function:Callable, s
     else: old_id = None
 
     message = f"Creating {object_type} {object_name}"
-    log_message(message)
+    pb.log_message(message)
     data, missing_uuids = uuid_matching.find_and_replace(data, object_type)
     
     if missing_uuids and not retry:
         uuid_matching.add_replay(mistapi_function, scope_id, object_type, data)
-        log_warning(message)
+        pb.log_warning(message, inc=True)
     else:
         try:
             response = mistapi_function(apisession, scope_id, data).data
             if "id" in response:
                 new_id = response["id"]
-            log_success(message)
+            pb.log_success(message, inc=True)
         except:
-            log_failure(message)
+            pb.log_failure(message, inc=True)
         uuid_matching.add_uuid(new_id, old_id)
         return new_id
     return None
 
 ##########################################################################################
 # WLAN FUNCTIONS
-def _restore_wlan(apisession: mistapi.APISession, mistapi_function:Callable, scope_id: str, data: dict, old_org_id: str, old_site_id: str = None):
+def _deploy_wlan(apisession: mistapi.APISession, mistapi_function:Callable, scope_id: str, data: dict, old_org_id: str, old_site_id: str = None):
+    if sys_exit: sys.exit(0)
     old_wlan_id = data["id"]
-    new_wlan_id = _common_restore(apisession, mistapi_function, scope_id, 'wlans', data)
+    new_wlan_id = _common_deploy(apisession, mistapi_function, scope_id, 'wlans', data)
     uuid_matching.add_uuid(new_wlan_id, old_wlan_id)
-    _restore_wlan_portal(apisession, old_org_id,old_site_id, old_wlan_id, scope_id, new_wlan_id, data["ssid"])
+    _deploy_wlan_portal(apisession, old_org_id,old_site_id, old_wlan_id, scope_id, new_wlan_id, data["ssid"])
 
 
-def _restore_wlan_portal(apisession: mistapi.APISession, old_org_id:str, old_site_id:str, old_wlan_id:str, scope_id: str, new_wlan_id:str, wlan_name:str):
+def _deploy_wlan_portal(apisession: mistapi.APISession, old_org_id:str, old_site_id:str, old_wlan_id:str, scope_id: str, new_wlan_id:str, wlan_name:str):
+    if sys_exit: sys.exit(0)
     if old_site_id is None:
         portal_file_name = f"{file_prefix}_org_{old_org_id}_wlan_{old_wlan_id}.json"
         portal_image = f"{file_prefix}_org_{old_org_id}_wlan_{old_wlan_id}.png"
@@ -260,91 +309,92 @@ def _restore_wlan_portal(apisession: mistapi.APISession, old_org_id:str, old_sit
 
     if os.path.isfile(portal_file_name):
         message = f"Creating Portal Template for WLAN \"{wlan_name}\" "
-        log_message(message)
+        pb.log_message(message)
         try:
             template = open(portal_file_name, 'r')
         except Exception as e:
-            log_failure(
+            pb.log_failure(
                 f"Unable to open the template file \"{portal_file_name}\" ")
             logger.error("Exception occurred", exc_info=True)
             return
         try:
             template = json.load(template)
         except Exception as e:
-            log_failure(
+            pb.log_failure(
                 f"Unable to read the template file \"{portal_file_name}\" ")
             logger.error("Exception occurred", exc_info=True)
             return
         try:
             update_template_function(apisession, scope_id, new_wlan_id, template)
-            log_success(message)
+            pb.log_success(message)
         except Exception as e:
-            log_failure(
+            pb.log_failure(
                 f"Unable to upload the template \"{portal_file_name}\" ")
             logger.error("Exception occurred", exc_info=True)
 
     else:
-        log_debug(f"No Portal template found for WLAN \"{wlan_name}\"")
+        pb.log_debug(f"No Portal template found for WLAN \"{wlan_name}\"")
 
     if os.path.isfile(portal_image):
         message = f"Uploading Portal image for WLAN \"{wlan_name}\" "
         try:
             upload_image_function(apisession, scope_id, new_wlan_id, portal_image)
-            log_success(message)
+            pb.log_success(message)
         except Exception as e:
-            log_failure(message)
+            pb.log_failure(message)
             logger.error("Exception occurred", exc_info=True)
     else:
-        log_debug(f"No Portal Template image found for WLAN {wlan_name} ")
+        pb.log_debug(f"No Portal Template image found for WLAN {wlan_name} ")
 
 ##########################################################################################
 # SITE FUNCTIONS
-def _restore_site_maps(apisession: mistapi.APISession, old_org_id: str, old_site_id: str, new_site_id: str, data: dict):
+def _deploy_site_maps(apisession: mistapi.APISession, old_org_id: str, old_site_id: str, new_site_id: str, data: dict):
+    if sys_exit: sys.exit(0)
     old_map_id = data["id"]
-    new_map_id = _common_restore(
+    new_map_id = _common_deploy(
         apisession, site_steps["maps"]["mistapi_function"], new_site_id, 'maps', data)
 
     image_name = f"{file_prefix}_org_{old_org_id}_site_{old_site_id}_map_{old_map_id}.png"
     if os.path.isfile(image_name):
         message = f"Uploading image floorplan  \"{data['name']}\""
-        log_message(message)
+        pb.log_message(message)
         try:
             mistapi.api.v1.sites.maps.addSiteMapImageFile(
                 apisession, new_site_id, new_map_id, image_name)
-            log_success(message)
+            pb.log_success(message)
         except:
-            log_failure(message)
+            pb.log_failure(message)
     else:
-        log_debug(f"No image found for \"{data['name']}\"")
+        pb.log_debug(f"No image found for \"{data['name']}\"")
 
 
-def _restore_site(apisession: mistapi.APISession, org_id:str, old_org_id:str, site_info:dict, sites_backup:dict):
+def _deploy_site(apisession: mistapi.APISession, org_id:str, old_org_id:str, site_info:dict, sites_backup:dict):
+    if sys_exit: sys.exit(0)
     old_site_id = site_info["id"]
     site_data = sites_backup.get(old_site_id, {})
 
-    print(f" Deploying Site {site_info['name']} ".center(80, "_"))
-    new_site_id = _common_restore(
+    pb.log_title(f" Deploying Site {site_info['name']} ".center(80, "_"))
+    new_site_id = _common_deploy(
         apisession,org_steps["sites"]["mistapi_function"], org_id, "sites", site_info)
 
     for step_name in site_steps:
         step = site_steps[step_name]
         if step_name == "settings":
             step_data = site_data.get(step_name, {})
-            _common_restore(apisession, step["mistapi_function"], new_site_id, step_name, step_data)
+            _common_deploy(apisession, step["mistapi_function"], new_site_id, step_name, step_data)
         else:
             for step_data in site_data.get(step_name, []):
                 if step_name == "maps":
-                    _restore_site_maps(apisession, old_org_id, old_site_id, new_site_id, step_data)
+                    _deploy_site_maps(apisession, old_org_id, old_site_id, new_site_id, step_data)
                 elif step_name == "wlans":
-                    _restore_wlan(apisession, step["mistapi_function"], org_id, step_data, old_org_id, old_site_id)
+                    _deploy_wlan(apisession, step["mistapi_function"], org_id, step_data, old_org_id, old_site_id)
                 else:
-                    _common_restore(apisession, step["mistapi_function"], new_site_id, step_name, step_data)
+                    _common_deploy(apisession, step["mistapi_function"], new_site_id, step_name, step_data)
 
 ##########################################################################################
 #  ORG FUNCTIONS
-def _restore_org(apisession: mistapi.APISession, org_id:str, org_name:str, backup:dict):
-    print()
-    print(f" Deploying Org {org_name} ".center(80, "_"))
+def _deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, backup:dict):
+    pb.log_title(f"Deploying Org {org_name}")
 
     ####################
     ####  ORG MAIN  ####
@@ -356,55 +406,75 @@ def _restore_org(apisession: mistapi.APISession, org_id:str, org_name:str, backu
     uuid_matching.add_uuid(org_id, old_org_id)
 
     message = "Org Info "
-    log_message(message)
+    pb.log_message(message)
     try:
         org_data["name"] = org_name
         mistapi.api.v1.orgs.orgs.updateOrg(apisession, org_id, org_data)
-        log_success(message)
+        pb.log_success(message, inc=True)
     except Exception as e:
-        log_failure(message)
+        pb.log_failure(message, inc=True)
         logger.error("Exception occurred", exc_info=True)
 
     ########################
     ####  ORG SETTINGS  ####
     message = "Org Settings "
-    log_message(message)
+    pb.log_message(message)
     try:
         mistapi.api.v1.orgs.setting.updateOrgSettings(apisession, org_id, org_data)
-        log_success(message)
+        pb.log_success(message, inc=True)
     except Exception as e:
-        log_failure(message)
+        pb.log_failure(message, inc=True)
         logger.error("Exception occurred", exc_info=True)
 
     #######################
     ####  ORG OBJECTS  ####
-    print(f" Deploying Common Org Objects ".center(80, "_"))
+    pb.log_title(f"Deploying Common Org Objects")
     for step_name in org_steps:
         if step_name in org_backup:
             step = org_steps[step_name]
             for step_data in org_backup[step_name]:
                 if step_name == "sites":
-                    _restore_site(apisession, org_id, old_org_id, step_data, sites_backup)
-                    print(f" Deploying Reamining Org Objects ".center(80, "_"))
+                    _deploy_site(apisession, org_id, old_org_id, step_data, sites_backup)
                 elif step_name == "wlans":
-                    _restore_wlan(apisession, step["mistapi_function"], org_id, step_data, old_org_id)
+                    _deploy_wlan(apisession, step["mistapi_function"], org_id, step_data, old_org_id)
                 else:
-                    _common_restore(apisession, step["mistapi_function"], org_id, step_name, step_data)
+                    _common_deploy(apisession, step["mistapi_function"], org_id, step_name, step_data)
+            if step_name == "sites":
+                pb.log_title(f"Deploying Reamining Org Objects")
 
-    print(f" Retrying missing objects ".center(80, "_"))
+    pb.log_title(f"Retrying missing objects")
     for replay in uuid_matching.get_replay():
-        _common_restore(apisession, replay["mistapi_function"], replay["scope_id"], replay["object_type"], replay["data"], True)
+        _common_deploy(apisession, replay["mistapi_function"], replay["scope_id"], replay["object_type"], replay["data"], True)
+
+    pb.log_title("Deployment Done", end=True)
 
 #####################################################################
 #### MENUS ####
+def _chdir(path:str):
+    try:
+        os.chdir(path)
+        return True
+    except FileNotFoundError:
+        console.error("Le chemin spécifié n'existe pas.")        
+        return False
+    except NotADirectoryError:
+        console.error("Le chemin spécifié n'est pas un répertoire.")
+        return False
+    except PermissionError:
+        console.error("Vous n'avez pas les autorisations nécessaires pour accéder au répertoire spécifié.")
+        return False
+    except Exception as e:
+        console.error(f"Une erreur s'est produite : {e}")
+        return False
+
 def _display_warning(message):
     resp = "x"
     while not resp.lower() in ["y", "n", ""]:
         print()
         resp = input(message)
     if not resp.lower() == "y":
-        print("Interruption... Exiting...")
-        log_error("Interruption... Exiting...")
+        console.error("Interruption... Exiting...")
+        logger.error("Interruption... Exiting...")
         sys.exit(0)
 
 
@@ -417,10 +487,10 @@ def _select_backup_folder(folders):
     folder = None
     while folder is None:
         resp = input(
-            f"Which template/backup do you want to restore (0-{i - 1}, or q to quit)? ")
+            f"Which template/backup do you want to deploy (0-{i - 1}, or q to quit)? ")
         if resp.lower() == "q":
-            print("Interruption... Exiting...")
-            log_error("Interruption... Exiting...")
+            console.error("Interruption... Exiting...")
+            logger.error("Interruption... Exiting...")
             sys.exit(0)
         try:
             respi = int(resp)
@@ -431,33 +501,31 @@ def _select_backup_folder(folders):
                     f"The entry value \"{respi}\" is not valid. Please try again...")
         except:
             print("Only numbers are allowed. Please try again...")
-    os.chdir(folder)
+    _chdir(folder)
 
 
-def _go_to_backup_folder(source_org_name=None):
+def _go_to_backup_folder(source_org_name:str=None, source_backup:str=None):
     print()
     print(" Source Backup/Template ".center(80, "-"))
     print()
-    os.chdir(os.getcwd())
-    os.chdir(backup_folder)
+    _chdir(backup_folder)
     folders = []
     for entry in os.listdir("./"):
         if os.path.isdir(os.path.join("./", entry)):
             folders.append(entry)
-    if source_org_name in folders:
+    if source_backup in folders and _chdir(source_backup):
+        print(f"Template/Backup {source_backup} found. It will be automatically used.")
+    elif source_org_name in folders:
         print(f"Template/Backup found for organization {source_org_name}.")
         loop = True
         while loop:
-            resp = input("Do you want to use this template/backup (y/n)? ")
-            if resp.lower == "y":
+            resp = input("Do you want to use this template/backup (y/N)? ")
+            if resp.lower() in ["y", "n", " "]:
                 loop = False
-                try:
-                    os.chdir(source_org_name)
-                except:
+                if resp.lower() == "y" and _chdir(source_org_name):
+                    pass
+                else:
                     _select_backup_folder(folders)
-            else:
-                loop = False
-                _select_backup_folder(folders)
     else:
         print(
             f"No Template/Backup found for organization {source_org_name}. Please select a folder in the following list.")
@@ -487,26 +555,41 @@ def _check_org_name(apisession:mistapi.APISession, org_id:str, org_name:str=None
             print("The orgnization names do not match... Please try again...")
 
 
-def start_deploy_org(apisession: mistapi.APISession, org_id, org_name, source_backup):
-    _go_to_backup_folder(source_backup)
+def start_deploy_org(apisession: mistapi.APISession, org_id, org_name, source_org_name:str=None, source_backup:str=None):
+    _go_to_backup_folder(source_org_name, source_backup)
     print()
-    message = f"Loading template/backup file {backup_file} "
-    log_message(message)
     try:
+        message = f"Loading template/backup file {backup_file} "
+        pb.log_message(message, display_pbar=False)
         with open(backup_file) as f:
             backup = json.load(f)
-        log_success(message)
+        pb.log_success(message, display_pbar=False)
     except:
-        print("Unable to load the template/bakup ".ljust(79, "."), end="", flush=True)
-        log_failure(message)
+        pb.log_failure(message, display_pbar=False)
+        console.critical("Unable to load the template/bakup")
         sys.exit(1)
-    finally:
-        if backup:
-            _display_warning(
-                f"Are you sure about this? Do you want to import the configuration into the organization {org_name} with the id {org_id} (y/N)? ")
-            _restore_org(apisession, org_id, org_name, backup)
-            print()
-            print("Importation process finished...")
+
+    try:
+        message = f"Analyzing template/backup file {backup_file} "
+        pb.log_message(message, display_pbar=False)
+        steps_total = 2
+        for step_name in org_steps:
+            if step_name in backup["org"]: steps_total += len(backup["org"][step_name])
+        for site_id in backup["sites"]:
+            for step_name in site_steps:
+                if step_name == "settings": steps_total += 1
+                elif step_name in backup["sites"][site_id]: steps_total += len(backup["sites"][site_id][step_name])
+        pb.set_steps_total(steps_total)
+        pb.log_success(message, display_pbar=False)
+        console.info(f"The process will deploy {steps_total} new objects")
+    except:
+        pb.log_failure(message, display_pbar=False)
+        console.critical("Unable to parse the template/backup file")
+        sys.exit(1)
+    if backup:
+        _display_warning(
+            f"Are you sure about this? Do you want to import the configuration into the organization {org_name} with the id {org_id} (y/N)? ")
+        _deploy_org(apisession, org_id, org_name, backup)        
 
 
 def _create_org(apisession: mistapi.APISession):
@@ -517,11 +600,11 @@ def _create_org(apisession: mistapi.APISession):
                 "name": custom_dest_org_name
             }
             message = f"Creating the organisation \"{custom_dest_org_name}\" in {apisession.get_cloud()} "
-            log_message(message)
+            pb.log_message(message, display_pbar=False)
             try:
-                log_success(message)
+                pb.log_success(message, display_pbar=False)
             except Exception as e:
-                log_failure(message)
+                pb.log_failure(message, display_pbar=False)
                 logger.error("Exception occurred", exc_info=True)
                 sys.exit(10)
             org_id = mistapi.api.v1.orgs.orgs.createOrg(
@@ -547,7 +630,7 @@ def _select_dest_org(apisession: mistapi.APISession):
 
 #####################################################################
 #### START ####
-def start(apisession: mistapi.APISession, org_id: str, org_name: str, backup_folder_param: str = None, source_backup: str = None):
+def start(apisession: mistapi.APISession, org_id: str, org_name: str, backup_folder_param: str = None, source_org_name:str=None, source_backup: str = None):
     current_folder = os.getcwd()
     if backup_folder_param:
         global backup_folder
@@ -561,7 +644,7 @@ def start(apisession: mistapi.APISession, org_id: str, org_name: str, backup_fol
         console.critical(f"Org name {org_name} does not match the org {org_id}")
         sys.exit(0)
     
-    start_deploy_org(apisession, org_id, org_name, source_backup)
+    start_deploy_org(apisession, org_id, org_name, source_org_name, source_backup)
     os.chdir(current_folder)
 
 
@@ -604,4 +687,4 @@ if __name__ == "__main__":
     ### START ###
     apisession = mistapi.APISession(env_file=env_file)
     apisession.login()
-    start(apisession, org_id, org_name, backup_folder_param, source_backup)
+    start(apisession, org_id, org_name, backup_folder_param, source_backup=source_backup)
