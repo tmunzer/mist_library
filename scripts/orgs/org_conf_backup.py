@@ -177,7 +177,7 @@ class ProgressBar():
         print(f" {text} ".center(size, "-"),"\n")
         if not end and display_pbar: 
             print("".ljust(80))
-            self._pb_update(size, display_pbar=display_pbar)
+            self._pb_update(size)
 
     def set_steps_total(self, steps_total:int):
         self.steps_total = steps_total
@@ -311,10 +311,7 @@ def _save_to_file(backup_file, backup, org_name):
         logger.error("Exception occurred", exc_info=True)
 
 
-def start_org_backup(mist_session, org_id, org_name, parent_log_file=None):
-    if parent_log_file:
-        logging.basicConfig(filename=log_file, filemode='a')
-        logger.setLevel(logging.DEBUG)
+def start_org_backup(mist_session, org_id, org_name):
     # FOLDER
     try:
         if not os.path.exists(backup_folder):
@@ -442,4 +439,4 @@ if __name__ == "__main__":
     ### START ###
     apisession = mistapi.APISession(env_file=env_file)
     apisession.login()
-    sys.exit(start(apisession, org_id, backup_folder_param))
+    start(apisession, org_id, backup_folder_param)
