@@ -1,8 +1,13 @@
 '''
-Written by: Thomas Munzer (tmunzer@juniper.net)
-Github repository: https://github.com/tmunzer/Mist_library/
+-------------------------------------------------------------------------------
 
-Python script to deploy organization backup file.
+    Written by Thomas Munzer (tmunzer@juniper.net)
+    Github repository: https://github.com/tmunzer/Mist_library/
+
+    This script is licensed under the MIT License.
+
+-------------------------------------------------------------------------------
+Python script to deploy organization backup/template file.
 You can use the script "org_conf_backup.py" to generate the backup file from an
 existing organization.
 
@@ -13,12 +18,46 @@ This script is trying to maintain objects integrity as much as possible. To do s
 an object is referencing another object by its ID, the script will replace be ID from 
 the original organization by the corresponding ID from the destination org.
 
-You can run the script with the command "python3 org_admins_import.py <path_to_the_json_file>"
+-------
+Requirements:
+mistapi: https://pypi.org/project/mistapi/
 
-The script has 2 different steps:
-1) admin login
-2) choose the destination org
-3) deploy all the objects from the json file. 
+-------
+Usage:
+This script can be run as is (without parameters), or with the options below.
+If no options are defined, or if options are missing, the missing options will
+be asked by the script or the default values will be used.
+
+It is recomended to use an environment file to store the required information
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+information about the available parameters).
+
+-------
+Script Parameters:
+-h, --help              display this help
+-o, --org_id=           Only if the destination org already exists. org_id where to 
+                        deploy the configuration
+-n, --org_name=         Org name where to deploy the configuration:
+                            - if org_id is provided (existing org), used to validate 
+                            the destination org
+                            - if org_id is not provided (new org), the script will 
+                            create a new org and name it with the org_name value                        
+-b, --backup_folder=    Path to the folder where to save the org backup (a subfolder
+                        will be created with the org name)
+                        default is "./org_backup"
+-s, --source_backup=    Name of the backup/template to deploy. This is the name of
+                        the folder where all the backup files are stored.
+-l, --log_file=         define the filepath/filename where to write the logs
+                        default is "./script.log"
+-e, --env=              define the env file to use (see mistapi env file documentation 
+                        here: https://pypi.org/project/mistapi/)
+                        default is "~/.mist_env"
+
+-------
+Examples:
+python3 ./org_conf_deploy.py     
+python3 ./org_conf_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "my test org"
+
 '''
 
 #### IMPORTS ####
@@ -592,9 +631,10 @@ def start_deploy_org(apisession: mistapi.APISession, org_id, org_name, source_or
         _deploy_org(apisession, org_id, org_name, backup)        
 
 
-def _create_org(apisession: mistapi.APISession):
+def _create_org(apisession: mistapi.APISession, custom_dest_org_name:str=None):
     while True:
-        custom_dest_org_name = input("Organization name? ")
+        if not custom_dest_org_name:
+            custom_dest_org_name = input("Organization name? ")
         if custom_dest_org_name:
             org = {
                 "name": custom_dest_org_name
@@ -636,18 +676,87 @@ def start(apisession: mistapi.APISession, org_id: str, org_name: str, backup_fol
         global backup_folder
         backup_folder = backup_folder_param
 
-    if not org_id:
-        org_id, org_name = _select_dest_org(apisession)
-    elif not org_name:
+    if org_id and org_name:
+        if not _check_org_name_in_script_param(apisession, org_id, org_name):
+            console.critical(f"Org name {org_name} does not match the org {org_id}")
+            sys.exit(0)
+    elif org_id and not org_name:
         org_id, org_name = _check_org_name(apisession, org_id)
-    elif not _check_org_name_in_script_param(apisession, org_id, org_name):
-        console.critical(f"Org name {org_name} does not match the org {org_id}")
+    elif not org_id and org_name:
+        org_id, name = _create_org(apisession, org_name)
+    elif not org_id and not org_name:
+        org_id, org_name = _select_dest_org(apisession)
+    else: #should not since we covered all the possibilities...
         sys.exit(0)
     
     start_deploy_org(apisession, org_id, org_name, source_org_name, source_backup)
     os.chdir(current_folder)
 
 
+#####################################################################
+#### USAGE ####
+def usage():
+    print('''
+-------------------------------------------------------------------------------
+
+    Written by Thomas Munzer (tmunzer@juniper.net)
+    Github repository: https://github.com/tmunzer/Mist_library/
+
+    This script is licensed under the MIT License.
+
+-------------------------------------------------------------------------------
+Python script to deploy organization backup/template file.
+You can use the script "org_conf_backup.py" to generate the backup file from an
+existing organization.
+
+This script will not overide existing objects. If you already configured objects in the 
+destination organisation, new objects will be created. If you want to "reset" the 
+destination organization, you can use the script "org_conf_zeroise.py".
+This script is trying to maintain objects integrity as much as possible. To do so, when 
+an object is referencing another object by its ID, the script will replace be ID from 
+the original organization by the corresponding ID from the destination org.
+
+-------
+Requirements:
+mistapi: https://pypi.org/project/mistapi/
+
+-------
+Usage:
+This script can be run as is (without parameters), or with the options below.
+If no options are defined, or if options are missing, the missing options will
+be asked by the script or the default values will be used.
+
+It is recomended to use an environment file to store the required information
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+information about the available parameters).
+
+-------
+Script Parameters:
+-h, --help              display this help
+-o, --org_id=           Only if the destination org already exists. org_id where to 
+                        deploy the configuration
+-n, --org_name=         Org name where to deploy the configuration:
+                            - if org_id is provided (existing org), used to validate 
+                            the destination org
+                            - if org_id is not provided (new org), the script will 
+                            create a new org and name it with the org_name value                        
+-b, --backup_folder=    Path to the folder where to save the org backup (a subfolder
+                        will be created with the org name)
+                        default is "./org_backup"
+-s, --source_backup=    Name of the backup/template to deploy. This is the name of
+                        the folder where all the backup files are stored.
+-l, --log_file=         define the filepath/filename where to write the logs
+                        default is "./script.log"
+-e, --env=              define the env file to use (see mistapi env file documentation 
+                        here: https://pypi.org/project/mistapi/)
+                        default is "~/.mist_env"
+
+-------
+Examples:
+python3 ./org_conf_deploy.py     
+python3 ./org_conf_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "my test org"
+
+''')
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
 uuid_matching = UUIDM()
@@ -680,7 +789,7 @@ if __name__ == "__main__":
             source_backup = a
         else:
             assert False, "unhandled option"
-    print(env_file)
+    
     #### LOGS ####
     logging.basicConfig(filename=log_file, filemode='w')
     logger.setLevel(logging.DEBUG)
