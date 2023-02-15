@@ -671,6 +671,20 @@ def _select_dest_org(apisession: mistapi.APISession):
 #####################################################################
 #### START ####
 def start(apisession: mistapi.APISession, org_id: str, org_name: str, backup_folder_param: str = None, source_org_name:str=None, source_backup: str = None):
+    '''
+    Start the process to deploy a backup/template
+
+    PARAMS
+    -------
+    :param  mistapi.APISession  apisession          - mistapi session, already logged in
+    :param  str                 org_id              - only if the destination org already exists. org_id where to deploy the configuration
+    :param  str                 org_name            - Org name where to deploy the configuration:
+                                                        * if org_id is provided (existing org), used to validate the destination org
+                                                        * if org_id is not provided (new org), the script will create a new org and name it with the org_name value     
+    :param  str                 backup_folder_param - Path to the folder where to save the org backup (a subfolder will be created with the org name). default is "./org_backup"
+    :param  str                 source_org_name     - Name of the backup/template to deploy. This is the name of the folder where all the backup files are stored. If the backup is found, the script will ask for a confirmation to use it
+    :param  str                 source_backup       - Name of the backup/template to deploy. This is the name of the folder where all the backup files are stored. If the backup is found, the script will NOT ask for a confirmation to use it
+    '''
     current_folder = os.getcwd()
     if backup_folder_param:
         global backup_folder
