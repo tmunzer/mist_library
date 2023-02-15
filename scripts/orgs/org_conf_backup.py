@@ -149,54 +149,57 @@ site_steps = {
 
 #####################################################################
 # PROGRESS BAR AND DISPLAY
-global_steps_total = 0
-global_steps_count = 0
-def _pb_update(size:int=80):   
-    global global_steps_count, global_steps_total
-    if global_steps_count > global_steps_total: global_steps_count = global_steps_total
+class ProgressBar():
 
-    percent = global_steps_count/global_steps_total
-    delta = 17
-    x = int((size-delta)*percent)
-    print(f"Progress: ", end="")
-    print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
-    print(f"{int(percent*100)}%".rjust(5), end="")
+    def __init__(self):        
+        self.steps_total = 0
+        self.steps_count = 0
 
-def _pb_new_step(message:str, result:str, inc:bool=False, size:int=80):
-    global global_steps_count
-    if inc: global_steps_count += 1
+    def _pb_update(self, size:int=80):   
+        if self.steps_count > self.steps_total: 
+            self.steps_count = self.steps_total
 
-    text = f"\033[A\033[F{message}"
-    print(f"{text} ".ljust(size + 4, "."), result)
-    print("".ljust(80))
-    _pb_update(size)
+        percent = self.steps_count/self.steps_total
+        delta = 17
+        x = int((size-delta)*percent)
+        print(f"Progress: ", end="")
+        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
+        print(f"{int(percent*100)}%".rjust(5), end="")
 
-def _pb_title(text:str, size:int=80, end:bool=False):
-    print("\033[A")
-    print(f" {text} ".center(size, "-"),"\n")
-    if not end: 
+    def _pb_new_step(self, message:str, result:str, inc:bool=False, size:int=80):
+        if inc: self.steps_count += 1
+
+        text = f"\033[A\033[F{message}"
+        print(f"{text} ".ljust(size + 4, "."), result)
         print("".ljust(80))
-        _pb_update(size)
+        self._pb_update(size)
 
-def _pb_set_global_steps(sites:list):
-    global global_steps_total
-    global_steps_total =len(org_steps) + len(sites) * len(site_steps)
+    def _pb_title(self, text:str, size:int=80, end:bool=False):
+        print("\033[A")
+        print(f" {text} ".center(size, "-"),"\n")
+        if not end: 
+            print("".ljust(80))
+            self._pb_update(size)
 
-def log_message(message):
-    _pb_new_step(message, " ")
+    def set_steps_total(self, steps_total:int):
+        self.steps_total = steps_total
 
-def log_success(message, inc:bool=False):
-    logger.info(f"{message}: Success")
-    _pb_new_step(message, "\033[92m\u2714\033[0m\n", inc)
+    def log_message(self, message):
+        self._pb_new_step(message, " ")
 
-def log_failure(message, inc:bool=False):
-    logger.error(f"{message}: Failure")    
-    _pb_new_step(message, '\033[31m\u2716\033[0m\n', inc)
+    def log_success(self, message, inc:bool=False):
+        logger.info(f"{message}: Success")
+        self._pb_new_step(message, "\033[92m\u2714\033[0m\n", inc)
 
-def log_title(message, end:bool=False):
-    logger.info(message)
-    _pb_title(message, end=end)
+    def log_failure(self, message, inc:bool=False):
+        logger.error(f"{message}: Failure")    
+        self._pb_new_step(message, '\033[31m\u2716\033[0m\n', inc)
 
+    def log_title(self, message, end:bool=False):
+        logger.info(message)
+        self._pb_title(message, end=end)
+
+pb = ProgressBar()
 #####################################################################
 #### FUNCTIONS ####
 def _backup_wlan_portal(org_id, site_id, wlans):
@@ -211,28 +214,28 @@ def _backup_wlan_portal(org_id, site_id, wlans):
         if "portal_template_url" in wlan and wlan["portal_template_url"]:
             try:
                 message=f"portal template for wlan {wlan_id}"
-                log_message(message)
+                pb.log_message(message)
                 urllib.request.urlretrieve(
                     wlan["portal_template_url"], portal_file_name)
-                log_success(message)
+                pb.log_success(message)
             except Exception as e:
-                log_failure(message)
+                pb.log_failure(message)
                 logger.error("Exception occurred", exc_info=True)
         if "portal_image" in wlan and wlan["portal_image"]:
             try:
                 message=f"portal image for wlan {wlan_id}"
-                log_message(message)
+                pb.log_message(message)
                 urllib.request.urlretrieve(wlan["portal_image"], portal_image)
-                log_success(message)
+                pb.log_success(message)
             except Exception as e:
-                log_failure(message)
+                pb.log_failure(message)
                 logger.error("Exception occurred", exc_info=True)
 
 
 def _do_backup(mist_session, backup_function, check_next, scope_id, message, request_type:str=None):
     if sys_exit: sys.exit(0)
     try:
-        log_message(message)
+        pb.log_message(message)
         if request_type:
             response = backup_function(mist_session, scope_id, type=request_type)
         else:
@@ -242,16 +245,16 @@ def _do_backup(mist_session, backup_function, check_next, scope_id, message, req
             data = mistapi.get_all(mist_session, response)
         else:
             data = response.data
-        log_success(message, True)
+        pb.log_success(message, True)
         return data
     except Exception as e:
-        log_failure(message, True)
+        pb.log_failure(message, True)
         logger.error("Exception occurred", exc_info=True)
         return None
 
 #### BACKUP ####
 def _backup_full_org(mist_session, org_id, org_name):
-    log_title(f"Backuping Org {org_name}")
+    pb.log_title(f"Backuping Org {org_name}")
     backup = {}
     backup["org"] = {"id": org_id}
 
@@ -268,7 +271,7 @@ def _backup_full_org(mist_session, org_id, org_name):
         site_id = site["id"]
         site_name = site["name"]
         site_backup = {}
-        log_title(f"Backuping Site {site_name}")
+        pb.log_title(f"Backuping Site {site_name}")
         for step_name in site_steps:
             step = site_steps[step_name]
             site_backup[step_name] = _do_backup(mist_session, step["mistapi_function"], step["check_next"], site_id, step["text"])
@@ -278,7 +281,7 @@ def _backup_full_org(mist_session, org_id, org_name):
             _backup_wlan_portal(org_id, site_id, site_backup["wlans"])
 
         message="Site map images"
-        log_message(message)
+        pb.log_message(message)
         try:
             for xmap in site_backup["maps"]:
                 url = None
@@ -288,12 +291,12 @@ def _backup_full_org(mist_session, org_id, org_name):
                 if url:
                     image_name = f"{file_prefix}_org_{org_id}_site_{site_id}_map_{xmap_id}.png"
                     urllib.request.urlretrieve(url, image_name)
-            log_success(message)
+            pb.log_success(message)
         except Exception as e:
-            log_failure(message)
+            pb.log_failure(message)
             logger.error("Exception occurred", exc_info=True)
         
-    log_title("Backup Done", end=True)
+    pb.log_title("Backup Done", end=True)
     return backup
 
 
@@ -330,7 +333,7 @@ def start_org_backup(mist_session, org_id, org_name, parent_log_file=None):
     try:
         response = mistapi.api.v1.orgs.sites.getOrgSites(mist_session, org_id)
         sites = mistapi.get_all(mist_session, response)
-        _pb_set_global_steps(sites)
+        pb.set_steps_total(len(org_steps) + len(sites) * len(site_steps))
     except Exception as e:
         print(e)
         logger.error("Exception occurred", exc_info=True)
