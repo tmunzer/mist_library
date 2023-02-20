@@ -218,6 +218,8 @@ def _check_parameters(apisession:mistapi.APISession, org_id:str, tmpl_id:str, pr
 
 def start(apisession:mistapi.APISession, org_id:str, tmpl_id:str, profile:str, action:str):
     org_id, tmpl_id, profile, action = _check_parameters(apisession, org_id, tmpl_id, profile, action)
+    print(" Processing ".center(80, "-"))
+    print()
     if action == "status":
         _display_status(apisession, org_id, tmpl_id, profile)
     if action == "off": 
