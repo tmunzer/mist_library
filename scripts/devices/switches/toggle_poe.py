@@ -1,52 +1,90 @@
 '''
-Written by Thomas Munzer (tmunzer@juniper.net)
-Github repository: https://github.com/tmunzer/Mist_library/
+-------------------------------------------------------------------------------
+
+    Written by Thomas Munzer (tmunzer@juniper.net)
+    Github repository: https://github.com/tmunzer/Mist_library/
+
+    This script is licensed under the MIT License.
+
+-------------------------------------------------------------------------------
+Python script to enable/disable/toggle PoE for a specified Port Profile in a 
+Switch Template.
+
+This script will not change/create/delete/touch any existing objects. It will 
+just retrieve every single object from the organization.
+
+-------
+Requirements:
+mistapi: https://pypi.org/project/mistapi/
+
+-------
+Usage:
+This script can be run as is (without parameters), or with the options below.
+If no options are defined, or if options are missing, the missing options will
+be asked by the script or the default values will be used.
+
+It is recomended to use an environment file to store the required information
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+information about the available parameters).
+
+-------
+Options:
+-o, --org_id=       Set the org_id
+-t, --tmpl_id=      Set the Switch template_id
+-p, --profile=      Set the Port Profile name
+-a, --action=       Set the action to execupte. It must be one of the following:
+                    - status: Retrieve the PoE status
+                    - on: Enable PoE on the port profile
+                    - off: Disable PoE on the port profile
+                    - toggle: toogle PoE on the port profile (i.e. turn it off if 
+                        currently enable, turn it on if currently enabled)
+-e, --env=          define the env file to use (see mistapi env file documentation 
+                    here: https://pypi.org/project/mistapi/)
+                    default is "~/.mist_env"
+
+-------
+Examples:
+python3 ./toggle_poe.py     
+python3 ./toggle_poe.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -t 2c57044e-xxxx-xxxx-xxxx-69374b32a070 -p ap -a toggle
+
 '''
 
 #### IMPORTS ####
-import os
-import getopt
+import logging
 import sys
-import mistapi
-from dotenv import load_dotenv
+import getopt
 
+try:
+    import mistapi
+    from mistapi.__logger import console
+except:
+    print("""
+Critical: 
+\"mistapi\" package is missing. Please use the pip command to install it.
 
-def _load_conf(cloud, org_id, tmpl_id, profile):    
-    print("Loading config ".ljust(79, "."), end="", flush=True)
-    mist_config = {}
-   
-    if org_id:
-        mist_config["org_id"]=org_id
-    else:
-        mist_config["org_id"]= os.environ.get("MIST_ORG_ID", default=None)
-    
-    if tmpl_id:
-        mist_config["tmpl_id"]=tmpl_id
-    else:
-        mist_config["tmpl_id"]= os.environ.get("MIST_TEMPLATE_ID", default=None)
-    
-    if profile:
-        mist_config["profile"]=profile
-    else:
-        mist_config["profile"]= os.environ.get("MIST_PORT_PROFILE", default=None)
-    
-    if not mist_config["tmpl_id"]: 
-        print('\033[31m\u2716\033[0m')
-        print("ERROR: Missing the tmpl_id")
-        sys.exit(1)
-    if not mist_config["profile"]:
-        print('\033[31m\u2716\033[0m') 
-        print("ERROR: Missing the profile")
-        sys.exit(1)
+# Linux/macOS
+python3 -m pip install mistapi
 
-    print("\033[92m\u2714\033[0m")
+# Windows
+py -m pip install mistapi
+    """)
+    sys.exit(2)
 
-    return mist_config
+#####################################################################
+#### PARAMETERS #####
+log_file = "./script.log"
+env_file = "~/.mist_env"
 
-def _get_port_usages(session, org_id, tmpl_id):
+#####################################################################
+#### LOGS ####
+logger = logging.getLogger(__name__)
+
+#####################################################################
+#### FUNCTIONS ####
+def _get_port_usages(apisession:mistapi.APISession, org_id:str, tmpl_id:str):
     print("Retrieving data from Mist ".ljust(79, "."), end="", flush=True)
     try:
-        res = mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplate(session, org_id, tmpl_id)
+        res = mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplate(apisession, org_id, tmpl_id)
         disabled = res.data.get("port_usages", {})
         print("\033[92m\u2714\033[0m")
         return disabled
@@ -54,8 +92,8 @@ def _get_port_usages(session, org_id, tmpl_id):
         print('\033[31m\u2716\033[0m') 
         sys.exit(4)
 
-def _status(session, org_id, tmpl_id, profile):
-    port_usages = _get_port_usages(session, org_id, tmpl_id)
+def _status(apisession:mistapi.APISession, org_id:str, tmpl_id:str, profile:str):
+    port_usages = _get_port_usages(apisession, org_id, tmpl_id)
     print("Extracting profile data ".ljust(79, "."), end="", flush=True)
     profile = port_usages.get(profile, {})
     if not profile:
@@ -65,8 +103,8 @@ def _status(session, org_id, tmpl_id, profile):
         print("\033[92m\u2714\033[0m")
         return profile.get("poe_disabled", False)
 
-def _display_status(session, org_id, tmpl_id, profile):
-    disabled = _status(session, org_id, tmpl_id, profile)
+def _display_status(apisession:mistapi.APISession, org_id:str, tmpl_id:str, profile:str):
+    disabled = _status(apisession, org_id, tmpl_id, profile)
     print()
     print(" Result ".center(80, "-"))
     print()
@@ -75,10 +113,10 @@ def _display_status(session, org_id, tmpl_id, profile):
     else:
         print(f"PoE Current status: ENABLED")
 
-def _update(session, org_id, tmpl_id,port_usages):
+def _update(apisession:mistapi.APISession, org_id:str, tmpl_id:str, port_usages:dict):
     try:
         print("Updating PoE Status ".ljust(79, "."), end="", flush=True)
-        res = mistapi.api.v1.orgs.networktemplates.updateOrgNetworkTemplates(session, org_id, tmpl_id, {"port_usages": port_usages})
+        res = mistapi.api.v1.orgs.networktemplates.updateOrgNetworkTemplates(apisession, org_id, tmpl_id, {"port_usages": port_usages})
         if res.status_code == 200:
             print("\033[92m\u2714\033[0m")
         else:
@@ -87,9 +125,8 @@ def _update(session, org_id, tmpl_id,port_usages):
         print('\033[31m\u2716\033[0m') 
         sys.exit(5)
 
-
-def _change(session, org_id, tmpl_id, profile, disabled):  
-    port_usages = _get_port_usages(session, org_id, tmpl_id)
+def _change(apisession:mistapi.APISession, org_id:str, tmpl_id:str, profile:str, disabled:bool):  
+    port_usages = _get_port_usages(apisession, org_id, tmpl_id)
     print("Extracting profile data ".ljust(79, "."), end="", flush=True)
     if not profile in port_usages:
         print('\033[31m\u2716\033[0m') 
@@ -97,10 +134,10 @@ def _change(session, org_id, tmpl_id, profile, disabled):
     else:
         print("\033[92m\u2714\033[0m")
         port_usages[profile]["poe_disabled"] = disabled
-        _update(session, org_id, tmpl_id, port_usages)
+        _update(apisession, org_id, tmpl_id, port_usages)
 
-def _toggle(session, org_id, tmpl_id, profile):  
-    port_usages = _get_port_usages(session, org_id, tmpl_id)
+def _toggle(apisession:mistapi.APISession, org_id:str, tmpl_id:str, profile:str):  
+    port_usages = _get_port_usages(apisession, org_id, tmpl_id)
     print("Extracting profile data ".ljust(79, "."), end="", flush=True)
     if not profile in port_usages:
         print('\033[31m\u2716\033[0m') 
@@ -108,58 +145,155 @@ def _toggle(session, org_id, tmpl_id, profile):
     else:
         print("\033[92m\u2714\033[0m")
         port_usages[profile]["poe_disabled"] = not port_usages[profile]["poe_disabled"]
-        _update(session, org_id, tmpl_id, port_usages)
+        _update(apisession, org_id, tmpl_id, port_usages)
 
+
+####################
+## MENU
+def _show_menu(header:str, menu:list) -> str:
+    print()
+    print("".center(80, "-"))
+    resp=None
+    menu = sorted(menu, key=str.casefold)
+    while True:
+        print(f"{header}")
+        i=0
+        for entry in menu:
+            print(f"{i}) {entry}")
+            i+=1
+        resp = input(f"Please select an option (0-{i-1}, q to quit): ")
+        if resp.lower() == "q":
+            sys.exit(0)
+        else:
+            try: 
+                resp=int(resp)
+            except:
+                console.error("Please enter a number\r\n ")
+            if resp < 0 or resp >= i:
+                console.error(f"Please enter a number between 0 and {i -1}.")
+            else:
+                return menu[resp]
+
+def _check_parameters(apisession:mistapi.APISession, org_id:str, tmpl_id:str, profile:str, action:str):
+    if not org_id:
+        org_id = mistapi.cli.select_org(apisession)[0]
+
+    if not tmpl_id:
+        response = mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplates(apisession, org_id)
+        templates = mistapi.get_all(apisession, response)
+        template_names = {}
+        template_menu = []
+        for template in templates:
+            template_menu.append(template.get("name"))
+            template_names[template.get("name")] = template["id"]
+        tmpl_name = _show_menu("Please select a Switch Template", template_menu)
+        tmpl_id = template_names[tmpl_name]
+    
+    if not profile:
+        template_settings = mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplate(apisession, org_id, tmpl_id).data
+        port_usages = template_settings.get("port_usages")
+        if not port_usages:
+            console.error("There is no profile to update in this switch template")
+            sys.exit(2)
+        else:
+            profile_names = []
+            for port_usage in port_usages:
+                profile_names.append(port_usage)
+            profile = _show_menu("Please select a Profile", profile_names)
+
+    if not action:
+        action = _show_menu("Please select an Action", ["status", "on", "off", "toggle"])
+        if action != "status":
+            action_str = action
+            if action != "toggle":
+                action_str = f"turn {action}"
+            while True:
+                print()
+                confirm = input(f"Do you confirm you want to {action_str} PoE on port profile {profile} (y/n)?")
+                if confirm.lower() == "y":
+                    break
+                elif confirm.lower() == "n":
+                    sys.exit(0)
+    return org_id, tmpl_id, profile, action
+
+def start(apisession:mistapi.APISession, org_id:str, tmpl_id:str, profile:str, action:str):
+    org_id, tmpl_id, profile, action = _check_parameters(apisession, org_id, tmpl_id, profile, action)
+    if action == "status":
+        _display_status(apisession, org_id, tmpl_id, profile)
+    if action == "off": 
+        _change(apisession, org_id, tmpl_id, profile, True)
+        _display_status(apisession, org_id, tmpl_id, profile)
+    if action == "on": 
+        _change(apisession, org_id, tmpl_id, profile, False)
+        _display_status(apisession, org_id, tmpl_id, profile)
+    if action == "toggle":
+        _toggle(apisession, org_id, tmpl_id, profile)
+        _display_status(apisession, org_id, tmpl_id, profile)
+
+#####################################################################
+##### USAGE ####
 def usage():
-    print("""
----
+    print('''
+-------------------------------------------------------------------------------
+
+    Written by Thomas Munzer (tmunzer@juniper.net)
+    Github repository: https://github.com/tmunzer/Mist_library/
+
+    This script is licensed under the MIT License.
+
+-------------------------------------------------------------------------------
+Python script to enable/disable/toggle PoE for a specified Port Profile in a 
+Switch Template.
+
+This script will not change/create/delete/touch any existing objects. It will 
+just retrieve every single object from the organization.
+
+-------
+Requirements:
+mistapi: https://pypi.org/project/mistapi/
+
+-------
 Usage:
--e, --env=file          Configuration file location. By default the script
-                        is looking for a ".env" file in the script root folder
+This script can be run as is (without parameters), or with the options below.
+If no options are defined, or if options are missing, the missing options will
+be asked by the script or the default values will be used.
 
--c, --cloud             Mist API Cloud (e.g. api.mist.com)
+It is recomended to use an environment file to store the required information
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+information about the available parameters).
 
--o, --org_id=oid        Mist ORG ID
+-------
+Options:
+-o, --org_id=       Set the org_id
+-t, --tmpl_id=      Set the Switch template_id
+-p, --profile=      Set the Port Profile name
+-a, --action=       Set the action to execupte. It must be one of the following:
+                    - status: Retrieve the PoE status
+                    - on: Enable PoE on the port profile
+                    - off: Disable PoE on the port profile
+                    - toggle: toogle PoE on the port profile (i.e. turn it off if 
+                        currently enable, turn it on if currently enabled)
+-e, --env=          define the env file to use (see mistapi env file documentation 
+                    here: https://pypi.org/project/mistapi/)
+                    default is "~/.mist_env"
 
--t, --tmpl_id=tid       Mist Switch template_id
+-------
+Examples:
+python3 ./toggle_poe.py     
+python3 ./toggle_poe.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -t 2c57044e-xxxx-xxxx-xxxx-69374b32a070 -p ap -a toggle
+'''
+)
 
--p, --profile=name      Mist Port Profile name
-
--s, --status            Get the PoE Status
-
---toggle                Toggle PoE
-
---on                    Turn ON PoE
-
---off                   Turn OFF PoE
-
----
-Configuration file example:
-MIST_HOST = "api.mist.com"              # Optional
-MIST_API_TOKEN = "xxxxxxxxxxxxxxxxx"    # Optional
-MIST_ORG_ID = "xxxxxxxxxxxxxx"          # Optional
-MIST_TEMPLATE_ID = "xxxxxxxxxxxxxx"     # Required in .env file or parameter
-MIST_PORT_PROFILE = "xxxx"              # Required in .env file or parameter
-
-    """)
-
-def main():    
-    print("""
-
-Python Script to toggle PoE on switch Port Profile.
-Written by Thomas Munzer (tmunzer@juniper.net)
-Github: https://github.com/tmunzer/mist_library
-
-""")
+#####################################################################
+##### ENTRY POINT ####
+if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "e:c:o:t:p:s", ["env=", "cloud=", "org-id=", "tmpl_id=", "profile=", "status", "toggle", "on", "off"])
+        opts, args = getopt.getopt(sys.argv[1:], "e:o:t:p:a:", ["env=", "org-id=", "tmpl_id=", "profile=", "action="])
     except getopt.GetoptError as err:
         print(err)
         usage()
         sys.exit(2)
-
-    env_file = None
-    cloud=None
+    
     org_id=None
     tmpl_id=None
     profile=None
@@ -170,62 +304,28 @@ Github: https://github.com/tmunzer/mist_library
             sys.exit()
         elif o in ["-e", "--env"]:
             env_file = a
-        elif o in ["-c", "--cloud"]:
-            cloud=a
         elif o in ["-o", "--org_id"]:
             org_id=a
         elif o in ["-t", "--tmpl_id"]:
             tmpl_id=a
         elif o in ["-p", "--profile"]:
             profile=a
-        elif o in ["--status"]:
-            action="status"
-        elif o in ["--toggle"]:
-            if action:
+        elif o in ["-a", "--action"]:
+            if a not in ["status", "on", "off", "toggle"]:
+                console.error(f"Unknown action \"{o}\"")
                 usage()
-                sys.exit(3)
-            action="toggle"
-        elif o in ["--on"]:
-            if action:
-                usage()
-                sys.exit(3)
-            action="on"
-        elif o in ["--off"]:
-            if action:
-                usage()
-                sys.exit(3)
-            action="off"
-        
+                sys.exit(0)
+            else:
+                action=a    
         else:
             assert False, "unhandled option"
 
-    if env_file:
-        session = mistapi.APISession(env_file=env_file)
-        load_dotenv(dotend_path=env_file)
-    else:
-        load_dotenv()
-        session = mistapi.APISession()
-        
-    mist_config = _load_conf(cloud, org_id, tmpl_id, profile)
-    
-    session.login()
+    #### LOGS ####
+    logging.basicConfig(filename=log_file, filemode='w')
+    logger.setLevel(logging.DEBUG)
+    ### START ###
+    apisession = mistapi.APISession(env_file=env_file)
+    apisession.login()
+    start(apisession, org_id, tmpl_id, profile, action)
 
-    if not mist_config["org_id"]:
-        mist_config["org_id"] = mistapi.cli.select_org(session)[0]
-    if action == "status":
-        _display_status(session, mist_config["org_id"], mist_config["tmpl_id"], mist_config["profile"])
-    if action == "off": 
-        _change(session, mist_config["org_id"], mist_config["tmpl_id"], mist_config["profile"], True)
-        _display_status(session, mist_config["org_id"], mist_config["tmpl_id"], mist_config["profile"])
-    if action == "on": 
-        _change(session, mist_config["org_id"], mist_config["tmpl_id"], mist_config["profile"], False)
-        _display_status(session, mist_config["org_id"], mist_config["tmpl_id"], mist_config["profile"])
-    if action == "toggle":
-        _toggle(session, mist_config["org_id"], mist_config["tmpl_id"], mist_config["profile"])
-        _display_status(session, mist_config["org_id"], mist_config["tmpl_id"], mist_config["profile"])
-
-
-#### ENTRYPOINT #####
-if __name__=="__main__":
-        main()
 
