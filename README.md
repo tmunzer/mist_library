@@ -41,7 +41,7 @@ There is a short desccription at the beginning of each script explaining the pur
 - APs
     - **configure_ap_mgmt_vlan.py**: Python script reconfigure Management VLAN on all the Mist APs from one or multiple sites.
 - Switches
-    - **toggle_poe.py**: Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template
+    - **toggle_poe.py**: Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template.
 #### Exports
 - **export_search.py**: Python script to export historical data from Mist API and save the result in CDV of JSON format.
 #### Orgs
