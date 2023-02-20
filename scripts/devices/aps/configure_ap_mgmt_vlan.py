@@ -68,9 +68,6 @@ py -m pip install mistapi
 #### PARAMETERS #####
 log_file = "./script.log"
 env_file = "~/.mist_env"
-org_id = ""
-site_ids = []
-vlan_id = 0
 
 #####################################################################
 #### LOGS ####
@@ -170,9 +167,9 @@ def _update_devices(apisession:mistapi.APISession, site_name:str, site_id:str, v
         for device in devices:
             device_id = device["id"]
             device_name = device.get("name", "No Name")
-            device_serial = device.get("serial")
             device_mac = device.get("mac")
-            message=f"Updating device {device_name} (Serial: {device_serial} / MAC: {device_mac})"
+            if not device_name: device_name = device_mac
+            message=f"Updating device {device_name} ({device_mac})"
             pb.log_message(message)
             try:
                 device_settings = mistapi.api.v1.sites.devices.getSiteDevice(apisession, site_id=site_id, device_id=device_id).data
