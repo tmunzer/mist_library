@@ -42,10 +42,10 @@ Script Parameters:
                             the destination org
                             - if org_id is not provided (new org), the script will 
                             create a new org and name it with the org_name value                        
--b, --backup_folder=    Path to the folder where to save the org backup (a subfolder
+-f, --backup_folder=    Path to the folder where to save the org backup (a subfolder
                         will be created with the org name)
                         default is "./org_backup"
--s, --source_backup=    Name of the backup/template to deploy. This is the name of
+-b, --source_backup=    Name of the backup/template to deploy. This is the name of
                         the folder where all the backup files are stored.
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
@@ -231,6 +231,7 @@ class UUIDM():
 
         return obj, missing_uuids
 
+uuid_matching = UUIDM()
 #####################################################################
 # PROGRESS BAR AND DISPLAY
 class ProgressBar():    
@@ -487,6 +488,44 @@ def _deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, backup
 
     pb.log_title("Deployment Done", end=True)
 
+
+def _start_deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, source_org_name:str=None, source_backup:str=None):
+    _go_to_backup_folder(source_org_name, source_backup)
+    print()
+    try:
+        message = f"Loading template/backup file {backup_file} "
+        pb.log_message(message, display_pbar=False)
+        with open(backup_file) as f:
+            backup = json.load(f)
+        pb.log_success(message, display_pbar=False)
+    except:
+        pb.log_failure(message, display_pbar=False)
+        console.critical("Unable to load the template/bakup")
+        sys.exit(1)
+
+    try:
+        message = f"Analyzing template/backup file {backup_file} "
+        pb.log_message(message, display_pbar=False)
+        steps_total = 2
+        for step_name in org_steps:
+            if step_name in backup["org"]: steps_total += len(backup["org"][step_name])
+        for site_id in backup["sites"]:
+            for step_name in site_steps:
+                if step_name == "settings": steps_total += 1
+                elif step_name in backup["sites"][site_id]: steps_total += len(backup["sites"][site_id][step_name])
+        pb.set_steps_total(steps_total)
+        pb.log_success(message, display_pbar=False)
+        console.info(f"The process will deploy {steps_total} new objects")
+    except:
+        pb.log_failure(message, display_pbar=False)
+        console.critical("Unable to parse the template/backup file")
+        sys.exit(1)
+    if backup:
+        _display_warning(
+            f"Are you sure about this? Do you want to import the configuration into the organization {org_name} with the id {org_id} (y/N)? ")
+        _deploy_org(apisession, org_id, org_name, backup)        
+
+
 #####################################################################
 #### MENUS ####
 def _chdir(path:str):
@@ -594,43 +633,6 @@ def _check_org_name(apisession:mistapi.APISession, org_id:str, org_name:str=None
             print("The orgnization names do not match... Please try again...")
 
 
-def start_deploy_org(apisession: mistapi.APISession, org_id, org_name, source_org_name:str=None, source_backup:str=None):
-    _go_to_backup_folder(source_org_name, source_backup)
-    print()
-    try:
-        message = f"Loading template/backup file {backup_file} "
-        pb.log_message(message, display_pbar=False)
-        with open(backup_file) as f:
-            backup = json.load(f)
-        pb.log_success(message, display_pbar=False)
-    except:
-        pb.log_failure(message, display_pbar=False)
-        console.critical("Unable to load the template/bakup")
-        sys.exit(1)
-
-    try:
-        message = f"Analyzing template/backup file {backup_file} "
-        pb.log_message(message, display_pbar=False)
-        steps_total = 2
-        for step_name in org_steps:
-            if step_name in backup["org"]: steps_total += len(backup["org"][step_name])
-        for site_id in backup["sites"]:
-            for step_name in site_steps:
-                if step_name == "settings": steps_total += 1
-                elif step_name in backup["sites"][site_id]: steps_total += len(backup["sites"][site_id][step_name])
-        pb.set_steps_total(steps_total)
-        pb.log_success(message, display_pbar=False)
-        console.info(f"The process will deploy {steps_total} new objects")
-    except:
-        pb.log_failure(message, display_pbar=False)
-        console.critical("Unable to parse the template/backup file")
-        sys.exit(1)
-    if backup:
-        _display_warning(
-            f"Are you sure about this? Do you want to import the configuration into the organization {org_name} with the id {org_id} (y/N)? ")
-        _deploy_org(apisession, org_id, org_name, backup)        
-
-
 def _create_org(apisession: mistapi.APISession, custom_dest_org_name:str=None):
     while True:
         if not custom_dest_org_name:
@@ -670,7 +672,7 @@ def _select_dest_org(apisession: mistapi.APISession):
 
 #####################################################################
 #### START ####
-def start(apisession: mistapi.APISession, org_id: str, org_name: str, backup_folder_param: str = None, source_org_name:str=None, source_backup: str = None):
+def start(apisession: mistapi.APISession, org_id: str=None, org_name: str=None, backup_folder_param: str = None, source_org_name:str=None, source_backup: str = None):
     '''
     Start the process to deploy a backup/template
 
@@ -703,7 +705,7 @@ def start(apisession: mistapi.APISession, org_id: str, org_name: str, backup_fol
     else: #should not since we covered all the possibilities...
         sys.exit(0)
     
-    start_deploy_org(apisession, org_id, org_name, source_org_name, source_backup)
+    _start_deploy_org(apisession, org_id, org_name, source_org_name, source_backup)
     os.chdir(current_folder)
 
 
@@ -754,10 +756,10 @@ Script Parameters:
                             the destination org
                             - if org_id is not provided (new org), the script will 
                             create a new org and name it with the org_name value                        
--b, --backup_folder=    Path to the folder where to save the org backup (a subfolder
+-f, --backup_folder=    Path to the folder where to save the org backup (a subfolder
                         will be created with the org name)
                         default is "./org_backup"
--s, --source_backup=    Name of the backup/template to deploy. This is the name of
+-b, --source_backup=    Name of the backup/template to deploy. This is the name of
                         the folder where all the backup files are stored.
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
@@ -773,10 +775,9 @@ python3 ./org_conf_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "m
 ''')
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
-uuid_matching = UUIDM()
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:n:e:l:b:s:", [
+        opts, args = getopt.getopt(sys.argv[1:], "ho:n:e:l:f:b:", [
                                    "help", "org_id=", "org_name=", "env=", "log_file=", "backup_folder=", "source_backup="])
     except getopt.GetoptError as err:
         console.error(err)
@@ -797,9 +798,9 @@ if __name__ == "__main__":
             env_file = a
         elif o in ["-l", "--log_file"]:
             log_file = a
-        elif o in ["-b", "--backup_folder"]:
+        elif o in ["-f", "--backup_folder"]:
             backup_folder_param = a
-        elif o in ["-s", "--source_backup"]:
+        elif o in ["-b", "--source_backup"]:
             source_backup = a
         else:
             assert False, "unhandled option"
