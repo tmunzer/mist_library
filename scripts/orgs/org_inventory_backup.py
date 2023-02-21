@@ -146,9 +146,8 @@ pb = ProgressBar()
 #### SITE FUNCTIONS ####
 def _save_site_info(site:dict, backup:dict):
     backup["org"]["sites"][site["name"]] = {
-        "id": site["id"],  "maps_ids": {}, "devices": []}
-    backup["org"]["sites_ids"][site["name"]] = {"old_id": site["id"]}
-    backup["org"]["sites_names"].append(site["name"])
+        "id": site["id"],  "old_maps_ids": {}, "devices": []}
+    backup["org"]["old_sites_id"][site["name"]] = site["id"]
 
 
 def _backup_site_id_dict(site:dict, backup:dict):
@@ -167,7 +166,6 @@ def _backup_site_id_dict(site:dict, backup:dict):
                 sys.exit(200)
     else:
         _save_site_info(site, backup)
-
 
 def _backup_site_maps(mist_session:mistapi.APISession, site):
     response = mistapi.api.v1.sites.maps.getSiteMaps(mist_session, site["id"])
@@ -190,8 +188,19 @@ def _backup_site_maps(mist_session:mistapi.APISession, site):
                     loop = False
                     sys.exit(200)
         else:
-            maps_ids[xmap["name"]] = {"old_id": xmap["id"]}
+            maps_ids[xmap["name"]] = xmap["id"]
     return maps_ids
+
+def _no_magic(backup:dict, site_name:str, device:dict, device_type:str=None):
+    if not device["mac"] in backup["org"]["magics"]:
+        backup["org"]["devices_without_magic"].append({
+                "site": site_name, 
+                "device_type": device.get("type", device_type), 
+                "model": device.get("model"), 
+                "name": device.get("name"), 
+                "mac": device.get("mac"),
+                "serial":device.get("serial")
+                })
 
 #####################################################################
 #### INVENTORY FUNCTIONS ####
@@ -199,24 +208,38 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
     pb.log_title(f"Backuping Org {org_name} Elements ")
 
     backup["org"]["id"] = org_id
-
     ################################################
     ##  Backuping inventory
     for device_type in device_types:
-        message=f"Backuping {device_type} inventory"
+        message=f"Backuping {device_type} magics"
         pb.log_message(message)
         try:
             response = mistapi.api.v1.orgs.inventory.getOrgInventory(mist_session, org_id, type=device_type)
             inventory = mistapi.get_all(mist_session, response)
             for data in inventory:
                 if data.get("magic"):
-                    backup["org"]["inventory"].append(
-                        {"serial": data["serial"], "magic": data["magic"]})
+                    backup["org"]["magics"][data["mac"]] =  data["magic"]
             pb.log_success(message, True)
         except Exception as e:
             pb.log_failure(message, True)
             logger.error("Exception occurred", exc_info=True)
 
+    ################################################
+    ##  Retrieving org MxEdges
+
+    message=f"Backuping Org MxEdges"
+    pb.log_message(message)
+    try:
+        response = mistapi.api.v1.orgs.mxedges.getOrgMxEdges(mist_session, org_id)
+        mxedges = mistapi.get_all(mist_session, response)
+        backup["org"]["mxedges"] = mxedges
+        pb.log_success(message, True)
+    except Exception as e:
+        pb.log_failure(message, True)
+        logger.error("Exception occurred", exc_info=True)
+    for mxedge in mxedges:
+        _no_magic(backup, "Org", mxedge, "mxedge")        
+        
     ################################################
     ##  Retrieving device profiles
     message=f"Backuping Device Profiles"
@@ -225,8 +248,20 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
         response = mistapi.api.v1.orgs.deviceprofiles.getOrgDeviceProfiles(mist_session, org_id)
         deviceprofiles = mistapi.get_all(mist_session, response)
         for deviceprofile in deviceprofiles:
-            backup["org"]["deviceprofiles_ids"][deviceprofile["name"]] = {
-                "old_id": deviceprofile["id"]}
+            backup["org"]["old_deviceprofiles_id"][deviceprofile["name"]] = deviceprofile["id"]
+        pb.log_success(message, True)
+    except Exception as e:
+        pb.log_failure(message, True)
+        logger.error("Exception occurred", exc_info=True)
+    ################################################
+    ##  Retrieving evpntopologies
+    message=f"Backuping EVPN Topologies"
+    pb.log_message(message)
+    try:
+        response = mistapi.api.v1.orgs.evpn_topologies.getOrgEvpnTopologies(mist_session, org_id)
+        evpn_topologies = mistapi.get_all(mist_session, response)
+        for evpn_topology in evpn_topologies:
+            backup["org"]["old_evpntopo_id"][deviceprofile["name"]] = evpn_topology["id"]
         pb.log_success(message, True)
     except Exception as e:
         pb.log_failure(message, True)
@@ -252,8 +287,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
         pb.log_message(message)
         try:
             _backup_site_id_dict(site, backup)
-            maps_ids = _backup_site_maps(mist_session, site)
-            backup["org"]["sites"][site["name"]]["maps_ids"] = maps_ids
+            backup["org"]["sites"][site["name"]]["old_maps_ids"] = _backup_site_maps(mist_session, site)
             response = mistapi.api.v1.sites.devices.getSiteDevices(mist_session, site["id"], type="all")
             devices = mistapi.get_all(mist_session, response)
             backup["org"]["sites"][site["name"]]["devices"] = devices
@@ -264,6 +298,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
         ################################################
         ## Backuping Site Devices Images
         for device in devices:
+            _no_magic(backup, site["name"], device)
             message=f"Backuping {device['type'].upper()} {device['serial']} images"
             pb.log_message(message)
             try:
@@ -281,8 +316,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
     ################################################
     ## End
     pb.log_title(f"Backup Done", end=True)
-
-
+    print()
 
 def _save_to_file(backup_file, org_name:str, backup):
     backup_path = f"./org_backup/{org_name}/{backup_file.replace('./','')}"
@@ -322,17 +356,14 @@ def start_inventory_backup(mist_session:mistapi.APISession, org_id:str, org_name
         logger.error("Exception occurred", exc_info=True)
 
     backup = {
-        "org": {
-            "id": "",
-            "sites": {},
-            "sites_ids": {},
-            "sites_names": [],
-            "deviceprofiles_ids": {},
-            "inventory": []
-        }
+        "org": {"id": "", "sites": {}, "old_sites_id": {}, "old_deviceprofiles_id": {}, "old_evpntopo_id": {}, "magics": {}, "devices_without_magic":[] }
     }
-    _backup_inventory(mist_session, org_id, org_name, backup)
+    _backup_inventory(mist_session, org_id, org_name, backup)    
     _save_to_file(backup_file, org_name, backup)
+    if backup["org"]["devices_without_magic"]:
+        console.warning("It was not possible to retrieve the claim codes for the following devices:")
+        mistapi.cli.display_list_of_json_as_table(backup["org"]["devices_without_magic"], ["site", "device_type", "model", "name", "mac", "serial"])
+        print()
 
 
 def start(mist_session:mistapi.APISession, org_id:str, backup_folder_param:str=None):
