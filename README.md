@@ -32,6 +32,13 @@ MIST_PASSWORD | string | None | The password to use if no API Token is provided 
 CONSOLE_LOG_LEVEL | int | 20 | The minimum log level to display on the console, using `logging` schema (0 = Disabled, 10 = Debug, 20 = Info, 30 = Warning, 40 = Error, 50 = Critical) |
 LOGGING_LOG_LEVEL | int | 10 | The minimum log level to log on the file, using `logging` schema (0 = Disabled, 10 = Debug, 20 = Info, 30 = Warning, 40 = Error, 50 = Critical). This is only used when the script calling `mistapi` is using Python `logging` package and is configured to log to a file |
 
+An example of the environment file content is:
+```
+MIST_HOST = api.mist.com
+MIST_APITOKEN = xxxxxx
+MIST_ORG_ID = 203d3d02-xxxx-xxxx-xxxx-76896a3330f4
+```
+
 ## Scripts
 The scripts are located in teh `scripts`folder. They can be used as-is, or customized if needed.
 There is a short desccription at the beginning of each script explaining the purpose of the script, the available options, and how to use it. They are also accepting the `-h` option which will display the script help.
