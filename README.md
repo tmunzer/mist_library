@@ -40,7 +40,7 @@ MIST_ORG_ID = 203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 ```
 
 ## Scripts
-The scripts are located in teh `scripts`folder. They can be used as-is, or customized if needed.
+The scripts are located in the `scripts` folder. They can be used as-is, or customized if needed.
 There is a short desccription at the beginning of each script explaining the purpose of the script, the available options, and how to use it. They are also accepting the `-h` option which will display the script help.
 
 ### Available scripts:
