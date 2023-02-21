@@ -11,6 +11,7 @@
 Python script to export the inventory from an organization. The export will 
 include all the information available from the org inventory, including the
 claim codes.
+The current version is not exporting Mist Edges inventory.
 
 -------
 Requirements:
@@ -243,6 +244,7 @@ def usage():
 Python script to export the inventory from an organization. The export will 
 include all the information available from the org inventory, including the
 claim codes.
+The current version is not exporting Mist Edges inventory.
 
 -------
 Requirements:
