@@ -50,7 +50,8 @@ There is a short desccription at the beginning of each script explaining the pur
 - Switches
     - **toggle_poe.py**: Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template.
 #### Exports
-- **export_search.py**: Python script to export historical data from Mist API and save the result in CDV of JSON format.
+- **export_inventory.py**: Python script to export the inventory from an organization. The export will include all the information available from the org inventory, including the claim codes.
+- **export_search.py**: Python script to export historical data from Mist API and save the result in CSV of JSON format.
 #### Orgs
 - **admin_import.py**: Python script to invite/add adminsitrators from a CSV file.
 - **configure_ap_auto_upgrade.py**: Python script update the Mist AP Auto_upgrade parameters in the site settings
@@ -59,6 +60,7 @@ There is a short desccription at the beginning of each script explaining the pur
 - **org_conf_deploy.py**: Python script to deploy organization backup/template file.
 - **org_conf_zeroize.py**: Python script to zeroise an organization. This scrip will remove all the configuration, all the sites and all the objects from the organization.
 - **org_inventory_backup.py**: Python script to backup all the devices from an organization. It will backup the devices claim codes (if any), configuration (including position on the maps) and pictures.
+- **org_inventory_deploy.py**: Python script to deploy organization inventory backup file. By default, this script can run in "Dry Run" mode to validate the destination org configuration and raise warning if any object from the source org is missing in the destination org.
 #### Sites
 - **import_sites.py**: Python script automate the sites creation in a Mist Org from a CSV file.
 - **site_conf_backup.py**: Python script to backup a whole site.
