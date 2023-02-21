@@ -8,7 +8,7 @@
 
 -------------------------------------------------------------------------------
 Python script to export historical data from Mist API and save the result 
-in CDV of JSON format.
+in CSV of JSON format.
 
 -------
 Requirements:
@@ -1181,7 +1181,7 @@ def usage():
 -------------------------------------------------------------------------------
 
 Python script to export historical data from Mist API and save the result 
-in CDV of JSON format.
+in CSV of JSON format.
 
 -------
 Requirements:
