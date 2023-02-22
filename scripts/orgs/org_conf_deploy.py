@@ -613,7 +613,7 @@ def _go_to_backup_folder(source_org_name:str=None, source_backup:str=None):
 def _check_org_name_in_script_param(apisession:mistapi.APISession, org_id:str, org_name:str=None):
     response = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id)
     if response.status_code != 200:
-        console.critical(f"Unable to retrieve the org information: {response.error}")
+        console.critical(f"Unable to retrieve the org information: {response.data}")
         sys.exit(3)
     org_name_from_mist = response.data["name"]
     return org_name == org_name_from_mist
