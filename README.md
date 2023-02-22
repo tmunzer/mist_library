@@ -3,6 +3,17 @@
 Examples of Python scripts using the [Mist APIs](https://www.mist.com)
 These scripts are using the [mistapi Python package](https://pypi.org/project/mistapi/) to simplify the authentication process.
 
+# Menu
+1. [Description](#description)
+1.1 [Usage](#usage)
+1.2 [Environment File](#environment-file)
+2. [Scripts](#scripts)
+2.1 [Devices](#devices)
+2.2 [Exports](#exports)
+2.3 [Orgs](#orgs)
+2.4 [Sites](#sites)
+2.5 [Reports](#reports)
+
 ## MIT LICENSE
  
 Copyright (c) 2023 Thomas Munzer
@@ -39,20 +50,19 @@ MIST_APITOKEN = xxxxxx
 MIST_ORG_ID = 203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 ```
 
-## Scripts
+# Scripts
 The scripts are located in the `scripts` folder. They can be used as-is, or customized if needed.
 There is a short desccription at the beginning of each script explaining the purpose of the script, the available options, and how to use it. They are also accepting the `-h` option which will display the script help.
 
-### Available scripts:
-#### Devices
+## Devices
 - APs
     - **configure_ap_mgmt_vlan.py**: Python script reconfigure Management VLAN on all the Mist APs from one or multiple sites.
 - Switches
     - **toggle_poe.py**: Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template.
-#### Exports
+## Exports
 - **export_inventory.py**: Python script to export the inventory from an organization. The export will include all the information available from the org inventory, including the claim codes.
 - **export_search.py**: Python script to export historical data from Mist API and save the result in CSV of JSON format.
-#### Orgs
+## Orgs
 - **admin_import.py**: Python script to invite/add adminsitrators from a CSV file.
 - **configure_ap_auto_upgrade.py**: Python script update the Mist AP Auto_upgrade parameters in the site settings
 - **configure_auto_site_assignment.py**: Python script to update the org auto assignement rules
@@ -61,14 +71,14 @@ There is a short desccription at the beginning of each script explaining the pur
 - **org_conf_zeroize.py**: Python script to zeroise an organization. This scrip will remove all the configuration, all the sites and all the objects from the organization.
 - **org_inventory_backup.py**: Python script to backup all the devices from an organization. It will backup the devices claim codes (if any), configuration (including position on the maps) and pictures.
 - **org_inventory_deploy.py**: Python script to deploy organization inventory backup file. By default, this script can run in "Dry Run" mode to validate the destination org configuration and raise warning if any object from the source org is missing in the destination org.
-#### Sites
+## Sites
 - **import_sites.py**: Python script automate the sites creation in a Mist Org from a CSV file.
 - **site_conf_backup.py**: Python script to backup a whole site.
 - **site_conf_psk_import_csv.py**: This script will import PSKs from a CSV file to one or multiple sites.
 - **site_conf_psk.py**:  
 - **site_conf_webhook.py**: This script can be used to list/add/delete Webhooks from Org/Site
 - **site_conf_wlan.py**: This script can be used to list/add/delete an SSID from Org/Site
-#### Reports
+## Reports
 - **report_app_usage.py**: Python script to generate a report of the application usage on a specific site
 - **report_bssids.py**: Python script to list all Access Points from orgs/sites and their associated BSSIDs. 
 - **report_rogues.py**: Python script to gerenate a Rogue AP report.
