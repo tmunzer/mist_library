@@ -4,15 +4,15 @@ Examples of Python scripts using the [Mist APIs](https://www.mist.com)
 These scripts are using the [mistapi Python package](https://pypi.org/project/mistapi/) to simplify the authentication process.
 
 # Menu
-1. [Description](#description)
-1.1 [Usage](#usage)
-1.2 [Environment File](#environment-file)
-2. [Scripts](#scripts)
-2.1 [Devices](#devices)
-2.2 [Exports](#exports)
-2.3 [Orgs](#orgs)
-2.4 [Sites](#sites)
-2.5 [Reports](#reports)
+- 1 [Description](#description)
+  - 1.1 [Usage](#usage)
+  - 1.2 [Environment File](#environment-file)
+- 2 [Scripts](#scripts)
+  - 2.1 [Devices](#devices)
+  - 2.2 [Exports](#exports)
+  - 2.3 [Orgs](#orgs)
+  - 2.4 [Sites](#sites)
+  - 2.5 [Reports](#reports)
 
 ## MIT LICENSE
  
