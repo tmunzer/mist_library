@@ -331,7 +331,7 @@ def _save_to_file(backup_file, org_name:str, backup):
         logger.error("Exception occurred", exc_info=True)
 
 
-def start_inventory_backup(mist_session:mistapi.APISession, org_id:str, org_name:str):
+def _start_inventory_backup(mist_session:mistapi.APISession, org_id:str, org_name:str):
     # FOLDER
     try:
         if not os.path.exists(backup_folder):
@@ -367,6 +367,17 @@ def start_inventory_backup(mist_session:mistapi.APISession, org_id:str, org_name
 
 
 def start(mist_session:mistapi.APISession, org_id:str, backup_folder_param:str=None):
+    '''
+    Start the backup process
+
+    PARAMS
+    -------
+    :param  mistapi.APISession  dst_apisession      - mistapi session with `Super User` access the destination Org, already logged in
+    :param  str                 org_id              - org_id of the org to backup
+    :param  str                 org_name            - Org name where to deploy the inventory. This parameter requires "org_id" to be defined
+    :param  str                 backup_folder_param - Path to the folder where to save the org backup (a subfolder will be created with the org name). default is "./org_backup"
+    
+    '''
     current_folder = os.getcwd()
     if backup_folder_param:
         global backup_folder 
@@ -374,7 +385,7 @@ def start(mist_session:mistapi.APISession, org_id:str, backup_folder_param:str=N
     if not org_id:
         org_id = mistapi.cli.select_org(mist_session)[0]
     org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(mist_session, org_id).data["name"]
-    start_inventory_backup(mist_session, org_id, org_name)
+    _start_inventory_backup(mist_session, org_id, org_name)
     os.chdir(current_folder)
 
 #####################################################################
