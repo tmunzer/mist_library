@@ -489,8 +489,8 @@ def _deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, backup
     pb.log_title("Deployment Done", end=True)
 
 
-def _start_deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, source_org_name:str=None, source_backup:str=None):
-    _go_to_backup_folder(source_org_name, source_backup)
+def _start_deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, src_org_name:str=None, source_backup:str=None):
+    _go_to_backup_folder(src_org_name, source_backup)
     print()
     try:
         message = f"Loading template/backup file {backup_file} "
@@ -582,7 +582,7 @@ def _select_backup_folder(folders):
     _chdir(folder)
 
 
-def _go_to_backup_folder(source_org_name:str=None, source_backup:str=None):
+def _go_to_backup_folder(src_org_name:str=None, source_backup:str=None):
     print()
     print(" Source Backup/Template ".center(80, "-"))
     print()
@@ -591,22 +591,23 @@ def _go_to_backup_folder(source_org_name:str=None, source_backup:str=None):
     for entry in os.listdir("./"):
         if os.path.isdir(os.path.join("./", entry)):
             folders.append(entry)
+    folders = sorted(folders, key=str.casefold)
     if source_backup in folders and _chdir(source_backup):
         print(f"Template/Backup {source_backup} found. It will be automatically used.")
-    elif source_org_name in folders:
-        print(f"Template/Backup found for organization {source_org_name}.")
+    elif src_org_name in folders:
+        print(f"Template/Backup found for organization {src_org_name}.")
         loop = True
         while loop:
             resp = input("Do you want to use this template/backup (y/N)? ")
             if resp.lower() in ["y", "n", " "]:
                 loop = False
-                if resp.lower() == "y" and _chdir(source_org_name):
+                if resp.lower() == "y" and _chdir(src_org_name):
                     pass
                 else:
                     _select_backup_folder(folders)
     else:
         print(
-            f"No Template/Backup found for organization {source_org_name}. Please select a folder in the following list.")
+            f"No Template/Backup found for organization {src_org_name}. Please select a folder in the following list.")
         _select_backup_folder(folders)
 
 
@@ -672,7 +673,7 @@ def _select_dest_org(apisession: mistapi.APISession):
 
 #####################################################################
 #### START ####
-def start(apisession: mistapi.APISession, org_id: str=None, org_name: str=None, backup_folder_param: str = None, source_org_name:str=None, source_backup: str = None):
+def start(apisession: mistapi.APISession, org_id: str=None, org_name: str=None, backup_folder_param: str = None, src_org_name:str=None, source_backup: str = None):
     '''
     Start the process to deploy a backup/template
 
@@ -684,7 +685,7 @@ def start(apisession: mistapi.APISession, org_id: str=None, org_name: str=None, 
                                                         * if org_id is provided (existing org), used to validate the destination org
                                                         * if org_id is not provided (new org), the script will create a new org and name it with the org_name value     
     :param  str                 backup_folder_param - Path to the folder where to save the org backup (a subfolder will be created with the org name). default is "./org_backup"
-    :param  str                 source_org_name     - Name of the backup/template to deploy. This is the name of the folder where all the backup files are stored. If the backup is found, the script will ask for a confirmation to use it
+    :param  str                 src_org_name     - Name of the backup/template to deploy. This is the name of the folder where all the backup files are stored. If the backup is found, the script will ask for a confirmation to use it
     :param  str                 source_backup       - Name of the backup/template to deploy. This is the name of the folder where all the backup files are stored. If the backup is found, the script will NOT ask for a confirmation to use it
     '''
     current_folder = os.getcwd()
@@ -705,7 +706,7 @@ def start(apisession: mistapi.APISession, org_id: str=None, org_name: str=None, 
     else: #should not since we covered all the possibilities...
         sys.exit(0)
     
-    _start_deploy_org(apisession, org_id, org_name, source_org_name, source_backup)
+    _start_deploy_org(apisession, org_id, org_name, src_org_name, source_backup)
     os.chdir(current_folder)
 
 
