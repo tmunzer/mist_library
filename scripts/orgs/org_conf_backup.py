@@ -311,7 +311,7 @@ def _save_to_file(backup_file, backup, org_name):
         logger.error("Exception occurred", exc_info=True)
 
 
-def start_org_backup(mist_session, org_id, org_name):
+def _start_org_backup(mist_session, org_id, org_name) -> bool:
     # FOLDER
     try:
         if not os.path.exists(backup_folder):
@@ -323,6 +323,7 @@ def start_org_backup(mist_session, org_id, org_name):
     except Exception as e:
         print(e)
         logger.error("Exception occurred", exc_info=True)
+        return False
 
     # PREPARE PROGRESS BAR
     try:
@@ -332,6 +333,7 @@ def start_org_backup(mist_session, org_id, org_name):
     except Exception as e:
         print(e)
         logger.error("Exception occurred", exc_info=True)
+        return False
 
     # BACKUP
     try:
@@ -340,17 +342,33 @@ def start_org_backup(mist_session, org_id, org_name):
     except Exception as e:
         print(e)
         logger.error("Exception occurred", exc_info=True)
+        return False
 
+    return True
 
 def start(mist_session:mistapi.APISession, org_id:str, backup_folder_param:str=None):
+    '''
+    Start the process to deploy a backup/template
+
+    PARAMS
+    -------
+    :param  mistapi.APISession  apisession          - mistapi session, already logged in
+    :param  str                 org_id              - only if the destination org already exists. org_id where to deploy the configuration
+    :param  str                 backup_folder_param - Path to the folder where to save the org backup (a subfolder will be created with the org name). default is "./org_backup"
+    
+    RETURNS
+    -------
+    :return bool                success status of the backup process. Returns False if the process didn't ended well
+    '''
     current_folder = os.getcwd()
     if backup_folder_param:
         global backup_folder 
         backup_folder = backup_folder_param
     if not org_id: org_id = mistapi.cli.select_org(mist_session)[0]
     org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(mist_session, org_id).data["name"]
-    start_org_backup(mist_session, org_id, org_name)
+    success = _start_org_backup(mist_session, org_id, org_name)    
     os.chdir(current_folder)
+    return success
 
 #####################################################################
 # USAGE
