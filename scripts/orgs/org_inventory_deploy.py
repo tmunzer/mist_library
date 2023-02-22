@@ -50,15 +50,15 @@ Script Parameters:
 -s, --sites=            If only selected must be process, list a site names to
                         process, comma separated (e.g. -s "site 1","site 2")
 
--d, --dry               Dry Run mode. Will only simulate the process. Used to 
-                        validate the destination org configuration. This mode 
-                        will not send any requests to Mist and will not change
-                        the Source/Dest Organisations.
-                        Cannot be used with -p
--p, --proceed           WARNING: Proceed to the deployment. This mode will 
+-p, --proceed           By default this script is executed in Dry Run mode. It
+                        will validate to destination org configuration, and 
+                        check if the required configuration is present, but 
+                        it will not change anything in the source/destination
+                        organisation. 
+                        Use this option to proceed to the changes.
+                        WARNING: Proceed to the deployment. This mode will 
                         unclaim the APs from the source org (if -u is set) and
                         deploy them on the destination org. 
-                        Cannot be used with -d
 
 -u, --unclaim           if set the script will unclaim the devices from the 
                         source org (only for devices claimed in the source org,
@@ -486,10 +486,10 @@ def _process_ids(dst_apisession: mistapi.APISession, step:dict, scope_id:str, ol
         pb.log_failure(message, True)
         logger.error("Exception occurred", exc_info=True)
 
-def _process_org_ids(dst_apisession:mistapi.APISession,dest_org_id:str, org_backup:dict):
+def _process_org_ids(dst_apisession:mistapi.APISession,dst_org_id:str, org_backup:dict):
     for org_step in org_object_to_match:        
         old_ids_dict = org_backup[org_object_to_match[org_step]["old_ids_dict"]]
-        _process_ids(dst_apisession, org_object_to_match[org_step], dest_org_id, old_ids_dict, "Checking Org Ids")
+        _process_ids(dst_apisession, org_object_to_match[org_step], dst_org_id, old_ids_dict, "Checking Org Ids")
 
 def _process_site_ids(dst_apisession:mistapi.APISession, new_site_id:str, site_name:str, site_data:dict):
     for site_step in site_object_to_match:        
@@ -502,8 +502,9 @@ def _result(failed_devices:dict, proceed:bool) -> bool:
     pb.log_title("Result", end=True)
     missing_ids = uuid_matching.get_missing_uuids()
     if not proceed:
-        console.info("This script has been executed in Dry Run mode.")
-        console.info("No modification have been done on the Source/Destination orgs.")
+        console.warning("This script has been executed in Dry Run mode.")
+        console.warning("No modification have been done on the Source/Destination orgs.")
+        console.warning("Use the \"-p\" / \"--proceed\" option to execute the changes.")
         print()
     if missing_ids:
         for object_type in missing_ids:
@@ -557,21 +558,30 @@ def _precheck(src_apisession:mistapi.APISession, dst_apisession:mistapi.APISessi
 
 def _check_access(apisession: mistapi.APISession, org_id:str, message:str) -> bool:
     pb.log_message(message, display_pbar=False)
-    for p in apisession.privileges:
-        if p.get("scope") == "org" and p.get("org_id") == org_id:
-            if p.get("role") == "admin":
-                pb.log_success(message, display_pbar=False)
-                return True
-            else:
-                pb.log_failure(message, display_pbar=False)
-                console.error("You don't have full access to this org. Please use another account")
-                return False
+    try:
+        response = mistapi.api.v1.self.self.getSelf(apisession)
+        if response.status_code == 200:
+            privileges = response.data.get("privileges", [])
+            for p in privileges:
+                if p.get("scope") == "org" and p.get("org_id") == org_id:
+                    if p.get("role") == "admin":
+                        pb.log_success(message, display_pbar=False)
+                        return True
+                    else:
+                        pb.log_failure(message, display_pbar=False)
+                        console.error("You don't have full access to this org. Please use another account")
+                        return False
+    except:
+        pb.log_failure(message, display_pbar=False)
+        console.critical("Unable to retrieve privileges from Mist Cloud")
+        logger.error("Exception occurred", exc_info=True)
+
     pb.log_failure(message, display_pbar=False)
     console.error("You don't have access to this org. Please use another account")
     return False
 
-def _start_precheck(src_apisession:mistapi.APISession, dst_apisession:mistapi.APISession, dst_org_id:str, source_backup:str=None, source_org_name:str=None, filter_site_names:list=[], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool: 
-    _go_to_backup_folder(source_org_name, source_backup)
+def _start_precheck(src_apisession:mistapi.APISession, dst_apisession:mistapi.APISession, dst_org_id:str, source_backup:str=None, src_org_name:str=None, filter_site_names:list=[], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool: 
+    _go_to_backup_folder(src_org_name, source_backup)
     print()    
     try:
         message = f"Loading inventory file {backup_file} "
@@ -656,7 +666,7 @@ def _select_backup_folder(folders):
     _chdir(folder)
 
 
-def _go_to_backup_folder(source_org_name:str=None, source_backup:str=None):
+def _go_to_backup_folder(src_org_name:str=None, source_backup:str=None):
     print()
     print(" Source Backup/Template ".center(80, "-"))
     print()
@@ -665,22 +675,23 @@ def _go_to_backup_folder(source_org_name:str=None, source_backup:str=None):
     for entry in os.listdir("./"):
         if os.path.isdir(os.path.join("./", entry)):
             folders.append(entry)
+    folders = sorted(folders, key=str.casefold)
     if source_backup in folders and _chdir(source_backup):
         print(f"Template/Backup {source_backup} found. It will be automatically used.")
-    elif source_org_name in folders:
-        print(f"Template/Backup found for organization {source_org_name}.")
+    elif src_org_name in folders:
+        print(f"Template/Backup found for organization {src_org_name}.")
         loop = True
         while loop:
             resp = input("Do you want to use this template/backup (y/N)? ")
             if resp.lower() in ["y", "n", " "]:
                 loop = False
-                if resp.lower() == "y" and _chdir(source_org_name):
+                if resp.lower() == "y" and _chdir(src_org_name):
                     pass
                 else:
                     _select_backup_folder(folders)
     else:
         print(
-            f"No Template/Backup found for organization {source_org_name}. Please select a folder in the following list.")
+            f"No Template/Backup found for organization {src_org_name}. Please select a folder in the following list.")
         _select_backup_folder(folders)
 
 #####################################################################
@@ -721,7 +732,7 @@ def _select_dest_org(apisession: mistapi.APISession):
 
 #####################################################################
 #### START ####
-def start(dst_apisession:mistapi.APISession, src_apisession:mistapi.APISession=None, dst_org_id:str=None, org_name:str=None, backup_folder_param: str = None, source_org_name:str=None, source_backup:str=None, filter_site_names:list=[], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool:
+def start(dst_apisession:mistapi.APISession, src_apisession:mistapi.APISession=None, dst_org_id:str=None, dst_org_name:str=None, backup_folder_param: str = None, src_org_name:str=None, source_backup:str=None, filter_site_names:list=[], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool:
     '''
     Start the process to check if the inventory can be deployed without issue
 
@@ -730,9 +741,9 @@ def start(dst_apisession:mistapi.APISession, src_apisession:mistapi.APISession=N
     :param  mistapi.APISession  dst_apisession      - mistapi session with `Super User` access the destination Org, already logged in
     :param  mistapi.APISession  src_apisession      - Only required if `unclaim`==`True`. mistapi session with `Super User` access the source Org, already logged in
     :param  str                 dst_org_id          - org_id where to deploy the inventory
-    :param  str                 org_name            - Org name where to deploy the inventory. This parameter requires "org_id" to be defined
+    :param  str                 dst_org_name        - Org name where to deploy the inventory. This parameter requires "org_id" to be defined
     :param  str                 backup_folder_param - Path to the folder where to save the org backup (a subfolder will be created with the org name). default is "./org_backup"
-    :param  str                 source_org_name     - Name of the backup/template to deploy. This is the name of the folder where all the backup files are stored. If the backup is found, the script will ask for a confirmation to use it
+    :param  str                 src_org_name        - Name of the backup/template to deploy. This is the name of the folder where all the backup files are stored. If the backup is found, the script will ask for a confirmation to use it
     :param  str                 source_backup       - Name of the backup/template to deploy. This is the name of the folder where all the backup files are stored. If the backup is found, the script will NOT ask for a confirmation to use it
     :param  str                 filter_site_names   - If only selected must be process, list a site names to process
     :param  bool                proceed             - By default, the script is executed in Dry Run mode (used to validate the destination org configuration). Set this parameter to True to disable the Dry Run mode and proceed to the deployment
@@ -748,16 +759,16 @@ def start(dst_apisession:mistapi.APISession, src_apisession:mistapi.APISession=N
         global backup_folder 
         backup_folder = backup_folder_param
 
-    if dst_org_id and org_name:
-        if not _check_org_name_in_script_param(dst_apisession, dst_org_id, org_name):
-            console.critical(f"Org name {org_name} does not match the org {dst_org_id}")
+    if dst_org_id and dst_org_name:
+        if not _check_org_name_in_script_param(dst_apisession, dst_org_id, dst_org_name):
+            console.critical(f"Org name {dst_org_name} does not match the org {dst_org_id}")
             sys.exit(0)
-    elif dst_org_id and not org_name:
-        dst_org_id, org_name = _check_org_name(dst_apisession, dst_org_id)
-    elif not dst_org_id and not org_name:
-        dst_org_id, org_name = _select_dest_org(dst_apisession)
-    elif not dst_org_id and org_name:
-        console.error("\"org_name\" required \"org_id\" to be defined. You can either remove the \"org_name\" parameter, or add the \"org_id\" parameter.")
+    elif dst_org_id and not dst_org_name:
+        dst_org_id, dst_org_name = _check_org_name(dst_apisession, dst_org_id)
+    elif not dst_org_id and not dst_org_name:
+        dst_org_id, dst_org_name = _select_dest_org(dst_apisession)
+    elif not dst_org_id and dst_org_name:
+        console.error("\"dst_org_name\" required \"dst_org_id\" to be defined. You can either remove the \"dst_org_name\" parameter, or add the \"dst_org_id\" parameter.")
         sys.exit(2)
     else: #should not since we covered all the possibilities...
         sys.exit(0)
@@ -767,7 +778,7 @@ def start(dst_apisession:mistapi.APISession, src_apisession:mistapi.APISession=N
         dst_apisession,
         dst_org_id, 
         source_backup=source_backup, 
-        source_org_name=source_org_name, 
+        src_org_name=src_org_name, 
         filter_site_names=filter_site_names, 
         proceed=proceed,
         unclaim=unclaim, 
@@ -830,15 +841,15 @@ Script Parameters:
 -s, --sites=            If only selected must be process, list a site names to
                         process, comma separated (e.g. -s "site 1","site 2")
 
--d, --dry               Dry Run mode. Will only simulate the process. Used to 
-                        validate the destination org configuration. This mode 
-                        will not send any requests to Mist and will not change
-                        the Source/Dest Organisations.
-                        Cannot be used with -p
--p, --proceed           WARNING: Proceed to the deployment. This mode will 
+-p, --proceed           By default this script is executed in Dry Run mode. It
+                        will validate to destination org configuration, and 
+                        check if the required configuration is present, but 
+                        it will not change anything in the source/destination
+                        organisation. 
+                        Use this option to proceed to the changes.
+                        WARNING: Proceed to the deployment. This mode will 
                         unclaim the APs from the source org (if -u is set) and
                         deploy them on the destination org. 
-                        Cannot be used with -d
 
 -u, --unclaim           if set the script will unclaim the devices from the 
                         source org (only for devices claimed in the source org,
@@ -870,8 +881,8 @@ python3 ./org_inventory_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:n:e:s:l:f:b:s:dpua", [
-                                   "help", "org_id=", "org_name=", "env=", "sourve_env=", "log_file=", "backup_folder=", "source_backup=", "sites=", "dry", "proceed", "unclaim", "unclaim_all"])
+        opts, args = getopt.getopt(sys.argv[1:], "ho:n:e:s:l:f:b:pua", [
+                                   "help", "org_id=", "org_name=", "env=", "sourve_env=", "log_file=", "backup_folder=", "source_backup=", "sites=", "proceed", "unclaim", "unclaim_all"])
     except getopt.GetoptError as err:
         console.error(err)
         usage()
@@ -881,26 +892,31 @@ if __name__ == "__main__":
     backup_folder_param = None
     filter_site_names = []
     source_backup=None
-    proceed=None
+    proceed=False
     unclaim=False
     unclaim_all=False
     for o, a in opts:
-        if o in ["-h", "--help"]:
-            usage()
-        elif o in ["-o", "--org_id"]:
-            dst_org_id = a
-        elif o in ["-n", "--org_name"]:
-            org_name = a
-        elif o in ["-e", "--env"]:
-            dest_env_file = a
-        elif o in ["-s", "--source_env"]:
-            source_env_file = a
-        elif o in ["-l", "--log_file"]:
-            log_file = a
-        elif o in ["-f", "--backup_folder"]:
-            backup_folder_param = a
+        if o in ["-a", "--unclaim_all"]:
+            unclaim_all = True
         elif o in ["-b", "--source_backup"]:
             source_backup = a
+        elif o in ["-e", "--env"]:
+            dest_env_file = a
+        elif o in ["-f", "--backup_folder"]:
+            backup_folder_param = a
+        elif o in ["-h", "--help"]:
+            usage()
+            sys.exit(0)
+        elif o in ["-l", "--log_file"]:
+            log_file = a
+        elif o in ["-n", "--org_name"]:
+            org_name = a
+        elif o in ["-o", "--org_id"]:
+            dst_org_id = a
+        elif o in ["-p", "--proceed"]:
+            proceed = True
+        elif o in ["--source_env"]:
+            source_env_file = a
         elif o in ["-s", "--sites"]:
             try:
                 tmp = a.split(",")
@@ -909,20 +925,8 @@ if __name__ == "__main__":
             except:
                 console.error("Unable to process the \"sites\" parameter. Please check it's value.")
                 sys.exit(3)
-        elif o in ["-p", "--proceed"]:
-            if type(proceed) == bool:
-                console.error("\"-p\" option cannot be used with \"-d\" option")
-                sys.exit(3)
-            proceed = True
-        elif o in ["-d", "--dry"]:
-            if type(proceed) == bool:
-                console.error("\"-d\" option cannot be used with \"-p\" option")
-                sys.exit(3)
-            proceed = False
         elif o in ["-u", "--unclaim"]:
             unclaim = True
-        elif o in ["-a", "--unclaim_all"]:
-            unclaim_all = True
         else:
             assert False, "unhandled option"
     
@@ -930,30 +934,15 @@ if __name__ == "__main__":
     logging.basicConfig(filename=log_file, filemode='w')
     logger.setLevel(logging.DEBUG)
     ### START ###
-    dst_apisession = mistapi.APISession(env_file=dest_env_file)
-    dst_apisession.login()
     if unclaim:
-        if not source_env_file or dest_env_file == source_env_file:
-            src_apisession = dst_apisession
-        elif source_env_file:
-            src_apisession = mistapi.APISession(env_file=source_env_file)
-            src_apisession.login()
+        print(" API Session to access the Source Org ".center(80, "_"))
+        src_apisession = mistapi.APISession(env_file=source_env_file)
+        src_apisession.login()
     else:
         src_apisession = None
-    ### DRY RUN OR NOT DRY RUN ###
-    if not type(proceed) == bool:
-        while True:
-            resp = input("Do you want to run this script in (d)ry-run mode, can we (p)roceed and deploy the devices to the new org, or do you want to quit (d/p/q)? ")
-            if resp.lower() == "d":
-                proceed = False
-                break
-            elif resp.lower() == "p":
-                proceed = True
-                break
-            elif resp.lower() == "q":                
-                sys.exit(0)
-            else:
-                "Invalid input. Only \"d\", \"p\" and \"q\" are allowed"
+    print(" API Session to access the Destination Org ".center(80, "_"))
+    dst_apisession = mistapi.APISession(env_file=dest_env_file)
+    dst_apisession.login()
     
     start(
         dst_apisession, 
