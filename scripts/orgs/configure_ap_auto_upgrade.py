@@ -32,6 +32,7 @@ import sys
 import logging
 try:
     import mistapi
+    from mistapi.__logger import console
 except:
     print("""
 Critical: 
@@ -46,7 +47,9 @@ py -m pip install mistapi
     sys.exit(2)
 
 #### PARAMETERS #####
-
+# for more information about the possible settings, please
+# see https://doc.mist-lab.fr/#tag/Sites-Setting/operation/updateSiteSettings
+#
 # auto_upgrade_rule = {
 #     "enabled": True,
 #     "version": "custom",
@@ -99,8 +102,14 @@ def confirm_action(mist_session, site_ids):
         print(auto_upgrade_rule)
         print("".center(80, "-"))
         print()
-        resp = input(
-            "Are you sure you want to update the selected sites with the configuration above (y/N)?")
+        if len(site_ids) == 0:
+            console.error("There is not site to update. Exiting...")
+            sys.exit(0)
+        elif len(site_ids) == 1:
+            message = f"Are you sure you want to update the selected site with the configuration above (y/N)?"
+        else:
+            message = f"Are you sure you want to update the {len(site_ids)} selected sites with the configuration above (y/N)?"
+        resp = input(message)
         if resp.lower() == 'n' or resp == "":
             sys.exit(0)
         elif resp.lower() == "y":
@@ -116,9 +125,9 @@ def get_site_ids(mist_session, org_id):
     for site in sites:
         site_ids.append(site["id"])
     return site_ids
+
+
 ####### ENTRY POINT #######
-
-
 if __name__ == "__main__":
     #### LOGS ####
     logging.basicConfig(filename=log_file, filemode='w')
@@ -133,8 +142,8 @@ while True:
     resp = input(
         "Do you want to update the auto-upgrade settings on all the sites (y/N)?")
     if resp.lower() == 'n' or resp == "":
-        site_id = mistapi.cli.select_site(mist_session, org_id)[0]
-        confirm_action(mist_session, [site_id])
+        site_ids = mistapi.cli.select_site(mist_session, org_id, allow_many=True)
+        confirm_action(mist_session, [site_ids])
         break
     elif resp.lower() == "y":
         site_ids = get_site_ids(mist_session, org_id)
