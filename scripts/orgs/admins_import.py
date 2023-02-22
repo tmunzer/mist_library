@@ -38,11 +38,12 @@ python3 org_admins_import.py <path_to_the_csv_file>"
 #### PARAMETERS #####
 csv_separator = ","
 privileges = []
-
+env_file="~/.mist_env"
+log_file = "./script.log"
 #### IMPORTS ####
 import sys
 import csv
-
+import logging
 try:
     import mistapi
 except:
@@ -58,6 +59,10 @@ py -m pip install mistapi
     """)
     sys.exit(2)
 
+
+#####################################################################
+#### LOGS ####
+logger = logging.getLogger(__name__)
 
 #### CONSTANTS ####
 roles = {"s": "admin", "n": "write", "o": "read", "h":"helpdesk"}
@@ -104,16 +109,29 @@ def import_admins(apisession, file_path, org_id):
                 "last_name": row[2],
                 "privileges": privileges      
                 }
-                print(', '.join(row))
-                mistapi.api.v1.orgs.invites.inviteOrgAdmin(apisession, org_id, body)
+                print(', '.join(row).ljust(80), end="", flush=True)
+                try:
+                    response = mistapi.api.v1.orgs.invites.inviteOrgAdmin(apisession, org_id, body)
+                    if response.status_code == 200:
+                        print("\033[92m\u2714\033[0m")
+                    else:
+                        print('\033[31m\u2716\033[0m')
+                except: 
+                    print('\033[31m\u2716\033[0m')
     except Exception as e:
         print("Error while opening the CSV file... Aborting")
         print(e)
 
-#### SCRIPT ENTRYPOINT ####
+#####################################################################
+##### ENTRY POINT ####
 if __name__ == "__main__":
+    #### LOGS ####
+    logging.basicConfig(filename=log_file, filemode='w')
+    logger.setLevel(logging.DEBUG)
+
+    ### START ###
     file_path = sys.argv[1]
-    apisession = mistapi.APISession()
+    apisession = mistapi.APISession(env_file=env_file)
     apisession.login()
 
     org_id = mistapi.cli.select_org(apisession)[0]
@@ -122,7 +140,4 @@ if __name__ == "__main__":
     import_admins(apisession, file_path, org_id)
 
     admins = mistapi.api.v1.orgs.admins.getOrgAdmins(apisession, org_id).data
-    print(admins)
-    mistapi.cli.display_list_of_json_as_table(admins)
-    mistapi.cli.pretty_print(admins)
-    sys.exit(0)
+    
