@@ -122,7 +122,8 @@ backup_folder = "./org_backup"
 backup_file = "./org_inventory_file.json"
 file_prefix = ".".join(backup_file.split(".")[:-1])
 log_file = "./script.log"
-env_file = "~/.mist_env"
+dest_env_file = "~/.mist_env"
+source_env_file = None
 
 #####################################################################
 #### LOGS ####
@@ -284,7 +285,7 @@ pb = ProgressBar()
 # DEPLOY FUNCTIONS
 ##########################################################################################
 ## UNCLAIM/CLAIM FUNCTIONS
-def _unclaim_devices(mist_session:mistapi.APISession, src_org_id:str, devices:list, magics:dict, failed_devices:dict, proceed:bool=False, unclaim_all:bool=False):
+def _unclaim_devices(src_apisession:mistapi.APISession, src_org_id:str, devices:list, magics:dict, failed_devices:dict, proceed:bool=False, unclaim_all:bool=False):
     serials = []
     macs = []
     serial_to_mac = {}
@@ -301,7 +302,7 @@ def _unclaim_devices(mist_session:mistapi.APISession, src_org_id:str, devices:li
             if not proceed:
                     pb.log_success(message, inc=True)
             else:
-                response = mistapi.api.v1.orgs.inventory.updateOrgInventoryAssignment(mist_session, src_org_id, {"op":"delete", "serials": serials})
+                response = mistapi.api.v1.orgs.inventory.updateOrgInventoryAssignment(src_apisession, src_org_id, {"op":"delete", "serials": serials})
                 if response.data.get("error"):
                     pb.log_warning(message, inc=True)
                     i = 0
@@ -321,7 +322,7 @@ def _unclaim_devices(mist_session:mistapi.APISession, src_org_id:str, devices:li
             pb.log_failure(message, inc=True)
             logger.error("Exception occurred", exc_info=True)
 
-def _claim_devices(mist_session:mistapi.APISession, dst_org_id:str, devices:list, magics:dict, failed_devices:dict, proceed:bool=False, unclaim_all:bool=False):
+def _claim_devices(dst_apisession:mistapi.APISession, dst_org_id:str, devices:list, magics:dict, failed_devices:dict, proceed:bool=False, unclaim_all:bool=False):
     magics_to_claim = []
     magic_to_mac = {}
     for device in devices:
@@ -340,7 +341,7 @@ def _claim_devices(mist_session:mistapi.APISession, dst_org_id:str, devices:list
             if not proceed:
                     pb.log_success(message, inc=True)
             else:
-                response = mistapi.api.v1.orgs.inventory.addOrgInventory(mist_session, dst_org_id, magics_to_claim)
+                response = mistapi.api.v1.orgs.inventory.addOrgInventory(dst_apisession, dst_org_id, magics_to_claim)
                 if response.data.get("error"):
                     pb.log_warning(message, inc=True)
                     i = 0
@@ -360,7 +361,7 @@ def _claim_devices(mist_session:mistapi.APISession, dst_org_id:str, devices:list
             pb.log_failure(message, inc=True)
             logger.error("Exception occurred", exc_info=True)
 
-def _assign_device_to_site(mist_session:mistapi.APISession, dst_org_id:str, dst_site_id:str, site_name:str, devices:list,failed_devices:dict, proceed:bool=False, unclaim_all:bool=False):
+def _assign_device_to_site(dst_apisession:mistapi.APISession, dst_org_id:str, dst_site_id:str, site_name:str, devices:list,failed_devices:dict, proceed:bool=False, unclaim_all:bool=False):
     macs_to_assign = []
     for device in devices:
         if device.get("mac") and device["mac"] not in failed_devices:
@@ -382,7 +383,7 @@ def _assign_device_to_site(mist_session:mistapi.APISession, dst_org_id:str, dst_
                     pb.log_success(message, inc=True)
             else:
                 response = mistapi.api.v1.orgs.inventory.updateOrgInventoryAssignment(
-                    mist_session, 
+                    dst_apisession, 
                     dst_org_id, 
                     {"macs": macs_to_assign, "site_id": dst_site_id, "op":"assign"}
                 )
@@ -406,14 +407,14 @@ def _assign_device_to_site(mist_session:mistapi.APISession, dst_org_id:str, dst_
 
 ##########################################################################################
 ## DEVICE RESTORE
-def _update_device_configuration(mist_session:mistapi.APISession, dst_site_id:str,  device:dict, devices_type:str="device", proceed:bool=False):
+def _update_device_configuration(dst_apisession:mistapi.APISession, dst_site_id:str,  device:dict, devices_type:str="device", proceed:bool=False):
     issue_config = False
     try:
         message = f"{device.get('type', devices_type).title()} {device.get('mac')} (S/N: {device.get('serial')}): Restoring Configuration"
         pb.log_message(message)
         data, missing_uuids = uuid_matching.find_and_replace(device, "device")
         if proceed:
-            response = mistapi.api.v1.sites.devices.updateSiteDevice(mist_session, dst_site_id, device["id"], data)
+            response = mistapi.api.v1.sites.devices.updateSiteDevice(dst_apisession, dst_site_id, device["id"], data)
             if response.status_code != 200:
                 raise Exception
         pb.log_success(message, inc=True)
@@ -423,7 +424,7 @@ def _update_device_configuration(mist_session:mistapi.APISession, dst_site_id:st
         issue_config = True
     return issue_config
 
-def _restore_device_images(mist_session:mistapi.APISession, src_org_id:str, dst_site_id:str, device:dict, devices_type:str="device", proceed:bool=False):
+def _restore_device_images(dst_apisession:mistapi.APISession, src_org_id:str, dst_site_id:str, device:dict, devices_type:str="device", proceed:bool=False):
         i=1
         image_exists = True
         issue_image = False
@@ -434,7 +435,7 @@ def _restore_device_images(mist_session:mistapi.APISession, src_org_id:str, dst_
                         message = f"{device.get('type', devices_type).title()} {device.get('mac')} (S/N: {device.get('serial')}): Restoring Image #{i}"
                         pb.log_message(message)
                         if proceed:
-                            response = mistapi.api.v1.sites.devices.addSiteDeviceImageFile(mist_session, dst_site_id, device["id"], i, image_name)
+                            response = mistapi.api.v1.sites.devices.addSiteDeviceImageFile(dst_apisession, dst_site_id, device["id"], i, image_name)
                             if response.status_code != 200:
                                 raise Exception
                         pb.log_success(message, inc=False)
@@ -447,15 +448,15 @@ def _restore_device_images(mist_session:mistapi.APISession, src_org_id:str, dst_
                     image_exists = False
         return issue_image
 
-def _restore_devices(mist_session:mistapi.APISession, src_org_id:str, dst_org_id:str, dst_site_id:str, site_name:str, devices:dict, magics:list, failed_devices:dict, proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False):
-    if unclaim: _unclaim_devices(mist_session, src_org_id, devices, magics, failed_devices, proceed, unclaim_all)  
-    _claim_devices(mist_session, dst_org_id, devices, magics, failed_devices, proceed, unclaim_all)
-    _assign_device_to_site(mist_session, dst_org_id, dst_site_id, site_name, devices, failed_devices, proceed, unclaim_all)
+def _restore_devices(src_apisession:mistapi.APISession, dst_apisession:mistapi.APISession, src_org_id:str, dst_org_id:str, dst_site_id:str, site_name:str, devices:dict, magics:list, failed_devices:dict, proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False):
+    if unclaim: _unclaim_devices(src_apisession, src_org_id, devices, magics, failed_devices, proceed, unclaim_all)  
+    _claim_devices(dst_apisession, dst_org_id, devices, magics, failed_devices, proceed, unclaim_all)
+    _assign_device_to_site(dst_apisession, dst_org_id, dst_site_id, site_name, devices, failed_devices, proceed, unclaim_all)
     for device in devices:
         if device["mac"] not in failed_devices:
             if device.get("type") == "ap" or unclaim_all:
-                issue_config = _update_device_configuration(mist_session, dst_site_id, device, device.get("type"), proceed)
-                issue_image = _restore_device_images(mist_session, src_org_id, dst_site_id, device, device.get("type"), proceed)
+                issue_config = _update_device_configuration(dst_apisession, dst_site_id, device, device.get("type"), proceed)
+                issue_image = _restore_device_images(dst_apisession, src_org_id, dst_site_id, device, device.get("type"), proceed)
 
                 if issue_config: failed_devices[device["mac"]] = f"Error when uploading device configuration (site {site_name})"
                 if issue_image: failed_devices[device["mac"]] = f"Error when uploading device image (site {site_name})"    
@@ -463,12 +464,12 @@ def _restore_devices(mist_session:mistapi.APISession, src_org_id:str, dst_org_id
 
 ##########################################################################################
 ### IDs Matching
-def _process_ids(mist_session: mistapi.APISession, step:dict, scope_id:str, old_ids:dict, message:str):
+def _process_ids(dst_apisession: mistapi.APISession, step:dict, scope_id:str, old_ids:dict, message:str):
     message = f"Loading {step['text']}"
     try:
         pb.log_message(message)
-        response = step["mistapi_function"](mist_session, scope_id)
-        data = mistapi.get_all(mist_session, response)
+        response = step["mistapi_function"](dst_apisession, scope_id)
+        data = mistapi.get_all(dst_apisession, response)
         for entry in data:
             if entry.get("name") in old_ids:
                 uuid_matching.add_uuid(entry.get("id"), old_ids[entry.get("name")], entry.get("name"))
@@ -485,15 +486,15 @@ def _process_ids(mist_session: mistapi.APISession, step:dict, scope_id:str, old_
         pb.log_failure(message, True)
         logger.error("Exception occurred", exc_info=True)
 
-def _process_org_ids(mist_session:mistapi.APISession,dest_org_id:str, org_backup:dict):
+def _process_org_ids(dst_apisession:mistapi.APISession,dest_org_id:str, org_backup:dict):
     for org_step in org_object_to_match:        
         old_ids_dict = org_backup[org_object_to_match[org_step]["old_ids_dict"]]
-        _process_ids(mist_session, org_object_to_match[org_step], dest_org_id, old_ids_dict, "Checking Org Ids")
+        _process_ids(dst_apisession, org_object_to_match[org_step], dest_org_id, old_ids_dict, "Checking Org Ids")
 
-def _process_site_ids(mist_session:mistapi.APISession, new_site_id:str, site_name:str, site_data:dict):
+def _process_site_ids(dst_apisession:mistapi.APISession, new_site_id:str, site_name:str, site_data:dict):
     for site_step in site_object_to_match:        
         old_ids_dict = site_data[site_object_to_match[site_step]["old_ids_dict"]]
-        _process_ids(mist_session, site_object_to_match[site_step], new_site_id, old_ids_dict, f"Checking Site {site_name} IDs")
+        _process_ids(dst_apisession, site_object_to_match[site_step], new_site_id, old_ids_dict, f"Checking Site {site_name} IDs")
             
 ##########################################################################################
 #### CORE FUNCTIONS ####
@@ -521,11 +522,11 @@ def _result(failed_devices:dict, proceed:bool) -> bool:
         return True
     return False
 
-def _precheck(mist_session:mistapi.APISession, src_org_id:str, dst_org_id:str, org_backup:dict, filter_site_names:list = [], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool:
+def _precheck(src_apisession:mistapi.APISession, dst_apisession:mistapi.APISession, src_org_id:str, dst_org_id:str, org_backup:dict, filter_site_names:list = [], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool:
     print()
     pb.log_title("Processing Org")
     uuid_matching.add_uuid(dst_org_id, src_org_id, "Source Org ID")
-    _process_org_ids(mist_session, dst_org_id, org_backup)
+    _process_org_ids(dst_apisession, dst_org_id, org_backup)
 
     failed_devices = {}
     for restore_site_name in org_backup["sites"]:
@@ -537,9 +538,10 @@ def _precheck(mist_session:mistapi.APISession, src_org_id:str, dst_org_id:str, o
             if not dst_site_id:
                 uuid_matching.add_missing_uuid("site", site["id"], restore_site_name)
             else:              
-                _process_site_ids(mist_session, dst_site_id, restore_site_name, site)          
+                _process_site_ids(dst_apisession, dst_site_id, restore_site_name, site)          
                 _restore_devices(
-                    mist_session, 
+                    src_apisession,
+                    dst_apisession, 
                     src_org_id, 
                     dst_org_id, 
                     dst_site_id, 
@@ -553,10 +555,24 @@ def _precheck(mist_session:mistapi.APISession, src_org_id:str, dst_org_id:str, o
                 )
     return _result(failed_devices, proceed)
 
+def _check_access(apisession: mistapi.APISession, org_id:str, message:str) -> bool:
+    pb.log_message(message, display_pbar=False)
+    for p in apisession.privileges:
+        if p.get("scope") == "org" and p.get("org_id") == org_id:
+            if p.get("role") == "admin":
+                pb.log_success(message, display_pbar=False)
+                return True
+            else:
+                pb.log_failure(message, display_pbar=False)
+                console.error("You don't have full access to this org. Please use another account")
+                return False
+    pb.log_failure(message, display_pbar=False)
+    console.error("You don't have access to this org. Please use another account")
+    return False
 
-def _start_precheck(mist_session:mistapi.APISession, dst_org_id:str, source_backup:str=None, source_org_name:str=None, filter_site_names:list=[], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool: 
+def _start_precheck(src_apisession:mistapi.APISession, dst_apisession:mistapi.APISession, dst_org_id:str, source_backup:str=None, source_org_name:str=None, filter_site_names:list=[], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool: 
     _go_to_backup_folder(source_org_name, source_backup)
-    print()
+    print()    
     try:
         message = f"Loading inventory file {backup_file} "
         pb.log_message(message, display_pbar=False)
@@ -587,11 +603,14 @@ def _start_precheck(mist_session:mistapi.APISession, dst_org_id:str, source_back
         console.critical("Unable to parse the template/backup file")
         logger.error("Exception occurred", exc_info=True)
         sys.exit(1)
+
     if backup:
-        return _precheck(mist_session, src_org_id, dst_org_id, backup["org"], filter_site_names, proceed, unclaim, unclaim_all)    
+        if _check_access(dst_apisession, dst_org_id, "Validating access to the Destination Org"):
+            if (unclaim and _check_access(src_apisession, src_org_id, "Validating access to the Source Org")) or not unclaim:
+                return _precheck(src_apisession, dst_apisession, src_org_id, dst_org_id, backup["org"], filter_site_names, proceed, unclaim, unclaim_all)    
 
 #####################################################################
-#### MENUS ####
+#### FOLDER MGMT ####
 def _chdir(path:str):
     try:
         os.chdir(path)
@@ -664,15 +683,16 @@ def _go_to_backup_folder(source_org_name:str=None, source_backup:str=None):
             f"No Template/Backup found for organization {source_org_name}. Please select a folder in the following list.")
         _select_backup_folder(folders)
 
-
+#####################################################################
+#### DEST ORG SELECTION ####
 def _check_org_name_in_script_param(apisession:mistapi.APISession, dst_org_id:str, org_name:str=None):
     response = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, dst_org_id)
     if response.status_code != 200:
-        console.critical(f"Unable to retrieve the org information: {response.error}")
-        sys.exit(3)
+        console.critical(f"Unable to retrieve the org information: {response.data}")
+        sys.exit(0)
     org_name_from_mist = response.data["name"]
     return org_name == org_name_from_mist
-    
+
 
 def _check_org_name(apisession:mistapi.APISession, dst_org_id:str, org_name:str=None):
     if not org_name:
@@ -701,13 +721,14 @@ def _select_dest_org(apisession: mistapi.APISession):
 
 #####################################################################
 #### START ####
-def start(mist_session:mistapi.APISession, dst_org_id:str=None, org_name:str=None, backup_folder_param: str = None, source_org_name:str=None, source_backup:str=None, filter_site_names:list=[], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool:
+def start(dst_apisession:mistapi.APISession, src_apisession:mistapi.APISession=None, dst_org_id:str=None, org_name:str=None, backup_folder_param: str = None, source_org_name:str=None, source_backup:str=None, filter_site_names:list=[], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool:
     '''
     Start the process to check if the inventory can be deployed without issue
 
     PARAMS
     -------
-    :param  mistapi.APISession  apisession          - mistapi session, already logged in
+    :param  mistapi.APISession  dst_apisession      - mistapi session with `Super User` access the destination Org, already logged in
+    :param  mistapi.APISession  src_apisession      - Only required if `unclaim`==`True`. mistapi session with `Super User` access the source Org, already logged in
     :param  str                 dst_org_id          - org_id where to deploy the inventory
     :param  str                 org_name            - Org name where to deploy the inventory. This parameter requires "org_id" to be defined
     :param  str                 backup_folder_param - Path to the folder where to save the org backup (a subfolder will be created with the org name). default is "./org_backup"
@@ -728,13 +749,13 @@ def start(mist_session:mistapi.APISession, dst_org_id:str=None, org_name:str=Non
         backup_folder = backup_folder_param
 
     if dst_org_id and org_name:
-        if not _check_org_name_in_script_param(apisession, dst_org_id, org_name):
+        if not _check_org_name_in_script_param(dst_apisession, dst_org_id, org_name):
             console.critical(f"Org name {org_name} does not match the org {dst_org_id}")
             sys.exit(0)
     elif dst_org_id and not org_name:
-        dst_org_id, org_name = _check_org_name(apisession, dst_org_id)
+        dst_org_id, org_name = _check_org_name(dst_apisession, dst_org_id)
     elif not dst_org_id and not org_name:
-        dst_org_id, org_name = _select_dest_org(apisession)
+        dst_org_id, org_name = _select_dest_org(dst_apisession)
     elif not dst_org_id and org_name:
         console.error("\"org_name\" required \"org_id\" to be defined. You can either remove the \"org_name\" parameter, or add the \"org_id\" parameter.")
         sys.exit(2)
@@ -742,7 +763,8 @@ def start(mist_session:mistapi.APISession, dst_org_id:str=None, org_name:str=Non
         sys.exit(0)
 
     success = _start_precheck(
-        mist_session,
+        src_apisession,
+        dst_apisession,
         dst_org_id, 
         source_backup=source_backup, 
         source_org_name=source_org_name, 
@@ -848,8 +870,8 @@ python3 ./org_inventory_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:n:e:l:f:b:s:dpua", [
-                                   "help", "org_id=", "org_name=", "env=", "log_file=", "backup_folder=", "source_backup=", "sites=", "dry", "proceed", "unclaim", "unclaim_all"])
+        opts, args = getopt.getopt(sys.argv[1:], "ho:n:e:s:l:f:b:s:dpua", [
+                                   "help", "org_id=", "org_name=", "env=", "sourve_env=", "log_file=", "backup_folder=", "source_backup=", "sites=", "dry", "proceed", "unclaim", "unclaim_all"])
     except getopt.GetoptError as err:
         console.error(err)
         usage()
@@ -870,7 +892,9 @@ if __name__ == "__main__":
         elif o in ["-n", "--org_name"]:
             org_name = a
         elif o in ["-e", "--env"]:
-            env_file = a
+            dest_env_file = a
+        elif o in ["-s", "--source_env"]:
+            source_env_file = a
         elif o in ["-l", "--log_file"]:
             log_file = a
         elif o in ["-f", "--backup_folder"]:
@@ -906,10 +930,17 @@ if __name__ == "__main__":
     logging.basicConfig(filename=log_file, filemode='w')
     logger.setLevel(logging.DEBUG)
     ### START ###
-    apisession = mistapi.APISession(env_file=env_file)
-    apisession.login()
+    dst_apisession = mistapi.APISession(env_file=dest_env_file)
+    dst_apisession.login()
+    if unclaim:
+        if not source_env_file or dest_env_file == source_env_file:
+            src_apisession = dst_apisession
+        elif source_env_file:
+            src_apisession = mistapi.APISession(env_file=source_env_file)
+            src_apisession.login()
+    else:
+        src_apisession = None
     ### DRY RUN OR NOT DRY RUN ###
-    print(type(proceed))
     if not type(proceed) == bool:
         while True:
             resp = input("Do you want to run this script in (d)ry-run mode, can we (p)roceed and deploy the devices to the new org, or do you want to quit (d/p/q)? ")
@@ -923,8 +954,10 @@ if __name__ == "__main__":
                 sys.exit(0)
             else:
                 "Invalid input. Only \"d\", \"p\" and \"q\" are allowed"
+    
     start(
-        apisession, 
+        dst_apisession, 
+        src_apisession,
         dst_org_id=dst_org_id, 
         org_name=org_name, 
         backup_folder_param=backup_folder_param, 
