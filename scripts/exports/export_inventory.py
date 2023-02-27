@@ -156,7 +156,7 @@ def _process_export(apisession:mistapi.APISession, org_id:str):
         try:
             message = f"Retrieving {device_type.title()} Inventory"
             pb.log_message(message, display_pbar=False)
-            response = mistapi.api.v1.orgs.inventory.getOrgInventory(apisession, org_id, type=device_type)
+            response = mistapi.api.v1.orgs.inventory.getOrgInventory(apisession, org_id, type=device_type, vc=True)
             data += mistapi.get_all(apisession, response)
             pb.log_success(message, display_pbar=False)
         except:
