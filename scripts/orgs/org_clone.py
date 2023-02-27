@@ -172,7 +172,6 @@ def _create_org(mist_session:mistapi.APISession):
 
 
 def select_or_create_org(mist_session:mistapi.APISession=None):
-    mist_session = mistapi.APISession()    
     while True:
         res = input("Do you want to create a (n)ew organisation or (r)estore to an existing one? ")
         if res.lower()=="r":
