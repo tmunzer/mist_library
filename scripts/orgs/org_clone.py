@@ -275,7 +275,7 @@ def start(src_apisession: mistapi.APISession, dst_apisession: mistapi.APISession
     _precheck_inventory(dst_apisession, dst_org_id, dst_org_name, src_org_name, backup_folder_param)
 
     _print_new_step("Process finised")
-    console.info(f"The Org {src_org_name} ({src_apisession.get_cloud()}) has been clone to {dst_org_name} ({dst_apisession.get_cloud}) with success")
+    console.info(f"The Org {src_org_name} ({src_apisession.get_cloud()}) has been clone to {dst_org_name} ({dst_apisession.get_cloud()}) with success")
     console.info("You can use the script \"org_inventory_deploy.py\" to migrate the devices to the new org.")
 
 ###############################################################################
