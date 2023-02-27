@@ -115,7 +115,8 @@ dst_env_file = "~/.mist_env"
 #### LOGS ####
 logger = logging.getLogger(__name__)
 
-
+#####################################################################
+#### ORG FUNCTIONS ####
 def _backup_org(source_mist_session:mistapi.APISession, src_org_id:str, backup_folder_param=str):
     try:
         _print_new_step("Backuping SOURCE Org Configuration")
@@ -128,7 +129,7 @@ def _deploy_org(dest_mist_session:mistapi.APISession, dst_org_id:str, dest_org_n
     org_conf_deploy.start(dest_mist_session, dst_org_id, dest_org_name, source_backup=src_org_name, backup_folder_param=backup_folder_param)
 
 #######
-#######
+#### SITES FUNCTIONS ####
 
 def _backup_inventory(source_mist_session:mistapi.APISession, src_org_id:str, backup_folder_param:str):
     _print_new_step("Backuping SOURCE Org Inventory")
@@ -276,7 +277,7 @@ def start(src_apisession: mistapi.APISession, dst_apisession: mistapi.APISession
 
     _print_new_step("Process finised")
     console.info(f"The Org {src_org_name} ({src_apisession.get_cloud()}) has been clone to {dst_org_name} ({dst_apisession.get_cloud}) with success")
-    console.info("No devices have been migrated! You can use the script \"org_inventory_deploy.py\" to migrate the devices to the new org.")
+    console.info("You can use the script \"org_inventory_deploy.py\" to migrate the devices to the new org.")
 
 ###############################################################################
 #### USAGE ####
