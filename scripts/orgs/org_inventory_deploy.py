@@ -85,11 +85,7 @@ python3 ./org_inventory_deploy.py
 python3 ./org_inventory_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "my test org" --dry
 
 '''
-
-#### PARAMETERS #####
-session_file = None
-org_id = ""
-
+#####################################################################
 #### IMPORTS ####
 import json
 import os
@@ -122,8 +118,8 @@ backup_folder = "./org_backup"
 backup_file = "./org_inventory_file.json"
 file_prefix = ".".join(backup_file.split(".")[:-1])
 log_file = "./script.log"
-dest_env_file = "~/.mist_env"
-source_env_file = None
+source_env_file =  "~/.mist_env"
+dest_env_file = None
 
 #####################################################################
 #### LOGS ####
@@ -523,7 +519,7 @@ def _result(failed_devices:dict, proceed:bool) -> bool:
         return True
     return False
 
-def _precheck(src_apisession:mistapi.APISession, dst_apisession:mistapi.APISession, src_org_id:str, dst_org_id:str, org_backup:dict, filter_site_names:list = [], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool:
+def _deploy(src_apisession:mistapi.APISession, dst_apisession:mistapi.APISession, src_org_id:str, dst_org_id:str, org_backup:dict, filter_site_names:list = [], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool:
     print()
     pb.log_title("Processing Org")
     uuid_matching.add_uuid(dst_org_id, src_org_id, "Source Org ID")
@@ -580,7 +576,7 @@ def _check_access(apisession: mistapi.APISession, org_id:str, message:str) -> bo
     console.error("You don't have access to this org. Please use another account")
     return False
 
-def _start_precheck(src_apisession:mistapi.APISession, dst_apisession:mistapi.APISession, dst_org_id:str, source_backup:str=None, src_org_name:str=None, filter_site_names:list=[], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool: 
+def _start_deploy(src_apisession:mistapi.APISession, dst_apisession:mistapi.APISession, dst_org_id:str, source_backup:str=None, src_org_name:str=None, filter_site_names:list=[], proceed:bool=False, unclaim:bool=False, unclaim_all:bool=False) -> bool: 
     _go_to_backup_folder(src_org_name, source_backup)
     print()    
     try:
@@ -617,7 +613,7 @@ def _start_precheck(src_apisession:mistapi.APISession, dst_apisession:mistapi.AP
     if backup:
         if _check_access(dst_apisession, dst_org_id, "Validating access to the Destination Org"):
             if (unclaim and _check_access(src_apisession, src_org_id, "Validating access to the Source Org")) or not unclaim:
-                return _precheck(src_apisession, dst_apisession, src_org_id, dst_org_id, backup["org"], filter_site_names, proceed, unclaim, unclaim_all)    
+                return _deploy(src_apisession, dst_apisession, src_org_id, dst_org_id, backup["org"], filter_site_names, proceed, unclaim, unclaim_all)    
 
 #####################################################################
 #### FOLDER MGMT ####
@@ -752,7 +748,7 @@ def start(dst_apisession:mistapi.APISession, src_apisession:mistapi.APISession=N
 
     RETURNS:
     -------
-    :return bool                Process success or not. If the precheck or the deployement raised any warning/error (e.g. missing objects in the dest org), it will return False.
+    :return bool                Process success or not. If the process raised any warning/error (e.g. missing objects in the dest org), it will return False.
     '''
     current_folder = os.getcwd()
     if backup_folder_param:
@@ -773,7 +769,7 @@ def start(dst_apisession:mistapi.APISession, src_apisession:mistapi.APISession=N
     else: #should not since we covered all the possibilities...
         sys.exit(0)
 
-    success = _start_precheck(
+    success = _start_deploy(
         src_apisession,
         dst_apisession,
         dst_org_id, 
