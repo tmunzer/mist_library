@@ -173,20 +173,22 @@ def _create_org(mist_session:mistapi.APISession):
 
 def select_or_create_org(mist_session:mistapi.APISession=None):
     while True:
-        res = input("Do you want to create a (n)ew organisation or (r)estore to an existing one? ")
+        res = input("Do you want to create a (n)ew organisation, (r)estore to an existing one, or (q)uit? ")
         if res.lower()=="r":
-            return _select_org(mist_session)
+            return _select_org("destination", mist_session)
         elif res.lower()=="n":
             return _create_org(mist_session)
+        elif res.lower()=="q":
+            sys.exit(0)
 
 
-def _check_org_name(apisession:mistapi.APISession, dst_org_id:str, org_name:str=None):
+def _check_org_name(apisession:mistapi.APISession, dst_org_id:str, org_type:str, org_name:str=None):
     if not org_name:
         org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, dst_org_id).data["name"]
     while True:
         print()
         resp = input(
-            "To avoid any error, please confirm the current destination orgnization name: ")
+            f"To avoid any error, please confirm the current {org_type} orgnization name: ")
         if resp == org_name:
             return True
         else:
@@ -195,10 +197,10 @@ def _check_org_name(apisession:mistapi.APISession, dst_org_id:str, org_name:str=
 
 #######
 #######
-def _select_org(mist_session=None):    
+def _select_org(org_type:str, mist_session=None):    
     org_id = mistapi.cli.select_org(mist_session)[0]
     org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(mist_session, org_id).data["name"]
-    _check_org_name(mist_session, org_id, org_name)
+    _check_org_name(mist_session, org_id, org_type, org_name)
     return org_id, org_name
 
 def _check_org_name_in_script_param(apisession:mistapi.APISession, org_id:str, org_name:str=None):
@@ -211,6 +213,7 @@ def _check_org_name_in_script_param(apisession:mistapi.APISession, org_id:str, o
     
 
 def _check_src_org(src_apisession:mistapi.APISession, src_org_id:str, src_org_name:str):
+    _print_new_step("SOURCE Org")
     if src_org_id and src_org_name:
         if not _check_org_name_in_script_param(src_apisession, src_org_id, src_org_name):
             console.critical(f"Org name {src_org_name} does not match the org {src_org_id}")
@@ -218,7 +221,7 @@ def _check_src_org(src_apisession:mistapi.APISession, src_org_id:str, src_org_na
     elif src_org_id and not src_org_name:
         return _check_org_name(src_apisession, src_org_id)
     elif not src_org_id and not src_org_name:
-        return  _select_org(src_apisession)
+        return  _select_org("source", src_apisession)
     elif not src_org_id and src_org_name:
         console.critical(f"\"src_org_name\" cannot be defined without \"src_org_id\". Please remove \"src_org_name\" parameter or add \"src_org_id\"")
         sys.exit(0)
