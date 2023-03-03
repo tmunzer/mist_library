@@ -157,7 +157,7 @@ def _backup_site_id_dict(site:dict, backup:dict):
         console.warning("I recommand you to rename one of the two sites.")
         loop = True
         while loop:
-            resp = input("Do you want to continur anyway (y/N)? ")
+            resp = input("Do you want to continue anyway (y/N)? ")
             if resp.lower() == "y":
                 loop = False
                 _save_site_info(site, backup)
@@ -179,7 +179,7 @@ def _backup_site_maps(mist_session:mistapi.APISession, site):
             console.warning("It is recommanded you to rename one of the two maps.")
             loop = True
             while loop:
-                resp = input("Do you want to continur anyway (y/N)? ")
+                resp = input("Do you want to continue anyway (y/N)? ")
                 if resp.lower() == "y":
                     loop = False
                     ["maps"].append({xmap["name"]: xmap["id"]})
