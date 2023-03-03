@@ -69,6 +69,7 @@ There is a short desccription at the beginning of each script explaining the pur
 - **configure_auto_site_assignment.py**: Python script to update the org auto assignement rules
 - **org_clone.py**: Python script to clone a whole organization to another one. The destination org can be an existing org, or it can be created during the process.
 - **org_migration.py**: Python script to migrate a whole organization and the devices to another one. The destination org can be an existing org, or it can be created during the process.
+- **org_complete_backup.py**: Python script to backup a whole organization configuration and devices. 
 - **org_conf_backup.py**: Python script to backup a whole organization.
 - **org_conf_deploy.py**: Python script to deploy organization backup/template file.
 - **org_conf_zeroize.py**: Python script to zeroise an organization. This scrip will remove all the configuration, all the sites and all the objects from the organization.
