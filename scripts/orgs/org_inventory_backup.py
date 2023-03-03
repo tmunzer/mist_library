@@ -214,7 +214,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
         message=f"Backuping {device_type} magics"
         pb.log_message(message)
         try:
-            response = mistapi.api.v1.orgs.inventory.getOrgInventory(mist_session, org_id, type=device_type)
+            response = mistapi.api.v1.orgs.inventory.getOrgInventory(mist_session, org_id, type=device_type, limit=1000)
             inventory = mistapi.get_all(mist_session, response)
             for data in inventory:
                 if data.get("magic"):
@@ -230,7 +230,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
     message=f"Backuping Org MxEdges"
     pb.log_message(message)
     try:
-        response = mistapi.api.v1.orgs.mxedges.getOrgMxEdges(mist_session, org_id)
+        response = mistapi.api.v1.orgs.mxedges.getOrgMxEdges(mist_session, org_id, limit=1000)
         mxedges = mistapi.get_all(mist_session, response)
         backup["org"]["mxedges"] = mxedges
         pb.log_success(message, True)
@@ -245,7 +245,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
     message=f"Backuping Device Profiles"
     pb.log_message(message)
     try:
-        response = mistapi.api.v1.orgs.deviceprofiles.getOrgDeviceProfiles(mist_session, org_id)
+        response = mistapi.api.v1.orgs.deviceprofiles.getOrgDeviceProfiles(mist_session, org_id, limit=1000)
         deviceprofiles = mistapi.get_all(mist_session, response)
         for deviceprofile in deviceprofiles:
             backup["org"]["old_deviceprofiles_id"][deviceprofile["name"]] = deviceprofile["id"]
@@ -272,7 +272,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
     message=f"Retrieving Sites list"
     pb.log_message(message)
     try:
-        response = mistapi.api.v1.orgs.sites.getOrgSites(mist_session, org_id)
+        response = mistapi.api.v1.orgs.sites.getOrgSites(mist_session, org_id, limit=1000)
         sites = mistapi.get_all(mist_session, response)
         pb.log_success(message, True)
     except Exception as e:
@@ -288,7 +288,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
         try:
             _backup_site_id_dict(site, backup)
             backup["org"]["sites"][site["name"]]["old_maps_ids"] = _backup_site_maps(mist_session, site)
-            response = mistapi.api.v1.sites.devices.getSiteDevices(mist_session, site["id"], type="all")
+            response = mistapi.api.v1.sites.devices.getSiteDevices(mist_session, site["id"], type="all", limit=1000)
             devices = mistapi.get_all(mist_session, response)
             backup["org"]["sites"][site["name"]]["devices"] = devices
             pb.log_success(message, True)
@@ -347,13 +347,16 @@ def _start_inventory_backup(mist_session:mistapi.APISession, org_id:str, org_nam
     try:
         device_count = 0
         for device_type in device_types:
-            response = mistapi.api.v1.orgs.inventory.getOrgInventory(mist_session, org_id, type=device_type)
-            device_count += len(mistapi.get_all(mist_session, response))
-        response = mistapi.api.v1.orgs.sites.getOrgSites(mist_session, org_id)
-        sites = mistapi.get_all(mist_session, response)
-        pb.set_steps_total(2 + len(device_types) + len(sites) + device_count)
+            response = mistapi.api.v1.orgs.inventory.getOrgInventory(mist_session, org_id, type=device_type, limit=1)
+            if (response.headers.get("X-Page-Total")): device_count += int(response.headers.get("X-Page-Total"))
+            else: device_count += len(response.data)
+        response = mistapi.api.v1.orgs.sites.getOrgSites(mist_session, org_id, limit=1)
+        if (response.headers.get("X-Page-Total")): site_count = int(response.headers.get("X-Page-Total"))
+        else: site_count = len(response.data)
+        pb.set_steps_total(2 + len(device_types) + site_count + device_count)
     except Exception as e:
         logger.error("Exception occurred", exc_info=True)
+        sys.exit(0)
 
     backup = {
         "org": {"id": "", "sites": {}, "old_sites_id": {}, "old_deviceprofiles_id": {}, "old_evpntopo_id": {}, "magics": {}, "devices_without_magic":[] }
