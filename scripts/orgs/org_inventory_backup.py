@@ -73,6 +73,22 @@ python3 -m pip install mistapi
 py -m pip install mistapi
     """)
     sys.exit(2)
+try:
+    if (int(mistapi.__version__.split(".")[1]) < 36):
+        raise Exception
+except:
+    print("""
+Critical: 
+Your version of \"mistapi\" package is too old to run this script. 
+Please use the pip command to upgrade it.
+
+# Linux/macOS
+python3 -m pip install --upgrade mistapi
+
+# Windows
+py -m pip install --upgrade mistapi
+    """)
+    sys.exit(2)
 
 #####################################################################
 #### PARAMETERS #####
@@ -350,7 +366,7 @@ def _start_inventory_backup(mist_session:mistapi.APISession, org_id:str, org_nam
             response = mistapi.api.v1.orgs.inventory.getOrgInventory(mist_session, org_id, type=device_type, limit=1)
             if (response.headers.get("X-Page-Total")): device_count += int(response.headers.get("X-Page-Total"))
             else: device_count += len(response.data)
-        response = mistapi.api.v1.orgs.sites.getOrgSites(mist_session, org_id, limit=1)
+        response = mistapi.api.v1.orgs.sites.countOrgSites(mist_session, org_id, limit=1)
         if (response.headers.get("X-Page-Total")): site_count = int(response.headers.get("X-Page-Total"))
         else: site_count = len(response.data)
         pb.set_steps_total(2 + len(device_types) + site_count + device_count)
