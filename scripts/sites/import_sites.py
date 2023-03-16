@@ -71,8 +71,16 @@ Optional:
 Script Parameters:
 -h, --help          display this help
 -f, --file=         REQUIRED: path to the CSV file
+
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
+-n, --org_name=         Org name where to deploy the configuration:
+                            - if org_id is provided (existing org), used to validate 
+                            the destination org
+                            - if org_id is not provided (new org), the script will 
+                            create a new org and name it with the org_name value   
+
 -s, --site_ids=     list of sites to use, comma separated
+
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
 -e, --env=          define the env file to use (see mistapi env file documentation 
@@ -145,13 +153,15 @@ steps_count = 0
 # PROGRESS BAR
 #####################################################################
 # PROGRESS BAR AND DISPLAY
+
+
 class ProgressBar():
-    def __init__(self):        
+    def __init__(self):
         self.steps_total = 0
         self.steps_count = 0
 
-    def _pb_update(self, size:int=80):   
-        if self.steps_count > self.steps_total: 
+    def _pb_update(self, size: int = 80):
+        if self.steps_count > self.steps_total:
             self.steps_count = self.steps_total
 
         percent = self.steps_count/self.steps_total
@@ -161,45 +171,51 @@ class ProgressBar():
         print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
         print(f"{int(percent*100)}%".rjust(5), end="")
 
-    def _pb_new_step(self, message:str, result:str, inc:bool=False, size:int=80, display_pbar:bool=True):
-        if inc: self.steps_count += 1
+    def _pb_new_step(self, message: str, result: str, inc: bool = False, size: int = 80, display_pbar: bool = True):
+        if inc:
+            self.steps_count += 1
         text = f"\033[A\033[F{message}"
         print(f"{text} ".ljust(size + 4, "."), result)
         print("".ljust(80))
-        if display_pbar: self._pb_update(size)
+        if display_pbar:
+            self._pb_update(size)
 
-    def _pb_title(self, text:str, size:int=80, end:bool=False, display_pbar:bool=True):
+    def _pb_title(self, text: str, size: int = 80, end: bool = False, display_pbar: bool = True):
         print("\033[A")
-        print(f" {text} ".center(size, "-"),"\n")
-        if not end and display_pbar: 
+        print(f" {text} ".center(size, "-"), "\n")
+        if not end and display_pbar:
             print("".ljust(80))
             self._pb_update(size)
 
-    def inc(self, size:int=80):
+    def inc(self, size: int = 80):
         self.steps_count += 1
-        display_pbar: self._pb_update(size)
+        self._pb_update(size)
 
-    def set_steps_total(self, steps_total:int):
+    def set_steps_total(self, steps_total: int):
         self.steps_total = steps_total
 
-    def log_message(self, message, display_pbar:bool=True):
+    def log_message(self, message, display_pbar: bool = True):
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
-    def log_success(self, message, inc:bool=False, display_pbar:bool=True):
+    def log_success(self, message, inc: bool = False, display_pbar: bool = True):
         logger.info(f"{message}: Success")
-        self._pb_new_step(message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
+        self._pb_new_step(
+            message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
 
-    def log_warning(self, message, inc:bool=False, display_pbar:bool=True):
+    def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
         logger.warning(f"{message}")
-        self._pb_new_step(message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
+        self._pb_new_step(
+            message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
 
-    def log_failure(self, message, inc:bool=False, display_pbar:bool=True):
+    def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
         logger.error(f"{message}: Failure")
-        self._pb_new_step(message, '\033[31m\u2716\033[0m\n', inc=inc, display_pbar=display_pbar)
+        self._pb_new_step(
+            message, '\033[31m\u2716\033[0m\n', inc=inc, display_pbar=display_pbar)
 
-    def log_title(self, message, end:bool=False, display_pbar:bool=True):
+    def log_title(self, message, end: bool = False, display_pbar: bool = True):
         logger.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
+
 
 pb = ProgressBar()
 
@@ -382,7 +398,8 @@ def _create_site(apisession: mistapi.APISession, org_id: str, site: dict):
             response = mistapi.api.v1.orgs.sites.createOrgSite(
                 apisession, org_id, site)
             if response.status_code == 200:
-                pb.log_success( f"Site {site['name']}: Created (ID  {response.data['id']})", True)
+                pb.log_success(
+                    f"Site {site['name']}: Created (ID  {response.data['id']})", True)
                 return response.data
             else:
                 pb.log_failure(message, True)
@@ -393,7 +410,7 @@ def _create_site(apisession: mistapi.APISession, org_id: str, site: dict):
         return None
 
 
-def _update_site(apisession: mistapi.APISession, site: dict, site_id:str):
+def _update_site(apisession: mistapi.APISession, site: dict, site_id: str):
     if "vars" in site and site["vars"]:
         message = f"Site {site['name']}: Site variables deployed"
         pb.log_message(message)
@@ -404,12 +421,14 @@ def _update_site(apisession: mistapi.APISession, site: dict, site_id:str):
                 key = entry.split(":")[0]
                 val = entry.split(":")[1]
                 site_vars[key] = val
-            mistapi.api.v1.sites.setting.updateSiteSettings(apisession, site_id, {"vars": site_vars})
+            mistapi.api.v1.sites.setting.updateSiteSettings(
+                apisession, site_id, {"vars": site_vars})
             pb.log_success(message, True)
         except:
             pb.log_failure(message, True)
     else:
-        pb.log_success(f"Site {site['name']}: No site variables to deploy", True)
+        pb.log_success(
+            f"Site {site['name']}: No site variables to deploy", True)
 
 
 ###############################################################################
@@ -425,11 +444,14 @@ def _replace_sitegroup_names(apisession: mistapi.APISession, org_id: str, sitegr
             if response.status_code == 200:
                 sitegroups[sitegroup_name] = response.data["id"]
             else:
-                pb.log_warning(f"Unable to create site group {sitegroup_name}", inc=False)
+                pb.log_warning(
+                    f"Unable to create site group {sitegroup_name}", inc=False)
         sitegroup_ids.append(sitegroups[sitegroup_name])
     return sitegroups, sitegroup_ids
 
 # GENERIC REPLACE FUNCTION
+
+
 def _replace_object_names_by_ids(apisession: mistapi.APISession, org_id: str, site: dict, parameters: dict) -> dict:
     '''
     replace the template/policy/groups names by the corresponding ids
@@ -442,7 +464,7 @@ def _replace_object_names_by_ids(apisession: mistapi.APISession, org_id: str, si
         parameters["sitegroup"], site["sitegroup_ids"] = _replace_sitegroup_names(
             apisession, org_id, parameters["sitegroup"], site["sitegroup_names"])
         del site["sitegroup_names"]
-    
+
     for parameter in parameter_types:
         try:
             if f"{parameter}_name" in site:
@@ -451,7 +473,8 @@ def _replace_object_names_by_ids(apisession: mistapi.APISession, org_id: str, si
                 del site[f"{parameter}_name"]
         except:
             warning = True
-            pb.log_warning(f"Site {site['name']}: Missing {parameter} on dest org", inc=False)
+            pb.log_warning(
+                f"Site {site['name']}: Missing {parameter} on dest org", inc=False)
     if not warning:
         pb.log_success(message, True)
     else:
@@ -459,6 +482,8 @@ def _replace_object_names_by_ids(apisession: mistapi.APISession, org_id: str, si
     return site
 
 # GET FROM MIST
+
+
 def _retrieve_objects(apisession: mistapi.APISession, org_id: str) -> dict:
     '''
     Get the list of the current templates, policies and sitegoups
@@ -531,7 +556,8 @@ def _extract_groups(data: str) -> list:
 #                                           must be key1:var1. If multiple vars,
 #                                           must be enclosed by double quote and
 #                                           comma separated (ex: "key1:var1,key2:var2")
-#                                           
+#
+
 
 def _check_settings(sites: list):
     message = "Validating Sites data"
@@ -564,6 +590,7 @@ def _check_settings(sites: list):
                 sys.exit(0)
     pb.log_success(message, display_pbar=False)
 
+
 def _process_sites_data(apisession: mistapi.APISession, org_id: str, sites: list) -> dict:
     '''
     Function to validate sites data and retrieve the required object from Mist
@@ -575,7 +602,7 @@ def _process_sites_data(apisession: mistapi.APISession, org_id: str, sites: list
     return parameters
 
 
-def _create_sites(apisession: mistapi.APISession, org_id: str, sites: list, parameters:dict):
+def _create_sites(apisession: mistapi.APISession, org_id: str, sites: list, parameters: dict):
     '''
     Function to create and update all the sites
     '''
@@ -589,7 +616,8 @@ def _create_sites(apisession: mistapi.APISession, org_id: str, sites: list, para
         else:
             _update_site(apisession, site, new_site["id"])
 
-def _read_csv_file(file_path:str):
+
+def _read_csv_file(file_path: str):
     with open(file_path, "r") as f:
         data = csv.reader(f, skipinitialspace=True, quotechar='"')
         fields = []
@@ -610,17 +638,21 @@ def _read_csv_file(file_path:str):
                 sites.append(site)
         return sites
 
-def _check_org_name_in_script_param(apisession:mistapi.APISession, org_id:str, org_name:str=None):
+
+def _check_org_name_in_script_param(apisession: mistapi.APISession, org_id: str, org_name: str = None):
     response = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id)
     if response.status_code != 200:
-        console.critical(f"Unable to retrieve the org information: {response.data}")
+        console.critical(
+            f"Unable to retrieve the org information: {response.data}")
         sys.exit(3)
     org_name_from_mist = response.data["name"]
     return org_name == org_name_from_mist
 
-def _check_org_name(apisession:mistapi.APISession, org_id:str, org_name:str=None):
+
+def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str = None):
     if not org_name:
-        org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id).data["name"]
+        org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(
+            apisession, org_id).data["name"]
     while True:
         print()
         resp = input(
@@ -631,7 +663,8 @@ def _check_org_name(apisession:mistapi.APISession, org_id:str, org_name:str=None
             print()
             print("The orgnization names do not match... Please try again...")
 
-def _create_org(apisession: mistapi.APISession, custom_dest_org_name:str=None):
+
+def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None):
     while True:
         if not custom_dest_org_name:
             custom_dest_org_name = input("Organization name? ")
@@ -650,7 +683,8 @@ def _create_org(apisession: mistapi.APISession, custom_dest_org_name:str=None):
             org_id = mistapi.api.v1.orgs.orgs.createOrg(
                 apisession, org).data["id"]
             return org_id, custom_dest_org_name
-        
+
+
 def _select_dest_org(apisession: mistapi.APISession):
     print()
     print(" Destination Org ".center(80, "-"))
@@ -667,10 +701,12 @@ def _select_dest_org(apisession: mistapi.APISession):
         elif res.lower() == "n":
             return _create_org(apisession)
 
-def start(apisession: mistapi.APISession, file_path:str,org_id: str =None, org_name:str=None):
+
+def start(apisession: mistapi.APISession, file_path: str, org_id: str = None, org_name: str = None):
     if org_id and org_name:
         if not _check_org_name_in_script_param(apisession, org_id, org_name):
-            console.critical(f"Org name {org_name} does not match the org {org_id}")
+            console.critical(
+                f"Org name {org_name} does not match the org {org_id}")
             sys.exit(0)
     elif org_id and not org_name:
         org_id, org_name = _check_org_name(apisession, org_id)
@@ -678,7 +714,7 @@ def start(apisession: mistapi.APISession, file_path:str,org_id: str =None, org_n
         org_id, name = _create_org(apisession, org_name)
     elif not org_id and not org_name:
         org_id, org_name = _select_dest_org(apisession)
-    else: #should not since we covered all the possibilities...
+    else:  # should not since we covered all the possibilities...
         sys.exit(0)
 
     sites = _read_csv_file(file_path)
@@ -689,7 +725,6 @@ def start(apisession: mistapi.APISession, file_path:str,org_id: str =None, org_n
 
     _create_sites(apisession, org_id, sites, parameters)
     pb.log_title("Site Import Done", end=True)
-
 
 
 ###############################################################################
@@ -768,8 +803,16 @@ Optional:
 Script Parameters:
 -h, --help          display this help
 -f, --file=         REQUIRED: path to the CSV file
+
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
+-n, --org_name=         Org name where to deploy the configuration:
+                            - if org_id is provided (existing org), used to validate 
+                            the destination org
+                            - if org_id is not provided (new org), the script will 
+                            create a new org and name it with the org_name value   
+
 -s, --site_ids=     list of sites to use, comma separated
+
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
 -e, --env=          define the env file to use (see mistapi env file documentation 
@@ -829,4 +872,4 @@ if __name__ == "__main__":
         console.error("CSV File is missing")
         usage()
     else:
-        start(apisession, csv_file,org_id, org_name)
+        start(apisession, csv_file, org_id, org_name)
