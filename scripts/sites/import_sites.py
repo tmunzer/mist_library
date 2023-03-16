@@ -143,55 +143,65 @@ steps_total = 0
 steps_count = 0
 #####################################################################
 # PROGRESS BAR
-def _progress_bar_update(size:int=80):   
-    global steps_count, steps_total
-    if steps_count > steps_total: steps_count = steps_total
+#####################################################################
+# PROGRESS BAR AND DISPLAY
+class ProgressBar():
+    def __init__(self):        
+        self.steps_total = 0
+        self.steps_count = 0
 
-    percent = steps_count/steps_total
-    delta = 17
-    x = int((size-delta)*percent)
-    out.write(f"Progress: ")
-    out.write(f"[{'█'*x}{'.'*(size-delta-x)}]")
-    if percent < 1:
-        out.write(f"  {int(percent*100)}%\r".rjust(5))
-    else:
-        out.write(f" {int(percent*100)}%\r".rjust(5))
-    out.flush()
+    def _pb_update(self, size:int=80):   
+        if self.steps_count > self.steps_total: 
+            self.steps_count = self.steps_total
 
-def _progress_bar_end(size:int=80): 
-    global steps_count, steps_total
-    if steps_count < 0: steps_count = steps_total
-    _progress_bar_update(size)
-    out.write("\n")
-    out.flush()
+        percent = self.steps_count/self.steps_total
+        delta = 17
+        x = int((size-delta)*percent)
+        print(f"Progress: ", end="")
+        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
+        print(f"{int(percent*100)}%".rjust(5), end="")
 
-def _new_step(text:str, success:bool=True, inc:bool=False, size:int=80):
-    global steps_count
-    if inc: steps_count += 1
+    def _pb_new_step(self, message:str, result:str, inc:bool=False, size:int=80, display_pbar:bool=True):
+        if inc: self.steps_count += 1
+        text = f"\033[A\033[F{message}"
+        print(f"{text} ".ljust(size + 4, "."), result)
+        print("".ljust(80))
+        if display_pbar: self._pb_update(size)
 
-    if success: 
-        if text:
-            print(f"{text} ".ljust(size - 3, "."), end="")
-            print(f" OK")
-        else:
+    def _pb_title(self, text:str, size:int=80, end:bool=False, display_pbar:bool=True):
+        print("\033[A")
+        print(f" {text} ".center(size, "-"),"\n")
+        if not end and display_pbar: 
             print("".ljust(80))
-        _progress_bar_update(size)
-    else: 
-        console.error(f"{text}".ljust(80))
-        _progress_bar_end(size)
+            self._pb_update(size)
 
-def _new_title(text:str, size:int=80):
-    print(f" {text} ".center(size, "-"))
-    _progress_bar_update(size)
+    def inc(self, size:int=80):
+        self.steps_count += 1
+        display_pbar: self._pb_update(size)
 
-def _new_end(size:int=80):
-    _progress_bar_end(size)
+    def set_steps_total(self, steps_total:int):
+        self.steps_total = steps_total
 
-def _calculate_steps_number(sites:list):
-    global steps_total
-    # 1 = sites validation
-    # 3 = geocoding + site creation + site settings update
-    steps_total = 1 + len(parameter_types) + len(sites) * 3
+    def log_message(self, message, display_pbar:bool=True):
+        self._pb_new_step(message, " ", display_pbar=display_pbar)
+
+    def log_success(self, message, inc:bool=False, display_pbar:bool=True):
+        logger.info(f"{message}: Success")
+        self._pb_new_step(message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
+
+    def log_warning(self, message, inc:bool=False, display_pbar:bool=True):
+        logger.warning(f"{message}")
+        self._pb_new_step(message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
+
+    def log_failure(self, message, inc:bool=False, display_pbar:bool=True):
+        logger.error(f"{message}: Failure")
+        self._pb_new_step(message, '\033[31m\u2716\033[0m\n', inc=inc, display_pbar=display_pbar)
+
+    def log_title(self, message, end:bool=False, display_pbar:bool=True):
+        logger.info(message)
+        self._pb_title(message, end=end, display_pbar=display_pbar)
+
+pb = ProgressBar()
 
 #####################################################################
 # Geocoding
@@ -201,52 +211,63 @@ def _calculate_steps_number(sites:list):
 
 
 def _get_google_geocoding(address):
-    data = {"location": None, "country_code": ""}
-    url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={google_api_key}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        if data["status"] == "OK":
-            if len(data["results"]) > 0:
-                data["location"] = {
-                    "address": data["results"][0]["formatted_address"],
-                    "latitude": data["results"][0]["geometry"]["location"]["lat"],
-                    "longitude": data["results"][0]["geometry"]["location"]["lng"]
-                }
-                for entry in data["results"][0]["address_components"]:
-                    if "country" in entry["types"]:
-                        data["country_code"] = entry["short_name"]
+    try:
+        data = {"location": None, "country_code": ""}
+        url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={google_api_key}"
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            if data["status"] == "OK":
+                if len(data["results"]) > 0:
+                    data["location"] = {
+                        "address": data["results"][0]["formatted_address"],
+                        "latitude": data["results"][0]["geometry"]["location"]["lat"],
+                        "longitude": data["results"][0]["geometry"]["location"]["lng"]
+                    }
+                    for entry in data["results"][0]["address_components"]:
+                        if "country" in entry["types"]:
+                            data["country_code"] = entry["short_name"]
+                    return data
+            elif data["status"] == "REQUEST_DENIED":
+                console.error(data["error_message"])
                 return data
-        elif data["status"] == "REQUEST_DENIED":
-            console.error(data["error_message"])
+        else:
+            pb.log_warning("Unable to get the location from Google API")
             return data
-    else:
-        console.error("Unable to get the location from Google API")
-        return data
+    except:
+        pb.log_warning("Unable to get the location from Google API")
+        return None
 
 
 def _get_google_tz(location):
-    ts = int(time.time())
-    url = f"https://maps.googleapis.com/maps/api/timezone/json?location={location['latitude']},{location['longitude']}&timestamp={ts}&key={google_api_key}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        if data["status"] == "OK":
-            tz = data["timeZoneId"]
-            return tz
-        elif data["status"] == "REQUEST_DENIED":
-            console.error(data["error_message"])
-    else:
-        console.error("Unable to get the timezone from Google API")
-
-
-def _geocoding_google(address):
-    data = _get_google_geocoding(address)
-    if data["location"] is not None:
-        data["tz"] = _get_google_tz(data["location"])
-        return data
-    else:
+    try:
+        ts = int(time.time())
+        url = f"https://maps.googleapis.com/maps/api/timezone/json?location={location['latitude']},{location['longitude']}&timestamp={ts}&key={google_api_key}"
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            if data["status"] == "OK":
+                tz = data["timeZoneId"]
+                return tz
+            elif data["status"] == "REQUEST_DENIED":
+                console.error(data["error_message"])
+        else:
+            pb.log_warning("Unable to find the site timezone")
+            return None
+    except:
+        pb.log_warning("Unable to find the site timezone")
         return None
+
+
+def _geocoding_google(site):
+    message = "Retrievning geo information"
+    pb.log_message(message)
+    data = _get_google_geocoding(site["address"])
+    if data["location"] is not None:
+        tz = _get_google_tz(data["location"])
+        if tz:
+            data["tz"] = tz
+    return data
 
 ################
 # OPEN LAT/LNG
@@ -297,10 +318,11 @@ def _import_open_geocoding():
     _import_tzfinder()
 
 
-def _get_open_geocoding(address):
-    location = geolocator.geocode(address, addressdetails=True)
+def _get_open_geocoding(site):
+    location = geolocator.geocode(site["address"], addressdetails=True)
     if type(location) == "NoneType":
-        console.error(f"Unable to find the address {address}")
+        pb.log_warning(f"Site {site['name']}: Unable to find the address")
+        return None
     else:
         return location
 
@@ -311,16 +333,17 @@ def _get_open_tz(location):
     return {"tz": tz, "country_code": country_code}
 
 
-def _geocoding_open(address):
+def _geocoding_open(site):
     data = {}
-    location = _get_open_geocoding(address)
-    data = {
-        "location": {
-            "latitude": location.latitude,
-            "longitude": location.longitude
-        },
-        **_get_open_tz(location)
-    }
+    location = _get_open_geocoding(site)
+    if location:
+        data = {
+            "location": {
+                "latitude": location.latitude,
+                "longitude": location.longitude
+            },
+            **_get_open_tz(location)
+        }
     return data
 
 #####################################################################
@@ -329,46 +352,64 @@ def _geocoding_open(address):
 
 
 def _get_geo_info(site: dict) -> dict:
+    message = f"Site {site['name']}: Retrievning geo information"
+    pb.log_message(message)
     if google_api_key:
-        data = _geocoding_google(site["address"])
+        data = _geocoding_google(site)
     if not google_api_key or data is None:
-        data = _geocoding_open(site["address"])
-    site["latlng"] = {
-        "lat": data["location"]["latitude"],
-        "lng": data["location"]["longitude"]
-    }
-    site["timezone"] = data["tz"]
-    site["country_code"] = data["country_code"]
-    _new_step(f"Site {site['name']}: Retrievning geo informations", True, True)
+        data = _geocoding_open(site)
+    if data:
+        site["latlng"] = {
+            "lat": data["location"]["latitude"],
+            "lng": data["location"]["longitude"]
+        }
+        site["timezone"] = data["tz"]
+        site["country_code"] = data["country_code"]
+        pb.log_success(message, True)
+    else:
+        pb.log_warning(message, True)
     return site
 
 
 def _create_site(apisession: mistapi.APISession, org_id: str, site: dict):
     site = _get_geo_info(site).copy()
-    if "vars" in site:
-        del site["vars"]
-    response = mistapi.api.v1.orgs.sites.createOrgSite(
-        apisession, org_id, site)
-    if response.status_code == 200:
-        _new_step(f"Site {site['name']}: Created (ID  {response.data['id']})", True, True)
-        return response.data
+    if site:
+        message = f"Site {site['name']}: Site creation"
+        pb.log_message(message)
+        try:
+            if "vars" in site:
+                del site["vars"]
+            response = mistapi.api.v1.orgs.sites.createOrgSite(
+                apisession, org_id, site)
+            if response.status_code == 200:
+                pb.log_success( f"Site {site['name']}: Created (ID  {response.data['id']})", True)
+                return response.data
+            else:
+                pb.log_failure(message, True)
+        except:
+            pb.log_failure(message, True)
     else:
-        console.error(f"> Unable to create site with the payload: {site}")
+        pb.inc()
+        return None
+
 
 def _update_site(apisession: mistapi.APISession, site: dict, site_id:str):
     if "vars" in site and site["vars"]:
-        vars = site["vars"]
-        site_vars = {}
-        for entry in vars.split(","):
-            key = entry.split(":")[0]
-            val = entry.split(":")[1]
-            site_vars[key] = val
-        mistapi.api.v1.sites.setting.updateSiteSettings(apisession, site_id, {"vars": site_vars})
-        _new_step(f"Site {site['name']}: Site variables deployed", True, True)
-        _new_step("")
+        message = f"Site {site['name']}: Site variables deployed"
+        pb.log_message(message)
+        try:
+            vars = site["vars"]
+            site_vars = {}
+            for entry in vars.split(","):
+                key = entry.split(":")[0]
+                val = entry.split(":")[1]
+                site_vars[key] = val
+            mistapi.api.v1.sites.setting.updateSiteSettings(apisession, site_id, {"vars": site_vars})
+            pb.log_success(message, True)
+        except:
+            pb.log_failure(message, True)
     else:
-        _new_step(f"Site {site['name']}: No site variables to deploy", True, True)
-        _new_step("")
+        pb.log_success(f"Site {site['name']}: No site variables to deploy", True)
 
 
 ###############################################################################
@@ -384,7 +425,7 @@ def _replace_sitegroup_names(apisession: mistapi.APISession, org_id: str, sitegr
             if response.status_code == 200:
                 sitegroups[sitegroup_name] = response.data["id"]
             else:
-                console.error(f"Unable to create site group {sitegroup_name}")
+                pb.log_warning(f"Unable to create site group {sitegroup_name}", inc=False)
         sitegroup_ids.append(sitegroups[sitegroup_name])
     return sitegroups, sitegroup_ids
 
@@ -393,15 +434,28 @@ def _replace_object_names_by_ids(apisession: mistapi.APISession, org_id: str, si
     '''
     replace the template/policy/groups names by the corresponding ids
     '''
+    warning = False
+    message = f"Site {site['name']}: updating IDs"
+    pb.log_message(message)
+
     if "sitegroup_names" in site:
         parameters["sitegroup"], site["sitegroup_ids"] = _replace_sitegroup_names(
             apisession, org_id, parameters["sitegroup"], site["sitegroup_names"])
         del site["sitegroup_names"]
+    
     for parameter in parameter_types:
-        if f"{parameter}_name" in site:
-            name = site[f"{parameter}_name"]
-            site[f"{parameter}_id"] = parameters[parameter][name]
-            del site[f"{parameter}_name"]
+        try:
+            if f"{parameter}_name" in site:
+                name = site[f"{parameter}_name"]
+                site[f"{parameter}_id"] = parameters[parameter][name]
+                del site[f"{parameter}_name"]
+        except:
+            warning = True
+            pb.log_warning(f"Site {site['name']}: Missing {parameter} on dest org", inc=False)
+    if not warning:
+        pb.log_success(message, True)
+    else:
+        pb.log_warning(message, True)
     return site
 
 # GET FROM MIST
@@ -411,35 +465,40 @@ def _retrieve_objects(apisession: mistapi.APISession, org_id: str) -> dict:
     '''
     parameters = {}
     for parameter_type in parameter_types:
+        message = f"Retrieving {parameter_type} from Mist"
+        pb.log_message(message, display_pbar=False)
         parameter_values = {}
         data = []
         response = None
-        if parameter_type == "alarmtemplate":
-            response = mistapi.api.v1.orgs.alarmtemplates.getOrgAlarmTemplates(
-                apisession, org_id)
-        elif parameter_type == "aptemplate":
-            response = mistapi.api.v1.orgs.aptemplates.getOrgAptemplates(
-                apisession, org_id)
-        elif parameter_type == "gatewaytemplate":
-            response = mistapi.api.v1.orgs.gatewaytemplates.getOrgGatewayTemplates(
-                apisession, org_id)
-        elif parameter_type == "networktemplate":
-            response = mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplates(
-                apisession, org_id)
-        elif parameter_type == "rftemplate":
-            response = mistapi.api.v1.orgs.rftemplates.getOrgRfTemplates(
-                apisession, org_id)
-        elif parameter_type == "secpolicy":
-            response = mistapi.api.v1.orgs.secpolicies.getOrgSecPolicies(
-                apisession, org_id)
-        elif parameter_type == "sitegroup":
-            response = mistapi.api.v1.orgs.sitegroups.getOrgSiteGroups(
-                apisession, org_id)
-        data = mistapi.get_all(apisession, response)
-        for entry in data:
-            parameter_values[entry["name"]] = entry["id"]
-        parameters[parameter_type] = parameter_values
-        _new_step(f"Retrieving {parameter_type} list ", True, True)
+        try:
+            if parameter_type == "alarmtemplate":
+                response = mistapi.api.v1.orgs.alarmtemplates.getOrgAlarmTemplates(
+                    apisession, org_id)
+            elif parameter_type == "aptemplate":
+                response = mistapi.api.v1.orgs.aptemplates.getOrgAptemplates(
+                    apisession, org_id)
+            elif parameter_type == "gatewaytemplate":
+                response = mistapi.api.v1.orgs.gatewaytemplates.getOrgGatewayTemplates(
+                    apisession, org_id)
+            elif parameter_type == "networktemplate":
+                response = mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplates(
+                    apisession, org_id)
+            elif parameter_type == "rftemplate":
+                response = mistapi.api.v1.orgs.rftemplates.getOrgRfTemplates(
+                    apisession, org_id)
+            elif parameter_type == "secpolicy":
+                response = mistapi.api.v1.orgs.secpolicies.getOrgSecPolicies(
+                    apisession, org_id)
+            elif parameter_type == "sitegroup":
+                response = mistapi.api.v1.orgs.sitegroups.getOrgSiteGroups(
+                    apisession, org_id)
+            data = mistapi.get_all(apisession, response)
+            for entry in data:
+                parameter_values[entry["name"]] = entry["id"]
+            parameters[parameter_type] = parameter_values
+            pb.log_success(message, display_pbar=False)
+        except:
+            pb.log_failure(message, display_pbar=False)
     return parameters
 
 
@@ -475,18 +534,23 @@ def _extract_groups(data: str) -> list:
 #                                           
 
 def _check_settings(sites: list):
+    message = "Validating Sites data"
+    pb.log_title(message, display_pbar=False)
     site_name = []
     for site in sites:
         if "name" not in site:
-            _new_step(f"Missing site parameter \"name\"", False)
+            pb.log_failure(message, display_pbar=False)
+            console.error(f"Missing site parameter \"name\"")
             sys.exit(0)
         elif site["name"] in site_name:
-            _new_step(f"Site Name \"{site['name']}\" duplicated".ljust(80))
+            pb.log_failure(message, display_pbar=False)
+            console.error(f"Site Name \"{site['name']}\" duplicated")
             sys.exit(0)
         else:
             site_name.append(site["name"])
         if "address" not in site:
-            _new_step(f"Missing site parameter \"address\"", False)
+            pb.log_failure(message, display_pbar=False)
+            console.error(f"Missing site parameter \"address\"")
             sys.exit(0)
         for key in site:
             parameter_name = key.split("_")
@@ -495,37 +559,137 @@ def _check_settings(sites: list):
             elif parameter_name[0] in parameter_types and parameter_name[1] in ["name", "id"]:
                 pass
             else:
-                _new_step(f"Invalid site parameter \"{key}\"", False)
+                pb.log_failure(message, display_pbar=False)
+                console.error(f"Invalid site parameter \"{key}\"")
                 sys.exit(0)
-    _new_step("Sites validated", True, True)
+    pb.log_success(message, display_pbar=False)
 
 def _process_sites_data(apisession: mistapi.APISession, org_id: str, sites: list) -> dict:
     '''
     Function to validate sites data and retrieve the required object from Mist
     '''
-    _new_title(" Processing Sites ")
     parameters = {}
+    pb.log_title("Preparing Sites Import")
     _check_settings(sites)
     parameters = _retrieve_objects(apisession, org_id)
     return parameters
+
 
 def _create_sites(apisession: mistapi.APISession, org_id: str, sites: list, parameters:dict):
     '''
     Function to create and update all the sites
     '''
-    _new_title(" Creating Sites ")
+    pb.log_title("Creating Sites", display_pbar=True)
     for site in sites:
-        _new_step("")
         site = _replace_object_names_by_ids(
             apisession, org_id, site, parameters)
         new_site = _create_site(apisession, org_id, site)
-        _update_site(apisession, site, new_site["id"])
+        if not new_site:
+            pb.inc()
+        else:
+            _update_site(apisession, site, new_site["id"])
 
-def start(apisession: mistapi.APISession, org_id: str, sites: list):
-    _calculate_steps_number(sites)
+def _read_csv_file(file_path:str):
+    with open(file_path, "r") as f:
+        data = csv.reader(f, skipinitialspace=True, quotechar='"')
+        fields = []
+        sites = []
+        for line in data:
+            if not fields:
+                for column in line:
+                    fields.append(column.strip().replace("#", ""))
+            else:
+                site = {}
+                i = 0
+                for column in line:
+                    field = fields[i]
+                    if field.startswith("sitegroup_"):
+                        column = _extract_groups(column)
+                    site[field] = column
+                    i += 1
+                sites.append(site)
+        return sites
+
+def _check_org_name_in_script_param(apisession:mistapi.APISession, org_id:str, org_name:str=None):
+    response = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id)
+    if response.status_code != 200:
+        console.critical(f"Unable to retrieve the org information: {response.data}")
+        sys.exit(3)
+    org_name_from_mist = response.data["name"]
+    return org_name == org_name_from_mist
+
+def _check_org_name(apisession:mistapi.APISession, org_id:str, org_name:str=None):
+    if not org_name:
+        org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id).data["name"]
+    while True:
+        print()
+        resp = input(
+            "To avoid any error, please confirm the current destination orgnization name: ")
+        if resp == org_name:
+            return True
+        else:
+            print()
+            print("The orgnization names do not match... Please try again...")
+
+def _create_org(apisession: mistapi.APISession, custom_dest_org_name:str=None):
+    while True:
+        if not custom_dest_org_name:
+            custom_dest_org_name = input("Organization name? ")
+        if custom_dest_org_name:
+            org = {
+                "name": custom_dest_org_name
+            }
+            message = f"Creating the organisation \"{custom_dest_org_name}\" in {apisession.get_cloud()} "
+            pb.log_message(message, display_pbar=False)
+            try:
+                pb.log_success(message, display_pbar=False)
+            except Exception as e:
+                pb.log_failure(message, display_pbar=False)
+                logger.error("Exception occurred", exc_info=True)
+                sys.exit(10)
+            org_id = mistapi.api.v1.orgs.orgs.createOrg(
+                apisession, org).data["id"]
+            return org_id, custom_dest_org_name
+        
+def _select_dest_org(apisession: mistapi.APISession):
+    print()
+    print(" Destination Org ".center(80, "-"))
+    print()
+    while True:
+        res = input(
+            "Do you want to create a (n)ew organisation or (r)estore to an existing one? ")
+        if res.lower() == "r":
+            org_id = mistapi.cli.select_org(apisession)[0]
+            org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(
+                apisession, org_id).data["name"]
+            if _check_org_name(apisession, org_id, org_name):
+                return org_id, org_name
+        elif res.lower() == "n":
+            return _create_org(apisession)
+
+def start(apisession: mistapi.APISession, file_path:str,org_id: str =None, org_name:str=None):
+    if org_id and org_name:
+        if not _check_org_name_in_script_param(apisession, org_id, org_name):
+            console.critical(f"Org name {org_name} does not match the org {org_id}")
+            sys.exit(0)
+    elif org_id and not org_name:
+        org_id, org_name = _check_org_name(apisession, org_id)
+    elif not org_id and org_name:
+        org_id, name = _create_org(apisession, org_name)
+    elif not org_id and not org_name:
+        org_id, org_name = _select_dest_org(apisession)
+    else: #should not since we covered all the possibilities...
+        sys.exit(0)
+
+    sites = _read_csv_file(file_path)
+    # 4 = IDs +  geocoding + site creation + site settings update
+    pb.set_steps_total(len(sites) * 4)
+
     parameters = _process_sites_data(apisession, org_id, sites)
+
     _create_sites(apisession, org_id, sites, parameters)
-    _new_end()
+    pb.log_title("Site Import Done", end=True)
+
 
 
 ###############################################################################
@@ -624,19 +788,22 @@ python3 ./import_sites.py -f ./my_new_sites.csv --org_id=203d3d02-xxxx-xxxx-xxxx
 # ENTRY POINT
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:g:f:e:l:", [
-                                   "help", "org_id=", "google_api_key=", "file=", "env=", "log_file="])
+        opts, args = getopt.getopt(sys.argv[1:], "ho:n:g:f:e:l:", [
+                                   "help", "org_id=", "--org_name=", "google_api_key=", "file=", "env=", "log_file="])
     except getopt.GetoptError as err:
         console.error(err)
         usage()
 
     csv_file = None
     org_id = None
+    org_name = None
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-o", "--org_id"]:
             org_id = a
+        elif o in ["-n", "--org_name"]:
+            org_name = a
         elif o in ["-g", "--google_api_key"]:
             google_api_key = a
         elif o in ["-f", "--file"]:
@@ -658,28 +825,8 @@ if __name__ == "__main__":
     apisession.login()
 
     ### START ###
-    if not org_id:
-        org_id = mistapi.cli.select_org(apisession)[0]
-
     if not csv_file:
-        console.error("")
-        with open(os.path(csv_file), "r") as f:
-            data = csv.reader(f, skipinitialspace=True, quotechar='"')
-            fields = []
-            sites = []
-            for line in data:
-                if not fields:
-                    for column in line:
-                        fields.append(column.strip().replace("#", ""))
-                else:
-                    site = {}
-                    i = 0
-                    for column in line:
-                        field = fields[i]
-                        if field.startswith("sitegroup_"):
-                            column = _extract_groups(column)
-                        site[field] = column
-                        i += 1
-                    sites.append(site)
-
-    start(apisession, org_id, sites)
+        console.error("CSV File is missing")
+        usage()
+    else:
+        start(apisession, csv_file,org_id, org_name)
