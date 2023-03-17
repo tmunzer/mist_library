@@ -238,6 +238,7 @@ def _assign_devices(apisession:mistapi.APISession, org_id:str, site_id:str, macs
             "site_id": site_id,
             "macs": macs,
             "managed": managed,
+            "disable_auto_config": not managed,
             "no_reassign": no_reassign
         }
         resp = mistapi.api.v1.orgs.inventory.updateOrgInventoryAssignment(apisession, org_id, body)
