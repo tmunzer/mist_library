@@ -690,7 +690,7 @@ def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str =
 def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None):
     while True:
         if not custom_dest_org_name:
-            custom_dest_org_name = input("Organization name? ")
+            custom_dest_org_name = input("New Organization name? ")
         if custom_dest_org_name:
             org = {
                 "name": custom_dest_org_name
