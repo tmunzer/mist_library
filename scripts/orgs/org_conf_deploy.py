@@ -137,7 +137,7 @@ org_steps = {
     "wxtags": {"mistapi_function": mistapi.api.v1.orgs.wxtags.createOrgWxTag, "text": "Org wxtags"},
     "wxrules": {"mistapi_function": mistapi.api.v1.orgs.wxrules.createOrgWxRule, "text": "Org wxrules"},
     "pskportals": {"mistapi_function": mistapi.api.v1.orgs.pskportals.createOrgPskPortal, "text": "Org pskportals"},
-    "psks": {"mistapi_function": mistapi.api.v1.orgs.psks.importOrgPsks, "text": "Org psks"},
+    "psks": {"mistapi_function": mistapi.api.v1.orgs.psks.createOrgPsk, "text": "Org psks"},
     "nactags": {"mistapi_function": mistapi.api.v1.orgs.nactags.createOrgNacTag, "text": "Org nactags"},
     "nacrules": {"mistapi_function": mistapi.api.v1.orgs.nacrules.createOrgNacRule, "text": "Org nacrules"},
     "ssos": {"mistapi_function": mistapi.api.v1.orgs.ssos.createOrgSso, "text": "Org ssos"},
