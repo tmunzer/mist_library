@@ -65,7 +65,7 @@ There is a short desccription at the beginning of each script explaining the pur
 - **export_search.py**: Python script to export historical data from Mist API and save the result in CSV of JSON format.
 ## Orgs
 - **admin_import.py**: Python script to invite/add adminsitrators from a CSV file.
-- **assign_inventory.py**: Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org.
+- **inventory_assign.py**: Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org.
 - **configure_ap_auto_upgrade.py**: Python script update the Mist AP Auto_upgrade parameters in the site settings
 - **configure_auto_site_assignment.py**: Python script to update the org auto assignement rules
 - **org_clone.py**: Python script to clone a whole organization to another one. The destination org can be an existing org, or it can be created during the process.

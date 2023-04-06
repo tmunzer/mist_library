@@ -34,10 +34,6 @@ CSV Format:
 The first line MUST start with a "#" and defines each columns of the CSV file. The allowed
 values are listed below.
 
-When defining the templates, the policies and the sitegroups, it is possible to use the
-object name OR the object id (this must be defined in the first line, by appending "_name" or 
-"_id"). In case both name and id are defined, the name will be used.
-
 -------
 CSV Examples:
 Example 1:
@@ -88,8 +84,8 @@ Script Parameters:
 
 -------
 Examples:
-python3 ./assign_inventory.py -f my_csv_file.csv
-python3 ./assign_inventory.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -f my_csv_file.csv
+python3 ./inventory_assign.py -f my_csv_file.csv
+python3 ./inventory_assign.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -f my_csv_file.csv
 
 '''
 
@@ -296,7 +292,8 @@ def _read_csv_file(file_path: str):
             if not fields:
                 i=0
                 for column in line:
-                    fields.append(column.strip().replace("#", ""))
+                    column = column.replace("#", "")
+                    fields.append(column)
                     if "site" in column:
                         if row_site < 0:
                             row_site = i
@@ -480,8 +477,8 @@ Script Parameters:
 
 -------
 Examples:
-python3 ./assign_inventory.py -f my_csv_file.csv
-python3 ./assign_inventory.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -f my_csv_file.csv
+python3 ./inventory_assign.py -f my_csv_file.csv
+python3 ./inventory_assign.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -f my_csv_file.csv
 
 ''')
 
@@ -512,6 +509,8 @@ if __name__ == "__main__":
             no_reassign = False
         elif o in ["-l", "--log_file"]:
             log_file = a
+        elif o in ["-e", "--env"]:
+            env_file = a
         else:
             assert False, "unhandled option"
     
