@@ -49,23 +49,29 @@ Required:
 - address
 
 Optional:
+- site_id or site_name                      site used as a template to create 
+                                            the new site. The name, address, 
+                                            groups, vars and template will not
+                                            be copied from the source site
 - alarmtemplate_id or alarmtemplate_name
 - aptemplate_id or aptemplate_name
 - gatewaytemplate_id or gatewaytemplate_name
 - networktemplate_id or networktemplate_name
 - rftemplate_id or rftemplate_name
 - secpolicy_id or secpolicy_name
-- site_group_ids or site_group_names    list of groups. If multiple groups ,must
-                                        be enclosed by double quote and comma
-                                        separated (ex: "group1, group2")
-- country_code                          can be detected by the script based on the
-                                        address
-- timezone                              can be detected by the script based on the
-                                        address
-- vars                                  dict of all the site variables. Format must
-                                        be key1:var1. If multiple vars, must be
-                                        enclosed by double quote and comma separated
-                                        (e.g. "key1:var1,key2:var2, ...")
+- site_group_ids or site_group_names        list of groups. If multiple groups,
+                                            must be enclosed by double quote 
+                                            and comma separated 
+                                            (ex: "group1, group2")
+- country_code                              can be detected by the script based
+                                            on the address
+- timezone                                  can be detected by the script based
+                                            on the address
+- vars                                      dict of all the site variables. 
+                                            Format must be key1:var1. 
+                                            If multiple vars, must be enclosed
+                                            by double quote and comma separated
+                                            (e.g. "key1:var1,key2:var2, ...")
 
 -------
 Script Parameters:
@@ -73,11 +79,11 @@ Script Parameters:
 -f, --file=         REQUIRED: path to the CSV file
 
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
--n, --org_name=         Org name where to deploy the configuration:
-                            - if org_id is provided (existing org), used to validate 
-                            the destination org
-                            - if org_id is not provided (new org), the script will 
-                            create a new org and name it with the org_name value   
+-n, --org_name=     Org name where to deploy the configuration:
+                        - if org_id is provided (existing org), used to validate 
+                        the destination org
+                        - if org_id is not provided (new org), the script will 
+                        create a new org and name it with the org_name value   
 
 -s, --site_ids=     list of sites to use, comma separated
 
@@ -137,6 +143,7 @@ out = sys.stdout
 #####################################################################
 #### GLOBALS #####
 parameter_types = [
+    "site",
     "alarmtemplate",
     "aptemplate",
     "gatewaytemplate",
@@ -412,7 +419,7 @@ def _create_site(apisession: mistapi.APISession, org_id: str, site: dict):
 
 def _update_site(apisession: mistapi.APISession, site: dict, site_id: str):
     if "vars" in site and site["vars"]:
-        message = f"Site {site['name']}: Site variables deployed"
+        message = f"Site {site['name']}: Updating Site settings"
         pb.log_message(message)
         try:
             vars = site["vars"]
@@ -428,7 +435,38 @@ def _update_site(apisession: mistapi.APISession, site: dict, site_id: str):
             pb.log_failure(message, True)
     else:
         pb.log_success(
-            f"Site {site['name']}: No site variables to deploy", True)
+            f"Site {site['name']}: No Site settings to update", True)
+
+
+###############################################################################
+# CLONING FROM SOURCE SITE
+###############################################################################
+def _clone_src_site_settings(apisession:mistapi.APISession, src_site_id:str, dst_site_id:str, site_name:str):
+    src_site = None
+    message= f"Site {site_name}: Retrievning settings from src site"
+    pb.log_message(message)
+    try:
+        resp = mistapi.api.v1.sites.setting.getSiteSetting(apisession, src_site_id)
+        if resp.status_code != 200:
+            pb.log_failure(message, True)
+        else:
+            src_site = resp.data
+            if "vars" in src_site: del src_site["vars"]            
+    except:
+        pb.log_failure(message, True)
+    
+    if src_site:
+        message= f"Site {site_name}: Deploying settings from src site"
+        pb.log_message(message)
+        try:
+            resp = mistapi.api.v1.sites.setting.updateSiteSettings(apisession, dst_site_id, src_site)
+            if resp.status_code != 200:
+                pb.log_failure(message, True)
+            else:
+                pb.log_success(f"Site {site_name}: Cloning settings from src site", True)      
+        except:
+            pb.log_failure(message, True)
+
 
 
 ###############################################################################
@@ -457,8 +495,17 @@ def _replace_object_names_by_ids(apisession: mistapi.APISession, org_id: str, si
     replace the template/policy/groups names by the corresponding ids
     '''
     warning = False
+    source_site_id = None
     message = f"Site {site['name']}: updating IDs"
     pb.log_message(message)
+
+
+    if "site_id" in site:
+        source_site_id = site["site_id"]
+        del site["site_id"]
+    elif "site_name" in site:
+        source_site_id = parameters["site"][site["site_name"]]
+        del site["site_name"]
 
     if "sitegroup_names" in site:
         parameters["sitegroup"], site["sitegroup_ids"] = _replace_sitegroup_names(
@@ -479,23 +526,25 @@ def _replace_object_names_by_ids(apisession: mistapi.APISession, org_id: str, si
         pb.log_success(message, True)
     else:
         pb.log_warning(message, True)
-    return site
+    return site, source_site_id
 
 # GET FROM MIST
 
 
-def _retrieve_objects(apisession: mistapi.APISession, org_id: str) -> dict:
+def _retrieve_objects(apisession: mistapi.APISession, org_id: str, parameters_in_use:list) -> dict:
     '''
     Get the list of the current templates, policies and sitegoups
     '''
     parameters = {}
-    for parameter_type in parameter_types:
+    for parameter_type in parameters_in_use:
         message = f"Retrieving {parameter_type} from Mist"
         pb.log_message(message, display_pbar=False)
         parameter_values = {}
         data = []
         response = None
         try:
+            if parameter_type == "site":
+                response = mistapi.api.v1.orgs.sites.getOrgSites(apisession, org_id)
             if parameter_type == "alarmtemplate":
                 response = mistapi.api.v1.orgs.alarmtemplates.getOrgAlarmTemplates(
                     apisession, org_id)
@@ -563,6 +612,7 @@ def _check_settings(sites: list):
     message = "Validating Sites data"
     pb.log_title(message, display_pbar=False)
     site_name = []
+    parameters_in_use = []
     for site in sites:
         if "name" not in site:
             pb.log_failure(message, display_pbar=False)
@@ -574,21 +624,28 @@ def _check_settings(sites: list):
             sys.exit(0)
         else:
             site_name.append(site["name"])
+
         if "address" not in site:
             pb.log_failure(message, display_pbar=False)
             console.error(f"Missing site parameter \"address\"")
             sys.exit(0)
+
         for key in site:
             parameter_name = key.split("_")
-            if key in ["name", "address", "sitegroup_names", "sitegroup_ids", "vars"]:
+            if key in [ "name", "address", "vars", "country_code", "timezone"]:
+                pass
+            elif key in [ "sitegroup_names", "sitegroup_ids"]:
+                parameters_in_use.append("sitegroup")
                 pass
             elif parameter_name[0] in parameter_types and parameter_name[1] in ["name", "id"]:
+                parameters_in_use.append(parameter_name[0])
                 pass
             else:
                 pb.log_failure(message, display_pbar=False)
                 console.error(f"Invalid site parameter \"{key}\"")
                 sys.exit(0)
     pb.log_success(message, display_pbar=False)
+    return parameters_in_use
 
 
 def _process_sites_data(apisession: mistapi.APISession, org_id: str, sites: list) -> dict:
@@ -597,8 +654,8 @@ def _process_sites_data(apisession: mistapi.APISession, org_id: str, sites: list
     '''
     parameters = {}
     pb.log_title("Preparing Sites Import")
-    _check_settings(sites)
-    parameters = _retrieve_objects(apisession, org_id)
+    parameters_in_use = _check_settings(sites)
+    parameters = _retrieve_objects(apisession, org_id, parameters_in_use)
     return parameters
 
 
@@ -607,13 +664,17 @@ def _create_sites(apisession: mistapi.APISession, org_id: str, sites: list, para
     Function to create and update all the sites
     '''
     pb.log_title("Creating Sites", display_pbar=True)
-    for site in sites:
-        site = _replace_object_names_by_ids(
+    for site in sites:        
+        site, source_site_id = _replace_object_names_by_ids(
             apisession, org_id, site, parameters)
         new_site = _create_site(apisession, org_id, site)
         if not new_site:
             pb.inc()
         else:
+            if source_site_id:
+                _clone_src_site_settings(apisession, source_site_id, new_site["id"], new_site["name"])
+            else:
+                pb.inc()
             _update_site(apisession, site, new_site["id"])
 
 
@@ -718,8 +779,8 @@ def start(apisession: mistapi.APISession, file_path: str, org_id: str = None, or
         sys.exit(0)
 
     sites = _read_csv_file(file_path)
-    # 4 = IDs +  geocoding + site creation + site settings update
-    pb.set_steps_total(len(sites) * 4)
+    # 4 = IDs +  geocoding + site creation + clone site settings + site settings update
+    pb.set_steps_total(len(sites) * 5)
 
     parameters = _process_sites_data(apisession, org_id, sites)
 
@@ -781,23 +842,29 @@ Required:
 - address
 
 Optional:
+- source_site_id or source_site_name        site used as a template to create 
+                                            the new site. The name, address, 
+                                            vars and template will not be 
+                                            copied from the source site
 - alarmtemplate_id or alarmtemplate_name
 - aptemplate_id or aptemplate_name
 - gatewaytemplate_id or gatewaytemplate_name
 - networktemplate_id or networktemplate_name
 - rftemplate_id or rftemplate_name
 - secpolicy_id or secpolicy_name
-- site_group_ids or site_group_names    list of groups. If multiple groups ,must
-                                        be enclosed by double quote and comma
-                                        separated (ex: "group1, group2")
-- country_code                          can be detected by the script based on the
-                                        address
-- timezone                              can be detected by the script based on the
-                                        address
-- vars                                  dict of all the site variables. Format must
-                                        be key1:var1. If multiple vars, must be
-                                        enclosed by double quote and comma separated
-                                        (e.g. "key1:var1,key2:var2, ...")
+- site_group_ids or site_group_names        list of groups. If multiple groups,
+                                            must be enclosed by double quote 
+                                            and comma separated 
+                                            (ex: "group1, group2")
+- country_code                              can be detected by the script based
+                                            on the address
+- timezone                                  can be detected by the script based
+                                            on the address
+- vars                                      dict of all the site variables. 
+                                            Format must be key1:var1. 
+                                            If multiple vars, must be enclosed
+                                            by double quote and comma separated
+                                            (e.g. "key1:var1,key2:var2, ...")
 
 -------
 Script Parameters:
@@ -805,11 +872,11 @@ Script Parameters:
 -f, --file=         REQUIRED: path to the CSV file
 
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
--n, --org_name=         Org name where to deploy the configuration:
-                            - if org_id is provided (existing org), used to validate 
-                            the destination org
-                            - if org_id is not provided (new org), the script will 
-                            create a new org and name it with the org_name value   
+-n, --org_name=     Org name where to deploy the configuration:
+                        - if org_id is provided (existing org), used to validate 
+                        the destination org
+                        - if org_id is not provided (new org), the script will 
+                        create a new org and name it with the org_name value   
 
 -s, --site_ids=     list of sites to use, comma separated
 
