@@ -719,7 +719,7 @@ def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str =
         resp = input(
             "To avoid any error, please confirm the current destination orgnization name: ")
         if resp == org_name:
-            return True
+            return org_id, org_name
         else:
             print()
             print("The orgnization names do not match... Please try again...")
@@ -772,7 +772,7 @@ def start(apisession: mistapi.APISession, file_path: str, org_id: str = None, or
     elif org_id and not org_name:
         org_id, org_name = _check_org_name(apisession, org_id)
     elif not org_id and org_name:
-        org_id, name = _create_org(apisession, org_name)
+        org_id, org_name = _create_org(apisession, org_name)
     elif not org_id and not org_name:
         org_id, org_name = _select_dest_org(apisession)
     else:  # should not since we covered all the possibilities...
