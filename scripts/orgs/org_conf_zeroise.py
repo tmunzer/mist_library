@@ -231,6 +231,64 @@ def start(apisession, org_id, org_name_from_user):
     print()
     console.info(f"All objects removed... Organization {org_name} is back to default...")
 
+def usage():
+    print('''
+-------------------------------------------------------------------------------
+
+    Written by Thomas Munzer (tmunzer@juniper.net)
+    Github repository: https://github.com/tmunzer/Mist_library/
+
+    This script is licensed under the MIT License.
+
+-------------------------------------------------------------------------------
+            __          __     _____  _   _ _____ _   _  _____ 
+            \ \        / /\   |  __ \| \ | |_   _| \ | |/ ____|
+             \ \  /\  / /  \  | |__) |  \| | | | |  \| | |  __ 
+              \ \/  \/ / /\ \ |  _  /| . ` | | | | . ` | | |_ |
+               \  /\  / ____ \| | \ \| |\  |_| |_| |\  | |__| |
+                \/  \/_/    \_\_|  \_\_| \_|_____|_| \_|\_____|
+            THIS SCRIPT IS DESIGNED TO REMOVE ALL THE OBJECT IN 
+              A SPECIFIC ORGANIZATION! THESE CHANGES CAN'T BE 
+               REVERT BACK. USE THIS SCRIPT AS YOUR OWN RISK
+
+
+Python script to zeroise an organization. This scrip will remove all the 
+configuration, all the sites and all the objects from the organization.
+                    
+Use it with extreme precaution, there is no way to revert the action if
+you didn't backed up the organization.
+
+-------
+Requirements:
+mistapi: https://pypi.org/project/mistapi/
+
+-------
+Usage:
+This script can be run as is (without parameters), or with the options below.
+If no options are defined, or if options are missing, the missing options will
+be asked by the script or the default values will be used.
+
+It is recomended to use an environment file to store the required information
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+information about the available parameters).
+
+-------
+Script Parameters:
+-h, --help              display this help
+-o, --org_id=           Set the org_id
+-n, --org_name=         Org name to reset, for validation
+-l, --log_file=         define the filepath/filename where to write the logs
+                        default is "./script.log"
+-e, --env=              define the env file to use (see mistapi env file documentation 
+                        here: https://pypi.org/project/mistapi/)
+                        default is "~/.mist_env"
+
+-------
+Examples:
+python3 ./org_conf_zeroise.py     
+python3 ./org_conf_zeroise.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n my_test_org
+
+''')
 
 def warning():
     print(""" 
