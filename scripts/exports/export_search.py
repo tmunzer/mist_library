@@ -1280,13 +1280,13 @@ if __name__ == "__main__":
                 usage()
         elif o in ["-f", "--out_file"]:
             out_file_path=a
-        elif o in ["e", "--env"]:
+        elif o in ["-e", "--env"]:
             env_file=a
-        elif o in ["q", "--q_params"]:
+        elif o in ["-q", "--q_params"]:
             params = a.split(",")
             for p in params:
                 query_params[p.split(":")[0]]=p.split(":")[1]
-        elif o in ["l", "--log_file"]:
+        elif o in ["-l", "--log_file"]:
             log_file = a
         else:
             assert False, "unhandled option"
