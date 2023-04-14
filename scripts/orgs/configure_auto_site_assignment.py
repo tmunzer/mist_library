@@ -248,17 +248,17 @@ if __name__ == "__main__":
             usage()
         elif o in ["-o", "--org_id"]:
             org_id = a
-        elif o in ["e", "--env"]:
+        elif o in ["-e", "--env"]:
             env_file=a
-        elif o in ["l", "--log_file"]:
+        elif o in ["-l", "--log_file"]:
             log_file = a    
-        elif o in ["a", "--enable"]:
+        elif o in ["-a", "--enable"]:
             if action:
                 console.error("Only one action \"enable\" or \"disable\" is allowed")
                 sys.exit(0)
             action ="enable"
             auto_site_assignment["enable"] = True
-        elif o in ["b", "--disable"]:
+        elif o in ["-b", "--disable"]:
             if action:
                 console.error("Only one action \"enable\" or \"disable\" is allowed")
                 sys.exit(0)
