@@ -64,9 +64,10 @@ There is a short desccription at the beginning of each script explaining the pur
 - **export_inventory.py**: Python script to export the inventory from an organization. The export will include all the information available from the org inventory, including the claim codes.
 - **export_search.py**: Python script to export historical data from Mist API and save the result in CSV of JSON format.
 ## Orgs
-- **admin_import.py**: Python script to invite/add adminsitrators from a CSV file.
 - **configure_ap_auto_upgrade.py**: Python script update the Mist AP Auto_upgrade parameters in the site settings
 - **configure_auto_site_assignment.py**: Python script to update the org auto assignement rules
+- **import_admins.py**: Python script to invite/add adminsitrators from a CSV file.
+- **import_sites.py**: Python script automate the sites creation in a Mist Org from a CSV file.
 - **inventory_assign.py**: Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org.
 - **inventory_claim.py**: Python script to claim devices to an org from a CSV file. 
 - **org_clone.py**: Python script to clone a whole organization to another one. The destination org can be an existing org, or it can be created during the process.
@@ -79,7 +80,6 @@ There is a short desccription at the beginning of each script explaining the pur
 - **org_inventory_deploy.py**: Python script to deploy organization inventory backup file. By default, this script can run in "Dry Run" mode to validate the destination org configuration and raise warning if any object from the source org is missing in the destination org.
 - **org_inventory_restore_pictures.py**: Python script to restore device images from an inventory backup file. 
 ## Sites
-- **import_sites.py**: Python script automate the sites creation in a Mist Org from a CSV file.
 - **site_conf_backup.py**: Python script to backup a whole site.
 - **site_conf_psk_import_csv.py**: This script will import PSKs from a CSV file to one or multiple sites.
 - **site_conf_psk.py**:  

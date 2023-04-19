@@ -32,7 +32,7 @@ pamidala@unknown.com,Padme,Amidala
 
 -------
 Example:
-python3 org_admins_import.py <path_to_the_csv_file>"
+python3 import_admins.py <path_to_the_csv_file>"
 
 '''
 #### PARAMETERS #####
