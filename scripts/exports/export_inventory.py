@@ -303,9 +303,9 @@ if __name__ == "__main__":
                 usage()
         elif o in ["-f", "--out_file"]:
             out_file_path=a
-        elif o in ["e", "--env"]:
+        elif o in ["-e", "--env"]:
             env_file=a
-        elif o in ["l", "--log_file"]:
+        elif o in ["-l", "--log_file"]:
             log_file = a
         else:
             assert False, "unhandled option"

@@ -244,9 +244,9 @@ if __name__ == "__main__":
             rogue_types = a.split(",")
         elif o in ["-f", "--out_file"]:
             csv_file=a
-        elif o in ["e", "--env"]:
+        elif o in ["-e", "--env"]:
             env_file=a
-        elif o in ["l", "--log_file"]:
+        elif o in ["-l", "--log_file"]:
             log_file = a
         
         else:
