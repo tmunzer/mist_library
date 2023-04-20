@@ -66,7 +66,7 @@ def list_psks(apisession, site_id):
     print("".center(80, "-"))
     print(f"List of current PSKs for site {site_id}".center(80, "-"))
     print("")
-    psks = mistapi.api.v1.sites.psks.getSitePsks(apisession, site_id).data
+    psks = mistapi.api.v1.sites.psks.listSitePsks(apisession, site_id).data
     mistapi.cli.display_list_of_json_as_table(psks)
 
 

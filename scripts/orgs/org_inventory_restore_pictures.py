@@ -100,7 +100,7 @@ logger = logging.getLogger(__name__)
 #### GLOBAL VARS ####
 
 org_object_to_match = {
-    "sites": {"mistapi_function": mistapi.api.v1.orgs.sites.getOrgSites, "text": "Site IDs", "old_ids_dict":"old_sites_id"}
+    "sites": {"mistapi_function": mistapi.api.v1.orgs.sites.listOrgSites, "text": "Site IDs", "old_ids_dict":"old_sites_id"}
 }
 ##########################################################################################
 # CLASS TO MANAGE UUIDS UPDATES (replace UUIDs from source org to the newly created ones)

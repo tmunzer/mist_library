@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 def start(apisession):
     site_id = mistapi.cli.select_site(apisession, allow_many=False)
     mistapi.api.v1.sites.psks.createSitePsk(apisession, site_id, psk)
-    psks = mistapi.api.v1.sites.psks.getSitePsks(apisession, site_id).data
+    psks = mistapi.api.v1.sites.psks.listSitePsks(apisession, site_id).data
     mistapi.cli.pretty_print(psks)
 
 ##### ENTRY POINT ####

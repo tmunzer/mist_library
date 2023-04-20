@@ -85,7 +85,7 @@ def define_privileges(apisession, org_id):
                 privileges.append({"scope": "site", "org_id": org_id, "site_id": site_id, "role":roles[role]})
             break
         elif all_sites.lower() == "n" or all_sites == "":            
-            site_ids = mistapi.api.v1.orgs.sites.getOrgSites(apisession, org_id)
+            site_ids = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id)
             site_id=""
             for site in site_ids.data:
                 if "site_id" in site:
@@ -139,5 +139,5 @@ if __name__ == "__main__":
     define_privileges(apisession, org_id)
     import_admins(apisession, file_path, org_id)
 
-    admins = mistapi.api.v1.orgs.admins.getOrgAdmins(apisession, org_id).data
+    admins = mistapi.api.v1.orgs.admins.listOrgAdmins(apisession, org_id).data
     

@@ -129,7 +129,7 @@ org_steps = {
     "mxclusters": {"mistapi_function": mistapi.api.v1.orgs.mxclusters.createOrgMxEdgeCluster, "text": "Org mxclusters"},
     "mxtunnels": {"mistapi_function": mistapi.api.v1.orgs.mxtunnels.createOrgMxTunnel, "text": "Org mxtunnels"},
     "wxtunnels": {"mistapi_function": mistapi.api.v1.orgs.wxtunnels.createOrgWxTunnel, "text": "Org wxtunnels"},
-    "sitetemplates": {"mistapi_function": mistapi.api.v1.orgs.sitetemplates.getOrgSiteTemplates, "text": "Org sitetemplates"},
+    "sitetemplates": {"mistapi_function": mistapi.api.v1.orgs.sitetemplates.createOrgSiteTemplates, "text": "Org sitetemplates"},
     "sitegroups": {"mistapi_function": mistapi.api.v1.orgs.sitegroups.createOrgSiteGroup, "text": "Org sitegroups"},
     "sites": {"mistapi_function": mistapi.api.v1.orgs.sites.createOrgSite, "text": "Org Sites"},
     "templates": {"mistapi_function": mistapi.api.v1.orgs.templates.createOrgTemplate, "text": "Org templates"},

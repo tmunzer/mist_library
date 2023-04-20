@@ -37,7 +37,7 @@ def add_wlan(apisession, site_id):
     mistapi.api.v1.sites.wlans.createSiteWlan(apisession, site_id, wlan_json)
 
 def remove_wlan(apisession, site_id):
-    wlans = mistapi.api.v1.sites.wlans.getSiteWlans(apisession, site_id).data
+    wlans = mistapi.api.v1.sites.wlans.listSiteWlans(apisession, site_id).data
     resp = -1
     while True:    
         print()    

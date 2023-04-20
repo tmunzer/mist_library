@@ -120,7 +120,7 @@ def bssids_from_sites(mist_session, sites, site_ids):
     _progress_bar_update(i, len(sites), 55)
     for site in sites:
         if len(org_ids) > 1 or site["id"] in site_ids:     
-            response = mistapi.api.v1.sites.stats.getSiteDevicesStats(mist_session, site["id"], limit=1000)
+            response = mistapi.api.v1.sites.stats.listSiteDevicesStats(mist_session, site["id"], limit=1000)
             devices = response.data
             while response.next:
                 response = mistapi.get_next(mist_session, response)
@@ -146,7 +146,7 @@ def bssids_from_orgs(mist_session, org_id, site_ids):
     org_sites = [privilege for privilege in mist_session.privileges if privilege.get("org_id") == org_id]
     # the admin only has access to the org information if he/she has this privilege 
     if len(org_sites) >= 1 and org_sites[0]["scope"] == "org":
-        org_sites = mistapi.api.v1.orgs.sites.getOrgSites(mist_session, org_id).data
+        org_sites = mistapi.api.v1.orgs.sites.listOrgSites(mist_session, org_id).data
         bssids_from_sites(mist_session, org_sites, site_ids)        
     # if the admin doesn't have access to the org level, but only the sites
     elif len(org_sites) >= 1:

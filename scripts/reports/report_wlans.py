@@ -88,7 +88,7 @@ def wlans_from_orgs(mist_session, org_ids, site_ids):
         if len(org_sites) >= 1 and org_sites[0]["scope"] == "org":
             org_info = mistapi.api.v1.orgs.orgs.getOrgInfo(
                 mist_session, org_id).data
-            org_sites = mistapi.api.v1.orgs.sites.getOrgSites(
+            org_sites = mistapi.api.v1.orgs.sites.listOrgSites(
                 mist_session, org_id).data
             org_wlans = mistapi.api.v1.orgs.wlans.report(
                 mist_session, org_id, fields)

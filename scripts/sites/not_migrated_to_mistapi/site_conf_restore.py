@@ -209,32 +209,32 @@ def _restore_site(apisession, org_id, org_name, site_name, backup):
 
     ### lookup for site groups ###
     if not backup["sitegroup_names"] == []:        
-        available_sitegroups = mistapi.api.v1.orgs.sitegroups.getOrgSiteGroups(apisession, org_id).data
+        available_sitegroups = mistapi.api.v1.orgs.sitegroups.listOrgSiteGroups(apisession, org_id).data
         for sitegroup_name in backup["sitegroup_names"]:
             new_sitegroup_id= _process_org_obj(mistapi.api.v1.orgs.sitegroups.createOrgSiteGroup(apisession, org_id, {"name":sitegroup_name}), available_sitegroups, "Site Group", sitegroup_name)            
             assigned_sitegroup_ids.append(new_sitegroup_id)
 
     ### lookup for RF templates ###
     if not backup["rftemplate"] == {}:
-        available_rftemplates = mistapi.api.v1.orgs.rftemplates.getOrgRfTemplates(apisession, org_id).data
+        available_rftemplates = mistapi.api.v1.orgs.rftemplates.listOrgRfTemplates(apisession, org_id).data
         new_rftemplate_id = _process_org_obj(mistapi.api.v1.orgs.rftemplates.createOrgRfTemplate(apisession, org_id, backup["rftemplate"]), available_rftemplates, "RF Template", backup["rftemplate"]["name"])   
         assigned_rftempate_id = new_rftemplate_id
 
     ### lookup for security policy ###
     if not backup["secpolicy"] == {}:
-        available_secpolicies = mistapi.api.v1.orgs.secpolicies.getOrgSecPolicies(apisession, org_id).data
+        available_secpolicies = mistapi.api.v1.orgs.secpolicies.listOrgSecPolicies(apisession, org_id).data
         new_secpolicy_id = _process_org_obj(mistapi.api.v1.orgs.secpolicies.createOrgSecPolicies(apisession, org_id, backup["secpolicy"]), available_secpolicies, "Security Policy", backup["secpolicy"]["name"])   
         assigned_secpolicy_id = new_secpolicy_id
 
     ### lookup for Alarm templates ###
     if not backup["alarmtemplate"] == {}:
-        available_alarmtemplates = mistapi.api.v1.orgs.alarmtemplates.getOrgAlarmTemplates(apisession, org_id).data
+        available_alarmtemplates = mistapi.api.v1.orgs.alarmtemplates.listOrgAlarmTemplates(apisession, org_id).data
         new_alarmtemplate_id = _process_org_obj(mistapi.api.v1.orgs.alarmtemplates.createOrgAlarmTemplate(apisession, org_id, backup["alarmtemplate"]), available_alarmtemplates, "Alarm Template", backup["alarmtemplate"]["name"])   
         assigned_alarmtemplate_id = new_alarmtemplate_id
 
     ### lookup for network templates ###
     if not backup["networktemplate"] == {}:
-        available_networktemplates = mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplates(apisession, org_id).data
+        available_networktemplates = mistapi.api.v1.orgs.networktemplates.listOrgNetworkTemplates(apisession, org_id).data
         new_networktemplate_id = _process_org_obj(mistapi.api.v1.orgs.networktemplates.createOrgNetworkTemplate(apisession, org_id, backup["networktemplate"]), available_networktemplates, "Network Template", backup["networktemplate"]["name"])  
         assigned_networktemplate_id = new_networktemplate_id
 

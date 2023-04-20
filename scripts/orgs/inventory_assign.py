@@ -311,7 +311,7 @@ def _read_csv_file(file_path: str):
                     message = "Retrieving site list from Mist"
                     pb.log_message(message, display_pbar=False)
                     try:
-                        response = mistapi.api.v1.orgs.sites.getOrgSites(apisession, org_id, limit=1000)
+                        response = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id, limit=1000)
                         sites_from_mist = mistapi.get_all(apisession, response)
                         for site in sites_from_mist:                        
                             sites[site["name"]] = site["id"]

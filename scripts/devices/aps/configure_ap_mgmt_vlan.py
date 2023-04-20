@@ -130,7 +130,7 @@ pb = ProgressBar()
 def _get_device_ids(apisession:mistapi.APISession, site_name:str, site_id:str):
     logger.info(f"{site_id}: Retrieving devices list")
     try:
-        response = mistapi.api.v1.sites.devices.getSiteDevices(apisession, site_id=site_id, type="ap")
+        response = mistapi.api.v1.sites.devices.listSiteDevices(apisession, site_id=site_id, type="ap")
         devices = mistapi.get_all(apisession, response)
     except:
         logger.error(f"{site_id}: Unable to retrieve devices list")
@@ -216,7 +216,7 @@ def process_sites(apisession:mistapi.APISession, site_ids:list, vlan_id:int):
 
 def start(apisession:mistapi.APISession, site_ids:list=None, vlan_id:int=-1):
     if not site_ids:
-        site_ids = mistapi.cli.select_site(apisession, org_id=org_id, allow_many=True)
+        site_ids = mistapi.cli.select_site(apisession, allow_many=True)
     if not type(vlan_id) == int or vlan_id < 0:
         vlan_id = _enter_vlan_id()
     logger.info(f"Site IDs: {site_ids}")
@@ -274,7 +274,7 @@ python3 ./configure_ap_mgmt_vlan.py -s 203d3d02-xxxx-xxxx-xxxx-76896a3330f4,203d
 ##### ENTRY POINT ####
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:s:v:e:l:", [
+        opts, args = getopt.getopt(sys.argv[1:], "hs:v:e:l:", [
                                    "help", "site_ids=", "vlan_id=", "env=", "log_file="])
     except getopt.GetoptError as err:
         console.error(err)

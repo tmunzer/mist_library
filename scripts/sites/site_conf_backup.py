@@ -91,27 +91,27 @@ logger = logging.getLogger(__name__)
 #####################################################################
 # BACKUP OBJECTS REFS
 org_steps = {
-    "alarmtemplate": {"mistapi_function": mistapi.api.v1.orgs.alarmtemplates.getOrgAlarmTemplates, "text": "Org alarmtemplates"},
-    "rftemplate": {"mistapi_function": mistapi.api.v1.orgs.rftemplates.getOrgRfTemplates, "text": "Org rftemplates"},
-    "networktemplate": {"mistapi_function": mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplates, "text": "Org networktemplates"},
-    "secpolicy": {"mistapi_function": mistapi.api.v1.orgs.secpolicies.getOrgSecPolicies, "text": "Org secpolicies"},
+    "alarmtemplate": {"mistapi_function": mistapi.api.v1.orgs.alarmtemplates.listOrgAlarmTemplates, "text": "Org alarmtemplates"},
+    "rftemplate": {"mistapi_function": mistapi.api.v1.orgs.rftemplates.listOrgRfTemplates, "text": "Org rftemplates"},
+    "networktemplate": {"mistapi_function": mistapi.api.v1.orgs.networktemplates.listOrgNetworkTemplates, "text": "Org networktemplates"},
+    "secpolicy": {"mistapi_function": mistapi.api.v1.orgs.secpolicies.listOrgSecPolicies, "text": "Org secpolicies"},
 }
 site_steps = {        
     "info": {"mistapi_function": mistapi.api.v1.sites.sites.getSiteInfo, "text": "Site info"},
     "settings": {"mistapi_function": mistapi.api.v1.sites.setting.getSiteSetting, "text": "Site settings"},
-    "assets": {"mistapi_function": mistapi.api.v1.sites.assets.getSiteAssets, "text": "Site assets"},
-    "assetfilters": {"mistapi_function": mistapi.api.v1.sites.assetfilters.getSiteAssetFilters, "text": "Site assetfilters"},
-    "beacons": {"mistapi_function": mistapi.api.v1.sites.beacons.getSiteBeacons, "text": "Site beacons"},
-    "maps": {"mistapi_function": mistapi.api.v1.sites.maps.getSiteMaps, "text": "Site maps"},
-    "psks": {"mistapi_function": mistapi.api.v1.sites.psks.getSitePsks, "text": "Site psks"},
-    "rssizones": {"mistapi_function": mistapi.api.v1.sites.rssizones.getSiteRssiZones, "text": "Site rssizones"},
-    "vbeacons": {"mistapi_function": mistapi.api.v1.sites.vbeacons.getSiteVBeacons, "text": "Site vbeacons"},
-    "webhooks": {"mistapi_function": mistapi.api.v1.sites.webhooks.getSiteWebhooks, "text": "Site webhooks"},
-    "wlans": {"mistapi_function": mistapi.api.v1.sites.wlans.getSiteWlans, "text": "Site wlans"},
-    "wxrules": {"mistapi_function": mistapi.api.v1.sites.wxrules.getSiteWxRules, "text": "Site wxrules"},
-    "wxtags": {"mistapi_function": mistapi.api.v1.sites.wxtags.getSiteWxTags, "text": "Site wxtags"},
-    "wxtunnels": {"mistapi_function": mistapi.api.v1.sites.wxtunnels.getSiteWxTunnels, "text": "Site wxtunnels"},
-    "zones": {"mistapi_function": mistapi.api.v1.sites.zones.getSiteZones, "text": "Site zones"}
+    "assets": {"mistapi_function": mistapi.api.v1.sites.assets.listSiteAssets, "text": "Site assets"},
+    "assetfilters": {"mistapi_function": mistapi.api.v1.sites.assetfilters.listSiteAssetFilters, "text": "Site assetfilters"},
+    "beacons": {"mistapi_function": mistapi.api.v1.sites.beacons.listSiteBeacons, "text": "Site beacons"},
+    "maps": {"mistapi_function": mistapi.api.v1.sites.maps.listSiteMaps, "text": "Site maps"},
+    "psks": {"mistapi_function": mistapi.api.v1.sites.psks.listSitePsks, "text": "Site psks"},
+    "rssizones": {"mistapi_function": mistapi.api.v1.sites.rssizones.listSiteRssiZones, "text": "Site rssizones"},
+    "vbeacons": {"mistapi_function": mistapi.api.v1.sites.vbeacons.listSiteVBeacons, "text": "Site vbeacons"},
+    "webhooks": {"mistapi_function": mistapi.api.v1.sites.webhooks.listSiteWebhooks, "text": "Site webhooks"},
+    "wlans": {"mistapi_function": mistapi.api.v1.sites.wlans.listSiteWlans, "text": "Site wlans"},
+    "wxrules": {"mistapi_function": mistapi.api.v1.sites.wxrules.listSiteWxRules, "text": "Site wxrules"},
+    "wxtags": {"mistapi_function": mistapi.api.v1.sites.wxtags.listSiteWxTags, "text": "Site wxtags"},
+    "wxtunnels": {"mistapi_function": mistapi.api.v1.sites.wxtunnels.listSiteWxTunnels, "text": "Site wxtunnels"},
+    "zones": {"mistapi_function": mistapi.api.v1.sites.zones.listSiteZones, "text": "Site zones"}
 }
 
 #####################################################################
@@ -269,7 +269,7 @@ def start(apisession:mistapi.APISession, org_id:str, site_id:str, backup_folder_
     if not org_id: org_id = mistapi.cli.select_org(apisession)[0]
     if not site_id: apisession = mistapi.cli.select_site(apisession)[0]
     else:
-        response = mistapi.api.v1.orgs.sites.getOrgSites(apisession, org_id)
+        response = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id)
         org_sites = mistapi.get_all(response)
         site_id_in_org = False
         for site in org_sites:

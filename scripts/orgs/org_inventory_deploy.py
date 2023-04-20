@@ -130,12 +130,12 @@ logger = logging.getLogger(__name__)
 #### GLOBAL VARS ####
 
 org_object_to_match = {
-    "sites": {"mistapi_function": mistapi.api.v1.orgs.sites.getOrgSites, "text": "Site IDs", "old_ids_dict":"old_sites_id"},
-    "deviceprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.getOrgDeviceProfiles, "text": "Device Profile IDs", "old_ids_dict":"old_deviceprofiles_id"},
-    "evpn_topologies": {"mistapi_function": mistapi.api.v1.orgs.evpn_topologies.getOrgEvpnTopologies, "text": "EVPN Topology IDs", "old_ids_dict":"old_evpntopo_id"},
+    "sites": {"mistapi_function": mistapi.api.v1.orgs.sites.listOrgSites, "text": "Site IDs", "old_ids_dict":"old_sites_id"},
+    "deviceprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles, "text": "Device Profile IDs", "old_ids_dict":"old_deviceprofiles_id"},
+    "evpn_topologies": {"mistapi_function": mistapi.api.v1.orgs.evpn_topologies.listOrgEvpnTopologies, "text": "EVPN Topology IDs", "old_ids_dict":"old_evpntopo_id"},
 }
 site_object_to_match = {
-    "maps": {"mistapi_function": mistapi.api.v1.sites.maps.getSiteMaps, "text": "Map IDs", "old_ids_dict":"old_maps_ids"},
+    "maps": {"mistapi_function": mistapi.api.v1.sites.maps.listSiteMaps, "text": "Map IDs", "old_ids_dict":"old_maps_ids"},
 }
 ##########################################################################################
 # CLASS TO MANAGE UUIDS UPDATES (replace UUIDs from source org to the newly created ones)

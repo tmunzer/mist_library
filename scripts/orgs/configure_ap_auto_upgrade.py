@@ -120,7 +120,7 @@ def confirm_action(mist_session, site_ids):
 
 def get_site_ids(mist_session, org_id):
     site_ids = []
-    response = mistapi.api.v1.orgs.sites.getOrgSites(mist_session, org_id)
+    response = mistapi.api.v1.orgs.sites.listOrgSites(mist_session, org_id)
     sites = mistapi.get_all(mist_session, response)
     for site in sites:
         site_ids.append(site["id"])

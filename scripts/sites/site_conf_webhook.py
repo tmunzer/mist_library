@@ -22,9 +22,9 @@ logger = logging.getLogger(__name__)
 def _get_webhooks(apisession, org_id, site_id=None):
     webhooks= []
     if site_id:
-        webhooks = mistapi.api.v1.sites.webhooks.getSiteWebhooks(apisession, site_id).data
+        webhooks = mistapi.api.v1.sites.webhooks.listSiteWebhooks(apisession, site_id).data
     else:
-        webhooks = mistapi.api.v1.orgs.webhooks.getOrgWebhooks(apisession, org_id).data
+        webhooks = mistapi.api.v1.orgs.webhooks.listOrgWebhooks(apisession, org_id).data
     return webhooks
 
 def _create_webhooks(apisession, webhook_data, org_id, site_id=None):

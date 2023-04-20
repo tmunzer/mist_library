@@ -245,7 +245,7 @@ def _get_google_geocoding(address):
                     data["location"] = {
                         "address": data["results"][0]["formatted_address"],
                         "latitude": data["results"][0]["geometry"]["location"]["lat"],
-                        "longitude": data["results"][0]["geometry"]["location"]["lng"]
+                         "longitude": data["results"][0]["geometry"]["location"]["lng"]
                     }
                     for entry in data["results"][0]["address_components"]:
                         if "country" in entry["types"]:
@@ -544,27 +544,27 @@ def _retrieve_objects(apisession: mistapi.APISession, org_id: str, parameters_in
         response = None
         try:
             if parameter_type == "site":
-                response = mistapi.api.v1.orgs.sites.getOrgSites(apisession, org_id)
+                response = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id)
             if parameter_type == "alarmtemplate":
-                response = mistapi.api.v1.orgs.alarmtemplates.getOrgAlarmTemplates(
+                response = mistapi.api.v1.orgs.alarmtemplates.listOrgAlarmTemplates(
                     apisession, org_id)
             elif parameter_type == "aptemplate":
-                response = mistapi.api.v1.orgs.aptemplates.getOrgAptemplates(
+                response = mistapi.api.v1.orgs.aptemplates.listOrgAptemplates(
                     apisession, org_id)
             elif parameter_type == "gatewaytemplate":
-                response = mistapi.api.v1.orgs.gatewaytemplates.getOrgGatewayTemplates(
+                response = mistapi.api.v1.orgs.gatewaytemplates.listOrgGatewayTemplates(
                     apisession, org_id)
             elif parameter_type == "networktemplate":
-                response = mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplates(
+                response = mistapi.api.v1.orgs.networktemplates.listOrgNetworkTemplates(
                     apisession, org_id)
             elif parameter_type == "rftemplate":
-                response = mistapi.api.v1.orgs.rftemplates.getOrgRfTemplates(
+                response = mistapi.api.v1.orgs.rftemplates.listOrgRfTemplates(
                     apisession, org_id)
             elif parameter_type == "secpolicy":
-                response = mistapi.api.v1.orgs.secpolicies.getOrgSecPolicies(
+                response = mistapi.api.v1.orgs.secpolicies.listOrgSecPolicies(
                     apisession, org_id)
             elif parameter_type == "sitegroup":
-                response = mistapi.api.v1.orgs.sitegroups.getOrgSiteGroups(
+                response = mistapi.api.v1.orgs.sitegroups.listOrgSiteGroups(
                     apisession, org_id)
             data = mistapi.get_all(apisession, response)
             for entry in data:

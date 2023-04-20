@@ -145,7 +145,7 @@ def _process_switches(switches:list) -> list:
 
 def _get_org_switches(apisession, org_id:str) -> list:
     print(" Retrieving Switches ".center(80, '-'))
-    response = mistapi.api.v1.orgs.stats.getOrgDevicesStats(apisession, org_id, type="switch", limit=1000)
+    response = mistapi.api.v1.orgs.stats.listOrgDevicesStats(apisession, org_id, type="switch", limit=1000)
     switches = response.data
     while response.next:
         response = mistapi.get_next(apisession, response)
@@ -154,7 +154,7 @@ def _get_org_switches(apisession, org_id:str) -> list:
 
 def _get_site_switches(apisession, site_id:str) -> list:
     print(" Retrieving Switches ".center(80, '-'))
-    response = mistapi.api.v1.sites.stats.getSiteDevicesStats(apisession, site_id, type="switch", limit=1000)
+    response = mistapi.api.v1.sites.stats.listSiteDevicesStats(apisession, site_id, type="switch", limit=1000)
     switches = response.data
     while response.next:
         response = mistapi.get_next(apisession, response)

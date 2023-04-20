@@ -114,7 +114,7 @@ def _process_rogues(rogues:list, rogue__type:str, site_name:str, site_id:str):
     return rogues
 
 def _get_rogues(mist_session, site_id:str, site_name:str, rogue__type:str, site_rogues:list=[]):
-    response = mistapi.api.v1.sites.insights.getSiteRogueAPs(mist_session, site_id, type=rogue__type, limit=1000, duration=duration)
+    response = mistapi.api.v1.sites.insights.listSiteRogueAPs(mist_session, site_id, type=rogue__type, limit=1000, duration=duration)
     site_rogues = site_rogues + _process_rogues(response.data["results"], rogue__type, site_name, site_id)
     while response.next:
         response = mistapi.get_next(mist_session, response)

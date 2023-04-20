@@ -179,7 +179,7 @@ def _check_parameters(apisession:mistapi.APISession, org_id:str, tmpl_id:str, pr
         org_id = mistapi.cli.select_org(apisession)[0]
 
     if not tmpl_id:
-        response = mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplates(apisession, org_id)
+        response = mistapi.api.v1.orgs.networktemplates.listOrgNetworkTemplates(apisession, org_id)
         templates = mistapi.get_all(apisession, response)
         template_names = {}
         template_menu = []

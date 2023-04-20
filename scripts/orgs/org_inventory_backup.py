@@ -184,7 +184,7 @@ def _backup_site_id_dict(site:dict, backup:dict):
         _save_site_info(site, backup)
 
 def _backup_site_maps(mist_session:mistapi.APISession, site):
-    response = mistapi.api.v1.sites.maps.getSiteMaps(mist_session, site["id"])
+    response = mistapi.api.v1.sites.maps.listSiteMaps(mist_session, site["id"])
     backup_maps = mistapi.get_all(mist_session, response)
     maps_ids = {}
     for xmap in backup_maps:
@@ -246,7 +246,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
     message=f"Backuping Org MxEdges"
     pb.log_message(message)
     try:
-        response = mistapi.api.v1.orgs.mxedges.getOrgMxEdges(mist_session, org_id, limit=1000)
+        response = mistapi.api.v1.orgs.mxedges.listOrgMxEdges(mist_session, org_id, limit=1000)
         mxedges = mistapi.get_all(mist_session, response)
         backup["org"]["mxedges"] = mxedges
         pb.log_success(message, True)
@@ -261,7 +261,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
     message=f"Backuping Device Profiles"
     pb.log_message(message)
     try:
-        response = mistapi.api.v1.orgs.deviceprofiles.getOrgDeviceProfiles(mist_session, org_id, limit=1000)
+        response = mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles(mist_session, org_id, limit=1000)
         deviceprofiles = mistapi.get_all(mist_session, response)
         for deviceprofile in deviceprofiles:
             backup["org"]["old_deviceprofiles_id"][deviceprofile["name"]] = deviceprofile["id"]
@@ -274,7 +274,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
     message=f"Backuping EVPN Topologies"
     pb.log_message(message)
     try:
-        response = mistapi.api.v1.orgs.evpn_topologies.getOrgEvpnTopologies(mist_session, org_id)
+        response = mistapi.api.v1.orgs.evpn_topologies.listOrgEvpnTopologies(mist_session, org_id)
         evpn_topologies = mistapi.get_all(mist_session, response)
         for evpn_topology in evpn_topologies:
             backup["org"]["old_evpntopo_id"][deviceprofile["name"]] = evpn_topology["id"]
@@ -288,7 +288,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
     message=f"Retrieving Sites list"
     pb.log_message(message)
     try:
-        response = mistapi.api.v1.orgs.sites.getOrgSites(mist_session, org_id, limit=1000)
+        response = mistapi.api.v1.orgs.sites.listOrgSites(mist_session, org_id, limit=1000)
         sites = mistapi.get_all(mist_session, response)
         pb.log_success(message, True)
     except Exception as e:
@@ -304,7 +304,7 @@ def _backup_inventory(mist_session:mistapi.APISession, org_id:str, org_name:str=
         try:
             _backup_site_id_dict(site, backup)
             backup["org"]["sites"][site["name"]]["old_maps_ids"] = _backup_site_maps(mist_session, site)
-            response = mistapi.api.v1.sites.devices.getSiteDevices(mist_session, site["id"], type="all", limit=1000)
+            response = mistapi.api.v1.sites.devices.listSiteDevices(mist_session, site["id"], type="all", limit=1000)
             devices = mistapi.get_all(mist_session, response)
             backup["org"]["sites"][site["name"]]["devices"] = devices
             pb.log_success(message, True)
