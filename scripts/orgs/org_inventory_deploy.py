@@ -944,7 +944,7 @@ if __name__ == "__main__":
         dst_apisession, 
         src_apisession,
         dst_org_id=dst_org_id, 
-        org_name=org_name, 
+        dst_org_name=org_name, 
         backup_folder_param=backup_folder_param, 
         source_backup=source_backup, 
         filter_site_names=filter_site_names, 
