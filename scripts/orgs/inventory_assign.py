@@ -95,6 +95,7 @@ import sys
 import os
 import csv
 import getopt
+import re
 
 try:
     import mistapi
@@ -276,7 +277,7 @@ def _process_devices(apisession:mistapi.APISession, org_id:str, data:object, man
     return failed_messages
 
 
-def _read_csv_file(file_path: str):
+def _read_csv_file(file_path: str, org_id:str):
     fields = []
     data = {}
     sites = {}
@@ -292,7 +293,7 @@ def _read_csv_file(file_path: str):
             if not fields:
                 i=0
                 for column in line:
-                    column = column.replace("#", "")
+                    column = re.sub("[^a-zA-Z_]", "", column)
                     fields.append(column)
                     if "site" in column:
                         if row_site < 0:
@@ -377,8 +378,10 @@ def start(apisession:mistapi.APISession, file_path:str, org_id:str, managed:bool
     :param  bool                managed             - If `False`, an adopted switch/gateway will not be managed/configured by Mist
     :param  bool                no_reassign         - If `True`,  treat site assignment against an already assigned AP as error
     '''   
-    if not org_id: org_id = mistapi.cli.select_org(apisession)
-    data = _read_csv_file(file_path)
+    if not org_id: 
+        org_id = mistapi.cli.select_org(apisession)[0]
+        print("\n\n")
+    data = _read_csv_file(file_path, org_id)
     pb.set_steps_total(len(data))
     failed_messages = _process_devices(apisession, org_id, data, managed, no_reassign)
     _result(failed_messages)
