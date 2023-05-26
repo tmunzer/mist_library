@@ -911,6 +911,8 @@ if __name__ == "__main__":
             dst_org_id = a
         elif o in ["-p", "--proceed"]:
             proceed = True
+        elif o in ["-u", "--unclaim"]:
+            unclaim = True
         elif o in ["--source_env"]:
             source_env_file = a
         elif o in ["-s", "--sites"]:
