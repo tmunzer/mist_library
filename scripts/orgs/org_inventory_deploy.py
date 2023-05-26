@@ -504,7 +504,7 @@ def _result(failed_devices:dict, proceed:bool) -> bool:
         print()
     if missing_ids:
         for object_type in missing_ids:
-            console.warning(f"Unable to find new ID for the following {object_type}:")
+            console.warning(f"Unable to find the following {object_type} in the Destination Org:")
             print()
             mistapi.cli.display_list_of_json_as_table(missing_ids[object_type], ["name", "old_uuid"])
             print("")
