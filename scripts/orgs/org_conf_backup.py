@@ -421,8 +421,8 @@ Examples:
 python3 ./org_conf_backup.py
 python3 ./org_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
-'''
-)
+''')
+    sys.exit(0)
 
 
 #####################################################################

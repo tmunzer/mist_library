@@ -270,6 +270,8 @@ python3 ./configure_ap_mgmt_vlan.py -s 203d3d02-xxxx-xxxx-xxxx-76896a3330f4,203d
 
 '''
 )
+    sys.exit(0)
+    
 #####################################################################
 ##### ENTRY POINT ####
 if __name__ == "__main__":

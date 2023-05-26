@@ -415,6 +415,8 @@ Script Parameters:
                         default is "./org_backup"
 
 ''')
+    sys.exit(0)
+    
 ###############################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":

@@ -285,6 +285,7 @@ python3 ./toggle_poe.py
 python3 ./toggle_poe.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -t 2c57044e-xxxx-xxxx-xxxx-69374b32a070 -p ap -a toggle
 '''
 )
+    sys.exit(0)
 
 #####################################################################
 ##### ENTRY POINT ####

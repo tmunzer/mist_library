@@ -345,6 +345,8 @@ python3 ./site_conf_backup.py
 python3 ./site_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -s a39d0e91-xxxx-xxxx-xxxx-42df868c5a0b
 
 ''')
+    sys.exit(0)
+    
 #####################################################################
 ##### ENTRY POINT ####
 if __name__ == "__main__":

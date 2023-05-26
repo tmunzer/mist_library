@@ -39,7 +39,7 @@ python3 -m pip install mistapi
 # Windows
 py -m pip install mistapi
     """)
-    sys.exit(2)
+    sys.exit(0)
 
 #### PARAMETERS #####
 csv_separator = ","

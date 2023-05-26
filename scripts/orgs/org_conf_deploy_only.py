@@ -798,6 +798,7 @@ python3 ./org_conf_deploy.py
 python3 ./org_conf_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "my test org"
 
 ''')
+    sys.exit(0)
 
 
 #####################################################################

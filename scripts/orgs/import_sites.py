@@ -892,6 +892,7 @@ python3 ./import_sites.py -f ./my_new_sites.csv
 python3 ./import_sites.py -f ./my_new_sites.csv --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
 ''')
+    sys.exit(0)
 
 
 ###############################################################################

@@ -525,6 +525,7 @@ python3 ./org_conf_zeroise.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n m
 
 """
     )
+    sys.exit(0)
 
 
 def warning():

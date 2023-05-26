@@ -484,6 +484,7 @@ python3 ./inventory_assign.py -f my_csv_file.csv
 python3 ./inventory_assign.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -f my_csv_file.csv
 
 ''')
+    sys.exit(0)
 
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
