@@ -109,6 +109,7 @@ import csv
 import getopt
 import logging
 from typing import Tuple
+import time
 
 try:
     import mistapi
@@ -174,6 +175,7 @@ class ProgressBar():
         percent = self.steps_count/self.steps_total
         delta = 17
         x = int((size-delta)*percent)
+        print("\033[A")
         print(f"Progress: ", end="")
         print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
         print(f"{int(percent*100)}%".rjust(5), end="")
@@ -188,6 +190,7 @@ class ProgressBar():
             self._pb_update(size)
 
     def _pb_title(self, text: str, size: int = 80, end: bool = False, display_pbar: bool = True):
+        print()
         print("\033[A")
         print(f" {text} ".center(size, "-"), "\n")
         if not end and display_pbar:
@@ -210,14 +213,14 @@ class ProgressBar():
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
 
     def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
-        logger.warning(f"{message}")
+        logger.warning(f"{message}: Warning")
         self._pb_new_step(
             message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
 
     def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
         logger.error(f"{message}: Failure")
         self._pb_new_step(
-            message, '\033[31m\u2716\033[0m\n', inc=inc, display_pbar=display_pbar)
+            message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar)
 
     def log_title(self, message, end: bool = False, display_pbar: bool = True):
         logger.info(message)
@@ -406,7 +409,7 @@ def _create_site(apisession: mistapi.APISession, org_id: str, site: dict):
                 apisession, org_id, site)
             if response.status_code == 200:
                 pb.log_success(
-                    f"Site {site['name']}: Created (ID  {response.data['id']})", True)
+                    f"Site {site['name']}: Created (ID {response.data['id']})", True)
                 return response.data
             else:
                 pb.log_failure(message, True)
@@ -536,6 +539,7 @@ def _retrieve_objects(apisession: mistapi.APISession, org_id: str, parameters_in
     Get the list of the current templates, policies and sitegoups
     '''
     parameters = {}
+    print(parameters_in_use)
     for parameter_type in parameters_in_use:
         message = f"Retrieving {parameter_type} from Mist"
         pb.log_message(message, display_pbar=False)
@@ -613,21 +617,23 @@ def _check_settings(sites: list):
     pb.log_title(message, display_pbar=False)
     site_name = []
     parameters_in_use = []
+    line = 1
     for site in sites:
+        line +=1
         if "name" not in site:
             pb.log_failure(message, display_pbar=False)
-            console.error(f"Missing site parameter \"name\"")
+            console.error(f"Line {line}: Missing site parameter \"name\"")
             sys.exit(0)
         elif site["name"] in site_name:
             pb.log_failure(message, display_pbar=False)
-            console.error(f"Site Name \"{site['name']}\" duplicated")
+            console.error(f"Line {line}: Site Name \"{site['name']}\" duplicated")
             sys.exit(0)
         else:
             site_name.append(site["name"])
 
         if "address" not in site:
             pb.log_failure(message, display_pbar=False)
-            console.error(f"Missing site parameter \"address\"")
+            console.error(f"Line {line}: Missing site parameter \"address\"")
             sys.exit(0)
 
         for key in site:
@@ -635,14 +641,16 @@ def _check_settings(sites: list):
             if key in [ "name", "address", "vars", "country_code", "timezone"]:
                 pass
             elif key in [ "sitegroup_names", "sitegroup_ids"]:
-                parameters_in_use.append("sitegroup")
+                if not "sitegroup" in parameters_in_use:
+                    parameters_in_use.append("sitegroup")
                 pass
             elif parameter_name[0] in parameter_types and parameter_name[1] in ["name", "id"]:
-                parameters_in_use.append(parameter_name[0])
+                if not parameter_name[0] in parameters_in_use:
+                    parameters_in_use.append(parameter_name[0])
                 pass
             else:
                 pb.log_failure(message, display_pbar=False)
-                console.error(f"Invalid site parameter \"{key}\"")
+                console.error(f"Line {line}: Invalid site parameter \"{key}\"")
                 sys.exit(0)
     pb.log_success(message, display_pbar=False)
     return parameters_in_use
@@ -653,7 +661,7 @@ def _process_sites_data(apisession: mistapi.APISession, org_id: str, sites: list
     Function to validate sites data and retrieve the required object from Mist
     '''
     parameters = {}
-    pb.log_title("Preparing Sites Import")
+    pb.log_title("Preparing Sites Import", display_pbar=False)
     parameters_in_use = _check_settings(sites)
     parameters = _retrieve_objects(apisession, org_id, parameters_in_use)
     return parameters
@@ -712,8 +720,12 @@ def _check_org_name_in_script_param(apisession: mistapi.APISession, org_id: str,
 
 def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str = None):
     if not org_name:
-        org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(
-            apisession, org_id).data["name"]
+        response = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id)
+        if response.status_code != 200:
+            console.critical(
+                f"Unable to retrieve the org information: {response.data}")
+            sys.exit(3)
+        org_name = response.data["name"]
     while True:
         print()
         resp = input(
