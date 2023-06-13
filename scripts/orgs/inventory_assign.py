@@ -60,7 +60,7 @@ de45d851-xxxx-xxxx-xxxx-93b0cc52b435,A113454322345
 CSV Parameters:
 Required:
 - site_id or site_name
-- mac or serial
+- mac, serial or claimcode
 
 -------
 Script Parameters:
@@ -214,7 +214,53 @@ def _result(failed_messages:list):
         for message in failed_messages:
             console.error(message)
 
-def _generate_failed_messages(macs:list, reasons:list):
+    
+
+#####################################################################
+## CLAIM
+def _generate_failed_claim_messages(claim_codes:list, reasons:list):
+    failed_messages = []
+    i = 0
+    while i < len(claim_codes):
+        claim_code = claim_codes[i]
+        if not claim_code: claim_code = "unknown"
+        mess = reasons[i]
+        if not mess: mess = "Unknown reason"
+        failed_messages.append(f"device {claim_code}: {mess}")
+        i+=1
+    return failed_messages
+
+def _claim_devices(apisession:mistapi.APISession, org_id:str,claim_codes:list):
+    message = f"Claiming {len(claim_codes)} device(s)"
+    pb.log_message(message, display_pbar=False) 
+    try:
+
+        resp = mistapi.api.v1.orgs.inventory.addOrgInventory(apisession, org_id, claim_codes)
+        if resp.status_code == 200:
+            device_macs = {}
+            added = resp.data.get("added", [])
+            duplicated = resp.data.get("duplicated", [])
+            error = resp.data.get("error", [])
+            if duplicated or error:
+                pb.log_warning(message, display_pbar=False)
+            else:
+                pb.log_success(message, display_pbar=False)
+            if added:
+                for device in resp.data.get("inventory_added", []):
+                    device_macs[device["magic"]] = device["mac"]
+            return {"added": device_macs, "error": _generate_failed_claim_messages(resp.data.get("error", []), resp.data.get("reason",[])), "duplicated": resp.data.get("duplicated", [])}
+        else:
+            pb.log_failure(message, display_pbar=False)
+            return {"error": _generate_failed_claim_messages(resp.data.get("error", []),  resp.data.get("reason",[])), "duplicated":resp.data.get("duplicated", [])}
+    except:
+        pb.log_failure(message, display_pbar=False)
+        return {"error": resp.data.get("error", [f"Unknown error for devices {claim_codes}"]), "duplicated": resp.data.get("duplicated", [])}
+
+#####################################################################
+## ASSIGN
+
+
+def _generate_failed_assign_messages(macs:list, reasons:list):
     failed_messages = []
     i = 0
     while i < len(macs):
@@ -225,7 +271,7 @@ def _generate_failed_messages(macs:list, reasons:list):
         failed_messages.append(f"device {mac}: {mess}")
         i+=1
     return failed_messages
-    
+
 def _assign_devices(apisession:mistapi.APISession, org_id:str, site_id:str, macs:list, managed:bool=False, no_reassign:bool=True):
     message = f"Assigning {len(macs)} device(s)"
     pb.log_message(message) 
@@ -245,10 +291,10 @@ def _assign_devices(apisession:mistapi.APISession, org_id:str, site_id:str, macs
                 return []
             else:
                 pb.log_warning(message, inc=False)
-                return _generate_failed_messages(resp.data.get("error", []), resp.data.get("reason",[]))
+                return _generate_failed_assign_messages(resp.data.get("error", []), resp.data.get("reason",[]))
         else:
             pb.log_failure(message, inc=False)
-            return _generate_failed_messages(resp.data.get("error", []), resp.data.get("reason",[]))
+            return _generate_failed_assign_messages(resp.data.get("error", []), resp.data.get("reason",[]))
     except:
         pb.log_failure(message, inc=False)
         return resp.data.get("reason", [f"Unknown error for devices {macs}"])
@@ -277,13 +323,16 @@ def _process_devices(apisession:mistapi.APISession, org_id:str, data:object, man
     return failed_messages
 
 
-def _read_csv_file(file_path: str, org_id:str):
+def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id:str):
     fields = []
     data = {}
+    data_cc = {}
     sites = {}
     inventory = {}
     use_site_name = False
     use_serial = False
+    use_claimcode = False
+    claimcodes = []
     row_site = -1
     row_device = -1
     pb.log_message("Processing CSV file", display_pbar=False)
@@ -300,7 +349,7 @@ def _read_csv_file(file_path: str, org_id:str):
                             row_site = i
                         else:
                             console.error("Either \"site_name\" or \"site_id\" can be used, not both.")
-                    elif column in ["serial", "mac"]:
+                    elif column in ["serial", "mac", "claimcode"]:
                         if row_device < 0:
                             row_device = i
                         else:
@@ -321,7 +370,10 @@ def _read_csv_file(file_path: str, org_id:str):
                     except:
                         pb.log_failure(message, inc=False, display_pbar=False)
                         sys.exit(0)
-                if "serial" in fields:
+
+                if "claimcode" in fields:
+                    use_claimcode = True
+                elif "serial" in fields:
                     use_serial = True
                     message = "Retrieving device list from Mist"
                     pb.log_message(message, display_pbar=False)
@@ -344,26 +396,52 @@ def _read_csv_file(file_path: str, org_id:str):
                     sys.exit(0)
                 
             else:
-                    if use_site_name:
-                        site_id = sites.get(line[row_site])
+                device_mac = None
+                if use_site_name:
+                    site_id = sites.get(line[row_site])
+                else:
+                    site_id = line[row_site]
+
+                if use_serial:
+                    device_mac = inventory.get(line[row_device])
+                elif use_claimcode:
+                    claimcodes.append(line[row_device])
+                else:
+                    device_mac = line[row_device]
+
+                if (site_id and device_mac):
+                    if not site_id in data:
+                        data[site_id] = [device_mac.replace(":", "").replace("-", "")]
                     else:
-                        site_id = line[row_site]
-                    if use_serial:
-                        device_mac = inventory.get(line[row_device])
+                        data[site_id].append(device_mac.replace(":", "").replace("-", ""))
+                elif (site_id and use_claimcode):
+                    if not site_id in data_cc:
+                        data_cc[site_id] = [line[row_device]]
                     else:
-                        device_mac = line[row_device]
-                    if (site_id and device_mac):
-                        if not site_id in data:
-                            data[site_id] = [device_mac.replace(":", "").replace("-", "")]
-                        else:
-                            data[site_id].append(device_mac.replace(":", "").replace("-", ""))
-                    elif (not site_id):
-                        console.error(f"Unable to get site_id for line {line}")
-                        sys.exit(0)
-                    elif (not device_mac):
-                        console.error(f"Unable to get device mac for line {line}")
-                        sys.exit(0)
+                        data_cc[site_id].append(line[row_device])
+                elif (not site_id):
+                    console.error(f"Unable to get site_id for line {line}")
+                    sys.exit(0)
+                elif (not device_mac):
+                    console.error(f"Unable to get device mac for line {line}")
+                    sys.exit(0)
+
+    
         pb.log_success("Processing CSV file", display_pbar=False, inc=False)
+
+        if use_claimcode:
+            _claim_devices(apisession, org_id, claimcodes)
+            response  = mistapi.api.v1.orgs.inventory.getOrgInventory(apisession, org_id, limit=1000)
+            devices_from_mist = mistapi.get_all(apisession, response)
+            for device in devices_from_mist:                        
+                inventory[device["magic"]] = device["mac"]
+            for site_id in data_cc:
+                data[site_id] = []
+                for claimcode in data_cc[site_id]:
+                    device_mac = inventory.get(claimcode)
+                    data[site_id].append(device_mac)
+
+
         return data
 
 def start(apisession:mistapi.APISession, file_path:str, org_id:str, managed:bool=False, no_reassign:bool=True):
@@ -381,7 +459,7 @@ def start(apisession:mistapi.APISession, file_path:str, org_id:str, managed:bool
     if not org_id: 
         org_id = mistapi.cli.select_org(apisession)[0]
         print("\n\n")
-    data = _read_csv_file(file_path, org_id)
+    data = _read_csv_file(apisession, file_path, org_id)
     pb.set_steps_total(len(data))
     failed_messages = _process_devices(apisession, org_id, data, managed, no_reassign)
     _result(failed_messages)
@@ -456,7 +534,7 @@ de45d851-xxxx-xxxx-xxxx-93b0cc52b435,A113454322345
 CSV Parameters:
 Required:
 - site_id or site_name
-- mac or serial
+- mac, serial or claimcode
 
 -------
 Script Parameters:
