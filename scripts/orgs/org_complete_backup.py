@@ -260,7 +260,7 @@ Script Parameters:
 if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hl:b:e:", [
-                                   "help", "org_id=", "org_name=",  "env=", "log_file=", "backup_folder="])
+                                   "help", "org_id=", "org_name=",  "env=", "src_env=", "log_file=", "backup_folder="])
     except getopt.GetoptError as err:
         console.error(err)
         usage()
@@ -278,7 +278,7 @@ if __name__ == "__main__":
             sys.exit(0)
         elif o in ["-l", "--log_file"]:
             log_file = a
-        elif o in ["-e", "--env"]:
+        elif o in ["-e", "--env", "--src_env"]:
             src_env_file = a
         elif o in ["--org_id"]:
             org_id = a
