@@ -136,7 +136,7 @@ def _check_org_name(apisession:mistapi.APISession, dst_org_id:str, org_type:str,
         resp = input(
             f"To avoid any error, please confirm the current {org_type} orgnization name: ")
         if resp == org_name:
-            return True
+            return org_id, org_name
         else:
             print()
             print("The orgnization names do not match... Please try again...")
@@ -164,6 +164,7 @@ def _check_src_org(apisession:mistapi.APISession, org_id:str, org_name:str):
         if not _check_org_name_in_script_param(apisession, org_id, org_name):
             console.critical(f"Org name {org_name} does not match the org {org_id}")
             sys.exit(0)
+        else: return org_id, org_name
     elif org_id and not org_name:
         return _check_org_name(apisession, org_id)
     elif not org_id and not org_name:
@@ -240,7 +241,7 @@ Script Parameters:
 --org_name=         Optional, name of the org to clone, for validation 
                         purpose. Requires org_id to be defined
 
---src_env=              Optional, env file to use to access the src org (see
+-e, --env=              Optional, env file to use to access the src org (see
                         mistapi env file documentation here: 
                         https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
@@ -258,8 +259,8 @@ Script Parameters:
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hl:b:", [
-                                   "help", "org_id=", "org_name=",  "src_env=", "log_file=", "backup_folder="])
+        opts, args = getopt.getopt(sys.argv[1:], "hl:b:e:", [
+                                   "help", "org_id=", "org_name=",  "env=", "log_file=", "backup_folder="])
     except getopt.GetoptError as err:
         console.error(err)
         usage()
@@ -277,7 +278,7 @@ if __name__ == "__main__":
             sys.exit(0)
         elif o in ["-l", "--log_file"]:
             log_file = a
-        elif o in ["--src_env"]:
+        elif o in ["-e", "--env"]:
             src_env_file = a
         elif o in ["--org_id"]:
             org_id = a
