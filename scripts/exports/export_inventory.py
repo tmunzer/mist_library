@@ -93,8 +93,10 @@ class ProgressBar():
     def _pb_update(self, size:int=80):   
         if self.steps_count > self.steps_total: 
             self.steps_count = self.steps_total
-
-        percent = self.steps_count/self.steps_total
+        if self.steps_total > 0:
+            percent = self.steps_count/self.steps_total
+        else:
+            percent = 0
         delta = 17
         x = int((size-delta)*percent)
         print(f"Progress: ", end="")
