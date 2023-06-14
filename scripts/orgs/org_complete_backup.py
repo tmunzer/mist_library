@@ -37,9 +37,7 @@ information about the available parameters).
 Script Parameters:
 -h, --help              display this help
 
---org_id=           Optional, org_id of the org to clone
---org_name=         Optional, name of the org to clone, for validation 
-                        purpose. Requires org_id to be defined
+--org_id=               Optional, org_id of the org to clone
 
 --src_env=              Optional, env file to use to access the src org (see
                         mistapi env file documentation here: 
@@ -126,57 +124,10 @@ def _print_new_step(message):
     print()
     logger.info(f"{message}")
 
-#######
-#######
-def _check_org_name(apisession:mistapi.APISession, dst_org_id:str, org_type:str, org_name:str=None):
-    if not org_name:
-        org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, dst_org_id).data["name"]
-    while True:
-        print()
-        resp = input(
-            f"To avoid any error, please confirm the current {org_type} orgnization name: ")
-        if resp == org_name:
-            return org_id, org_name
-        else:
-            print()
-            print("The orgnization names do not match... Please try again...")
 
 #######
 #######
-def _select_org(org_type:str, mist_session=None):    
-    org_id = mistapi.cli.select_org(mist_session)[0]
-    org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(mist_session, org_id).data["name"]
-    _check_org_name(mist_session, org_id, org_type, org_name)
-    return org_id, org_name
-
-def _check_org_name_in_script_param(apisession:mistapi.APISession, org_id:str, org_name:str=None):
-    response = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id)
-    if response.status_code != 200:
-        console.critical(f"Unable to retrieve the org information: {response.data}")
-        sys.exit(3)
-    org_name_from_mist = response.data["name"]
-    return org_name == org_name_from_mist
-    
-
-def _check_src_org(apisession:mistapi.APISession, org_id:str, org_name:str):
-    _print_new_step("SOURCE Org")
-    if org_id and org_name:
-        if not _check_org_name_in_script_param(apisession, org_id, org_name):
-            console.critical(f"Org name {org_name} does not match the org {org_id}")
-            sys.exit(0)
-        else: return org_id, org_name
-    elif org_id and not org_name:
-        return _check_org_name(apisession, org_id)
-    elif not org_id and not org_name:
-        return  _select_org("source", apisession)
-    elif not org_id and org_name:
-        console.critical(f"\"org_name\" cannot be defined without \"org_id\". Please remove \"org_name\" parameter or add \"org_id\"")
-        sys.exit(0)
-    else: #should not since we covered all the possibilities...
-        sys.exit(0)
-
-
-def start(apisession: mistapi.APISession, org_id:str=None, org_name:str=None, backup_folder_param:str=None,):    
+def start(apisession: mistapi.APISession, org_id:str=None, backup_folder_param:str=None,):    
     '''
     Start the process to clone the src org to the dst org
 
@@ -184,12 +135,11 @@ def start(apisession: mistapi.APISession, org_id:str=None, org_name:str=None, ba
     -------
     :param  mistapi.APISession  apisession      - mistapi session with `Super User` access the source Org, already logged in
     :param  str                 org_id          - Optional, org_id of the org to clone
-    :param  str                 org_name        - Optional, name of the org to clone, for validation purpose. Requires org_id to be defined
     :param  str                 backup_folder_param - Path to the folder where to save the org backup (a subfolder will be created with the org name). default is "./org_backup"
     
     '''
     if not backup_folder_param: backup_folder_param = backup_folder
-    org_id, org_name = _check_src_org(apisession, org_id, org_name)
+    if not org_id: org_id = mistapi.cli.select_org(apisession)[0]
     
     _backup_org(apisession, org_id, backup_folder_param)
     _backup_inventory(apisession, org_id, backup_folder_param)
@@ -237,9 +187,7 @@ information about the available parameters).
 Script Parameters:
 -h, --help              display this help
 
---org_id=           Optional, org_id of the org to clone
---org_name=         Optional, name of the org to clone, for validation 
-                        purpose. Requires org_id to be defined
+--org_id=               Optional, org_id of the org to clone
 
 -e, --env=              Optional, env file to use to access the src org (see
                         mistapi env file documentation here: 
@@ -299,6 +247,5 @@ if __name__ == "__main__":
     start(
         apisession,
         org_id=org_id,
-        org_name=org_name,
         backup_folder_param=backup_folder_param, 
         )
