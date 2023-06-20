@@ -67,6 +67,7 @@ There is a short desccription at the beginning of each script explaining the pur
 - **configure_ap_auto_upgrade.py**: Python script update the Mist AP Auto_upgrade parameters in the site settings
 - **configure_auto_site_assignment.py**: Python script to update the org auto assignement rules
 - **import_admins.py**: Python script to invite/add adminsitrators from a CSV file.
+- **mport_floorplans.py**: Python script to import multiple Ekahau/iBwave project into Mist Organisation.
 - **import_sites.py**: Python script automate the sites creation in a Mist Org from a CSV file.
 - **inventory_assign.py**: Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org.
 - **inventory_claim.py**: Python script to claim devices to an org from a CSV file. 
