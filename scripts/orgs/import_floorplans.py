@@ -221,25 +221,38 @@ class ProgressBar:
 
 pb = ProgressBar()
 
+#####################################################################
+def _result(errors:list):
+    pb.log_title("Result", display_pbar=False)    
+    print("\033[A\033[A\033[F")
+    if not errors:
+        console.info("All floorplans imported succesfully and devices assigned")
+    else:
+        for error in errors:
+            if error.get("level") == "warning":
+                console.warning(error['message'])
+                logger.warning(error['message'])
+            else:
+                console.error(error["message"])
+                logger.error(error["message"])
+    print()
 
 ###############################################################################
-# PARSE CSV
-def _extract_groups(data: str) -> list:
-    entries = data.split(",")
-    result = []
-    for entry in entries:
-        result.append(entry.strip())
-    return result
+# IMPORT
 
-def import_projects(apisession: mistapi.APISession, org_id: str, sites: dict, format:str="ekahau", import_all_floorplans:bool=True, import_height:bool=True, import_orientation:bool=True):
-    pb.log_title("Starting Import Process")
+def import_projects(apisession: mistapi.APISession, org_id: str, sites: dict, format:str="ekahau", import_all_floorplans:bool=True, import_height:bool=True, import_orientation:bool=True) -> list:
+    pb.log_title("Starting Import Process", display_pbar=False)
     errors = []
     for site_name in sites:
+        csv_file = None
+        project_file = None
         message = f"Importing maps for site {site_name}"
         pb.log_message(message)
         site_id = sites[site_name].get("id")
-        project_file = sites[site_name].get("project")        
-        csv_file = sites[site_name].get("csv")        
+        if sites[site_name].get("project"):
+            project_file = os.path.join(floorplans_folder, sites[site_name].get("project"))
+        if sites[site_name].get("csv"):
+            csv_file = os.path.join(floorplans_folder, sites[site_name].get("csv"))
         if not site_id:
             pb.log_failure(message, inc=True)
             errors.append({"site_name": site_name, "error": "Site ID missing"})
@@ -259,31 +272,44 @@ def import_projects(apisession: mistapi.APISession, org_id: str, sites: dict, fo
                     apisession,
                     site_id,
                     auto_deviceprofile_assignment=True,
-                    csv=os.path.join(floorplans_folder, csv_file),
-                    file=  os.path.join(floorplans_folder, project_file),
+                    csv=csv_file,
+                    file=  project_file,
                     json=json_dict,
                 )
                 if resp.status_code == 200:
-                    pb.log_success(message, inc=True)
+                    ignored_aps = {}
                     if resp.data:
+                        for ap in resp.data.get("aps", []):
+                            if ap.get("action") == "ignored":
+                                ignored_aps[ap.get("name")] = ap.get("reason")
                         logger.debug(resp.data)
+                    if len(ignored_aps) == 0:
+                        pb.log_success(message, inc=True)
+                    else:
+                        for mac in ignored_aps:
+                            errors.append({
+                                "level": "warning",
+                                "message": f"site {site_name} - device {mac} not assigned: {ignored_aps[mac]}"
+                            })
+                        pb.log_warning(message, inc=True)
                 else:
                     pb.log_failure(message, inc=True)
                     errors.append(
                         {
-                            "site_name": site_name,
-                            "error": f"Got HTTP{resp.status_code} from Mist. Please check the script logs.",
+                            "level": "error",
+                            "error": f"site {site_name} - Got HTTP{resp.status_code} from Mist. Please check the script logs.",
                         }
                     )
             except:
                 pb.log_failure(message, inc=True)
                 errors.append(
                     {
-                        "site_name": site_name,
-                        "error": "Error when importing esx file. Please check the script logs.",
+                        "level": "error",
+                        "error": f"site {site_name} - Error when importing esx file. Please check the script logs.",
                     }
                 )
                 logger.error("Exception occurred", exc_info=True)
+    return errors
 
 
 def _retrieve_site_ids(apisession: mistapi.APISession, org_id: str, sites: list):
@@ -341,7 +367,7 @@ def _list_files_to_process() -> dict:
             pb.log_success(message, display_pbar=False)
         else:
             pb.log_warning(
-                f"{message}: not a CSV, ESX or IBWC file. Skipping it...", display_pbar=False
+                f"{message}: not a CSV, ESX or IBWC file. Skipping it", display_pbar=False
             )
     return sites_to_process
 
@@ -402,12 +428,12 @@ def start(apisession: mistapi.APISession, org_id: str = None, org_name: str = No
         floorplans_folder += "/"
 
     sites = _list_files_to_process()
-    # 2 = IDs + upload
-    pb.set_steps_total(1 + len(sites) * 2)
+    pb.set_steps_total(len(sites))
 
     _retrieve_site_ids(apisession, org_id, sites)
 
-    import_projects(apisession, org_id, sites, format, import_all_floorplans, import_height, import_orientation)
+    errors = import_projects(apisession, org_id, sites, format, import_all_floorplans, import_height, import_orientation)
+    _result(errors)
     pb.log_title("Site Import Done", end=True)
 
 
