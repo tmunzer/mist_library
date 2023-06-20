@@ -268,9 +268,9 @@ def import_projects(apisession: mistapi.APISession, org_id: str, sites: dict, fo
                         "vendor_name": format,
                         "site_id": site_id
                 }
-                resp = mistapi.api.v1.sites.maps.importSiteMapsFile(
+                resp = mistapi.api.v1.orgs.maps.importOrgMapsFile(
                     apisession,
-                    site_id,
+                    org_id,
                     auto_deviceprofile_assignment=True,
                     csv=csv_file,
                     file=  project_file,
