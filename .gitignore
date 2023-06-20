@@ -1,7 +1,7 @@
 # credential files
 config.py
 session.py
-ekahau_files/
+floorplans/
 # script generated files
 *.png
 *.csv
