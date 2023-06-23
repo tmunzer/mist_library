@@ -108,8 +108,6 @@ as the org_clone.py file:
 #### PARAMETERS #####
 backup_folder = "./org_backup"
 log_file = "./script.log"
-src_env_file = "~/.mist_env"
-dst_env_file = "~/.mist_env"
 
 #####################################################################
 #### LOGS ####
@@ -367,6 +365,8 @@ if __name__ == "__main__":
     src_org_name = None
     dst_org_id = None
     dst_org_name = None
+    src_env_file = None
+    dst_env_file = None
     src_apisession = None
     dst_apisession = None
     backup_folder_param = None
@@ -399,7 +399,7 @@ if __name__ == "__main__":
     ### MIST SESSION ###
     print(" API Session to access the Source Org ".center(80, "_"))
     src_apisession = mistapi.APISession(env_file=src_env_file)
-    src_apisession.login()    
+    src_apisession.login()
     print(" API Session to access the Destination Org ".center(80, "_"))
     dst_apisession = mistapi.APISession(env_file=dst_env_file)
     dst_apisession.login()
