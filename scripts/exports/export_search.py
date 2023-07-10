@@ -89,12 +89,13 @@ py -m pip install mistapi
     """)
     sys.exit(2)
 
+
 #### PARAMETERS #####
 
-log_file = "./script.log"
-env_file = os.path.join(os.path.expanduser('~'), ".mist_env")
-out_file_format="csv"
-out_file_path="./export.csv"
+LOG_FILE = "./script.log"
+ENV_FILE = os.path.join(os.path.expanduser('~'), ".mist_env")
+OUT_FILE_FORMAT="csv"
+OUT_FILE_PATH="./export.csv"
 
 #### LOGS ####
 logger = logging.getLogger(__name__)
@@ -227,8 +228,6 @@ def _searchSwOrGwPorts(apisession: mistapi.APISession, func:str, scope_id=None, 
         "port_id": str,
         "port_mac":str,
         "speed": int,
-        "mac_limit": int,
-        "mac_count": int,
         "up": bool,
         "stp_state": str,
         "stp_role": str,
@@ -253,8 +252,6 @@ def _searchSwOrGwPorts(apisession: mistapi.APISession, func:str, scope_id=None, 
             port_id=query_params.get("port_id"),
             port_mac=query_params.get("port_mac"),
             speed=query_params.get("speed"),
-            mac_limit=query_params.get("mac_limit"),
-            mac_count=query_params.get("mac_count"),
             up=query_params.get("up"),
             stp_state=query_params.get("stp_state"),
             stp_role=query_params.get("stp_role"),
@@ -275,8 +272,6 @@ def _searchSwOrGwPorts(apisession: mistapi.APISession, func:str, scope_id=None, 
             port_id=query_params.get("port_id"),
             port_mac=query_params.get("port_mac"),
             speed=query_params.get("speed"),
-            mac_limit=query_params.get("mac_limit"),
-            mac_count=query_params.get("mac_count"),
             up=query_params.get("up"),
             stp_state=query_params.get("stp_state"),
             stp_role=query_params.get("stp_role"),
@@ -297,8 +292,6 @@ def _searchSwOrGwPorts(apisession: mistapi.APISession, func:str, scope_id=None, 
             port_id=query_params.get("port_id"),
             port_mac=query_params.get("port_mac"),
             speed=query_params.get("speed"),
-            mac_limit=query_params.get("mac_limit"),
-            mac_count=query_params.get("mac_count"),
             up=query_params.get("up"),
             stp_state=query_params.get("stp_state"),
             stp_role=query_params.get("stp_role"),
@@ -328,7 +321,7 @@ def _searchClientWirelessSessions(apisession: mistapi.APISession, func:str, scop
         query_params = _query_params(query_params_type)
 
     if func=="searchOrgClientWirelessSessions":
-        return mistapi.api.v1.orgs.clients.searchOrgClientWirelessSessions(apisession, scope_id,
+        return mistapi.api.v1.orgs.clients.searchOrgWirelessClientSessions(apisession, scope_id,
             ap=query_params.get("ap"),
             band=query_params.get("band"),
             client_family=query_params.get("client_family"),
@@ -344,7 +337,7 @@ def _searchClientWirelessSessions(apisession: mistapi.APISession, func:str, scop
             limit=query_params.get("limit", 1000)
         )        
     elif func=="searchSiteClientWirelessSessions":
-        return mistapi.api.v1.sites.clients.searchSiteClientWirelessSessions(apisession, scope_id,
+        return mistapi.api.v1.sites.clients.searchSiteWirelessClientSessions(apisession, scope_id,
             ap=query_params.get("ap"),
             band=query_params.get("band"),
             client_family=query_params.get("client_family"),
@@ -376,7 +369,7 @@ def _searchClientEvents(apisession: mistapi.APISession, func:str, scope_id:str, 
         query_params = _query_params(query_params_type)
 
     if func=="searchOrgClientEvents":
-        return mistapi.api.v1.orgs.clients.searchOrgClientsEvents(apisession, scope_id,
+        return mistapi.api.v1.orgs.clients.searchOrgWirelessClientsEvents(apisession, scope_id,
             type=query_params.get("type"),
             reason_code=query_params.get("reason_code"),
             ssid=query_params.get("ssid"),
@@ -387,7 +380,7 @@ def _searchClientEvents(apisession: mistapi.APISession, func:str, scope_id:str, 
             limit=query_params.get("limit", 1000)
         )         
     elif func=="searchSiteClientEvents":
-        return mistapi.api.v1.sites.clients.searchSiteClientsEvents(apisession, scope_id,
+        return mistapi.api.v1.sites.clients.searchSiteWirelessClientsEvents(apisession, scope_id,
             type=query_params.get("type"),
             reason_code=query_params.get("reason_code"),
             ssid=query_params.get("ssid"),
@@ -400,12 +393,14 @@ def _searchClientEvents(apisession: mistapi.APISession, func:str, scope_id:str, 
 
 def _searchClientsWireless(apisession: mistapi.APISession, func:str, scope_id:str, query_params:dict|None=None):
     query_params_type = {
-        "type": bool,
-        "reason_code": int,
-        "ssid": str,
-        "ap":str,
-        "proto": str,
-        "band": bool,
+        "mac": bool,
+        "ip_address": int,
+        "hostname": str,
+        "device":str,
+        "model": str,
+        "ap": bool,
+        "ssid": bool,
+        "text": bool,
         "duration": str,
         "limit": int
     }
@@ -417,25 +412,28 @@ def _searchClientsWireless(apisession: mistapi.APISession, func:str, scope_id:st
         query_params = _query_params(query_params_type)
 
     if func=="searchOrgClientsWireless":
-        return mistapi.api.v1.orgs.clients.searchOrgClientsWireless(apisession, scope_id,
-            site_id=query_params.get("site_id"),
-            type=query_params.get("type"),
-            reason_code=query_params.get("reason_code"),
-            ssid=query_params.get("ssid"),
+        return mistapi.api.v1.orgs.clients.searchOrgWirelessClients(apisession, scope_id,
+            mac=query_params.get("mac"),
+            ip_address=query_params.get("ip_address"),
+            hostname=query_params.get("hostname"),
+            device=query_params.get("device"),
+            model=query_params.get("model"),
             ap=query_params.get("ap"),
-            proto=query_params.get("proto"),
-            band=query_params.get("band"),
+            ssid=query_params.get("ssid"),
+            text=query_params.get("text"),
             duration=query_params.get("duration", "1d"),
             limit=query_params.get("limit", 1000)
         )
     elif func=="searchSiteClientsWireless":
-        return mistapi.api.v1.sites.clients.searchSiteClientsWireless(apisession, scope_id,
-            type=query_params.get("type"),
-            reason_code=query_params.get("reason_code"),
-            ssid=query_params.get("ssid"),
+        return mistapi.api.v1.sites.clients.searchSiteWirelessClients(apisession, scope_id,
+            mac=query_params.get("mac"),
+            ip_address=query_params.get("ip_address"),
+            hostname=query_params.get("hostname"),
+            device=query_params.get("device"),
+            model=query_params.get("model"),
             ap=query_params.get("ap"),
-            proto=query_params.get("proto"),
-            band=query_params.get("band"),
+            ssid=query_params.get("ssid"),
+            text=query_params.get("text"),
             duration=query_params.get("duration", "1d"),
             limit=query_params.get("limit", 1000)
         )
@@ -461,7 +459,7 @@ def _searchClientsWired(apisession: mistapi.APISession, func:str, scope_id:str, 
         query_params = _query_params(query_params_type)
 
     if func=="searchOrgClientsWired":
-        return mistapi.api.v1.orgs.wired_clients.searchOrgClientsWired(apisession, scope_id,
+        return mistapi.api.v1.orgs.wired_clients.searchOrgWiredClients(apisession, scope_id,
             site_id=query_params.get("site_id"),
             device_mac=query_params.get("device_mac"),
             mac=query_params.get("mac"),
@@ -474,12 +472,11 @@ def _searchClientsWired(apisession: mistapi.APISession, func:str, scope_id:str, 
             limit=query_params.get("limit", 1000)
         )
     elif func=="searchSiteClientsWired":
-        return mistapi.api.v1.sites.wired_clients.searchSiteClientsWired(apisession, scope_id,
+        return mistapi.api.v1.sites.wired_clients.searchSiteWiredClients(apisession, scope_id,
             device_mac=query_params.get("device_mac"),
             mac=query_params.get("mac"),
             port_id=query_params.get("port_id"),
             vlan=query_params.get("vlan"),
-            site_id=query_params.get("site_id"),
             ip=query_params.get("ip"),
             manufacture=query_params.get("manufacture"),
             text=query_params.get("text"),
@@ -504,21 +501,21 @@ def _searchDevicesEvents(apisession: mistapi.APISession, func:str, scope_id:str,
 
     if func=="searchOrgDevicesEvents":
         return mistapi.api.v1.orgs.devices.searchOrgDevicesEvents(apisession, scope_id,
-            ap=query_params.get("ap"),
-            apfw=query_params.get("apfw"),
+            mac=query_params.get("mac"),
             model=query_params.get("model"),
             text=query_params.get("text"),
             type=query_params.get("type"),
+            device_type=query_params.get("device_type"),
             duration=query_params.get("duration", "1d"),
             limit=query_params.get("limit", 1000),
         )
     elif func=="searchSiteDevicesEvents":
         return mistapi.api.v1.sites.devices.searchSiteDevicesEvents(apisession, scope_id,
-            ap=query_params.get("ap"),
-            apfw=query_params.get("apfw"),
+            mac=query_params.get("mac"),
             model=query_params.get("model"),
             text=query_params.get("text"),
             type=query_params.get("type"),
+            device_type=query_params.get("device_type"),
             duration=query_params.get("duration", "1d"),
             limit=query_params.get("limit", 1000),
         )
@@ -1052,7 +1049,7 @@ def _save_as_csv( start:float, end:float, data:list, report:str, query_params:di
     print()
     print("Saving to file ".ljust(80,"."))
     i = 0
-    with open(out_file_path, "w", encoding='UTF8', newline='') as f:
+    with open(OUT_FILE_PATH, "w", encoding='UTF8', newline='') as f:
         csv_writer = csv.writer(f)
         csv_writer.writerow([f"#Report: {report}", f"Params: {query_params}", f"start: {start}", f"end:{end}"])
         csv_writer.writerow(headers)
@@ -1076,7 +1073,7 @@ def _save_as_json( start:float, end:float, data:list, report:str, query_params:d
         'end': end,
         'data': data
     }
-    with open(os.path.abspath(out_file_path), 'w') as f:
+    with open(os.path.abspath(OUT_FILE_PATH), 'w') as f:
         json.dump(json_data, f)
     print("Done.")
 
@@ -1163,14 +1160,15 @@ def _menu(apisession:mistapi.APISession, scope:str|None, scope_id:str|None, repo
 def start(apisession, scope:str|None=None, scope_id:str|None=None, report:str|None=None, query_params:dict|None=None):
     scope, scope_id, report=_menu(apisession, scope, scope_id, report)
     start, end, data=_process_request(apisession, scope, scope_id, report, query_params) # type: ignore
-    if out_file_format == "csv":
+    if OUT_FILE_FORMAT == "csv":
         _save_as_csv(start, end, data, report, query_params) # type: ignore
-    elif out_file_format == "json":
+    elif OUT_FILE_FORMAT == "json":
         _save_as_json(start, end, data, report, query_params) # type: ignore
     else:
-        console.error(f"file format {out_file_format} not supported")
+        console.error(f"file format {OUT_FILE_FORMAT} not supported")
 
 def usage():
+    '''Function to display Help'''
     print(f"""
 -------------------------------------------------------------------------------
 
@@ -1222,14 +1220,14 @@ Options:
                     in https://doc.mist-lab.fr
                     format: key1:value1,key2:value2,...
 -l, --log_file=     define the filepath/filename where to write the logs
-                    default is {log_file}
+                    default is {LOG_FILE}
 -f, --out_file=     define the filepath/filename where to save the data
-                    default is {out_file_path}
+                    default is {OUT_FILE_PATH}
 --out_format=       define the output format (csv or json)
                     default is csv
 -e, --env=          define the env file to use (see mistapi env file documentation 
                     here: https://pypi.org/project/mistapi/)
-                    default is {env_file}
+                    default is {ENV_FILE}
 
 -------
 Examples:
@@ -1241,65 +1239,72 @@ python3 ./export_searchs.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --repo
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hm:o:s:r:f:e:l:q:", ["help", "msp_id=", "org_id=", "site_id=", "report=", "out_format=", "out_file=", "env=", "log_file=", "q_params="])
+        opts, args = getopt.getopt(sys.argv[1:], "hm:o:s:r:f:e:l:q:", [
+            "help", 
+            "msp_id=", 
+            "org_id=", 
+            "site_id=", 
+            "report=", 
+            "out_format=", 
+            "out_file=", 
+            "env=", 
+            "log_file=", 
+            "q_params="
+            ])
     except getopt.GetoptError as err:
         console.error(err)
         usage()
 
-    scope=None
-    scope_id=None
-    report=None
-    query_params={}
+    SCOPE=None
+    SCOPE_ID=None
+    REPORT=None
+    QUERY_PARAMS={}
     for o, a in opts: # type: ignore
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-m", "--msp_id"]:
-            if scope:
+            if SCOPE:
                 console.error(f"Only one id can be configured")
                 usage()
-            scope = "msp"
-            scope_id = a
+            SCOPE = "msp"
+            SCOPE_ID = a
         elif o in ["-o", "--org_id"]:
-            if scope:
+            if SCOPE:
                 console.error(f"Only one id can be configured")
                 usage()
-            scope = "org"
-            scope_id = a
+            SCOPE = "org"
+            SCOPE_ID = a
         elif o in ["-s", "--site_id"]:
-            if scope:
+            if SCOPE:
                 console.error(f"Only one id can be configured")
                 usage()
-            scope = "site"
-            scope_id = a
+            SCOPE = "site"
+            SCOPE_ID = a
         elif o in ["-r", "--report"]:
-            report = a
+            REPORT = a
         elif o in ["--out_format"]:
             if a in ["csv", "json"]:
-                out_file_format=a
+                OUT_FILE_FORMAT=a
             else:
                 console.error(f"Out format {a} not supported")
                 usage()
         elif o in ["-f", "--out_file"]:
-            out_file_path=a
+            OUT_FILE_PATH=a
         elif o in ["-e", "--env"]:
-            env_file=a
+            ENV_FILE=a
         elif o in ["-q", "--q_params"]:
             params = a.split(",")
             for p in params:
-                query_params[p.split(":")[0]]=p.split(":")[1]
+                QUERY_PARAMS[p.split(":")[0]]=p.split(":")[1]
         elif o in ["-l", "--log_file"]:
-            log_file = a
+            LOG_FILE = a
         else:
             assert False, "unhandled option"
 
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode='w')
+    logging.basicConfig(filename=LOG_FILE, filemode='w')
     logger.setLevel(logging.DEBUG)
     ### START ###
-    apisession = mistapi.APISession(env_file=env_file)
+    apisession = mistapi.APISession(env_file=ENV_FILE)
     apisession.login()
-    start(apisession, scope, scope_id, report, query_params)
-
-
-
-
+    start(apisession, SCOPE, SCOPE_ID, REPORT, QUERY_PARAMS)
