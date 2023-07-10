@@ -335,7 +335,7 @@ delete_steps = {
         "text": "Org pskportals",
     },
     "nactags": {
-        "mistapi_function": mistapi.api.v1.orgs.nactags.DeleteOrgNacTag,
+        "mistapi_function": mistapi.api.v1.orgs.nactags.deleteOrgNacTag,
         "text": "Org nactags",
     },
     "nacrules": {
