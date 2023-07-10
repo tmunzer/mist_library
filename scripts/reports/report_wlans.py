@@ -26,6 +26,7 @@ dns_server_rewrite, coa_server, radsec, airwatch, cisco_cwa, rateset, schedule, 
 '''
 #### IMPORTS ####
 import sys
+import getopt
 try:
     import mistapi
 except:
@@ -47,9 +48,6 @@ fields = ["id", "ssid", "enabled", "auth", "auth_servers", "acct_servers",
           "band", "interface", "vlan_id", "dynamic_vlan", "hide_ssid"]
 csv_file = "./report.csv"
 
-org_ids = []
-site_ids = []
-
 
 #### GLOBAL VARIABLES ####
 wlans_summarized = []
@@ -66,87 +64,87 @@ def country_code(site):
 
 def wlans_from_sites(mist_session, sites, org_info, site_ids):
     for site in sites:
-        if len(org_ids) > 1 or site["id"] in site_ids:
-            site_wlans = mistapi.api.v1.sites.wlans.report(
-                mist_session, site["id"], fields)
+        if site["id"] in site_ids:
+            site_wlans = mistapi.api.v1.sites.wlans.listSiteWlanDerived(
+                mist_session, site["id"]).data
             for site_wlan in site_wlans:
-                site_wlan.insert(0, "site")
-                site_wlan.insert(1, org_info["name"])
-                site_wlan.insert(2, org_info["id"])
-                site_wlan.insert(3, site["name"])
-                site_wlan.insert(4, site["id"])
-                site_wlan.insert(5, country_code(site))
-                wlans_summarized.append(site_wlan)
+                tmp= []
+                tmp.append("site")
+                tmp.append(org_info["name"])
+                tmp.append(org_info["id"])
+                tmp.append(site["name"])
+                tmp.append(site["id"])
+                tmp.append(country_code(site))
+                for field in fields:
+                    tmp.append(site_wlan.get(field, ""))
+                wlans_summarized.append(tmp)
 
 
-def wlans_from_orgs(mist_session, org_ids, site_ids):
-    for org_id in org_ids:
-        # org_sites = list(filter(lambda privilege: "org_id" in privilege and privilege["org_id"] == org_id, mist_session.privileges))
-        org_sites = [
-            p for p in mist_session.privileges if "org_id" in p and p["org_id"] == org_id]
-        # the admin only has access to the org information if he/she has this privilege
-        if len(org_sites) >= 1 and org_sites[0]["scope"] == "org":
-            org_info = mistapi.api.v1.orgs.orgs.getOrgInfo(
-                mist_session, org_id).data
-            org_sites = mistapi.api.v1.orgs.sites.listOrgSites(
-                mist_session, org_id).data
-            org_wlans = mistapi.api.v1.orgs.wlans.report(
-                mist_session, org_id, fields)
-            for org_wlan in org_wlans:
-                if len(org_ids) > 1 or org_wlan[0] in site_ids:
-                    # site = list(filter(lambda site: site['id'] == org_wlan[0], org_sites))
-                    site = [s for s in org_sites if s['id'] == org_wlan[0]]
-                    if len(site) == 1:
-                        site_name = site[0]["name"]
-                        site_country_code = country_code(site[0])
-                    else:
-                        site_name = ""
-                        site_country_code = "N/A"
-                    org_wlan.insert(0, "org")
-                    org_wlan.insert(1, org_info["name"])
-                    org_wlan.insert(2, org_info["id"])
-                    org_wlan.insert(3, site_name)
-                    org_wlan.insert(5, site_country_code)
-                    wlans_summarized.append(org_wlan)
-            wlans_from_sites(mist_session, org_sites, org_info, site_ids)
-        else:
-            org_info = {
-                "name": org_sites[0]["org_name"],
-                "id": org_sites[0]["org_id"]
-            }
-            org_sites = []
-            for site_id in site_ids:
-                org_sites.append(mistapi.api.v1.sites.sites.getSiteInfo(
-                    mist_session, site_id).data)
-            wlans_from_sites(mist_session, org_sites, org_info, site_ids)
+def start(mist_session, org_id, site_ids):
+    # org_sites = list(filter(lambda privilege: "org_id" in privilege and privilege["org_id"] == org_id, mist_session.privileges))
+    org_info = mistapi.api.v1.orgs.orgs.getOrgInfo(
+        mist_session, org_id).data
+    org_info = {
+        "name": org_info["name"],
+        "id": org_id
+    }
+    org_sites = []
+    for site_id in site_ids:
+        org_sites.append(mistapi.api.v1.sites.sites.getSiteInfo(
+            mist_session, site_id).data)
+    wlans_from_sites(mist_session, org_sites, org_info, site_ids)
 
-
+def usage():
+    print('''''')
 #### SCRIPT ENTRYPOINT ####
+###############################################################################
+#### SCRIPT ENTRYPOINT ####
+if __name__ == "__main__":
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "he:o:", [
+                                   "help", "env_file=", "org_id="])
+    except getopt.GetoptError as err:
+        usage()
 
-mist = mistapi.APISession()
+    env_file=None
+    org_id=None
+    for o, a in opts:
+        if o in ["-h", "--help"]:
+            usage()
+            sys.exit(0)
+        elif o in ["-e", "--env_file"]:
+            env_file = a
+        elif o in ["-o", "--org_id"]:
+            org_id = a
+        else:
+            assert False, "unhandled option"
 
-org_id = mistapi.cli.select_org(mist, allow_many=False)[0]
-site_ids = mistapi.cli.select_site(mist, org_id=org_id[0], allow_many=True)
+    mist = mistapi.APISession(env_file=env_file)
+    mist.login()
 
-wlans_from_orgs(mist, org_ids, site_ids)
+    if not org_id:
+        org_id = mistapi.cli.select_org(mist, allow_many=False)[0]
+    site_ids = mistapi.cli.select_site(mist, org_id=org_id, allow_many=True)
+
+    start(mist, org_id, site_ids)
 
 
-fields.insert(0, "origin")
-fields.insert(1, "org_name")
-fields.insert(2, "org_id")
-fields.insert(3, "site_name")
-fields.insert(4, "site_id")
-fields.insert(5, "country_code")
+    fields.insert(0, "origin")
+    fields.insert(1, "org_name")
+    fields.insert(2, "org_id")
+    fields.insert(3, "site_name")
+    fields.insert(4, "site_id")
+    fields.insert(5, "country_code")
 
-mistapi.cli.pretty_print(wlans_summarized, fields)
+    mistapi.cli.pretty_print(wlans_summarized, fields)
 
-print("saving to file...")
-with open(csv_file, "w") as f:
-    for column in fields:
-        f.write("%s," % column)
-    f.write('\r\n')
-    for row in wlans_summarized:
-        for field in row:
-            f.write(field)
-            f.write(csv_separator)
+    print("saving to file...")
+    with open(csv_file, "w") as f:
+        for column in fields:
+            f.write(f"{column},")
         f.write('\r\n')
+        for row in wlans_summarized:
+            for field in row:
+                f.write(field)
+                f.write(csv_separator)
+            f.write('\r\n')
