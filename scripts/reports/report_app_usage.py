@@ -102,7 +102,7 @@ def _progress_bar_end(total:int, size:int):
 ### FUNCTIONS
 
 def _get_clients_list(mist_session, site_id):
-    clients = mistapi.api.v1.sites.stats.listSiteClientsStats(mist_session, site_id).data
+    clients = mistapi.api.v1.sites.stats.listSiteWirelessClientsStats(mist_session, site_id).data
     return clients
 
 
