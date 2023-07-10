@@ -129,6 +129,7 @@ pb = ProgressBar()
 
 def _get_device_ids(apisession:mistapi.APISession, site_name:str, site_id:str):
     logger.info(f"{site_id}: Retrieving devices list")
+    devices = []
     try:
         response = mistapi.api.v1.sites.devices.listSiteDevices(apisession, site_id=site_id, type="ap")
         devices = mistapi.get_all(apisession, response)
