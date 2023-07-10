@@ -256,7 +256,7 @@ def _check_src_org(src_apisession:mistapi.APISession, src_org_id:str, src_org_na
             console.critical(f"Org name {src_org_name} does not match the org {src_org_id}")
             sys.exit(0)
     elif src_org_id and not src_org_name:
-        return _check_org_name(src_apisession, src_org_id)
+        return _check_org_name(src_apisession, src_org_id, "Source")
     elif not src_org_id and not src_org_name:
         return  _select_org("source", src_apisession)
     elif not src_org_id and src_org_name:
@@ -271,7 +271,7 @@ def _check_dst_org(dst_apisession: mistapi.APISession, dst_org_id:str, dst_org_n
             console.critical(f"Org name {src_org_name} does not match the org {src_org_id}")
             sys.exit(0)
     elif dst_org_id and not dst_org_name:
-        return _check_org_name(dst_apisession, src_org_id)
+        return _check_org_name(dst_apisession, src_org_id, "Destination")
     elif not dst_org_id and dst_org_name:
         response = mistapi.api.v1.orgs.orgs.createOrg(dst_apisession, {"name": dst_org_name})
         if response.status_code == 200:
