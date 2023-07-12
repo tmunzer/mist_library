@@ -507,7 +507,9 @@ def _replace_object_names_by_ids(apisession: mistapi.APISession, org_id: str, si
         source_site_id = site["site_id"]
         del site["site_id"]
     elif "site_name" in site:
-        source_site_id = parameters["site"][site["site_name"]]
+        source_site_id = parameters["site"].get(site["site_name"], None)
+        if not source_site_id:
+            pb.log_warning(f"Site {site['name']}: Source site {site['site_name']} not found")
         del site["site_name"]
 
     if "sitegroup_names" in site:
