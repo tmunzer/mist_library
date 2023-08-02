@@ -143,7 +143,7 @@ def start(apisession: mistapi.APISession, org_id:str=None, backup_folder_param:s
     
     _backup_org(apisession, org_id, backup_folder_param)
     _backup_inventory(apisession, org_id, backup_folder_param)
-    _print_new_step("Process finised")
+    _print_new_step("Process finished")
     
 ###############################################################################
 #### USAGE ####
