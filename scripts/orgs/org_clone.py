@@ -182,7 +182,7 @@ def select_or_create_org(mist_session:mistapi.APISession=None):
 
 def _check_org_name(apisession:mistapi.APISession, dst_org_id:str, org_type:str, org_name:str=None):
     if not org_name:
-        org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, dst_org_id).data["name"]
+        org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, dst_org_id).data["name"]
     while True:
         print()
         resp = input(
@@ -197,12 +197,12 @@ def _check_org_name(apisession:mistapi.APISession, dst_org_id:str, org_type:str,
 #######
 def _select_org(org_type:str, mist_session=None):    
     org_id = mistapi.cli.select_org(mist_session)[0]
-    org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(mist_session, org_id).data["name"]
+    org_name = mistapi.api.v1.orgs.orgs.getOrg(mist_session, org_id).data["name"]
     _check_org_name(mist_session, org_id, org_type, org_name)
     return org_id, org_name
 
 def _check_org_name_in_script_param(apisession:mistapi.APISession, org_id:str, org_name:str=None):
-    response = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id)
+    response = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id)
     if response.status_code != 200:
         console.critical(f"Unable to retrieve the org information: {response.data}")
         sys.exit(3)

@@ -612,7 +612,7 @@ def _go_to_backup_folder(src_org_name:str=None, source_backup:str=None):
 
 
 def _check_org_name_in_script_param(apisession:mistapi.APISession, org_id:str, org_name:str=None):
-    response = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id)
+    response = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id)
     if response.status_code != 200:
         console.critical(f"Unable to retrieve the org information: {response.data}")
         sys.exit(3)
@@ -622,7 +622,7 @@ def _check_org_name_in_script_param(apisession:mistapi.APISession, org_id:str, o
 
 def _check_org_name(apisession:mistapi.APISession, org_id:str, org_name:str=None):
     if not org_name:
-        org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id).data["name"]
+        org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
     while True:
         print()
         resp = input(
@@ -664,7 +664,7 @@ def _select_dest_org(apisession: mistapi.APISession):
             "Do you want to create a (n)ew organisation or (r)estore to an existing one? ")
         if res.lower() == "r":
             org_id = mistapi.cli.select_org(apisession)[0]
-            org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(
+            org_name = mistapi.api.v1.orgs.orgs.getOrg(
                 apisession, org_id).data["name"]
             if _check_org_name(apisession, org_id, org_name):
                 return org_id, org_name

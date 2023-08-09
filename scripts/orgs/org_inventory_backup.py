@@ -403,7 +403,7 @@ def start(mist_session:mistapi.APISession, org_id:str, backup_folder_param:str=N
         backup_folder = backup_folder_param
     if not org_id:
         org_id = mistapi.cli.select_org(mist_session)[0]
-    org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(mist_session, org_id).data["name"]
+    org_name = mistapi.api.v1.orgs.orgs.getOrg(mist_session, org_id).data["name"]
     _start_inventory_backup(mist_session, org_id, org_name)
     os.chdir(current_folder)
 

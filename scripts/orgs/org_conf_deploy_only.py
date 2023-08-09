@@ -663,7 +663,7 @@ def _go_to_backup_folder(src_org_name: str = None, source_backup: str = None):
 
 
 def _check_org_name_in_script_param(apisession: mistapi.APISession, org_id: str, org_name: str = None):
-    response = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id)
+    response = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id)
     if response.status_code != 200:
         console.critical(
             f"Unable to retrieve the org information: {response.data}")
@@ -674,7 +674,7 @@ def _check_org_name_in_script_param(apisession: mistapi.APISession, org_id: str,
 
 def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str = None):
     if not org_name:
-        org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(
+        org_name = mistapi.api.v1.orgs.orgs.getOrg(
             apisession, org_id).data["name"]
     while True:
         print()

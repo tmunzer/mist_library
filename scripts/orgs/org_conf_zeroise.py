@@ -439,7 +439,7 @@ def check_org_name(org_name):
 def start(apisession, org_id, org_name_from_user):
     if not org_id:
         org_id = mistapi.cli.select_org(apisession)[0]
-    org_name_from_mist = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id).data[
+    org_name_from_mist = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data[
         "name"
     ]
 

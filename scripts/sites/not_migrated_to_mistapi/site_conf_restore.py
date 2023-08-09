@@ -480,7 +480,7 @@ def start_restore_org(apisession, org_id, org_name, check_org_name=True, in_back
 def start(apisession, org_id=None):
     if org_id == "":
         org_id = mistapi.cli.select_org(apisession)[0]
-    org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id).data["name"]
+    org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
     start_restore_org(apisession, org_id, org_name)
 
 

@@ -223,7 +223,7 @@ def _save_as_json(data:list, org_name:str, org_id:str):
 def start(apisession, org_id:str=None):
     if not org_id:
         org_id = mistapi.cli.select_org(apisession)[0]
-    org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id).data["name"]
+    org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
     data=_process_export(apisession, org_id)
     if out_file_format == "csv":
         _save_as_csv(data, org_name, org_id)

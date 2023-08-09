@@ -284,7 +284,7 @@ def start(apisession:mistapi.APISession, org_id:str, site_id:str, backup_folder_
     if backup_folder_param:
         global backup_folder 
         backup_folder = backup_folder_param
-    org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id=org_id).data["name"]
+    org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id=org_id).data["name"]
     site_id = mistapi.cli.select_site(apisession, org_id=org_id, allow_many=True)
     start_site_backup(apisession, org_id, org_name, site_id)
     os.chdir(current_folder)

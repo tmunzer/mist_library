@@ -693,7 +693,7 @@ def _go_to_backup_folder(src_org_name:str=None, source_backup:str=None):
 #####################################################################
 #### DEST ORG SELECTION ####
 def _check_org_name_in_script_param(apisession:mistapi.APISession, dst_org_id:str, org_name:str=None):
-    response = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, dst_org_id)
+    response = mistapi.api.v1.orgs.orgs.getOrg(apisession, dst_org_id)
     if response.status_code != 200:
         console.critical(f"Unable to retrieve the org information: {response.data}")
         sys.exit(0)
@@ -703,7 +703,7 @@ def _check_org_name_in_script_param(apisession:mistapi.APISession, dst_org_id:st
 
 def _check_org_name(apisession:mistapi.APISession, dst_org_id:str, org_name:str=None):
     if not org_name:
-        org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, dst_org_id).data["name"]
+        org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, dst_org_id).data["name"]
     while True:
         print()
         resp = input(
@@ -721,7 +721,7 @@ def _select_dest_org(apisession: mistapi.APISession):
     print()
     while True:
         dst_org_id = mistapi.cli.select_org(apisession)[0]
-        org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(
+        org_name = mistapi.api.v1.orgs.orgs.getOrg(
             apisession, dst_org_id).data["name"]
         if _check_org_name(apisession, dst_org_id, org_name):
             return dst_org_id, org_name

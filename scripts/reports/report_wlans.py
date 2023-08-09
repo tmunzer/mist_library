@@ -82,7 +82,7 @@ def wlans_from_sites(mist_session, sites, org_info, site_ids):
 
 def start(mist_session, org_id, site_ids):
     # org_sites = list(filter(lambda privilege: "org_id" in privilege and privilege["org_id"] == org_id, mist_session.privileges))
-    org_info = mistapi.api.v1.orgs.orgs.getOrgInfo(
+    org_info = mistapi.api.v1.orgs.orgs.getOrg(
         mist_session, org_id).data
     org_info = {
         "name": org_info["name"],

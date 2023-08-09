@@ -97,7 +97,7 @@ signal.signal(signal.SIGINT, sigint_handler)
 #####################################################################
 # BACKUP OBJECTS REFS
 org_steps = {
-    "data": {"mistapi_function": mistapi.api.v1.orgs.orgs.getOrgInfo, "text": "Org info", "check_next":False},
+    "data": {"mistapi_function": mistapi.api.v1.orgs.orgs.getOrg, "text": "Org info", "check_next":False},
     "settings": {"mistapi_function": mistapi.api.v1.orgs.setting.getOrgSettings, "text": "Org settings", "check_next":False},
     "sites": {"mistapi_function": mistapi.api.v1.orgs.sites.listOrgSites, "text": "Org Sites", "check_next":True},
     "webhooks": {"mistapi_function": mistapi.api.v1.orgs.webhooks.listOrgWebhooks, "text": "Org webhooks", "check_next":True},
@@ -365,7 +365,7 @@ def start(mist_session:mistapi.APISession, org_id:str, backup_folder_param:str=N
         global backup_folder 
         backup_folder = backup_folder_param
     if not org_id: org_id = mistapi.cli.select_org(mist_session)[0]
-    org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(mist_session, org_id).data["name"]
+    org_name = mistapi.api.v1.orgs.orgs.getOrg(mist_session, org_id).data["name"]
     success = _start_org_backup(mist_session, org_id, org_name)    
     os.chdir(current_folder)
     return success

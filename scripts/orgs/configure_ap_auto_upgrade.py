@@ -516,7 +516,7 @@ def _check_custom(custom:str):
 ###############################################################################
 # ORG SELECTION
 def _check_org_name_in_script_param(apisession: mistapi.APISession, org_id: str, org_name: str = None):
-    response = mistapi.api.v1.orgs.orgs.getOrgInfo(apisession, org_id)
+    response = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id)
     if response.status_code != 200:
         console.critical(
             f"Unable to retrieve the org information: {response.data}")
@@ -527,7 +527,7 @@ def _check_org_name_in_script_param(apisession: mistapi.APISession, org_id: str,
 
 def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str = None):
     if not org_name:
-        org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(
+        org_name = mistapi.api.v1.orgs.orgs.getOrg(
             apisession, org_id).data["name"]
     while True:
         print()
@@ -545,7 +545,7 @@ def _select_dest_org(apisession: mistapi.APISession):
     print(" Destination Org ".center(80, "-"))
     print()
     org_id = mistapi.cli.select_org(apisession)[0]
-    org_name = mistapi.api.v1.orgs.orgs.getOrgInfo(
+    org_name = mistapi.api.v1.orgs.orgs.getOrg(
         apisession, org_id).data["name"]
     if _check_org_name(apisession, org_id, org_name):
         return org_id, org_name
