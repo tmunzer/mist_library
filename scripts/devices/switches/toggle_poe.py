@@ -54,21 +54,38 @@ import logging
 import sys
 import getopt
 
+MISTAPI_MIN_VERSION = "0.44.1"
+
 try:
     import mistapi
     from mistapi.__logger import console
 except:
-    print("""
-Critical: 
-\"mistapi\" package is missing. Please use the pip command to install it.
+        print("""
+        Critical: 
+        \"mistapi\" package is missing. Please use the pip command to install it.
 
-# Linux/macOS
-python3 -m pip install mistapi
+        # Linux/macOS
+        python3 -m pip install mistapi
 
-# Windows
-py -m pip install mistapi
-    """)
-    sys.exit(2)
+        # Windows
+        py -m pip install mistapi
+        """)
+        sys.exit(2)
+else:
+    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+        print(f"""
+    Critical: 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Please use the pip command to updated it.
+
+    # Linux/macOS
+    python3 -m pip upgrade mistapi
+
+    # Windows
+    py -m pip upgrade mistapi
+        """)
+        sys.exit(2)
+
 
 #####################################################################
 #### PARAMETERS #####
@@ -120,7 +137,7 @@ def _update(apisession:mistapi.APISession, org_id:str, tmpl_id:str, port_usages:
         if res.status_code == 200:
             print("\033[92m\u2714\033[0m")
         else:
-            raise
+            raise Exception
     except:
         print('\033[31m\u2716\033[0m') 
         sys.exit(5)

@@ -5,8 +5,41 @@ Github repository: https://github.com/tmunzer/Mist_library/
 
 
 #### IMPORTS #####
-import mistapi
 import logging
+import sys
+
+MISTAPI_MIN_VERSION = "0.44.1"
+
+try:
+    import mistapi
+    from mistapi.__logger import console
+except:
+        print("""
+        Critical: 
+        \"mistapi\" package is missing. Please use the pip command to install it.
+
+        # Linux/macOS
+        python3 -m pip install mistapi
+
+        # Windows
+        py -m pip install mistapi
+        """)
+        sys.exit(2)
+else:
+    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+        print(f"""
+    Critical: 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Please use the pip command to updated it.
+
+    # Linux/macOS
+    python3 -m pip upgrade mistapi
+
+    # Windows
+    py -m pip upgrade mistapi
+        """)
+        sys.exit(2)
+
 #### PARAMETERS #####
 psk = {"name":'myUser', "passphrase":'myBadPassword', "ssid":'mySSID', "usage":'multi'}
 log_file = "./sites_scripts.log"
@@ -18,7 +51,8 @@ logger = logging.getLogger(__name__)
 def start(apisession):
     site_id = mistapi.cli.select_site(apisession, allow_many=False)
     mistapi.api.v1.sites.psks.createSitePsk(apisession, site_id, psk)
-    psks = mistapi.api.v1.sites.psks.listSitePsks(apisession, site_id).data
+    response = mistapi.api.v1.sites.psks.listSitePsks(apisession, site_id)
+    psks = mistapi.get_all(apisession, response)
     mistapi.cli.pretty_print(psks)
 
 ##### ENTRY POINT ####

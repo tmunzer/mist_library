@@ -35,30 +35,48 @@ Example:
 python3 import_admins.py <path_to_the_csv_file>"
 
 '''
+#### IMPORTS ####
+import sys
+import csv
+import logging
+
+MISTAPI_MIN_VERSION = "0.44.1"
+
+try:
+    import mistapi
+    from mistapi.__logger import console
+except:
+        print("""
+        Critical: 
+        \"mistapi\" package is missing. Please use the pip command to install it.
+
+        # Linux/macOS
+        python3 -m pip install mistapi
+
+        # Windows
+        py -m pip install mistapi
+        """)
+        sys.exit(2)
+else:
+    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+        print(f"""
+    Critical: 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Please use the pip command to updated it.
+
+    # Linux/macOS
+    python3 -m pip upgrade mistapi
+
+    # Windows
+    py -m pip upgrade mistapi
+        """)
+        sys.exit(2)
+
 #### PARAMETERS #####
 csv_separator = ","
 privileges = []
 env_file="~/.mist_env"
 log_file = "./script.log"
-#### IMPORTS ####
-import sys
-import csv
-import logging
-try:
-    import mistapi
-except:
-    print("""
-Critical: 
-\"mistapi\" package is missing. Please use the pip command to install it.
-
-# Linux/macOS
-python3 -m pip install mistapi
-
-# Windows
-py -m pip install mistapi
-    """)
-    sys.exit(0)
-
 
 #####################################################################
 #### LOGS ####

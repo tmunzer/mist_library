@@ -66,21 +66,38 @@ import re
 import logging
 import getopt
 from typing import Callable
+
+MISTAPI_MIN_VERSION = "0.44.1"
+
 try:
     import mistapi
     from mistapi.__logger import console
 except:
-    print("""
-Critical: 
-\"mistapi\" package is missing. Please use the pip command to install it.
+        print("""
+        Critical: 
+        \"mistapi\" package is missing. Please use the pip command to install it.
 
-# Linux/macOS
-python3 -m pip install mistapi
+        # Linux/macOS
+        python3 -m pip install mistapi
 
-# Windows
-py -m pip install mistapi
-    """)
-    sys.exit(2)
+        # Windows
+        py -m pip install mistapi
+        """)
+        sys.exit(2)
+else:
+    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+        print(f"""
+    Critical: 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Please use the pip command to updated it.
+
+    # Linux/macOS
+    python3 -m pip upgrade mistapi
+
+    # Windows
+    py -m pip upgrade mistapi
+        """)
+        sys.exit(2)
 
 
 #####################################################################
@@ -256,10 +273,9 @@ def _restore_device_images(dst_apisession:mistapi.APISession, src_org_id:str, ds
                     try:
                         message = f"{device.get('type', devices_type).title()} {device.get('mac')} (S/N: {device.get('serial')}): Restoring Image #{i}"
                         pb.log_message(message)
-                        if proceed:
-                            response = mistapi.api.v1.sites.devices.addSiteDeviceImageFile(dst_apisession, dst_site_id, device["id"], i, image_name)
-                            if response.status_code != 200:
-                                raise Exception
+                        response = mistapi.api.v1.sites.devices.addSiteDeviceImageFile(dst_apisession, dst_site_id, device["id"], i, image_name)
+                        if response.status_code != 200:
+                            raise Exception
                         pb.log_success(message, inc=False)
                     except:
                         issue_image = True
@@ -307,7 +323,7 @@ def _process_org_ids(dst_apisession:mistapi.APISession,dst_org_id:str, org_backu
             
 ##########################################################################################
 #### CORE FUNCTIONS ####
-def _result(failed_devices:dict, proceed:bool) -> bool:
+def _result(failed_devices:dict, proceed:bool=True) -> bool:
     pb.log_title("Result", end=True)
     missing_ids = uuid_matching.get_missing_uuids()
     if not proceed:
@@ -514,7 +530,7 @@ def _check_org_name(apisession:mistapi.APISession, dst_org_id:str, org_name:str=
         resp = input(
             "To avoid any error, please confirm the current destination orgnization name: ")
         if resp == org_name:
-            return True
+            return dst_org_id, org_name
         else:
             print()
             print("The orgnization names do not match... Please try again...")
@@ -697,7 +713,7 @@ if __name__ == "__main__":
     start(
         apisession, 
         dst_org_id=dst_org_id, 
-        org_name=org_name, 
+        dst_org_name=org_name, 
         backup_folder_param=backup_folder_param, 
         source_backup=source_backup, 
         filter_site_names=filter_site_names

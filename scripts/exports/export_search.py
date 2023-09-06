@@ -65,29 +65,45 @@ python3 ./export_searchs.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --repo
 '''
 
 #### IMPORTS ####
-
 import sys
 import json
 import csv
 import os
 import logging
 import getopt
+
+MISTAPI_MIN_VERSION = "0.44.1"
+
 try:
     import mistapi
     from mistapi.__api_response import APIResponse
     from mistapi.__logger import console
 except:
-    print("""
-Critical: 
-\"mistapi\" package is missing. Please use the pip command to install it.
+        print("""
+        Critical: 
+        \"mistapi\" package is missing. Please use the pip command to install it.
 
-# Linux/macOS
-python3 -m pip install mistapi
+        # Linux/macOS
+        python3 -m pip install mistapi
 
-# Windows
-py -m pip install mistapi
-    """)
-    sys.exit(2)
+        # Windows
+        py -m pip install mistapi
+        """)
+        sys.exit(2)
+else:
+    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+        print(f"""
+    Critical: 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Please use the pip command to updated it.
+
+    # Linux/macOS
+    python3 -m pip upgrade mistapi
+
+    # Windows
+    py -m pip upgrade mistapi
+        """)
+        sys.exit(2)
 
 
 #### PARAMETERS #####
@@ -369,7 +385,7 @@ def _searchClientEvents(apisession: mistapi.APISession, func:str, scope_id:str, 
         query_params = _query_params(query_params_type)
 
     if func=="searchOrgClientEvents":
-        return mistapi.api.v1.orgs.clients.searchOrgWirelessClientsEvents(apisession, scope_id,
+        return mistapi.api.v1.orgs.clients.searchOrgWirelessClientEvents(apisession, scope_id,
             type=query_params.get("type"),
             reason_code=query_params.get("reason_code"),
             ssid=query_params.get("ssid"),
@@ -380,7 +396,7 @@ def _searchClientEvents(apisession: mistapi.APISession, func:str, scope_id:str, 
             limit=query_params.get("limit", 1000)
         )         
     elif func=="searchSiteClientEvents":
-        return mistapi.api.v1.sites.clients.searchSiteWirelessClientsEvents(apisession, scope_id,
+        return mistapi.api.v1.sites.clients.searchSiteWirelessClientEvents(apisession, scope_id,
             type=query_params.get("type"),
             reason_code=query_params.get("reason_code"),
             ssid=query_params.get("ssid"),

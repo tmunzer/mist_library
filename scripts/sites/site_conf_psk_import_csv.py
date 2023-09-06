@@ -14,10 +14,41 @@ pskName2,pskValue2,Wlan2
 '''
 
 #### IMPORTS #####
-import mistapi
 import sys
 import csv
 import logging
+
+MISTAPI_MIN_VERSION = "0.44.1"
+
+try:
+    import mistapi
+    from mistapi.__logger import console
+except:
+        print("""
+        Critical: 
+        \"mistapi\" package is missing. Please use the pip command to install it.
+
+        # Linux/macOS
+        python3 -m pip install mistapi
+
+        # Windows
+        py -m pip install mistapi
+        """)
+        sys.exit(2)
+else:
+    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+        print(f"""
+    Critical: 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Please use the pip command to updated it.
+
+    # Linux/macOS
+    python3 -m pip upgrade mistapi
+
+    # Windows
+    py -m pip upgrade mistapi
+        """)
+        sys.exit(2)
 
 #### PARAMETERS #####
 csv_separator = ","
@@ -66,8 +97,9 @@ def list_psks(apisession, site_id):
     print("".center(80, "-"))
     print(f"List of current PSKs for site {site_id}".center(80, "-"))
     print("")
-    psks = mistapi.api.v1.sites.psks.listSitePsks(apisession, site_id).data
-    mistapi.cli.display_list_of_json_as_table(psks)
+    response = mistapi.api.v1.sites.psks.listSitePsks(apisession, site_id)
+    psks = mistapi.get_all(apisession, response)
+    mistapi.cli.pretty_print(psks)
 
 
 def start(apisession):
@@ -79,10 +111,10 @@ def start(apisession):
     psks = read_csv(sys.argv[1])
 
     for site_id in site_ids:
-        import_psk(site_id, psks)
+        import_psk(apisession, site_id, psks)
 
     for site_id in site_ids:
-        list_psks(site_id)
+        list_psks(apisession, site_id)
 
 #### SCRIPT ENTRYPOINT #####
 if __name__ == "__main__":

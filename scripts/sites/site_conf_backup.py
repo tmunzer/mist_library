@@ -59,21 +59,38 @@ import os
 import sys
 import getopt
 
+MISTAPI_MIN_VERSION = "0.44.1"
+
 try:
     import mistapi
     from mistapi.__logger import console
 except:
-    print("""
-Critical: 
-\"mistapi\" package is missing. Please use the pip command to install it.
+        print("""
+        Critical: 
+        \"mistapi\" package is missing. Please use the pip command to install it.
 
-# Linux/macOS
-python3 -m pip install mistapi
+        # Linux/macOS
+        python3 -m pip install mistapi
 
-# Windows
-py -m pip install mistapi
-    """)
-    sys.exit(2)
+        # Windows
+        py -m pip install mistapi
+        """)
+        sys.exit(2)
+else:
+    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+        print(f"""
+    Critical: 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Please use the pip command to updated it.
+
+    # Linux/macOS
+    python3 -m pip upgrade mistapi
+
+    # Windows
+    py -m pip upgrade mistapi
+        """)
+        sys.exit(2)
+
 
 #####################################################################
 #### PARAMETERS #####
@@ -270,7 +287,7 @@ def start(apisession:mistapi.APISession, org_id:str, site_id:str, backup_folder_
     if not site_id: apisession = mistapi.cli.select_site(apisession)[0]
     else:
         response = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id)
-        org_sites = mistapi.get_all(response)
+        org_sites = mistapi.get_all(apisession, response)
         site_id_in_org = False
         for site in org_sites:
             if site["id"] == site_id:
