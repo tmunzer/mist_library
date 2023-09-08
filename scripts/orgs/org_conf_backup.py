@@ -1,4 +1,4 @@
-'''
+"""
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -46,7 +46,7 @@ Examples:
 python3 ./org_conf_backup.py     
 python3 ./org_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
-'''
+"""
 
 
 #### IMPORTS ####
@@ -64,7 +64,8 @@ try:
     import mistapi
     from mistapi.__logger import console
 except:
-        print("""
+    print(
+        """
         Critical: 
         \"mistapi\" package is missing. Please use the pip command to install it.
 
@@ -73,22 +74,9 @@ except:
 
         # Windows
         py -m pip install mistapi
-        """)
-        sys.exit(2)
-else:
-    if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        print(f"""
-    Critical: 
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
-    Please use the pip command to updated it.
-
-    # Linux/macOS
-    python3 -m pip upgrade mistapi
-
-    # Windows
-    py -m pip upgrade mistapi
-        """)
-        sys.exit(2)
+        """
+    )
+    sys.exit(2)
 
 #####################################################################
 #### PARAMETERS #####
@@ -104,116 +92,324 @@ logger = logging.getLogger(__name__)
 
 #####################################################################
 #### GLOBALS #####
-sys_exit=False
+sys_exit = False
+
+
 def sigint_handler(signal, frame):
     global sys_exit
     sys_exit = True
-    ('[Ctrl C],KeyboardInterrupt exception occured.')
+    ("[Ctrl C],KeyboardInterrupt exception occured.")
+
+
 signal.signal(signal.SIGINT, sigint_handler)
 #####################################################################
 # BACKUP OBJECTS REFS
 org_steps = {
-    "data": {"mistapi_function": mistapi.api.v1.orgs.orgs.getOrg, "text": "Org info", "check_next":False},
-    "settings": {"mistapi_function": mistapi.api.v1.orgs.setting.getOrgSettings, "text": "Org settings", "check_next":False},
-    "sites": {"mistapi_function": mistapi.api.v1.orgs.sites.listOrgSites, "text": "Org Sites", "check_next":True},
-    "webhooks": {"mistapi_function": mistapi.api.v1.orgs.webhooks.listOrgWebhooks, "text": "Org webhooks", "check_next":True},
-    "assetfilters": {"mistapi_function": mistapi.api.v1.orgs.assetfilters.listOrgAssetFilters, "text": "Org assetfilters", "check_next":True},
-    "alarmtemplates": {"mistapi_function": mistapi.api.v1.orgs.alarmtemplates.listOrgAlarmTemplates, "text": "Org alarmtemplates", "check_next":True},
-    "deviceprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles, "text": "Org deviceprofiles", "check_next":True},
-    "hubprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles, "text": "Org hubprofiles", "request_type":"gateway", "check_next":True},
-    "mxclusters": {"mistapi_function": mistapi.api.v1.orgs.mxclusters.listOrgMxEdgeClusters, "text": "Org mxclusters", "check_next":True},
-    "mxtunnels": {"mistapi_function": mistapi.api.v1.orgs.mxtunnels.listOrgMxTunnels, "text": "Org mxtunnels", "check_next":True},
-    "psks": {"mistapi_function": mistapi.api.v1.orgs.psks.listOrgPsks, "text": "Org psks", "check_next":True},
-    "pskportals": {"mistapi_function": mistapi.api.v1.orgs.pskportals.listOrgPskPortals, "text": "Org pskportals", "check_next":True},
-    "rftemplates": {"mistapi_function": mistapi.api.v1.orgs.rftemplates.listOrgRfTemplates, "text": "Org rftemplates", "check_next":True},
-    "networktemplates": {"mistapi_function": mistapi.api.v1.orgs.networktemplates.listOrgNetworkTemplates, "text": "Org networktemplates", "check_next":True},
-    "evpn_topologies": {"mistapi_function": mistapi.api.v1.orgs.evpn_topologies.listOrgEvpnTopologies, "text": "Org evpn_topologies", "check_next":True},
-    "services": {"mistapi_function": mistapi.api.v1.orgs.services.listOrgServices, "text": "Org services", "check_next":True},
-    "networks": {"mistapi_function": mistapi.api.v1.orgs.networks.listOrgNetworks, "text": "Org networks", "check_next":True},
-    "gatewaytemplates": {"mistapi_function": mistapi.api.v1.orgs.gatewaytemplates.listOrgGatewayTemplates, "text": "Org gatewaytemplates", "check_next":True},
-    "vpns": {"mistapi_function": mistapi.api.v1.orgs.vpns.listOrgsVpns, "text": "Org vpns", "check_next":True},
-    "secpolicies": {"mistapi_function": mistapi.api.v1.orgs.secpolicies.listOrgSecPolicies, "text": "Org secpolicies", "check_next":True},
-    "servicepolicies": {"mistapi_function": mistapi.api.v1.orgs.servicepolicies.listOrgServicePolicies, "text": "Org servicepolicies", "check_next":True},
-    "sitegroups": {"mistapi_function": mistapi.api.v1.orgs.sitegroups.listOrgSiteGroups, "text": "Org sitegroups", "check_next":True},
-    "sitetemplates": {"mistapi_function": mistapi.api.v1.orgs.sitetemplates.listOrgSiteTemplates, "text": "Org sitetemplates", "check_next":True},
-    "ssos": {"mistapi_function": mistapi.api.v1.orgs.ssos.listOrgSsos, "text": "Org ssos", "check_next":True},
-    "ssoroles": {"mistapi_function": mistapi.api.v1.orgs.ssoroles.listOrgSsoRoles, "text": "Org ssoroles", "check_next":True},
-    "templates": {"mistapi_function": mistapi.api.v1.orgs.templates.listOrgTemplates, "text": "Org templates", "check_next":True},
-    "wxrules": {"mistapi_function": mistapi.api.v1.orgs.wxrules.listOrgWxRules, "text": "Org wxrules", "check_next":True},
-    "wxtags": {"mistapi_function": mistapi.api.v1.orgs.wxtags.listOrgWxTags, "text": "Org wxtags", "check_next":True},
-    "wxtunnels": {"mistapi_function": mistapi.api.v1.orgs.wxtunnels.listOrgWxTunnels, "text": "Org wxtunnels", "check_next":True},
-    "nactags": {"mistapi_function": mistapi.api.v1.orgs.nactags.listOrgNacTags, "text": "Org nactags", "check_next":True},
-    "nacrules": {"mistapi_function": mistapi.api.v1.orgs.nacrules.listOrgNacRules, "text": "Org nacrules", "check_next":True},
-    "wlans": {"mistapi_function": mistapi.api.v1.orgs.wlans.listOrgWlans, "text": "Org wlans", "check_next":True}
+    "data": {
+        "mistapi_function": mistapi.api.v1.orgs.orgs.getOrg,
+        "text": "Org info",
+        "check_next": False,
+    },
+    "settings": {
+        "mistapi_function": mistapi.api.v1.orgs.setting.getOrgSettings,
+        "text": "Org settings",
+        "check_next": False,
+    },
+    "sites": {
+        "mistapi_function": mistapi.api.v1.orgs.sites.listOrgSites,
+        "text": "Org Sites",
+        "check_next": True,
+    },
+    "webhooks": {
+        "mistapi_function": mistapi.api.v1.orgs.webhooks.listOrgWebhooks,
+        "text": "Org webhooks",
+        "check_next": True,
+    },
+    "assetfilters": {
+        "mistapi_function": mistapi.api.v1.orgs.assetfilters.listOrgAssetFilters,
+        "text": "Org assetfilters",
+        "check_next": True,
+    },
+    "alarmtemplates": {
+        "mistapi_function": mistapi.api.v1.orgs.alarmtemplates.listOrgAlarmTemplates,
+        "text": "Org alarmtemplates",
+        "check_next": True,
+    },
+    "deviceprofiles": {
+        "mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles,
+        "text": "Org deviceprofiles",
+        "check_next": True,
+    },
+    "hubprofiles": {
+        "mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles,
+        "text": "Org hubprofiles",
+        "request_type": "gateway",
+        "check_next": True,
+    },
+    "mxclusters": {
+        "mistapi_function": mistapi.api.v1.orgs.mxclusters.listOrgMxEdgeClusters,
+        "text": "Org mxclusters",
+        "check_next": True,
+    },
+    "mxtunnels": {
+        "mistapi_function": mistapi.api.v1.orgs.mxtunnels.listOrgMxTunnels,
+        "text": "Org mxtunnels",
+        "check_next": True,
+    },
+    "psks": {
+        "mistapi_function": mistapi.api.v1.orgs.psks.listOrgPsks,
+        "text": "Org psks",
+        "check_next": True,
+    },
+    "pskportals": {
+        "mistapi_function": mistapi.api.v1.orgs.pskportals.listOrgPskPortals,
+        "text": "Org pskportals",
+        "check_next": True,
+    },
+    "rftemplates": {
+        "mistapi_function": mistapi.api.v1.orgs.rftemplates.listOrgRfTemplates,
+        "text": "Org rftemplates",
+        "check_next": True,
+    },
+    "networktemplates": {
+        "mistapi_function": mistapi.api.v1.orgs.networktemplates.listOrgNetworkTemplates,
+        "text": "Org networktemplates",
+        "check_next": True,
+    },
+    "evpn_topologies": {
+        "mistapi_function": mistapi.api.v1.orgs.evpn_topologies.listOrgEvpnTopologies,
+        "text": "Org evpn_topologies",
+        "check_next": True,
+    },
+    "services": {
+        "mistapi_function": mistapi.api.v1.orgs.services.listOrgServices,
+        "text": "Org services",
+        "check_next": True,
+    },
+    "networks": {
+        "mistapi_function": mistapi.api.v1.orgs.networks.listOrgNetworks,
+        "text": "Org networks",
+        "check_next": True,
+    },
+    "gatewaytemplates": {
+        "mistapi_function": mistapi.api.v1.orgs.gatewaytemplates.listOrgGatewayTemplates,
+        "text": "Org gatewaytemplates",
+        "check_next": True,
+    },
+    "vpns": {
+        "mistapi_function": mistapi.api.v1.orgs.vpns.listOrgsVpns,
+        "text": "Org vpns",
+        "check_next": True,
+    },
+    "secpolicies": {
+        "mistapi_function": mistapi.api.v1.orgs.secpolicies.listOrgSecPolicies,
+        "text": "Org secpolicies",
+        "check_next": True,
+    },
+    "servicepolicies": {
+        "mistapi_function": mistapi.api.v1.orgs.servicepolicies.listOrgServicePolicies,
+        "text": "Org servicepolicies",
+        "check_next": True,
+    },
+    "sitegroups": {
+        "mistapi_function": mistapi.api.v1.orgs.sitegroups.listOrgSiteGroups,
+        "text": "Org sitegroups",
+        "check_next": True,
+    },
+    "sitetemplates": {
+        "mistapi_function": mistapi.api.v1.orgs.sitetemplates.listOrgSiteTemplates,
+        "text": "Org sitetemplates",
+        "check_next": True,
+    },
+    "ssos": {
+        "mistapi_function": mistapi.api.v1.orgs.ssos.listOrgSsos,
+        "text": "Org ssos",
+        "check_next": True,
+    },
+    "ssoroles": {
+        "mistapi_function": mistapi.api.v1.orgs.ssoroles.listOrgSsoRoles,
+        "text": "Org ssoroles",
+        "check_next": True,
+    },
+    "templates": {
+        "mistapi_function": mistapi.api.v1.orgs.templates.listOrgTemplates,
+        "text": "Org templates",
+        "check_next": True,
+    },
+    "wxrules": {
+        "mistapi_function": mistapi.api.v1.orgs.wxrules.listOrgWxRules,
+        "text": "Org wxrules",
+        "check_next": True,
+    },
+    "wxtags": {
+        "mistapi_function": mistapi.api.v1.orgs.wxtags.listOrgWxTags,
+        "text": "Org wxtags",
+        "check_next": True,
+    },
+    "wxtunnels": {
+        "mistapi_function": mistapi.api.v1.orgs.wxtunnels.listOrgWxTunnels,
+        "text": "Org wxtunnels",
+        "check_next": True,
+    },
+    "nactags": {
+        "mistapi_function": mistapi.api.v1.orgs.nactags.listOrgNacTags,
+        "text": "Org nactags",
+        "check_next": True,
+    },
+    "nacrules": {
+        "mistapi_function": mistapi.api.v1.orgs.nacrules.listOrgNacRules,
+        "text": "Org nacrules",
+        "check_next": True,
+    },
+    "wlans": {
+        "mistapi_function": mistapi.api.v1.orgs.wlans.listOrgWlans,
+        "text": "Org wlans",
+        "check_next": True,
+    },
 }
-site_steps = {        
-    "assets": {"mistapi_function": mistapi.api.v1.sites.assets.listSiteAssets, "text": "Site assets", "check_next":True},
-    "assetfilters": {"mistapi_function": mistapi.api.v1.sites.assetfilters.listSiteAssetFilters, "text": "Site assetfilters", "check_next":True},
-    "beacons": {"mistapi_function": mistapi.api.v1.sites.beacons.listSiteBeacons, "text": "Site beacons", "check_next":True},
-    "maps": {"mistapi_function": mistapi.api.v1.sites.maps.listSiteMaps, "text": "Site maps", "check_next":True},
-    "psks": {"mistapi_function": mistapi.api.v1.sites.psks.listSitePsks, "text": "Site psks", "check_next":True},
-    "rssizones": {"mistapi_function": mistapi.api.v1.sites.rssizones.listSiteRssiZones, "text": "Site rssizones", "check_next":True},
-    "settings": {"mistapi_function": mistapi.api.v1.sites.setting.getSiteSetting, "text": "Site settings", "check_next":False},
-    "vbeacons": {"mistapi_function": mistapi.api.v1.sites.vbeacons.listSiteVBeacons, "text": "Site vbeacons", "check_next":True},
-    "webhooks": {"mistapi_function": mistapi.api.v1.sites.webhooks.listSiteWebhooks, "text": "Site webhooks", "check_next":True},
-    "wlans": {"mistapi_function": mistapi.api.v1.sites.wlans.listSiteWlans, "text": "Site wlans", "check_next":True},
-    "wxrules": {"mistapi_function": mistapi.api.v1.sites.wxrules.listSiteWxRules, "text": "Site wxrules", "check_next":True},
-    "wxtags": {"mistapi_function": mistapi.api.v1.sites.wxtags.listSiteWxTags, "text": "Site wxtags", "check_next":True},
-    "wxtunnels": {"mistapi_function": mistapi.api.v1.sites.wxtunnels.listSiteWxTunnels, "text": "Site wxtunnels", "check_next":True},
-    "zones": {"mistapi_function": mistapi.api.v1.sites.zones.listSiteZones, "text": "Site zones", "check_next":True}
+site_steps = {
+    "assets": {
+        "mistapi_function": mistapi.api.v1.sites.assets.listSiteAssets,
+        "text": "Site assets",
+        "check_next": True,
+    },
+    "assetfilters": {
+        "mistapi_function": mistapi.api.v1.sites.assetfilters.listSiteAssetFilters,
+        "text": "Site assetfilters",
+        "check_next": True,
+    },
+    "beacons": {
+        "mistapi_function": mistapi.api.v1.sites.beacons.listSiteBeacons,
+        "text": "Site beacons",
+        "check_next": True,
+    },
+    "maps": {
+        "mistapi_function": mistapi.api.v1.sites.maps.listSiteMaps,
+        "text": "Site maps",
+        "check_next": True,
+    },
+    "psks": {
+        "mistapi_function": mistapi.api.v1.sites.psks.listSitePsks,
+        "text": "Site psks",
+        "check_next": True,
+    },
+    "rssizones": {
+        "mistapi_function": mistapi.api.v1.sites.rssizones.listSiteRssiZones,
+        "text": "Site rssizones",
+        "check_next": True,
+    },
+    "settings": {
+        "mistapi_function": mistapi.api.v1.sites.setting.getSiteSetting,
+        "text": "Site settings",
+        "check_next": False,
+    },
+    "vbeacons": {
+        "mistapi_function": mistapi.api.v1.sites.vbeacons.listSiteVBeacons,
+        "text": "Site vbeacons",
+        "check_next": True,
+    },
+    "webhooks": {
+        "mistapi_function": mistapi.api.v1.sites.webhooks.listSiteWebhooks,
+        "text": "Site webhooks",
+        "check_next": True,
+    },
+    "wlans": {
+        "mistapi_function": mistapi.api.v1.sites.wlans.listSiteWlans,
+        "text": "Site wlans",
+        "check_next": True,
+    },
+    "wxrules": {
+        "mistapi_function": mistapi.api.v1.sites.wxrules.listSiteWxRules,
+        "text": "Site wxrules",
+        "check_next": True,
+    },
+    "wxtags": {
+        "mistapi_function": mistapi.api.v1.sites.wxtags.listSiteWxTags,
+        "text": "Site wxtags",
+        "check_next": True,
+    },
+    "wxtunnels": {
+        "mistapi_function": mistapi.api.v1.sites.wxtunnels.listSiteWxTunnels,
+        "text": "Site wxtunnels",
+        "check_next": True,
+    },
+    "zones": {
+        "mistapi_function": mistapi.api.v1.sites.zones.listSiteZones,
+        "text": "Site zones",
+        "check_next": True,
+    },
 }
+
 
 #####################################################################
 # PROGRESS BAR AND DISPLAY
-class ProgressBar():
-    def __init__(self):        
+class ProgressBar:
+    def __init__(self):
         self.steps_total = 0
         self.steps_count = 0
 
-    def _pb_update(self, size:int=80):   
-        if self.steps_count > self.steps_total: 
+    def _pb_update(self, size: int = 80):
+        if self.steps_count > self.steps_total:
             self.steps_count = self.steps_total
 
-        percent = self.steps_count/self.steps_total
+        percent = self.steps_count / self.steps_total
         delta = 17
-        x = int((size-delta)*percent)
+        x = int((size - delta) * percent)
         print(f"Progress: ", end="")
         print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
         print(f"{int(percent*100)}%".rjust(5), end="")
 
-    def _pb_new_step(self, message:str, result:str, inc:bool=False, size:int=80, display_pbar:bool=True):
-        if inc: self.steps_count += 1
+    def _pb_new_step(
+        self,
+        message: str,
+        result: str,
+        inc: bool = False,
+        size: int = 80,
+        display_pbar: bool = True,
+    ):
+        if inc:
+            self.steps_count += 1
         text = f"\033[A\033[F{message}"
         print(f"{text} ".ljust(size + 4, "."), result)
         print("".ljust(80))
-        if display_pbar: self._pb_update(size)
+        if display_pbar:
+            self._pb_update(size)
 
-    def _pb_title(self, text:str, size:int=80, end:bool=False, display_pbar:bool=True):
+    def _pb_title(
+        self, text: str, size: int = 80, end: bool = False, display_pbar: bool = True
+    ):
         print("\033[A")
-        print(f" {text} ".center(size, "-"),"\n")
-        if not end and display_pbar: 
+        print(f" {text} ".center(size, "-"), "\n")
+        if not end and display_pbar:
             print("".ljust(80))
             self._pb_update(size)
 
-    def set_steps_total(self, steps_total:int):
+    def set_steps_total(self, steps_total: int):
         self.steps_total = steps_total
 
-    def log_message(self, message, display_pbar:bool=True):
+    def log_message(self, message, display_pbar: bool = True):
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
-    def log_success(self, message, inc:bool=False, display_pbar:bool=True):
+    def log_success(self, message, inc: bool = False, display_pbar: bool = True):
         logger.info(f"{message}: Success")
-        self._pb_new_step(message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
+        self._pb_new_step(
+            message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
 
-    def log_failure(self, message, inc:bool=False, display_pbar:bool=True):
-        logger.error(f"{message}: Failure")    
-        self._pb_new_step(message, '\033[31m\u2716\033[0m\n', inc=inc, display_pbar=display_pbar)
+    def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
+        logger.error(f"{message}: Failure")
+        self._pb_new_step(
+            message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
 
-    def log_title(self, message, end:bool=False, display_pbar:bool=True):
+    def log_title(self, message, end: bool = False, display_pbar: bool = True):
         logger.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
+
 pb = ProgressBar()
+
+
 #####################################################################
 #### FUNCTIONS ####
 def _backup_wlan_portal(org_id, site_id, wlans):
@@ -223,21 +419,26 @@ def _backup_wlan_portal(org_id, site_id, wlans):
             portal_file_name = f"{file_prefix}_org_{org_id}_wlan_{wlan_id}.json"
             portal_image = f"{file_prefix}_org_{org_id}_wlan_{wlan_id}.png"
         else:
-            portal_file_name = f"{file_prefix}_org_{org_id}_site_{site_id}_wlan_{wlan_id}.json"
-            portal_image = f"{file_prefix}_org_{org_id}_site_{site_id}_wlan_{wlan_id}.png"
+            portal_file_name = (
+                f"{file_prefix}_org_{org_id}_site_{site_id}_wlan_{wlan_id}.json"
+            )
+            portal_image = (
+                f"{file_prefix}_org_{org_id}_site_{site_id}_wlan_{wlan_id}.png"
+            )
         if "portal_template_url" in wlan and wlan["portal_template_url"]:
             try:
-                message=f"portal template for wlan {wlan_id}"
+                message = f"portal template for wlan {wlan_id}"
                 pb.log_message(message)
                 urllib.request.urlretrieve(
-                    wlan["portal_template_url"], portal_file_name)
+                    wlan["portal_template_url"], portal_file_name
+                )
                 pb.log_success(message)
             except Exception as e:
                 pb.log_failure(message)
                 logger.error("Exception occurred", exc_info=True)
         if "portal_image" in wlan and wlan["portal_image"]:
             try:
-                message=f"portal image for wlan {wlan_id}"
+                message = f"portal image for wlan {wlan_id}"
                 pb.log_message(message)
                 urllib.request.urlretrieve(wlan["portal_image"], portal_image)
                 pb.log_success(message)
@@ -246,8 +447,16 @@ def _backup_wlan_portal(org_id, site_id, wlans):
                 logger.error("Exception occurred", exc_info=True)
 
 
-def _do_backup(mist_session, backup_function, check_next, scope_id, message, request_type:str=None):
-    if sys_exit: sys.exit(0)
+def _do_backup(
+    mist_session,
+    backup_function,
+    check_next,
+    scope_id,
+    message,
+    request_type: str = None,
+):
+    if sys_exit:
+        sys.exit(0)
     try:
         pb.log_message(message)
         if request_type:
@@ -266,6 +475,7 @@ def _do_backup(mist_session, backup_function, check_next, scope_id, message, req
         logger.error("Exception occurred", exc_info=True)
         return None
 
+
 #### BACKUP ####
 def _backup_full_org(mist_session, org_id, org_name):
     pb.log_title(f"Backuping Org {org_name}")
@@ -276,11 +486,18 @@ def _backup_full_org(mist_session, org_id, org_name):
     for step_name in org_steps:
         step = org_steps[step_name]
         request_type = step.get("request_type")
-        backup["org"][step_name] = _do_backup(mist_session, step["mistapi_function"], step["check_next"], org_id, step["text"], request_type)
+        backup["org"][step_name] = _do_backup(
+            mist_session,
+            step["mistapi_function"],
+            step["check_next"],
+            org_id,
+            step["text"],
+            request_type,
+        )
     _backup_wlan_portal(org_id, None, backup["org"]["wlans"])
-    
+
     ### SITES BACKUP
-    backup["sites"]={}
+    backup["sites"] = {}
     for site in backup["org"]["sites"]:
         site_id = site["id"]
         site_name = site["name"]
@@ -288,13 +505,19 @@ def _backup_full_org(mist_session, org_id, org_name):
         pb.log_title(f"Backuping Site {site_name}")
         for step_name in site_steps:
             step = site_steps[step_name]
-            site_backup[step_name] = _do_backup(mist_session, step["mistapi_function"], step["check_next"], site_id, step["text"])
+            site_backup[step_name] = _do_backup(
+                mist_session,
+                step["mistapi_function"],
+                step["check_next"],
+                site_id,
+                step["text"],
+            )
         backup["sites"][site_id] = site_backup
 
         if site_backup["wlans"]:
             _backup_wlan_portal(org_id, site_id, site_backup["wlans"])
 
-        message="Site map images"
+        message = "Site map images"
         pb.log_message(message)
         try:
             for xmap in site_backup["maps"]:
@@ -303,20 +526,22 @@ def _backup_full_org(mist_session, org_id, org_name):
                     url = xmap["url"]
                     xmap_id = xmap["id"]
                 if url:
-                    image_name = f"{file_prefix}_org_{org_id}_site_{site_id}_map_{xmap_id}.png"
+                    image_name = (
+                        f"{file_prefix}_org_{org_id}_site_{site_id}_map_{xmap_id}.png"
+                    )
                     urllib.request.urlretrieve(url, image_name)
             pb.log_success(message)
         except Exception as e:
             pb.log_failure(message)
             logger.error("Exception occurred", exc_info=True)
-        
+
     pb.log_title("Backup Done", end=True)
     return backup
 
 
 def _save_to_file(backup_file, backup, org_name):
     backup_path = os.path.join(backup_folder, org_name, backup_file)
-    message=f"Saving to file {backup_path} "
+    message = f"Saving to file {backup_path} "
     print(f"{message}".ljust(79, "."), end="", flush=True)
     try:
         with open(backup_file, "w") as f:
@@ -362,8 +587,11 @@ def _start_org_backup(mist_session, org_id, org_name) -> bool:
 
     return True
 
-def start(mist_session:mistapi.APISession, org_id:str, backup_folder_param:str=None):
-    '''
+
+def start(
+    mist_session: mistapi.APISession, org_id: str, backup_folder_param: str = None
+):
+    """
     Start the process to deploy a backup/template
 
     PARAMS
@@ -371,25 +599,28 @@ def start(mist_session:mistapi.APISession, org_id:str, backup_folder_param:str=N
     :param  mistapi.APISession  apisession          - mistapi session, already logged in
     :param  str                 org_id              - only if the destination org already exists. org_id where to deploy the configuration
     :param  str                 backup_folder_param - Path to the folder where to save the org backup (a subfolder will be created with the org name). default is "./org_backup"
-    
+
     RETURNS
     -------
     :return bool                success status of the backup process. Returns False if the process didn't ended well
-    '''
+    """
     current_folder = os.getcwd()
     if backup_folder_param:
-        global backup_folder 
+        global backup_folder
         backup_folder = backup_folder_param
-    if not org_id: org_id = mistapi.cli.select_org(mist_session)[0]
+    if not org_id:
+        org_id = mistapi.cli.select_org(mist_session)[0]
     org_name = mistapi.api.v1.orgs.orgs.getOrg(mist_session, org_id).data["name"]
-    success = _start_org_backup(mist_session, org_id, org_name)    
+    success = _start_org_backup(mist_session, org_id, org_name)
     os.chdir(current_folder)
     return success
+
 
 #####################################################################
 # USAGE
 def usage():
-    print('''
+    print(
+        """
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -437,16 +668,52 @@ Examples:
 python3 ./org_conf_backup.py
 python3 ./org_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
-''')
+"""
+    )
     sys.exit(0)
+
+
+def check_mistapi_version():
+    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+        logger.critical(
+            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+        )
+        logger.critical(f"Please use the pip command to updated it.")
+        logger.critical("")
+        logger.critical(f"    # Linux/macOS")
+        logger.critical(f"    python3 -m pip upgrade mistapi")
+        logger.critical("")
+        logger.critical(f"    # Windows")
+        logger.critical(f"    py -m pip upgrade mistapi")
+        print(
+            f"""
+    Critical: 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.
+    Please use the pip command to updated it.
+
+    # Linux/macOS
+    python3 -m pip upgrade mistapi
+
+    # Windows
+    py -m pip upgrade mistapi
+        """
+        )
+        sys.exit(2)
+    else:
+        logger.info(
+            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+        )
 
 
 #####################################################################
 ##### ENTRY POINT ####
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:e:l:b:", [
-                                   "help", "org_id=", "env=", "log_file=", "backup_folder="])
+        opts, args = getopt.getopt(
+            sys.argv[1:],
+            "ho:e:l:b:",
+            ["help", "org_id=", "env=", "log_file=", "backup_folder="],
+        )
     except getopt.GetoptError as err:
         console.error(err)
         usage()
@@ -457,7 +724,7 @@ if __name__ == "__main__":
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-o", "--org_id"]:
-            org_id = a      
+            org_id = a
         elif o in ["-e", "--env"]:
             env_file = a
         elif o in ["-l", "--log_file"]:
@@ -468,8 +735,9 @@ if __name__ == "__main__":
             assert False, "unhandled option"
 
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode='w')
+    logging.basicConfig(filename=log_file, filemode="w")
     logger.setLevel(logging.DEBUG)
+    check_mistapi_version()
     ### START ###
     apisession = mistapi.APISession(env_file=env_file)
     apisession.login()

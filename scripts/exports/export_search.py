@@ -90,20 +90,6 @@ except:
         py -m pip install mistapi
         """)
         sys.exit(2)
-else:
-    if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        print(f"""
-    Critical: 
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
-    Please use the pip command to updated it.
-
-    # Linux/macOS
-    python3 -m pip upgrade mistapi
-
-    # Windows
-    py -m pip upgrade mistapi
-        """)
-        sys.exit(2)
 
 
 #### PARAMETERS #####
@@ -1251,8 +1237,34 @@ python3 ./export_search.py
 python3 ./export_searchs.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --report=client_sessions_wireless --q_params=duration:1w  
     """)
     sys.exit(0)
-#### SCRIPT ENTRYPOINT ####
 
+def check_mistapi_version():
+    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+        logger.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+        logger.critical(f"Please use the pip command to updated it.")
+        logger.critical("")
+        logger.critical(f"    # Linux/macOS")
+        logger.critical(f"    python3 -m pip upgrade mistapi")
+        logger.critical("")
+        logger.critical(f"    # Windows")
+        logger.critical(f"    py -m pip upgrade mistapi")
+        print(f"""
+    Critical: 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Please use the pip command to updated it.
+
+    # Linux/macOS
+    python3 -m pip upgrade mistapi
+
+    # Windows
+    py -m pip upgrade mistapi
+        """)
+        sys.exit(2)
+    else: 
+        logger.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+
+##################################################################### 
+#### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hm:o:s:r:f:e:l:q:", [
@@ -1320,6 +1332,7 @@ if __name__ == "__main__":
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode='w')
     logger.setLevel(logging.DEBUG)
+    check_mistapi_version()
     ### START ###
     apisession = mistapi.APISession(env_file=ENV_FILE)
     apisession.login()

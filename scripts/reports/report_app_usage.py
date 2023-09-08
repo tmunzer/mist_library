@@ -68,20 +68,6 @@ except:
         py -m pip install mistapi
         """)
         sys.exit(2)
-else:
-    if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        print(f"""
-    Critical: 
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
-    Please use the pip command to updated it.
-
-    # Linux/macOS
-    python3 -m pip upgrade mistapi
-
-    # Windows
-    py -m pip upgrade mistapi
-        """)
-        sys.exit(2)
 
 
 #### PARAMETERS #####
@@ -241,6 +227,32 @@ python3 ./report_app_usage.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --d
 """)
     sys.exit(0)
 
+def check_mistapi_version():
+    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+        logger.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+        logger.critical(f"Please use the pip command to updated it.")
+        logger.critical("")
+        logger.critical(f"    # Linux/macOS")
+        logger.critical(f"    python3 -m pip upgrade mistapi")
+        logger.critical("")
+        logger.critical(f"    # Windows")
+        logger.critical(f"    py -m pip upgrade mistapi")
+        print(f"""
+    Critical: 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Please use the pip command to updated it.
+
+    # Linux/macOS
+    python3 -m pip upgrade mistapi
+
+    # Windows
+    py -m pip upgrade mistapi
+        """)
+        sys.exit(2)
+    else: 
+        logger.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+
+
 ###############################################################################
 ### ENTRY POINT
 if __name__ == "__main__":
@@ -276,6 +288,7 @@ if __name__ == "__main__":
     #### LOGS ####
     logging.basicConfig(filename=log_file, filemode='w')
     logger.setLevel(logging.DEBUG)
+    check_mistapi_version()
     ### MIST SESSION ###
     mist_session = mistapi.APISession(env_file=env_file)
     mist_session.login()

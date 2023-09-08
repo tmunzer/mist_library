@@ -35,20 +35,6 @@ except:
         py -m pip install mistapi
         """)
         sys.exit(2)
-else:
-    if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        print(f"""
-    Critical: 
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
-    Please use the pip command to updated it.
-
-    # Linux/macOS
-    python3 -m pip upgrade mistapi
-
-    # Windows
-    py -m pip upgrade mistapi
-        """)
-        sys.exit(2)
 
 #### PARAMETERS #####
 csv_separator = ","

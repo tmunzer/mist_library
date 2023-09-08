@@ -27,6 +27,7 @@ dns_server_rewrite, coa_server, radsec, airwatch, cisco_cwa, rateset, schedule, 
 #### IMPORTS ####
 import sys
 import getopt
+import logging
 
 MISTAPI_MIN_VERSION = "0.44.1"
 
@@ -45,20 +46,6 @@ except:
         py -m pip install mistapi
         """)
         sys.exit(2)
-else:
-    if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        print(f"""
-    Critical: 
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
-    Please use the pip command to updated it.
-
-    # Linux/macOS
-    python3 -m pip upgrade mistapi
-
-    # Windows
-    py -m pip upgrade mistapi
-        """)
-        sys.exit(2)
 
 
 #### PARAMETERS #####
@@ -66,7 +53,11 @@ csv_separator = ","
 fields = ["id", "ssid", "enabled", "auth", "auth_servers", "acct_servers",
           "band", "interface", "vlan_id", "dynamic_vlan", "hide_ssid"]
 csv_file = "./report.csv"
+log_file = "./script.log"
 
+#####################################################################
+#### LOGS ####
+logger = logging.getLogger(__name__)
 
 #### GLOBAL VARIABLES ####
 wlans_summarized = []
@@ -115,10 +106,40 @@ def start(mist_session, org_id, site_ids):
 
 def usage():
     print('''''')
-#### SCRIPT ENTRYPOINT ####
+
+def check_mistapi_version():
+    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+        logger.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+        logger.critical(f"Please use the pip command to updated it.")
+        logger.critical("")
+        logger.critical(f"    # Linux/macOS")
+        logger.critical(f"    python3 -m pip upgrade mistapi")
+        logger.critical("")
+        logger.critical(f"    # Windows")
+        logger.critical(f"    py -m pip upgrade mistapi")
+        print(f"""
+    Critical: 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Please use the pip command to updated it.
+
+    # Linux/macOS
+    python3 -m pip upgrade mistapi
+
+    # Windows
+    py -m pip upgrade mistapi
+        """)
+        sys.exit(2)
+    else: 
+        logger.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+
 ###############################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
+    #### LOGS ####
+    logging.basicConfig(filename=log_file, filemode='w')
+    logger.setLevel(logging.DEBUG)
+    check_mistapi_version()
+
     try:
         opts, args = getopt.getopt(sys.argv[1:], "he:o:", [
                                    "help", "env_file=", "org_id="])

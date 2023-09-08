@@ -79,20 +79,6 @@ except:
         py -m pip install mistapi
         """)
         sys.exit(2)
-else:
-    if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        print(f"""
-    Critical: 
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
-    Please use the pip command to updated it.
-
-    # Linux/macOS
-    python3 -m pip upgrade mistapi
-
-    # Windows
-    py -m pip upgrade mistapi
-        """)
-        sys.exit(2)
 #####################################################################
 #### PARAMETERS #####
 ids_to_not_delete = []
@@ -575,6 +561,31 @@ __          __     _____  _   _ _____ _   _  _____
 """
     )
 
+def check_mistapi_version():
+    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+        logger.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+        logger.critical(f"Please use the pip command to updated it.")
+        logger.critical("")
+        logger.critical(f"    # Linux/macOS")
+        logger.critical(f"    python3 -m pip upgrade mistapi")
+        logger.critical("")
+        logger.critical(f"    # Windows")
+        logger.critical(f"    py -m pip upgrade mistapi")
+        print(f"""
+    Critical: 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Please use the pip command to updated it.
+
+    # Linux/macOS
+    python3 -m pip upgrade mistapi
+
+    # Windows
+    py -m pip upgrade mistapi
+        """)
+        sys.exit(2)
+    else: 
+        logger.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+
 
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
@@ -610,6 +621,7 @@ if __name__ == "__main__":
     #### LOGS ####
     logging.basicConfig(filename=log_file, filemode="w")
     logger.setLevel(logging.DEBUG)
+    check_mistapi_version()
     ### START ###
     warning()
     apisession = mistapi.APISession(env_file=env_file)
