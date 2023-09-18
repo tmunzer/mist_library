@@ -79,7 +79,8 @@ There is a short desccription at the beginning of each script explaining the pur
 - **org_conf_zeroize.py**: Python script to zeroise an organization. This scrip will remove all the configuration, all the sites and all the objects from the organization.
 - **org_inventory_backup.py**: Python script to backup all the devices from an organization. It will backup the devices claim codes (if any), configuration (including position on the maps) and pictures.
 - **org_inventory_deploy.py**: Python script to deploy organization inventory backup file. By default, this script can run in "Dry Run" mode to validate the destination org configuration and raise warning if any object from the source org is missing in the destination org.
-- **org_inventory_restore_pictures.py**: Python script to restore device images from an inventory backup file. 
+- **org_inventory_restore_pictures.py**: Python script to restore device images from an inventory backup file.
+- **validate_site_variables.py**: Python script to validate that all the variables used in the templates used by each site are configured at the site level. The result is displayed on the console and saved in a CSV file.
 ## Sites
 - **site_conf_backup.py**: Python script to backup a whole site.
 - **site_conf_psk_import_csv.py**: This script will import PSKs from a CSV file to one or multiple sites.
