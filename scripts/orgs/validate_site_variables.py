@@ -793,10 +793,10 @@ def check_mistapi_version():
         LOGGER.critical(f"Please use the pip command to updated it.")
         LOGGER.critical("")
         LOGGER.critical(f"    # Linux/macOS")
-        LOGGER.critical(f"    python3 -m pip upgrade mistapi")
+        LOGGER.critical(f"    python3 -m pip install --upgrade mistapi")
         LOGGER.critical("")
         LOGGER.critical(f"    # Windows")
-        LOGGER.critical(f"    py -m pip upgrade mistapi")
+        LOGGER.critical(f"    py -m pip install --upgrade mistapi")
         print(
             f"""
     Critical: 
@@ -804,10 +804,10 @@ def check_mistapi_version():
     Please use the pip command to updated it.
 
     # Linux/macOS
-    python3 -m pip upgrade mistapi
+    python3 -m pip install --upgrade mistapi
 
     # Windows
-    py -m pip upgrade mistapi
+    py -m pip install --upgrade mistapi
         """
         )
         sys.exit(2)
