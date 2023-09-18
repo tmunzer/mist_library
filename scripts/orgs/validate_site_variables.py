@@ -160,12 +160,28 @@ pb = ProgressBar()
 #####################################################################
 #### SITE FUNCTIONS ####
 def _site_included(site: dict, included: dict = {}):
+    '''
+    Check if the WLAN template is used by the scpecified site 
+    
+    PARAMS
+    -----------
+    site : dict
+        site info retrieved from /api/v1/orgs/{org_id}/site
+
+    included : dict
+        "applies" or "exceptions" info from the template
+
+    RETURN
+    -----------
+    boolean
+        True if the WLAN template is assigned to the site
+    '''
     site_id = site["id"]
     sitegroup_ids = site.get("sitegroup_ids", [])
     if included:
         if (included.get("org_id") or site_id in included.get("site_ids", [])):
             return True
-        elif included.get("sitegroup_ids"):
+        if included.get("sitegroup_ids"):
             for sitegroup_id in sitegroup_ids:
                 if sitegroup_id in included["sitegroup_ids"]:
                     return True
@@ -175,6 +191,25 @@ def _site_included(site: dict, included: dict = {}):
 def _find_site_vars_in_wlans(
     site: dict, wlan_templates_vars: dict, required_vars: dict = {}
 ):
+    '''
+    Retrieve the WLAN site variables for the site
+    
+    PARAMS
+    -----------
+    site : dict
+        site info retrieved from /api/v1/orgs/{org_id}/site
+
+    wlan_templates_vars : dict
+        dict of WLAN templates with their WLANs and the variables for each
+    
+    required_vars : dict
+        site variables already identified for the site
+
+    RETURN
+    -----------
+    dict
+        updated site variables identified for the site
+    '''
     for wlan_template_id in wlan_templates_vars:
         wlan_template = wlan_templates_vars[wlan_template_id]
         applies = wlan_template["applies"]
@@ -203,6 +238,28 @@ def _find_site_vars_in_wlans(
 
 
 def _find_site_vars_in_template(site: str,gateway_templates_vars: dict,switch_templates_vars: dict,required_vars: dict = {}):
+    '''
+    Retrieve the GW and SW site variables for the site
+    
+    PARAMS
+    -----------
+    site : dict
+        site info retrieved from /api/v1/orgs/{org_id}/site
+
+    gateway_templates_vars : dict
+        dict of GW templates with their variables 
+
+    switch_templates_vars : dict
+        dict of SW templates with their variables 
+    
+    required_vars : dict
+        site variables already identified for the site
+
+    RETURN
+    -----------
+    dict
+        updated site variables identified for the site
+    '''
     gateway_template_id = site.get("gatewaytemplate_id")
     switch_template_id = site.get("networktemplate_id")
     if gateway_template_id and gateway_template_id in gateway_templates_vars:
@@ -245,6 +302,31 @@ def _check_sites(
     switch_templates_vars: dict,
     wlan_templates_vars: dict,
 ):
+    '''
+    Compare the site vars with the required vars for each site
+    
+    PARAMS
+    -----------
+    mistapi.APISession : mist_session
+        mistapi session including authentication and Mist host information
+
+    sites : list
+        list of sites retrieved from /api/v1/orgs/{org_id}/site
+
+    gateway_templates_vars : dict
+        dict of GW templates with their variables 
+
+    switch_templates_vars : dict
+        dict of SW templates with their variables 
+    
+    required_vars : dict
+        site variables already identified for the site
+
+    RETURN
+    -----------
+    dict
+        dict of sites with the requireds and configured vars
+    '''
     sites_vars = {}
     for site in sites:
         configured_vars = {}
@@ -286,7 +368,20 @@ def _check_sites(
 
 #####################################################################
 #### TEMPLATES FUNCTIONS ####
-def _find_site_variables(data: object):
+def _find_site_variables(data: dict):
+    '''
+    Find the required var in a template/wlan
+    
+    PARAMS
+    -----------
+    data : dict
+        temaplate/wlan
+
+    RETURN
+    -----------
+    list
+        list of vars used in the template/wlan
+    '''
     regex = r"({{[^}]*}})"
     result = []
     LOGGER.debug(f"regex: template id: {data['id']}")
@@ -302,6 +397,22 @@ def _find_site_variables(data: object):
 
 
 def _gateway_templates(mist_session: mistapi.APISession, org_id: str):
+    '''
+    Retrieve anf process the GW templates to identify the required vars
+    
+    PARAMS
+    -----------
+    mistapi.APISession : mist_session
+        mistapi session including authentication and Mist host information
+
+    org_id : str
+        Mist org_id
+
+    RETURN
+    -----------
+    dict
+        dict of GW templates with the required vars
+    '''
     gateway_template_vars = {}
     message = "Retrieving Gateway Templates"
     pb.log_message(message)
@@ -328,6 +439,22 @@ def _gateway_templates(mist_session: mistapi.APISession, org_id: str):
 
 
 def _switch_templates(mist_session: mistapi.APISession, org_id: str):
+    '''
+    Retrieve anf process the SW templates to identify the required vars
+    
+    PARAMS
+    -----------
+    mistapi.APISession : mist_session
+        mistapi session including authentication and Mist host information
+
+    org_id : str
+        Mist org_id
+
+    RETURN
+    -----------
+    dict
+        dict of SW templates with the required vars
+    '''
     switch_template_vars = {}
     message = "Retrieving Switch Templates"
     pb.log_message(message)
@@ -354,8 +481,25 @@ def _switch_templates(mist_session: mistapi.APISession, org_id: str):
 
 
 def _wlan_templates(mist_session: mistapi.APISession, org_id: str):
-    wlan_template_vars = {}
+    '''
+    Retrieve anf process the WLAN templates to identify the required vars.
+    This function also retrieving the list of Org WLANs and attach them to 
+    the corresponding WLAN template
+    
+    PARAMS
+    -----------
+    mistapi.APISession : mist_session
+        mistapi session including authentication and Mist host information
 
+    org_id : str
+        Mist org_id
+
+    RETURN
+    -----------
+    dict
+        dict of WLAN templates with the attached WLANs and the required vars
+    '''
+    wlan_template_vars = {}
     # retrieve the list of wlan templates
     try:
         message = "Retrieving WLAN Templates"
@@ -431,6 +575,24 @@ def _wlan_templates(mist_session: mistapi.APISession, org_id: str):
 
 
 def _retrieve_templates_variables(mist_session: mistapi.APISession, org_id: str):
+    '''
+    Retrieve anf process Mist templates
+    
+    PARAMS
+    -----------
+    mistapi.APISession : mist_session
+        mistapi session including authentication and Mist host information
+
+    org_id : str
+        Mist org_id
+
+    RETURN
+    -----------
+    tuple
+        dict of GW templates with the required vars
+        dict of SW templates with the required vars
+        dict of WLAN templates with the attached WLANs and the required vars
+    '''
     gateway_template_vars = _gateway_templates(mist_session, org_id)
     switch_templates_vars = _switch_templates(mist_session, org_id)
     wlan_templates_vars = _wlan_templates(mist_session, org_id)
@@ -438,6 +600,22 @@ def _retrieve_templates_variables(mist_session: mistapi.APISession, org_id: str)
 
 
 def _retrieve_sites(mist_session: mistapi.APISession, org_id: str):
+    '''
+    Retrieve sites info from the Mist Org
+    
+    PARAMS
+    -----------
+    mistapi.APISession : mist_session
+        mistapi session including authentication and Mist host information
+
+    org_id : str
+        Mist org_id
+
+    RETURN
+    -----------
+    list
+        List of Mist Sites
+    '''
     message = "Retrieving Sites from the org"
     pb.log_message(message, display_pbar=False)
     try:
@@ -459,6 +637,18 @@ def _retrieve_sites(mist_session: mistapi.APISession, org_id: str):
 #####################################################################
 #### END ####
 def _process_data(sites_vars:dict, csv_file:str):
+    '''
+    Process the result, then display it on the console and save it in a CSV file
+    
+    PARAMS
+    -----------
+    sites_vars : dict
+        dict of sites with the required vars, the configured vars, and all the
+        required info
+
+    csv_file : str
+        file path where to save the result
+    '''
     pb.log_title("RESULTS", end=True)
     result = []
     header = ["#site_name","site_id","template_type","template_name","template_id","wlan_name","wlan_id","var_name","value","configured"]
@@ -511,8 +701,7 @@ def start(mist_session: mistapi.APISession, org_id: str, csv_file: str = None):
     -------
     :param  mistapi.APISession  dst_apisession      - mistapi session with `Super User` access the destination Org, already logged in
     :param  str                 org_id              - org_id of the org to backup
-    :param  str                 org_name            - Org name where to deploy the inventory. This parameter requires "org_id" to be defined
-    :param  str                 csv_file            - Path to the CSV file where to save the output. default is "./org_backup"
+    :param  str                 csv_file            - Path to the CSV file where to save the output. default is "./validate_site_variables.csv"
 
     """
     if not csv_file:
@@ -540,6 +729,9 @@ def start(mist_session: mistapi.APISession, org_id: str, csv_file: str = None):
 #####################################################################
 #### USAGE ####
 def usage():
+    '''
+    Display Usage
+    '''
     print(
         """
 -------------------------------------------------------------------------------
@@ -591,6 +783,9 @@ python3 ./validate_site_variables.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330
 
 
 def check_mistapi_version():
+    '''
+    Check the mistapi package version in use, and compare it to MISTAPI_MIN_VERSION
+    '''
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
         LOGGER.critical(
             f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
