@@ -101,15 +101,13 @@ python3 ./import_sites.py -f ./my_new_sites.csv --org_id=203d3d02-xxxx-xxxx-xxxx
 '''
 
 #### IMPORTS #####
-import requests
 import time
 import sys
-import os
 import csv
 import getopt
 import logging
 from typing import Tuple
-import time
+import requests
 
 MISTAPI_MIN_VERSION = "0.44.1"
 
@@ -131,21 +129,20 @@ except:
 
 #####################################################################
 #### PARAMETERS #####
-log_file = "./script.log"
-env_file = "~/.mist_env"
+LOG_FILE = "./script.log"
+ENV_FILE = "~/.mist_env"
 # This Script can use Google APIs (optional) to retrieve lat/lng, tz and country code. To be
 # able to use Google API, you need an API Key first. Mode information available here:
 # https://developers.google.com/maps/documentation/javascript/get-api-key?hl=en
-google_api_key = ""
+GOOGLE_API_KEY = ""
 
 #####################################################################
 #### LOGS ####
-logger = logging.getLogger(__name__)
-out = sys.stdout
+LOGGER = logging.getLogger(__name__)
 
 #####################################################################
 #### GLOBALS #####
-parameter_types = [
+PARAMETER_TYPES = [
     "site",
     "alarmtemplate",
     "aptemplate",
@@ -155,10 +152,8 @@ parameter_types = [
     "secpolicy",
     "sitegroup"
 ]
-geolocator = None
-tzfinder = None
-steps_total = 0
-steps_count = 0
+GEOLOCATOR = None
+TZFINDER = None
 #####################################################################
 # PROGRESS BAR
 #####################################################################
@@ -210,22 +205,22 @@ class ProgressBar():
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
     def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        logger.info(f"{message}: Success")
+        LOGGER.info(f"{message}: Success")
         self._pb_new_step(
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
 
     def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
-        logger.warning(f"{message}: Warning")
+        LOGGER.warning(f"{message}: Warning")
         self._pb_new_step(
             message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
 
     def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        logger.error(f"{message}: Failure")
+        LOGGER.error(f"{message}: Failure")
         self._pb_new_step(
             message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar)
 
     def log_title(self, message, end: bool = False, display_pbar: bool = True):
-        logger.info(message)
+        LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
 
@@ -238,7 +233,7 @@ pb = ProgressBar()
 # GOOGLE LAT/LNG
 
 
-def _get_google_geocoding(address):
+def _get_google_geocoding(address, google_api_key):
     try:
         data = {"location": None, "country_code": ""}
         url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={google_api_key}"
@@ -267,7 +262,7 @@ def _get_google_geocoding(address):
         return None
 
 
-def _get_google_tz(location):
+def _get_google_tz(location, google_api_key):
     try:
         ts = int(time.time())
         url = f"https://maps.googleapis.com/maps/api/timezone/json?location={location['latitude']},{location['longitude']}&timestamp={ts}&key={google_api_key}"
@@ -287,12 +282,12 @@ def _get_google_tz(location):
         return None
 
 
-def _geocoding_google(site):
+def _geocoding_google(site, google_api_key:str):
     message = "Retrievning geo information"
     pb.log_message(message)
-    data = _get_google_geocoding(site["address"])
+    data = _get_google_geocoding(site["address"], google_api_key)
     if data["location"] is not None:
-        tz = _get_google_tz(data["location"])
+        tz = _get_google_tz(data["location"], google_api_key)
         if tz:
             data["tz"] = tz
     return data
@@ -303,9 +298,9 @@ def _geocoding_google(site):
 
 def _import_tzfinder():
     try:
-        global tzfinder
+        global TZFINDER
         from timezonefinder import TimezoneFinder
-        tzfinder = TimezoneFinder()
+        TZFINDER = TimezoneFinder()
     except:
         print("""
     Critical: 
@@ -323,9 +318,9 @@ def _import_tzfinder():
 
 def _import_geopy():
     try:
-        global geolocator
+        global GEOLOCATOR
         from geopy import Nominatim
-        geolocator = Nominatim(user_agent="import_app")
+        GEOLOCATOR = Nominatim(user_agent="import_app")
     except:
         print("""
     Critical: 
@@ -347,7 +342,7 @@ def _import_open_geocoding():
 
 
 def _get_open_geocoding(site):
-    location = geolocator.geocode(site["address"], addressdetails=True)
+    location = GEOLOCATOR.geocode(site["address"], addressdetails=True)
     if type(location) == "NoneType":
         pb.log_warning(f"Site {site['name']}: Unable to find the address")
         return None
@@ -356,7 +351,7 @@ def _get_open_geocoding(site):
 
 
 def _get_open_tz(location):
-    tz = tzfinder.timezone_at(lat=location.latitude, lng=location.longitude)
+    tz = TZFINDER.timezone_at(lat=location.latitude, lng=location.longitude)
     country_code = str(location.raw["address"]["country_code"]).upper()
     return {"tz": tz, "country_code": country_code}
 
@@ -379,11 +374,11 @@ def _geocoding_open(site):
 #####################################################################
 
 
-def _get_geo_info(site: dict) -> dict:
+def _get_geo_info(site: dict, google_api_key:str) -> dict:
     message = f"Site {site['name']}: Retrievning geo information"
     pb.log_message(message)
     if google_api_key:
-        data = _geocoding_google(site)
+        data = _geocoding_google(site, google_api_key)
     if not google_api_key or data is None:
         data = _geocoding_open(site)
     if data:
@@ -399,8 +394,8 @@ def _get_geo_info(site: dict) -> dict:
     return site
 
 
-def _create_site(apisession: mistapi.APISession, org_id: str, site: dict):
-    site = _get_geo_info(site).copy()
+def _create_site(apisession: mistapi.APISession, org_id: str, site: dict, google_api_key:str):
+    site = _get_geo_info(site, google_api_key).copy()
     if site:
         message = f"Site {site['name']}: Site creation"
         pb.log_message(message)
@@ -459,7 +454,7 @@ def _clone_src_site_settings(apisession:mistapi.APISession, src_site_id:str, dst
             if "vars" in src_site: del src_site["vars"]            
     except:
         pb.log_failure(message, True)
-    
+
     if src_site:
         message= f"Site {site_name}: Deploying settings from src site"
         pb.log_message(message)
@@ -468,7 +463,7 @@ def _clone_src_site_settings(apisession:mistapi.APISession, src_site_id:str, dst
             if resp.status_code != 200:
                 pb.log_failure(message, True)
             else:
-                pb.log_success(f"Site {site_name}: Cloning settings from src site", True)      
+                pb.log_success(f"Site {site_name}: Cloning settings from src site", True)
         except:
             pb.log_failure(message, True)
 
@@ -519,7 +514,7 @@ def _replace_object_names_by_ids(apisession: mistapi.APISession, org_id: str, si
             apisession, org_id, parameters["sitegroup"], site["sitegroup_names"])
         del site["sitegroup_names"]
 
-    for parameter in parameter_types:
+    for parameter in PARAMETER_TYPES:
         try:
             if f"{parameter}_name" in site:
                 name = site[f"{parameter}_name"]
@@ -648,7 +643,7 @@ def _check_settings(sites: list):
                 if not "sitegroup" in parameters_in_use:
                     parameters_in_use.append("sitegroup")
                 pass
-            elif parameter_name[0] in parameter_types and parameter_name[1] in ["name", "id"]:
+            elif parameter_name[0] in PARAMETER_TYPES and parameter_name[1] in ["name", "id"]:
                 if not parameter_name[0] in parameters_in_use:
                     parameters_in_use.append(parameter_name[0])
                 pass
@@ -671,7 +666,7 @@ def _process_sites_data(apisession: mistapi.APISession, org_id: str, sites: list
     return parameters
 
 
-def _create_sites(apisession: mistapi.APISession, org_id: str, sites: list, parameters: dict):
+def _create_sites(apisession: mistapi.APISession, org_id: str, sites: list, parameters: dict, google_api_key:str):
     '''
     Function to create and update all the sites
     '''
@@ -679,7 +674,7 @@ def _create_sites(apisession: mistapi.APISession, org_id: str, sites: list, para
     for site in sites:        
         site, source_site_id = _replace_object_names_by_ids(
             apisession, org_id, site, parameters)
-        new_site = _create_site(apisession, org_id, site)
+        new_site = _create_site(apisession, org_id, site, google_api_key)
         if not new_site:
             pb.inc()
         else:
@@ -755,7 +750,7 @@ def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None
                 pb.log_success(message, display_pbar=False)
             except Exception as e:
                 pb.log_failure(message, display_pbar=False)
-                logger.error("Exception occurred", exc_info=True)
+                LOGGER.error("Exception occurred", exc_info=True)
                 sys.exit(10)
             org_id = mistapi.api.v1.orgs.orgs.createOrg(
                 apisession, org).data["id"]
@@ -768,8 +763,10 @@ def _select_dest_org(apisession: mistapi.APISession):
     print()
     while True:
         res = input(
-            "Do you want to create a (n)ew organisation or (r)estore to an existing one? ")
-        if res.lower() == "r":
+            "Do you want to import into a (n)ew organisation or (e)xisting one, (q) to quit? ")
+        if res.lower() == "q":
+            sys.exit(0)
+        elif res.lower() == "e":
             org_id = mistapi.cli.select_org(apisession)[0]
             org_name = mistapi.api.v1.orgs.orgs.getOrg(
                 apisession, org_id).data["name"]
@@ -779,7 +776,7 @@ def _select_dest_org(apisession: mistapi.APISession):
             return _create_org(apisession)
 
 
-def start(apisession: mistapi.APISession, file_path: str, org_id: str = None, org_name: str = None):
+def start(apisession: mistapi.APISession, file_path: str, org_id: str = None, org_name: str = None, google_api_key:str = None):
     if org_id and org_name:
         if not _check_org_name_in_script_param(apisession, org_id, org_name):
             console.critical(
@@ -800,7 +797,7 @@ def start(apisession: mistapi.APISession, file_path: str, org_id: str = None, or
 
     parameters = _process_sites_data(apisession, org_id, sites)
 
-    _create_sites(apisession, org_id, sites, parameters)
+    _create_sites(apisession, org_id, sites, parameters, google_api_key)
     pb.log_title("Site Import Done", end=True)
 
 
@@ -912,14 +909,14 @@ python3 ./import_sites.py -f ./my_new_sites.csv --org_id=203d3d02-xxxx-xxxx-xxxx
 
 def check_mistapi_version():
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        logger.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
-        logger.critical(f"Please use the pip command to updated it.")
-        logger.critical("")
-        logger.critical(f"    # Linux/macOS")
-        logger.critical(f"    python3 -m pip upgrade mistapi")
-        logger.critical("")
-        logger.critical(f"    # Windows")
-        logger.critical(f"    py -m pip upgrade mistapi")
+        LOGGER.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+        LOGGER.critical(f"Please use the pip command to updated it.")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Linux/macOS")
+        LOGGER.critical(f"    python3 -m pip upgrade mistapi")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Windows")
+        LOGGER.critical(f"    py -m pip upgrade mistapi")
         print(f"""
     Critical: 
     \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
@@ -933,7 +930,7 @@ def check_mistapi_version():
         """)
         sys.exit(2)
     else: 
-        logger.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+        LOGGER.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
 
 
 ###############################################################################
@@ -949,6 +946,9 @@ if __name__ == "__main__":
     csv_file = None
     org_id = None
     org_name = None
+    env_file = ENV_FILE
+    log_file = LOG_FILE
+    google_api_key = GOOGLE_API_KEY
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -971,7 +971,7 @@ if __name__ == "__main__":
         _import_open_geocoding()
     #### LOGS ####
     logging.basicConfig(filename=log_file, filemode='w')
-    logger.setLevel(logging.DEBUG)
+    LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### MIST SESSION ###
     apisession = mistapi.APISession(env_file=env_file)
@@ -982,4 +982,4 @@ if __name__ == "__main__":
         console.error("CSV File is missing")
         usage()
     else:
-        start(apisession, csv_file, org_id, org_name)
+        start(apisession, csv_file, org_id, org_name, google_api_key)
