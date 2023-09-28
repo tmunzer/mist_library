@@ -50,7 +50,7 @@ import os
 import logging
 import getopt
 
-MISTAPI_MIN_VERSION = "0.44.1"
+MISTAPI_MIN_VERSION = "0.45.1"
 
 try:
     import mistapi
@@ -245,8 +245,8 @@ def _get_org_devices(apisession: mistapi.APISession, org_id: str) -> list:
     '''
     message = f"Retrieving devices stats"
     try:
-        PB.log_message(message)
-        response = mistapi.api.v1.orgs.stats.listOrgDevicesStats(apisession, org_id, limit=1000, type="ap")
+        PB.log_message(message, display_pbar=False)
+        response = mistapi.api.v1.orgs.stats.listOrgDevicesStats(apisession, org_id, limit=1000, type="ap", fields="power_constrained,power_budget,power_src,lldp_stat")
         devices = mistapi.get_all(apisession, response)
         PB.log_success(message, display_pbar=False)
         return devices
@@ -255,38 +255,6 @@ def _get_org_devices(apisession: mistapi.APISession, org_id: str) -> list:
         LOGGER.error("Unable to retrieve the list of devices stats from the Org")
         LOGGER.error("Exception occurred", exc_info=True)
         return []
-
-def _get_site_devices(apisession: mistapi.APISession, site_id: str, site_name:str) -> list:
-    '''
-    function to retrieve the devices stats from a site.
-
-    PARAMS
-    -------
-    apisession : mistapi.APISession
-        mistapi session with access the source or the Site, already logged in
-    site_id : str
-        site_id to use
-    site_name : str
-        site_name, only used in console/logs
-
-    RETURN
-    -----------
-    list
-        list of devices stats from the site
-    '''
-    message = f"Retrieving devices stats from {site_name}"
-    try:
-        PB.log_message(message)
-        response = mistapi.api.v1.sites.stats.listSiteDevicesStats(apisession, site_id, limit=1000, type="ap")
-        devices = mistapi.get_all(apisession, response)
-        PB.log_success(message, inc=True)
-        return devices
-    except Exception as error:
-        PB.log_failure(message, inc=True)
-        LOGGER.error(f"Unable to retrieve the list of devices stats from the Site {site_name}")
-        LOGGER.error("Exception occurred", exc_info=True)
-        return []
-
 
 def _get_sites(apisession: mistapi.APISession, org_id:str) -> list:
     '''
@@ -341,17 +309,12 @@ def start(apisession: mistapi.APISession,  org_id:str, csv_file:str=None) -> lis
     PB.log_title("Preparation steps", display_pbar=False)
     devices = []
     sites = _get_sites(apisession, org_id)
-    PB.set_steps_total(len(sites))
-
-    PB.log_title("Retrieving data", display_pbar=True)
+    devices = _get_org_devices(apisession, org_id)
     for site in sites:
-        devices = _get_site_devices(apisession, site["id"], site["name"])
-        site["devices"] = []
-        for device in devices:
-            if device.get("power_constrained"):
-                site["devices"].append(device)
+        site_devices = [d for d in devices if d.get("site_id") == site["id"]]
+        site["devices"] = site_devices
 
-    PB.log_title("Result", end=True)
+    PB.log_title("Result", display_pbar=False)
     _process_data(sites, csv_file)
 
     return sites
