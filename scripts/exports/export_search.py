@@ -1,4 +1,4 @@
-'''
+"""
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -62,7 +62,7 @@ Examples:
 python3 ./export_search.py                  
 python3 ./export_searchs.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --report=client_sessions_wireless --q_params=duration:1w           
 
-'''
+"""
 
 #### IMPORTS ####
 import sys
@@ -72,14 +72,15 @@ import os
 import logging
 import getopt
 
-MISTAPI_MIN_VERSION = "0.44.1"
+MISTAPI_MIN_VERSION = "0.45.1"
 
 try:
     import mistapi
     from mistapi.__api_response import APIResponse
     from mistapi.__logger import console
 except:
-        print("""
+    print(
+        """
         Critical: 
         \"mistapi\" package is missing. Please use the pip command to install it.
 
@@ -88,32 +89,35 @@ except:
 
         # Windows
         py -m pip install mistapi
-        """)
-        sys.exit(2)
+        """
+    )
+    sys.exit(2)
 
 
 #### PARAMETERS #####
 
 LOG_FILE = "./script.log"
-ENV_FILE = os.path.join(os.path.expanduser('~'), ".mist_env")
-OUT_FILE_FORMAT="csv"
-OUT_FILE_PATH="./export.csv"
+ENV_FILE = os.path.join(os.path.expanduser("~"), ".mist_env")
+OUT_FILE_FORMAT = "csv"
+OUT_FILE_PATH = "./export.csv"
 
 #### LOGS ####
 logger = logging.getLogger(__name__)
-out=sys.stdout
+out = sys.stdout
 
-def _query_param_input(query_param_name: str, query_param_type: type)->any: # type: ignore
-    value=None
+
+def _query_param_input(query_param_name: str, query_param_type: type) -> any:  # type: ignore
+    value = None
     while True:
-        value=input(f"\"{query_param_name}\" ({str(query_param_type).replace('<class ', '').replace('>', '')}) : ")
+        value = input(
+            f"\"{query_param_name}\" ({str(query_param_type).replace('<class ', '').replace('>', '')}) : "
+        )
         # TODO: process bool and int
         if type(value) is query_param_type or not value:
             return value
 
 
-
-def _query_params(query_params_type:dict) -> dict:
+def _query_params(query_params_type: dict) -> dict:
     query_params_data = {}
     print()
     print("".center(80, "-"))
@@ -124,52 +128,63 @@ def _query_params(query_params_type:dict) -> dict:
         for query_param in query_params_type:
             query_params_list.append(query_param)
             print(f"{i}) {query_param}={query_params_data.get(query_param, 'Not set')}")
-            i+=1
+            i += 1
         while resp.lower() != "x":
-            index=None
+            index = None
             print()
-            resp = input(f"Please select a query_param to add to the request (0-{i-1}, \"r\" to reset the query_params, or \"x\" to finish): ")
+            resp = input(
+                f'Please select a query_param to add to the request (0-{i-1}, "r" to reset the query_params, or "x" to finish): '
+            )
             if resp.lower() == "r":
                 query_params_data = {}
             elif resp.lower() != "x":
                 try:
                     index = int(resp)
-                    if index < 0 or index > i-1:
-                        console.error("Please enter a number between 0 and {i-1}, or x to finish.\r\n")
+                    if index < 0 or index > i - 1:
+                        console.error(
+                            "Please enter a number between 0 and {i-1}, or x to finish.\r\n"
+                        )
                     else:
                         query_param_name = query_params_list[index]
-                        value = _query_param_input(query_param_name, query_params_type[query_param_name])
+                        value = _query_param_input(
+                            query_param_name, query_params_type[query_param_name]
+                        )
                         if value:
-                            query_params_data[query_param_name]=value
+                            query_params_data[query_param_name] = value
                 except:
                     console.error("Please enter a number.\r\n")
-            
+
         return query_params_data
     else:
         return query_params_data
-        
+
 
 ########################################################################
 #### COMMON FUNCTIONS ####
-def _searchAssets(apisession: mistapi.APISession, func:str, scope_id:str, query_params:dict|None=None):
+def _searchAssets(
+    apisession: mistapi.APISession,
+    func: str,
+    scope_id: str,
+    query_params: dict | None = None,
+):
     query_params_type = {
         "mac": str,
         "map_id": str,
-        "device_name":str,
+        "device_name": str,
         "name": str,
         "ibeacon_uuid": str,
         "ibeacon_major": str,
-        "ibeacon_minor": str, 
-        "eddystone_uid_namespace": str, 
-        "eddystone_uid_instance": str, 
-        "eddystone_url": str, 
+        "ibeacon_minor": str,
+        "eddystone_uid_namespace": str,
+        "eddystone_uid_instance": str,
+        "eddystone_url": str,
         "ap_mac": str,
-        "beam":int,
+        "beam": int,
         "rssi": int,
         "start": int,
         "end": int,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if func == "searchOrgAssets":
@@ -178,9 +193,10 @@ def _searchAssets(apisession: mistapi.APISession, func:str, scope_id:str, query_
     if not query_params:
         query_params = _query_params(query_params_type)
 
-
     if func == "searchOrgAssets":
-        return mistapi.api.v1.orgs.stats.searchOrgAssets(apisession, scope_id, 
+        return mistapi.api.v1.orgs.stats.searchOrgAssets(
+            apisession,
+            scope_id,
             site_id=query_params.get("site_id"),
             mac=query_params.get("mac"),
             map_id=query_params.get("map_id"),
@@ -196,10 +212,12 @@ def _searchAssets(apisession: mistapi.APISession, func:str, scope_id:str, query_
             start=query_params.get("start"),
             end=query_params.get("end"),
             duration=query_params.get("duration", "1d"),
-        limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
-    elif func=="searchSiteAssets":
-        return mistapi.api.v1.sites.stats.searchSiteAssets(apisession, scope_id, 
+    elif func == "searchSiteAssets":
+        return mistapi.api.v1.sites.stats.searchSiteAssets(
+            apisession,
+            scope_id,
             mac=query_params.get("mac"),
             map_id=query_params.get("map_id"),
             ibeacon_uuid=query_params.get("ibeacon_uuid"),
@@ -214,35 +232,43 @@ def _searchAssets(apisession: mistapi.APISession, func:str, scope_id:str, query_
             start=query_params.get("start"),
             end=query_params.get("end"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
 
-def _searchSwOrGwPorts(apisession: mistapi.APISession, func:str, scope_id=None, query_params:dict|None=None):
+
+def _searchSwOrGwPorts(
+    apisession: mistapi.APISession,
+    func: str,
+    scope_id=None,
+    query_params: dict | None = None,
+):
     query_params_type = {
         "full_duplex": bool,
         "mac": str,
         "neighbor_mac": str,
-        "neighbor_port_desc":str,
+        "neighbor_port_desc": str,
         "neighbor_system_name": str,
         "poe_disabled": bool,
         "poe_mode": str,
-        "poe_on": bool, 
+        "poe_on": bool,
         "port_id": str,
-        "port_mac":str,
+        "port_mac": str,
         "speed": int,
         "up": bool,
         "stp_state": str,
         "stp_role": str,
         "auth_state": str,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
     if func == "searchOrgSwOrGwPorts":
-        return mistapi.api.v1.orgs.stats.searchOrgSwOrGwPorts(apisession, scope_id,
+        return mistapi.api.v1.orgs.stats.searchOrgSwOrGwPorts(
+            apisession,
+            scope_id,
             full_duplex=query_params.get("full_duplex"),
             mac=query_params.get("mac"),
             neighbor_mac=query_params.get("neighbor_mac"),
@@ -259,10 +285,12 @@ def _searchSwOrGwPorts(apisession: mistapi.APISession, func:str, scope_id=None, 
             stp_role=query_params.get("stp_role"),
             auth_state=query_params.get("auth_state"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
-    elif func=="searchSiteSwOrGwPorts":
-        return mistapi.api.v1.sites.stats.searchSiteSwOrGwPorts(apisession, scope_id,
+    elif func == "searchSiteSwOrGwPorts":
+        return mistapi.api.v1.sites.stats.searchSiteSwOrGwPorts(
+            apisession,
+            scope_id,
             full_duplex=query_params.get("full_duplex"),
             mac=query_params.get("mac"),
             neighbor_mac=query_params.get("neighbor_mac"),
@@ -279,10 +307,12 @@ def _searchSwOrGwPorts(apisession: mistapi.APISession, func:str, scope_id=None, 
             stp_role=query_params.get("stp_role"),
             auth_state=query_params.get("auth_state"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
-    elif func=="searchSiteSwitchPorts":
-        return mistapi.api.v1.sites.stats.searchSiteSwitchPorts(apisession, scope_id,
+    elif func == "searchSiteSwitchPorts":
+        return mistapi.api.v1.sites.stats.searchSiteSwitchPorts(
+            apisession,
+            scope_id,
             full_duplex=query_params.get("full_duplex"),
             mac=query_params.get("mac"),
             neighbor_mac=query_params.get("neighbor_mac"),
@@ -299,15 +329,21 @@ def _searchSwOrGwPorts(apisession: mistapi.APISession, func:str, scope_id=None, 
             stp_role=query_params.get("stp_role"),
             auth_state=query_params.get("auth_state"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
 
-def _searchClientWirelessSessions(apisession: mistapi.APISession, func:str, scope_id:str, query_params:dict|None=None):
+
+def _searchClientWirelessSessions(
+    apisession: mistapi.APISession,
+    func: str,
+    scope_id: str,
+    query_params: dict | None = None,
+):
     query_params_type = {
         "ap": bool,
         "band": str,
         "client_family": str,
-        "client_manufacture":str,
+        "client_manufacture": str,
         "client_model": str,
         "client_os": str,
         "client_username": str,
@@ -316,14 +352,16 @@ def _searchClientWirelessSessions(apisession: mistapi.APISession, func:str, scop
         "psk_id": str,
         "psk_name": str,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    if func=="searchOrgClientWirelessSessions":
-        return mistapi.api.v1.orgs.clients.searchOrgWirelessClientSessions(apisession, scope_id,
+    if func == "searchOrgClientWirelessSessions":
+        return mistapi.api.v1.orgs.clients.searchOrgWirelessClientSessions(
+            apisession,
+            scope_id,
             ap=query_params.get("ap"),
             band=query_params.get("band"),
             client_family=query_params.get("client_family"),
@@ -336,10 +374,12 @@ def _searchClientWirelessSessions(apisession: mistapi.APISession, func:str, scop
             psk_id=query_params.get("psk_id"),
             psk_name=query_params.get("psk_name"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
-        )        
-    elif func=="searchSiteClientWirelessSessions":
-        return mistapi.api.v1.sites.clients.searchSiteWirelessClientSessions(apisession, scope_id,
+            limit=query_params.get("limit", 1000),
+        )
+    elif func == "searchSiteClientWirelessSessions":
+        return mistapi.api.v1.sites.clients.searchSiteWirelessClientSessions(
+            apisession,
+            scope_id,
             ap=query_params.get("ap"),
             band=query_params.get("band"),
             client_family=query_params.get("client_family"),
@@ -352,26 +392,34 @@ def _searchClientWirelessSessions(apisession: mistapi.APISession, func:str, scop
             psk_id=query_params.get("psk_id"),
             psk_name=query_params.get("psk_name"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
-        )       
+            limit=query_params.get("limit", 1000),
+        )
 
-def _searchClientEvents(apisession: mistapi.APISession, func:str, scope_id:str, query_params:dict|None=None):
+
+def _searchClientEvents(
+    apisession: mistapi.APISession,
+    func: str,
+    scope_id: str,
+    query_params: dict | None = None,
+):
     query_params_type = {
         "type": bool,
         "reason_code": int,
         "ssid": str,
-        "ap":str,
+        "ap": str,
         "proto": str,
         "band": bool,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    if func=="searchOrgClientEvents":
-        return mistapi.api.v1.orgs.clients.searchOrgWirelessClientEvents(apisession, scope_id,
+    if func == "searchOrgClientEvents":
+        return mistapi.api.v1.orgs.clients.searchOrgWirelessClientEvents(
+            apisession,
+            scope_id,
             type=query_params.get("type"),
             reason_code=query_params.get("reason_code"),
             ssid=query_params.get("ssid"),
@@ -379,10 +427,12 @@ def _searchClientEvents(apisession: mistapi.APISession, func:str, scope_id:str, 
             proto=query_params.get("proto"),
             band=query_params.get("band"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
-        )         
-    elif func=="searchSiteClientEvents":
-        return mistapi.api.v1.sites.clients.searchSiteWirelessClientEvents(apisession, scope_id,
+            limit=query_params.get("limit", 1000),
+        )
+    elif func == "searchSiteClientEvents":
+        return mistapi.api.v1.sites.clients.searchSiteWirelessClientEvents(
+            apisession,
+            scope_id,
             type=query_params.get("type"),
             reason_code=query_params.get("reason_code"),
             ssid=query_params.get("ssid"),
@@ -390,21 +440,27 @@ def _searchClientEvents(apisession: mistapi.APISession, func:str, scope_id:str, 
             proto=query_params.get("proto"),
             band=query_params.get("band"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
-        )         
+            limit=query_params.get("limit", 1000),
+        )
 
-def _searchClientsWireless(apisession: mistapi.APISession, func:str, scope_id:str, query_params:dict|None=None):
+
+def _searchClientsWireless(
+    apisession: mistapi.APISession,
+    func: str,
+    scope_id: str,
+    query_params: dict | None = None,
+):
     query_params_type = {
         "mac": bool,
         "ip_address": int,
         "hostname": str,
-        "device":str,
+        "device": str,
         "model": str,
         "ap": bool,
         "ssid": bool,
         "text": bool,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if func == "searchOrgAssets":
@@ -413,8 +469,10 @@ def _searchClientsWireless(apisession: mistapi.APISession, func:str, scope_id:st
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    if func=="searchOrgClientsWireless":
-        return mistapi.api.v1.orgs.clients.searchOrgWirelessClients(apisession, scope_id,
+    if func == "searchOrgClientsWireless":
+        return mistapi.api.v1.orgs.clients.searchOrgWirelessClients(
+            apisession,
+            scope_id,
             mac=query_params.get("mac"),
             ip_address=query_params.get("ip_address"),
             hostname=query_params.get("hostname"),
@@ -424,10 +482,12 @@ def _searchClientsWireless(apisession: mistapi.APISession, func:str, scope_id:st
             ssid=query_params.get("ssid"),
             text=query_params.get("text"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
-    elif func=="searchSiteClientsWireless":
-        return mistapi.api.v1.sites.clients.searchSiteWirelessClients(apisession, scope_id,
+    elif func == "searchSiteClientsWireless":
+        return mistapi.api.v1.sites.clients.searchSiteWirelessClients(
+            apisession,
+            scope_id,
             mac=query_params.get("mac"),
             ip_address=query_params.get("ip_address"),
             hostname=query_params.get("hostname"),
@@ -437,21 +497,27 @@ def _searchClientsWireless(apisession: mistapi.APISession, func:str, scope_id:st
             ssid=query_params.get("ssid"),
             text=query_params.get("text"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
 
-def _searchClientsWired(apisession: mistapi.APISession, func:str, scope_id:str, query_params:dict|None=None):
+
+def _searchClientsWired(
+    apisession: mistapi.APISession,
+    func: str,
+    scope_id: str,
+    query_params: dict | None = None,
+):
     query_params_type = {
         "device_mac": bool,
         "mac": str,
         "port_id": str,
-        "vlan":int,
+        "vlan": int,
         "site_id": str,
         "ip": str,
         "manufacture": str,
         "text": str,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if func == "searchOrgAssets":
@@ -460,8 +526,10 @@ def _searchClientsWired(apisession: mistapi.APISession, func:str, scope_id:str, 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    if func=="searchOrgClientsWired":
-        return mistapi.api.v1.orgs.wired_clients.searchOrgWiredClients(apisession, scope_id,
+    if func == "searchOrgClientsWired":
+        return mistapi.api.v1.orgs.wired_clients.searchOrgWiredClients(
+            apisession,
+            scope_id,
             site_id=query_params.get("site_id"),
             device_mac=query_params.get("device_mac"),
             mac=query_params.get("mac"),
@@ -471,10 +539,12 @@ def _searchClientsWired(apisession: mistapi.APISession, func:str, scope_id:str, 
             manufacture=query_params.get("manufacture"),
             text=query_params.get("text"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
-    elif func=="searchSiteClientsWired":
-        return mistapi.api.v1.sites.wired_clients.searchSiteWiredClients(apisession, scope_id,
+    elif func == "searchSiteClientsWired":
+        return mistapi.api.v1.sites.wired_clients.searchSiteWiredClients(
+            apisession,
+            scope_id,
             device_mac=query_params.get("device_mac"),
             mac=query_params.get("mac"),
             port_id=query_params.get("port_id"),
@@ -483,11 +553,16 @@ def _searchClientsWired(apisession: mistapi.APISession, func:str, scope_id:str, 
             manufacture=query_params.get("manufacture"),
             text=query_params.get("text"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
 
 
-def _searchDevicesEvents(apisession: mistapi.APISession, func:str, scope_id:str, query_params:dict|None=None):
+def _searchDeviceEvents(
+    apisession: mistapi.APISession,
+    func: str,
+    scope_id: str,
+    query_params: dict | None = None,
+):
     query_params_type = {
         "device_type": str,
         "mac": str,
@@ -495,14 +570,16 @@ def _searchDevicesEvents(apisession: mistapi.APISession, func:str, scope_id:str,
         "text": str,
         "type": str,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    if func=="searchOrgDevicesEvents":
-        return mistapi.api.v1.orgs.devices.searchOrgDevicesEvents(apisession, scope_id,
+    if func == "searchOrgDeviceEvents":
+        return mistapi.api.v1.orgs.devices.searchOrgDeviceEvents(
+            apisession,
+            scope_id,
             mac=query_params.get("mac"),
             model=query_params.get("model"),
             text=query_params.get("text"),
@@ -511,8 +588,10 @@ def _searchDevicesEvents(apisession: mistapi.APISession, func:str, scope_id:str,
             duration=query_params.get("duration", "1d"),
             limit=query_params.get("limit", 1000),
         )
-    elif func=="searchSiteDevicesEvents":
-        return mistapi.api.v1.sites.devices.searchSiteDevicesEvents(apisession, scope_id,
+    elif func == "searchSiteDeviceEvents":
+        return mistapi.api.v1.sites.devices.searchSiteDeviceEvents(
+            apisession,
+            scope_id,
             mac=query_params.get("mac"),
             model=query_params.get("model"),
             text=query_params.get("text"),
@@ -523,12 +602,17 @@ def _searchDevicesEvents(apisession: mistapi.APISession, func:str, scope_id:str,
         )
 
 
-def _searchDevices(apisession: mistapi.APISession, func:str, scope_id:str, query_params:dict|None=None):
+def _searchDevices(
+    apisession: mistapi.APISession,
+    func: str,
+    scope_id: str,
+    query_params: dict | None = None,
+):
     query_params_type = {
         "hostname": str,
         "site_id": str,
         "model": str,
-        "mac":str,
+        "mac": str,
         "version": str,
         "power_constrained": bool,
         "ip_address": str,
@@ -546,7 +630,7 @@ def _searchDevices(apisession: mistapi.APISession, func:str, scope_id:str, query
         "band_6_channel": int,
         "eth0_port_speed": int,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if func == "searchOrgDevices":
@@ -556,7 +640,9 @@ def _searchDevices(apisession: mistapi.APISession, func:str, scope_id:str, query
         query_params = _query_params(query_params_type)
 
     if func == "searchOrgDevices":
-        return mistapi.api.v1.orgs.devices.searchOrgDevices(apisession, scope_id,
+        return mistapi.api.v1.orgs.devices.searchOrgDevices(
+            apisession,
+            scope_id,
             site_id=query_params.get("site_id"),
             hostname=query_params.get("hostname"),
             model=query_params.get("model"),
@@ -578,10 +664,12 @@ def _searchDevices(apisession: mistapi.APISession, func:str, scope_id:str, query
             band_6_channel=query_params.get("band_6_channel"),
             eth0_port_speed=query_params.get("eth0_port_speed"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
     elif func == "searchSiteDevices":
-        return mistapi.api.v1.sites.devices.searchSiteDevices(apisession, scope_id,
+        return mistapi.api.v1.sites.devices.searchSiteDevices(
+            apisession,
+            scope_id,
             hostname=query_params.get("hostname"),
             model=query_params.get("model"),
             mac=query_params.get("mac"),
@@ -602,71 +690,87 @@ def _searchDevices(apisession: mistapi.APISession, func:str, scope_id:str, query
             band_6_channel=query_params.get("band_6_channel"),
             eth0_port_speed=query_params.get("eth0_port_speed"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
 
-def _searchDeviceLastConfigs(apisession: mistapi.APISession, func:str, scope_id:str, query_params:dict|None=None):
-    query_params_type = {
-        "device_type": str,
-        "mac": str,
-        "duration": str,
-        "limit": int
-    }
+
+def _searchDeviceLastConfigs(
+    apisession: mistapi.APISession,
+    func: str,
+    scope_id: str,
+    query_params: dict | None = None,
+):
+    query_params_type = {"device_type": str, "mac": str, "duration": str, "limit": int}
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
     if func == "searchOrgDeviceLastConfigs":
-        return mistapi.api.v1.orgs.devices.searchOrgDeviceLastConfigs(apisession, scope_id,
+        return mistapi.api.v1.orgs.devices.searchOrgDeviceLastConfigs(
+            apisession,
+            scope_id,
             device_type=query_params.get("device_type"),
             mac=query_params.get("mac"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
     elif func == "searchSiteDeviceLastConfigs":
-        return mistapi.api.v1.sites.devices.searchSiteDeviceLastConfigs(apisession, scope_id,
+        return mistapi.api.v1.sites.devices.searchSiteDeviceLastConfigs(
+            apisession,
+            scope_id,
             device_type=query_params.get("device_type"),
             mac=query_params.get("mac"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
 
-def _searchGuestAuthorization(apisession: mistapi.APISession,func:str, scope_id:str, query_params:dict|None=None):
+
+def _searchGuestAuthorization(
+    apisession: mistapi.APISession,
+    func: str,
+    scope_id: str,
+    query_params: dict | None = None,
+):
     query_params_type = {
         "wlan_id": str,
         "auth_method": str,
         "ssid": str,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
     if func == "searchOrgGuestAuthorization":
-        return mistapi.api.v1.orgs.guests.searchOrgGuestAuthorization(apisession, scope_id,
+        return mistapi.api.v1.orgs.guests.searchOrgGuestAuthorization(
+            apisession,
+            scope_id,
             wlan_id=query_params.get("wlan_id"),
             auth_method=query_params.get("auth_method"),
             ssid=query_params.get("ssid"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
     elif func == "searchSiteGuestAuthorization":
-        return mistapi.api.v1.sites.guests.searchSiteGuestAuthorization(apisession, scope_id,
+        return mistapi.api.v1.sites.guests.searchSiteGuestAuthorization(
+            apisession,
+            scope_id,
             wlan_id=query_params.get("wlan_id"),
             auth_method=query_params.get("auth_method"),
             ssid=query_params.get("ssid"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
 
 
-def _searchAlarms(apisession: mistapi.APISession, func:str, scope_id:str, query_params:dict|None=None):
-    query_params_type = {
-        "type": str,
-        "duration": str,
-        "limit": int
-    }
+def _searchAlarms(
+    apisession: mistapi.APISession,
+    func: str,
+    scope_id: str,
+    query_params: dict | None = None,
+):
+    query_params_type = {"type": str, "duration": str, "limit": int}
 
     if func == "searchOrgAlarms":
         query_params_type["site_id"] = str
@@ -675,23 +779,29 @@ def _searchAlarms(apisession: mistapi.APISession, func:str, scope_id:str, query_
         query_params = _query_params(query_params_type)
 
     if func == "searchOrgAlarms":
-        return mistapi.api.v1.orgs.alarms.searchOrgAlarms(apisession, scope_id,
+        return mistapi.api.v1.orgs.alarms.searchOrgAlarms(
+            apisession,
+            scope_id,
             site_id=query_params.get("site_id"),
             type=query_params.get("type"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
     elif func == "searchSiteAlarms":
-        return mistapi.api.v1.sites.alarms.searchSiteAlarms(apisession, scope_id,
+        return mistapi.api.v1.sites.alarms.searchSiteAlarms(
+            apisession,
+            scope_id,
             type=query_params.get("type"),
             duration=query_params.get("duration", "1d"),
-            limit=query_params.get("limit", 1000)
+            limit=query_params.get("limit", 1000),
         )
 
 
 ########################################################################
 #### ORG FUNCTIONS ####
-def _searchOrgSites(apisession: mistapi.APISession, org_id:str, query_params:dict|None=None):
+def _searchOrgSites(
+    apisession: mistapi.APISession, org_id: str, query_params: dict | None = None
+):
     query_params_type = {
         "analytic_enabled": bool,
         "app_waking": bool,
@@ -708,13 +818,15 @@ def _searchOrgSites(apisession: mistapi.APISession, org_id:str, query_params:dic
         "vna_enabled": bool,
         "wifi_enabled": bool,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    return mistapi.api.v1.orgs.sites.searchOrgSites(apisession, org_id,
+    return mistapi.api.v1.orgs.sites.searchOrgSites(
+        apisession,
+        org_id,
         analytic_enabled=query_params.get("analytic_enabled"),
         app_waking=query_params.get("app_waking"),
         asset_enabled=query_params.get("asset_enabled"),
@@ -730,65 +842,68 @@ def _searchOrgSites(apisession: mistapi.APISession, org_id:str, query_params:dic
         vna_enabled=query_params.get("vna_enabled"),
         wifi_enabled=query_params.get("wifi_enabled"),
         duration=query_params.get("duration", "1d"),
-        limit=query_params.get("limit", 1000)
+        limit=query_params.get("limit", 1000),
     )
 
 
 ########################################################################
 #### SITE FUNCTIONS ####
-def _searchSiteCalls(apisession: mistapi.APISession, site_id:str, query_params:dict|None=None):
-    query_params_type = {
-        "mac": str,
-        "app": str,
-        "duration": str,
-        "limit": int
-    }
+def _searchSiteCalls(
+    apisession: mistapi.APISession, site_id: str, query_params: dict | None = None
+):
+    query_params_type = {"mac": str, "app": str, "duration": str, "limit": int}
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    return mistapi.api.v1.sites.stats.searchSiteCalls(apisession, site_id,
+    return mistapi.api.v1.sites.stats.searchSiteCalls(
+        apisession,
+        site_id,
         mac=query_params.get("mac"),
         app=query_params.get("app"),
         duration=query_params.get("duration", "1d"),
         limit=query_params.get("limit", 1000),
     )
 
-def _searchSiteDeviceConfigHistory(apisession: mistapi.APISession, site_id:str, query_params:dict|None=None):
-    query_params_type = {
-        "device_type": str,
-        "mac": str,
-        "duration": str,
-        "limit": int
-    }
+
+def _searchSiteDeviceConfigHistory(
+    apisession: mistapi.APISession, site_id: str, query_params: dict | None = None
+):
+    query_params_type = {"device_type": str, "mac": str, "duration": str, "limit": int}
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    return mistapi.api.v1.sites.devices.searchSiteDeviceConfigHistory(apisession, site_id,
+    return mistapi.api.v1.sites.devices.searchSiteDeviceConfigHistory(
+        apisession,
+        site_id,
         device_type=query_params.get("device_type"),
         mac=query_params.get("mac"),
         duration=query_params.get("duration", "1d"),
-        limit=query_params.get("limit", 1000)
+        limit=query_params.get("limit", 1000),
     )
 
-def _searchSiteSystemEvents(apisession: mistapi.APISession, site_id:str, query_params:dict|None=None):
-    query_params_type = {
-        "type": str,
-        "duration": str,
-        "limit": int
-    }
+
+def _searchSiteSystemEvents(
+    apisession: mistapi.APISession, site_id: str, query_params: dict | None = None
+):
+    query_params_type = {"type": str, "duration": str, "limit": int}
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    return mistapi.api.v1.sites.events.searchSiteSystemEvents(apisession, site_id,
+    return mistapi.api.v1.sites.events.searchSiteSystemEvents(
+        apisession,
+        site_id,
         type=query_params.get("type"),
         duration=query_params.get("duration", "1d"),
-        limit=query_params.get("limit", 1000)
+        limit=query_params.get("limit", 1000),
     )
 
-def _searchSiteRogueEvents(apisession: mistapi.APISession, site_id:str, query_params:dict|None=None):
+
+def _searchSiteRogueEvents(
+    apisession: mistapi.APISession, site_id: str, query_params: dict | None = None
+):
     query_params_type = {
         "type": str,
         "ssid": str,
@@ -797,13 +912,15 @@ def _searchSiteRogueEvents(apisession: mistapi.APISession, site_id:str, query_pa
         "channel": int,
         "seen_on_lan": bool,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    return mistapi.api.v1.sites.rogues.searchSiteRogueEvents(apisession, site_id,
+    return mistapi.api.v1.sites.rogues.searchSiteRogueEvents(
+        apisession,
+        site_id,
         type=query_params.get("type"),
         ssid=query_params.get("ssid"),
         bssid=query_params.get("bssid"),
@@ -811,10 +928,13 @@ def _searchSiteRogueEvents(apisession: mistapi.APISession, site_id:str, query_pa
         channel=query_params.get("channel"),
         seen_on_lan=query_params.get("seen_on_lan"),
         duration=query_params.get("duration", "1d"),
-        limit=query_params.get("limit", 1000)
+        limit=query_params.get("limit", 1000),
     )
 
-def _searchSiteSkyatpEvents(apisession: mistapi.APISession, site_id:str, query_params:dict|None=None):
+
+def _searchSiteSkyatpEvents(
+    apisession: mistapi.APISession, site_id: str, query_params: dict | None = None
+):
     query_params_type = {
         "type": str,
         "mac": str,
@@ -822,39 +942,45 @@ def _searchSiteSkyatpEvents(apisession: mistapi.APISession, site_id:str, query_p
         "threat_level": int,
         "ip_address": str,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    return mistapi.api.v1.sites.skyatp.searchSiteSkyatpEvents(apisession, site_id,
+    return mistapi.api.v1.sites.skyatp.searchSiteSkyatpEvents(
+        apisession,
+        site_id,
         type=query_params.get("type"),
         mac=query_params.get("mac"),
         device_mac=query_params.get("device_mac"),
         threat_level=query_params.get("threat_level"),
         ip_address=query_params.get("ip_address"),
         duration=query_params.get("duration", "1d"),
-        limit=query_params.get("limit", 1000)
+        limit=query_params.get("limit", 1000),
     )
 
-def _searchSiteDiscoveredSwitchesMetrics(apisession: mistapi.APISession, site_id:str, query_params:dict|None=None):
-    query_params_type = {
-        "type": str,
-        "duration": str,
-        "limit": int
-    }
+
+def _searchSiteDiscoveredSwitchesMetrics(
+    apisession: mistapi.APISession, site_id: str, query_params: dict | None = None
+):
+    query_params_type = {"type": str, "duration": str, "limit": int}
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    return mistapi.api.v1.sites.stats.searchSiteDiscoveredSwitchesMetrics(apisession, site_id,
+    return mistapi.api.v1.sites.stats.searchSiteDiscoveredSwitchesMetrics(
+        apisession,
+        site_id,
         type=query_params.get("type"),
         duration=query_params.get("duration", "1d"),
-        limit=query_params.get("limit", 1000)
+        limit=query_params.get("limit", 1000),
     )
 
-def _searchSiteDiscoveredSwitches(apisession: mistapi.APISession, site_id:str, query_params:dict|None=None):
+
+def _searchSiteDiscoveredSwitches(
+    apisession: mistapi.APISession, site_id: str, query_params: dict | None = None
+):
     query_params_type = {
         "adopted": bool,
         "system_name": str,
@@ -863,13 +989,15 @@ def _searchSiteDiscoveredSwitches(apisession: mistapi.APISession, site_id:str, q
         "model": str,
         "version": str,
         "duration": str,
-        "limit": int
+        "limit": int,
     }
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    return mistapi.api.v1.sites.stats.searchSiteDiscoveredSwitches(apisession, site_id,
+    return mistapi.api.v1.sites.stats.searchSiteDiscoveredSwitches(
+        apisession,
+        site_id,
         adopted=query_params.get("adopted"),
         system_name=query_params.get("system_name"),
         hostname=query_params.get("hostname"),
@@ -877,55 +1005,84 @@ def _searchSiteDiscoveredSwitches(apisession: mistapi.APISession, site_id:str, q
         model=query_params.get("model"),
         version=query_params.get("version"),
         duration=query_params.get("duration", "1d"),
-        limit=query_params.get("limit", 1000)
+        limit=query_params.get("limit", 1000),
     )
 
 
 ########################################################################
 #### MSP FUNCTIONS ####
-def _searchMspOrgs(apisession: mistapi.APISession, msp_id:str, query_params:dict|None=None):
+def _searchMspOrgs(
+    apisession: mistapi.APISession, msp_id: str, query_params: dict | None = None
+):
     query_params_type = {
         "name": str,
         "org_id": str,
         "sub_insufficient": bool,
         "trial_enabled": bool,
-        "limit": int
+        "limit": int,
     }
 
     if not query_params:
         query_params = _query_params(query_params_type)
 
-    return mistapi.api.v1.msps.orgs.searchMspOrgs(apisession, msp_id,
+    return mistapi.api.v1.msps.orgs.searchMspOrgs(
+        apisession,
+        msp_id,
         name=query_params.get("name"),
         org_id=query_params.get("org_id"),
         sub_insufficient=query_params.get("sub_insufficient"),
         trial_enabled=query_params.get("trial_enabled"),
-        limit=query_params.get("limit", 1000)
+        limit=query_params.get("limit", 1000),
     )
 
+
 #####################
-def _search(scope:str,  report:str, apisession:mistapi.APISession, scope_id:str, query_params:dict|None=None):
+def _search(
+    scope: str,
+    report: str,
+    apisession: mistapi.APISession,
+    scope_id: str,
+    query_params: dict | None = None,
+):
     if scope == "org":
         if report == "assets":
             return _searchAssets(apisession, "searchOrgAssets", scope_id, query_params)
-        elif report =="ports":
-            return _searchSwOrGwPorts(apisession, "searchOrgSwOrGwPorts", scope_id, query_params)
+        elif report == "ports":
+            return _searchSwOrGwPorts(
+                apisession, "searchOrgSwOrGwPorts", scope_id, query_params
+            )
         elif report == "client_events":
-            return _searchClientEvents(apisession, "searchOrgClientEvents", scope_id, query_params)
+            return _searchClientEvents(
+                apisession, "searchOrgClientEvents", scope_id, query_params
+            )
         elif report == "client_sessions_wireless":
-            return _searchClientWirelessSessions(apisession, "searchOrgClientWirelessSessions", scope_id, query_params)
+            return _searchClientWirelessSessions(
+                apisession, "searchOrgClientWirelessSessions", scope_id, query_params
+            )
         elif report == "clients_wireless":
-            return _searchClientsWireless(apisession, "searchOrgClientsWireless", scope_id, query_params)
+            return _searchClientsWireless(
+                apisession, "searchOrgClientsWireless", scope_id, query_params
+            )
         elif report == "client_wired":
-            return _searchClientsWired(apisession, "searchOrgClientsWired", scope_id, query_params)
+            return _searchClientsWired(
+                apisession, "searchOrgClientsWired", scope_id, query_params
+            )
         elif report == "device_events":
-            return _searchDevicesEvents(apisession, "searchOrgDevicesEvents", scope_id, query_params)
+            return _searchDeviceEvents(
+                apisession, "searchOrgDeviceEvents", scope_id, query_params
+            )
         elif report == "devices":
-            return _searchDevices(apisession, "searchOrgDevices", scope_id, query_params)
+            return _searchDevices(
+                apisession, "searchOrgDevices", scope_id, query_params
+            )
         elif report == "device_last_config":
-            return _searchDeviceLastConfigs(apisession, "searchOrgDeviceLastConfigs", scope_id, query_params)
+            return _searchDeviceLastConfigs(
+                apisession, "searchOrgDeviceLastConfigs", scope_id, query_params
+            )
         elif report == "guests_authorizsations":
-            return _searchGuestAuthorization(apisession, "searchOrgGuestAuthorization", scope_id, query_params)
+            return _searchGuestAuthorization(
+                apisession, "searchOrgGuestAuthorization", scope_id, query_params
+            )
         elif report == "alarms":
             return _searchAlarms(apisession, "searchOrgAlarms", scope_id, query_params)
         elif report == "sites":
@@ -936,25 +1093,45 @@ def _search(scope:str,  report:str, apisession:mistapi.APISession, scope_id:str,
         elif report == "calls":
             return _searchSiteCalls(apisession, scope_id)
         elif report == "ports":
-            return _searchSwOrGwPorts(apisession, "searchSiteSwOrGwPorts", scope_id, query_params)
+            return _searchSwOrGwPorts(
+                apisession, "searchSiteSwOrGwPorts", scope_id, query_params
+            )
         elif report == "switch_ports":
-            return _searchSwOrGwPorts(apisession, "searchSiteSwitchPorts", scope_id, query_params)
+            return _searchSwOrGwPorts(
+                apisession, "searchSiteSwitchPorts", scope_id, query_params
+            )
         elif report == "client_sessions_wireless":
-            return _searchClientWirelessSessions(apisession, "searchSiteClientWirelessSessions", scope_id, query_params)
+            return _searchClientWirelessSessions(
+                apisession, "searchSiteClientWirelessSessions", scope_id, query_params
+            )
         elif report == "client_events_wireless":
-            return _searchClientEvents(apisession, "searchSiteClientEvents", scope_id, query_params)
+            return _searchClientEvents(
+                apisession, "searchSiteClientEvents", scope_id, query_params
+            )
         elif report == "clients_wireless":
-            return _searchClientsWireless(apisession, "searchSiteClientsWireless", scope_id, query_params)
+            return _searchClientsWireless(
+                apisession, "searchSiteClientsWireless", scope_id, query_params
+            )
         elif report == "clients_wired":
-            return _searchClientsWired(apisession, "searchSiteClientsWired", scope_id, query_params)
+            return _searchClientsWired(
+                apisession, "searchSiteClientsWired", scope_id, query_params
+            )
         elif report == "device_events":
-            return _searchDevicesEvents(apisession, "searchSiteDevicesEvents", scope_id, query_params)
+            return _searchDeviceEvents(
+                apisession, "searchSiteDeviceEvents", scope_id, query_params
+            )
         elif report == "devices":
-            return _searchDevices(apisession, "searchSiteDevices", scope_id, query_params)
+            return _searchDevices(
+                apisession, "searchSiteDevices", scope_id, query_params
+            )
         elif report == "device_last_config":
-            return _searchDeviceLastConfigs(apisession, "searchOrgDeviceLastConfigs", scope_id, query_params)
+            return _searchDeviceLastConfigs(
+                apisession, "searchOrgDeviceLastConfigs", scope_id, query_params
+            )
         elif report == "guests_authorizsations":
-            return _searchGuestAuthorization(apisession, "searchSiteGuestAuthorization", scope_id, query_params)
+            return _searchGuestAuthorization(
+                apisession, "searchSiteGuestAuthorization", scope_id, query_params
+            )
         elif report == "alarms":
             return _searchAlarms(apisession, "searchSiteAlarms", scope_id, query_params)
         elif report == "device_config_history":
@@ -966,36 +1143,47 @@ def _search(scope:str,  report:str, apisession:mistapi.APISession, scope_id:str,
         elif report == "skyatp_events":
             return _searchSiteSkyatpEvents(apisession, scope_id, query_params)
         elif report == "discovered_switches_metrics":
-            return _searchSiteDiscoveredSwitchesMetrics(apisession, scope_id, query_params)
+            return _searchSiteDiscoveredSwitchesMetrics(
+                apisession, scope_id, query_params
+            )
         elif report == "discovered_switches":
             return _searchSiteDiscoveredSwitches(apisession, scope_id, query_params)
-    elif scope =="msp":
-        if report=='orgs':
+    elif scope == "msp":
+        if report == "orgs":
             return _searchMspOrgs(apisession, scope_id, query_params)
+
 
 ####################
 ## PROGRESS BAR
-def _progress_bar_update(count:int, total:int, size:int):    
+def _progress_bar_update(count: int, total: int, size: int):
     if total == 0:
         return
     elif count > total:
         count = total
-    x = int(size*count/total)
+    x = int(size * count / total)
     out.write(f"Progress: ".ljust(10))
     out.write(f"[{'█'*x}{'.'*(size-x)}]")
     out.write(f"{count}/{total}\r".rjust(19))
     out.flush()
 
-def _progress_bar_end(total:int, size:int):
+
+def _progress_bar_end(total: int, size: int):
     if total == 0:
         return
     _progress_bar_update(total, total, size)
     out.write("\n")
     out.flush()
 
+
 ####################
 ## REQUEST
-def _process_request( apisession:mistapi.APISession, scope:str, scope_id:str, report:str, query_params:dict|None=None):
+def _process_request(
+    apisession: mistapi.APISession,
+    scope: str,
+    scope_id: str,
+    report: str,
+    query_params: dict | None = None,
+):
     data = []
     start = None
     end = None
@@ -1015,14 +1203,14 @@ def _process_request( apisession:mistapi.APISession, scope:str, scope_id:str, re
     total = response.data["total"]
     limit = response.data["limit"]
     if total:
-        _progress_bar_update(i*limit, total, size)
+        _progress_bar_update(i * limit, total, size)
 
         # request the rest of the data
         while response.next:
             response = mistapi.get_next(apisession, response)
             data = data + response.data["results"]
             i += 1
-            _progress_bar_update(i*limit, total, size)
+            _progress_bar_update(i * limit, total, size)
         # end the progress bar
         _progress_bar_end(total, size)
         print()
@@ -1030,16 +1218,17 @@ def _process_request( apisession:mistapi.APISession, scope:str, scope_id:str, re
     else:
         console.warning("There is no results for this search...")
         sys.exit(0)
-    
+
+
 ####################
 ## SAVE TO FILE
-def _save_as_csv( start:float, end:float, data:list, report:str, query_params:dict):
-    headers=[]    
+def _save_as_csv(start: float, end: float, data: list, report: str, query_params: dict):
+    headers = []
     size = 50
     total = len(data)
     print(" Saving Data ".center(80, "-"))
     print()
-    print("Generating CSV Headers ".ljust(80,"."))
+    print("Generating CSV Headers ".ljust(80, "."))
     i = 0
     for entry in data:
         for key in entry:
@@ -1049,14 +1238,21 @@ def _save_as_csv( start:float, end:float, data:list, report:str, query_params:di
         _progress_bar_update(i, total, size)
     _progress_bar_end(total, size)
     print()
-    print("Saving to file ".ljust(80,"."))
+    print("Saving to file ".ljust(80, "."))
     i = 0
-    with open(OUT_FILE_PATH, "w", encoding='UTF8', newline='') as f:
+    with open(OUT_FILE_PATH, "w", encoding="UTF8", newline="") as f:
         csv_writer = csv.writer(f)
-        csv_writer.writerow([f"#Report: {report}", f"Params: {query_params}", f"start: {start}", f"end:{end}"])
+        csv_writer.writerow(
+            [
+                f"#Report: {report}",
+                f"Params: {query_params}",
+                f"start: {start}",
+                f"end:{end}",
+            ]
+        )
         csv_writer.writerow(headers)
         for entry in data:
-            tmp=[]
+            tmp = []
             for header in headers:
                 tmp.append(entry.get(header, ""))
             csv_writer.writerow(tmp)
@@ -1065,48 +1261,58 @@ def _save_as_csv( start:float, end:float, data:list, report:str, query_params:di
         _progress_bar_end(total, size)
         print()
 
-def _save_as_json( start:float, end:float, data:list, report:str, query_params:dict):
+
+def _save_as_json(
+    start: float, end: float, data: list, report: str, query_params: dict
+):
     print(" Saving Data ".center(80, "-"))
     print()
     json_data = {
-        'report': report,
-        'query_params': json.dumps(query_params),
-        'start': start,
-        'end': end,
-        'data': data
+        "report": report,
+        "query_params": json.dumps(query_params),
+        "start": start,
+        "end": end,
+        "data": data,
     }
-    with open(os.path.abspath(OUT_FILE_PATH), 'w') as f:
+    with open(os.path.abspath(OUT_FILE_PATH), "w") as f:
         json.dump(json_data, f)
     print("Done.")
+
 
 ####################
 ## MENU
 
-def _show_menu(header:str, menu:list):
+
+def _show_menu(header: str, menu: list):
     print()
     print("".center(80, "-"))
-    resp=None
+    resp = None
     while True:
         print(f"{header}")
-        i=0
+        i = 0
         for entry in menu:
             print(f"{i}) {entry}")
-            i+=1
+            i += 1
         resp = input(f"Please select an option (0-{i-1}, q to quit): ")
         if resp.lower() == "q":
             sys.exit(0)
         else:
-            try: 
-                resp=int(resp)
+            try:
+                resp = int(resp)
                 if resp < 0 or resp >= i:
                     console.error(f"Please enter a number between 0 and {i -1}.")
                 else:
                     return menu[resp]
             except:
                 console.error("Please enter a number\r\n ")
-        
 
-def _menu(apisession:mistapi.APISession, scope:str|None, scope_id:str|None, report:str|None):
+
+def _menu(
+    apisession: mistapi.APISession,
+    scope: str | None,
+    scope_id: str | None,
+    report: str | None,
+):
     menu_1 = ["msp", "org", "site"]
     menu_2 = {
         "org": [
@@ -1120,8 +1326,8 @@ def _menu(apisession:mistapi.APISession, scope:str|None, scope_id:str|None, repo
             "device_last_config",
             "guests_authorizsations",
             "alarms",
-            "sites"
-            ],
+            "sites",
+        ],
         "site": [
             "assets",
             "calls",
@@ -1143,35 +1349,44 @@ def _menu(apisession:mistapi.APISession, scope:str|None, scope_id:str|None, repo
             "discovered_switches_metrics",
             "discovered_switches",
         ],
-        "msp":["orgs"]
+        "msp": ["orgs"],
     }
     menu_2["org"].sort()
     menu_2["site"].sort()
     menu_2["msp"].sort()
     if not scope:
-        scope=_show_menu("", menu_1)
+        scope = _show_menu("", menu_1)
     if not scope_id:
         if scope == "org":
             scope_id = mistapi.cli.select_org(apisession)[0]
         elif scope == "site":
             scope_id = mistapi.cli.select_site(apisession)[0]
     if not report:
-        report=_show_menu("", menu_2[scope]) # type: ignore
+        report = _show_menu("", menu_2[scope])  # type: ignore
     return scope, scope_id, report
 
-def start(apisession, scope:str|None=None, scope_id:str|None=None, report:str|None=None, query_params:dict|None=None):
-    scope, scope_id, report=_menu(apisession, scope, scope_id, report)
-    start, end, data=_process_request(apisession, scope, scope_id, report, query_params) # type: ignore
+
+def start(
+    apisession,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    report: str | None = None,
+    query_params: dict | None = None,
+):
+    scope, scope_id, report = _menu(apisession, scope, scope_id, report)
+    start, end, data = _process_request(apisession, scope, scope_id, report, query_params)  # type: ignore
     if OUT_FILE_FORMAT == "csv":
-        _save_as_csv(start, end, data, report, query_params) # type: ignore
+        _save_as_csv(start, end, data, report, query_params)  # type: ignore
     elif OUT_FILE_FORMAT == "json":
-        _save_as_json(start, end, data, report, query_params) # type: ignore
+        _save_as_json(start, end, data, report, query_params)  # type: ignore
     else:
         console.error(f"file format {OUT_FILE_FORMAT} not supported")
 
+
 def usage():
-    '''Function to display Help'''
-    print(f"""
+    """Function to display Help"""
+    print(
+        f"""
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -1235,12 +1450,16 @@ Options:
 Examples:
 python3 ./export_search.py                  
 python3 ./export_searchs.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --report=client_sessions_wireless --q_params=duration:1w  
-    """)
+    """
+    )
     sys.exit(0)
+
 
 def check_mistapi_version():
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        logger.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+        logger.critical(
+            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+        )
         logger.critical(f"Please use the pip command to updated it.")
         logger.critical("")
         logger.critical(f"    # Linux/macOS")
@@ -1248,7 +1467,8 @@ def check_mistapi_version():
         logger.critical("")
         logger.critical(f"    # Windows")
         logger.critical(f"    py -m pip install --upgrade mistapi")
-        print(f"""
+        print(
+            f"""
     Critical: 
     \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
     Please use the pip command to updated it.
@@ -1258,36 +1478,44 @@ def check_mistapi_version():
 
     # Windows
     py -m pip install --upgrade mistapi
-        """)
+        """
+        )
         sys.exit(2)
-    else: 
-        logger.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+    else:
+        logger.info(
+            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+        )
 
-##################################################################### 
+
+#####################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hm:o:s:r:f:e:l:q:", [
-            "help", 
-            "msp_id=", 
-            "org_id=", 
-            "site_id=", 
-            "report=", 
-            "out_format=", 
-            "out_file=", 
-            "env=", 
-            "log_file=", 
-            "q_params="
-            ])
+        opts, args = getopt.getopt(
+            sys.argv[1:],
+            "hm:o:s:r:f:e:l:q:",
+            [
+                "help",
+                "msp_id=",
+                "org_id=",
+                "site_id=",
+                "report=",
+                "out_format=",
+                "out_file=",
+                "env=",
+                "log_file=",
+                "q_params=",
+            ],
+        )
     except getopt.GetoptError as err:
         console.error(err)
         usage()
 
-    SCOPE=None
-    SCOPE_ID=None
-    REPORT=None
-    QUERY_PARAMS={}
-    for o, a in opts: # type: ignore
+    SCOPE = None
+    SCOPE_ID = None
+    REPORT = None
+    QUERY_PARAMS = {}
+    for o, a in opts:  # type: ignore
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-m", "--msp_id"]:
@@ -1312,25 +1540,25 @@ if __name__ == "__main__":
             REPORT = a
         elif o in ["--out_format"]:
             if a in ["csv", "json"]:
-                OUT_FILE_FORMAT=a
+                OUT_FILE_FORMAT = a
             else:
                 console.error(f"Out format {a} not supported")
                 usage()
         elif o in ["-f", "--out_file"]:
-            OUT_FILE_PATH=a
+            OUT_FILE_PATH = a
         elif o in ["-e", "--env"]:
-            ENV_FILE=a
+            ENV_FILE = a
         elif o in ["-q", "--q_params"]:
             params = a.split(",")
             for p in params:
-                QUERY_PARAMS[p.split(":")[0]]=p.split(":")[1]
+                QUERY_PARAMS[p.split(":")[0]] = p.split(":")[1]
         elif o in ["-l", "--log_file"]:
             LOG_FILE = a
         else:
             assert False, "unhandled option"
 
     #### LOGS ####
-    logging.basicConfig(filename=LOG_FILE, filemode='w')
+    logging.basicConfig(filename=LOG_FILE, filemode="w")
     logger.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### START ###
