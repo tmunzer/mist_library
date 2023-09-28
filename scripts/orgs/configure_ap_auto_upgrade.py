@@ -116,11 +116,11 @@ except:
 # }
 auto_upgrade_rule = {"enabled": True}
 
-log_file = "./script.log"
-env_file = "~/.mist_env"
+LOG_FILE = "./script.log"
+ENV_FILE = "~/.mist_env"
 
 #### LOGS ####
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 
@@ -171,25 +171,25 @@ class ProgressBar():
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
     def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        logger.info(f"{message}: Success")
+        LOGGER.info(f"{message}: Success")
         self._pb_new_step(
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
 
     def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
-        logger.warning(f"{message}")
+        LOGGER.warning(f"{message}")
         self._pb_new_step(
             message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
 
     def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        logger.error(f"{message}: Failure")
+        LOGGER.error(f"{message}: Failure")
         self._pb_new_step(
             message, '\033[31m\u2716\033[0m\n', inc=inc, display_pbar=display_pbar)
 
     def log_title(self, message, end: bool = False, display_pbar: bool = True):
-        logger.info(message)
+        LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
-pb = ProgressBar()
+PB = ProgressBar()
 
 #####################################################################
 # FUNCTIONS
@@ -197,15 +197,15 @@ pb = ProgressBar()
 # SITE SETTINGS
 def get_site_setting(mist_session, site_id, auto_upgrade_rule):
     message=f"Site {site_id}: Retrieving current settings"
-    pb.log_message(message, display_pbar=True)
+    PB.log_message(message, display_pbar=True)
     try:
         current_auto_upgrade_rule = mistapi.api.v1.sites.setting.getSiteSetting(
             mist_session, site_id
         ).data["auto_upgrade"]
-        pb.log_success(message, inc=True)
+        PB.log_success(message, inc=True)
         update_site_setting(mist_session, site_id, current_auto_upgrade_rule, auto_upgrade_rule)
     except:
-        pb.log_failure(message, inc=True)
+        PB.log_failure(message, inc=True)
 
 
 def update_site_setting(mist_session, site_id, current_auto_upgrade_rule, auto_upgrade_rule):
@@ -216,20 +216,20 @@ def update_site_setting(mist_session, site_id, current_auto_upgrade_rule, auto_u
         except:
             pass
     message=f"Site {site_id}: Updating settings"
-    pb.log_message(message, display_pbar=True)
+    PB.log_message(message, display_pbar=True)
     try:
         mistapi.api.v1.sites.setting.updateSiteSettings(
             mist_session, site_id, {"auto_upgrade": current_auto_upgrade_rule}
         )
-        pb.log_success(message, inc=True)
+        PB.log_success(message, inc=True)
     except:
-        pb.log_failure(message, inc=True)
+        PB.log_failure(message, inc=True)
 
 
 # INPPUT
 def confirm_action(mist_session, site_ids, auto_upgrade_rule):
     while True:
-        pb.log_title("New Auto Upgrade Configuration", display_pbar=False)
+        PB.log_title("New Auto Upgrade Configuration", display_pbar=False)
         print(json.dumps(auto_upgrade_rule, indent=2))
         print("".center(80, "-"))
         print()
@@ -245,7 +245,7 @@ def confirm_action(mist_session, site_ids, auto_upgrade_rule):
             sys.exit(0)
         elif resp.lower() == "y":
             print("\n\n\n")
-            pb.set_steps_total(len(site_ids) * 2)
+            PB.set_steps_total(len(site_ids) * 2)
             for site_id in site_ids:
                 get_site_setting(mist_session, site_id, auto_upgrade_rule)
             break
@@ -277,7 +277,7 @@ def _get_ap_models(mist_session: mistapi.APISession, org_id: str, site_ids: list
     except:
         print("Unable to retrieve the list of APs from the Org...")
         sys.exit(1)
-        
+
     return ap_models
 
 
@@ -319,7 +319,7 @@ def _get_ap_versions(mist_session: mistapi.APISession, site_id: str, ap_models: 
 ###############################################################################
 # MENUS
 def _menu_enabled(auto_upgrade_rule:dict):
-    pb.log_title(f"Auto Upgrade Activation", display_pbar=False)
+    PB.log_title(f"Auto Upgrade Activation", display_pbar=False)
     print("0) Disabled")
     print("1) Enabled")
     print()
@@ -337,7 +337,7 @@ def _menu_enabled(auto_upgrade_rule:dict):
 
 def _show_menu_version(ap_model: str, ap_versions: dict):
     i = 0
-    pb.log_title(f"Available firmwares for {ap_model}", display_pbar=False)
+    PB.log_title(f"Available firmwares for {ap_model}", display_pbar=False)
     for version in ap_versions[ap_model]:
         print(f"{i}) {version}")
         i += 1
@@ -366,7 +366,7 @@ def _select_custom_version(
 
 
 def _menu_version(mist_session: mistapi.APISession, org_id: str, site_ids: list, auto_upgrade_rule:dict):
-    pb.log_title("Firmware selection", display_pbar=False)
+    PB.log_title("Firmware selection", display_pbar=False)
     print("0) Production")
     print("1) RC2")
     print("2) Custom")
@@ -389,7 +389,7 @@ def _menu_version(mist_session: mistapi.APISession, org_id: str, site_ids: list,
             print("Invalid Input. Only numbers between 0 and 2 are allowed...")
 
 def _menu_day(auto_upgrade_rule:dict):
-    pb.log_title("Day of Week upgrade selection", display_pbar=False)
+    PB.log_title("Day of Week upgrade selection", display_pbar=False)
     days = ["Daily", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     i = 0
     for day in days:
@@ -421,7 +421,7 @@ def _menu_hours(auto_upgrade_rule:dict):
                 auto_upgrade_rule["time_of_day"] = time_of_day
                 return auto_upgrade_rule
             else:
-                print("Invalid input...")            
+                print("Invalid input...")
 
 def get_site_ids(mist_session, org_id):
     site_ids = []
@@ -434,7 +434,7 @@ def get_site_ids(mist_session, org_id):
 ###############################################################################
 # START CONFIG
 def _start_config(mist_session:mistapi.APISession, org_id:str, auto_upgrade_rule:dict, all_sites:bool=None, site_ids:list=None):
-    if all_sites == True:
+    if all_sites:
         site_ids = get_site_ids(mist_session, org_id)
     elif not site_ids:
         while True:
@@ -454,7 +454,7 @@ def _start_config(mist_session:mistapi.APISession, org_id:str, auto_upgrade_rule
         if "version" not in auto_upgrade_rule:
             auto_upgrade_rule = _menu_version(mist_session, org_id, site_ids, auto_upgrade_rule)
         elif auto_upgrade_rule["version"] == "custom" and "custom" not in auto_upgrade_rule:
-            auto_upgrade_rule["custom_versions"] = _select_custom_version(mist_session, org_id, site_ids)            
+            auto_upgrade_rule["custom_versions"] = _select_custom_version(mist_session, org_id, site_ids)
         if "day_of_week" not in auto_upgrade_rule:
             auto_upgrade_rule = _menu_day(auto_upgrade_rule)
         if "time_of_day" not in auto_upgrade_rule:
@@ -465,7 +465,7 @@ def _start_config(mist_session:mistapi.APISession, org_id:str, auto_upgrade_rule
 # CHECK PARAMETERS
 def _check_day(day:str):
     if day in ["any", "mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
-        logger.info(f"PARAMETER > day_of_week: {day}")
+        LOGGER.info(f"PARAMETER > day_of_week: {day}")
         return True
     else:
         console.critical("Inavlid Parameters: \"--day\" is only accepting the follwing values: \"any\", \"mon\", \"tue\", \"wed\", \"thu\", \"fri\", \"sat\", \"sun\"")
@@ -484,7 +484,7 @@ def _check_hours(time_of_day: str):
                 console.critical("Inavlid Parameters: \"--time\" must use the 24H format \"HH:MM\" (e.g., \"14:00\")")
                 return False
             else:
-                logger.info(f"PARAMETER > time_of_day: {time_of_day}")
+                LOGGER.info(f"PARAMETER > time_of_day: {time_of_day}")
                 return True
         except:
             console.critical("Inavlid Parameters: \"--time\" must use the 24H format \"HH:MM\" (e.g., \"14:00\")")
@@ -492,7 +492,7 @@ def _check_hours(time_of_day: str):
 
 def _check_version(version:str):
     if version in ["custom", "stable", "beta"]:
-        logger.info(f"PARAMETER > version: {version}")
+        LOGGER.info(f"PARAMETER > version: {version}")
         return True
     else:
         console.critical("Inavlid Parameters: \"--version\" is only accepting the follwing values: \"custom\", \"stable\", \"beta\"")
@@ -511,7 +511,7 @@ def _check_custom(custom:str):
                 custom_versions[model]=version
             else:
                 console.warning(f"Invalid Parameters: \"--custom\" has an invalid entry: {entry}")
-        logger.info(f"PARAMETER > custom_versions: {custom_versions}")
+        LOGGER.info(f"PARAMETER > custom_versions: {custom_versions}")
         return custom_versions
 
 ###############################################################################
@@ -550,7 +550,7 @@ def _select_dest_org(apisession: mistapi.APISession):
         apisession, org_id).data["name"]
     if _check_org_name(apisession, org_id, org_name):
         return org_id, org_name
-    
+
 def start(apisession: mistapi.APISession, org_id: str = None, org_name: str = None, enabled: bool = None, day:str=None, time_of_day:str=None, version:str=None, custom:str=None, all_sites:bool=None, site_ids:list=None):
     if org_id and org_name:
         if not _check_org_name_in_script_param(apisession, org_id, org_name):
@@ -561,7 +561,7 @@ def start(apisession: mistapi.APISession, org_id: str = None, org_name: str = No
         org_id, org_name = _check_org_name(apisession, org_id)
     elif not org_id and not org_name:
         org_id, org_name = _select_dest_org(apisession)
-    else: 
+    else:
         usage()
         sys.exit(0)
 
@@ -669,14 +669,14 @@ python3 ./configure_ap_auto_upgrade.py \
 
 def check_mistapi_version():
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        logger.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
-        logger.critical(f"Please use the pip command to updated it.")
-        logger.critical("")
-        logger.critical(f"    # Linux/macOS")
-        logger.critical(f"    python3 -m pip install --upgrade mistapi")
-        logger.critical("")
-        logger.critical(f"    # Windows")
-        logger.critical(f"    py -m pip install --upgrade mistapi")
+        LOGGER.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+        LOGGER.critical(f"Please use the pip command to updated it.")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Linux/macOS")
+        LOGGER.critical(f"    python3 -m pip install --upgrade mistapi")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Windows")
+        LOGGER.critical(f"    py -m pip install --upgrade mistapi")
         print(f"""
     Critical: 
     \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
@@ -690,7 +690,7 @@ def check_mistapi_version():
         """)
         sys.exit(2)
     else:
-        logger.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+        LOGGER.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
 
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
@@ -702,61 +702,61 @@ if __name__ == "__main__":
         console.error(err)
         usage()
 
-    org_id = None
-    org_name = None
-    enabled = None
-    day = None
-    time_of_day = None
-    version = None
-    custom = None
-    all_sites = None
-    site_ids = None
+    ORG_ID = None
+    ORG_NAME = None
+    ENABLED = None
+    DAY = None
+    TIME_OF_DAY = None
+    VERSION = None
+    CUSTOM = None
+    ALL_SITES = False
+    SITE_IDS = None
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-o", "--org_id"]:
-            org_id = a
+            ORG_ID = a
         elif o in ["-n", "--org_name"]:
-            org_name = a
+            ORG_NAME = a
         elif o in ["-e", "--env"]:
-            env_file = a
+            ENV_FILE = a
         elif o in ["-l", "--log_file"]:
-            log_file = a
+            LOG_FILE = a
         elif o == "--enabled":
-            if enabled == None:
-                enabled = True
+            if ENABLED is None:
+                ENABLED = True
             else:
                 console.critical("Inavlid Parameters: \"--enabled\" and \"--disabled\" are exclusive")
                 sys.exit(1)
         elif o == "--disabled":
-            if enabled == None:
-                enabled = False
+            if ENABLED is None:
+                ENABLED = False
             else:
                 console.critical("Inavlid Parameters: \"--enabled\" and \"--disabled\" are exclusive")
                 sys.exit(1)
         elif o == "--day":
-            day = a
+            DAY = a
         elif o == "--time":
-            time_of_day = a                
+            TIME_OF_DAY = a
         elif o == "--version":
-            version = a
+            VERSION = a
         elif o == "--custom":
-            custom = a        
+            CUSTOM = a
         elif o in ["-a", "--all_sites"]:
-            all_sites = True       
+            ALL_SITES = True
         elif o in ["-s", "--site_ids"]:
-            site_ids = a        
+            SITE_IDS = a.split(",")
         else:
             assert False, "unhandled option"
     
 
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode='w')
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(filename=LOG_FILE, filemode='w')
+    LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### MIST SESSION ###
-    apisession = mistapi.APISession(env_file=env_file)
+    apisession = mistapi.APISession(env_file=ENV_FILE)
     apisession.login()
 
     ### START ###
-    start(apisession,  org_id, org_name, enabled, day, time_of_day, version, custom, all_sites, site_ids)
+    start(apisession,  ORG_ID, ORG_NAME, ENABLED, DAY, TIME_OF_DAY, VERSION, CUSTOM, ALL_SITES, SITE_IDS)
