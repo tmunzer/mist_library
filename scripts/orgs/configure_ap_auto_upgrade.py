@@ -201,7 +201,7 @@ def get_site_setting(mist_session, site_id, auto_upgrade_rule):
     try:
         current_auto_upgrade_rule = mistapi.api.v1.sites.setting.getSiteSetting(
             mist_session, site_id
-        ).data["auto_upgrade"]
+        ).data.get("auto_upgrade", {})
         PB.log_success(message, inc=True)
         update_site_setting(mist_session, site_id, current_auto_upgrade_rule, auto_upgrade_rule)
     except:
@@ -210,11 +210,15 @@ def get_site_setting(mist_session, site_id, auto_upgrade_rule):
 
 def update_site_setting(mist_session, site_id, current_auto_upgrade_rule, auto_upgrade_rule):
     parameters = ["enabled", "version", "time_of_day", "day_of_week", "custom_versions"]
+    LOGGER.debug(f"update_site_setting:Current settings for site {site_id}: {current_auto_upgrade_rule}")
     for param in parameters:
         try:
             current_auto_upgrade_rule[param] = auto_upgrade_rule[param]
         except:
+            LOGGER.error("update_site_setting: Unable to retrieve the list of Gateway Templates")
+            LOGGER.error("Exception occurred", exc_info=True)
             pass
+    LOGGER.debug(f"update_site_setting:New settings for site {site_id}: {current_auto_upgrade_rule}")
     message=f"Site {site_id}: Updating settings"
     PB.log_message(message, display_pbar=True)
     try:
@@ -448,24 +452,25 @@ def _start_config(mist_session:mistapi.APISession, org_id:str, auto_upgrade_rule
                 site_ids = get_site_ids(mist_session, org_id)
                 break
 
-    if "enabled" not in auto_upgrade_rule:
+    if auto_upgrade_rule.get("enabled") is None:
         auto_upgrade_rule = _menu_enabled(auto_upgrade_rule)
     if auto_upgrade_rule["enabled"]:
-        if "version" not in auto_upgrade_rule:
+        if auto_upgrade_rule.get("version") is None:
             auto_upgrade_rule = _menu_version(mist_session, org_id, site_ids, auto_upgrade_rule)
-        elif auto_upgrade_rule["version"] == "custom" and "custom" not in auto_upgrade_rule:
+        elif auto_upgrade_rule["version"] == "custom" and auto_upgrade_rule.get("custom_versions") is None:
             auto_upgrade_rule["custom_versions"] = _select_custom_version(mist_session, org_id, site_ids)
-        if "day_of_week" not in auto_upgrade_rule:
+        if auto_upgrade_rule.get("day_of_week") is None:
             auto_upgrade_rule = _menu_day(auto_upgrade_rule)
-        if "time_of_day" not in auto_upgrade_rule:
+        if auto_upgrade_rule.get("time_of_day") is None:
             auto_upgrade_rule = _menu_hours(auto_upgrade_rule)
+    LOGGER.debug(f"_start_config: auto_upgrade_rule: {auto_upgrade_rule}")
     confirm_action(mist_session, site_ids, auto_upgrade_rule)
 
 ###############################################################################
 # CHECK PARAMETERS
 def _check_day(day:str):
     if day in ["any", "mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
-        LOGGER.info(f"PARAMETER > day_of_week: {day}")
+        LOGGER.info(f"_check_day: day_of_week: {day}")
         return True
     else:
         console.critical("Inavlid Parameters: \"--day\" is only accepting the follwing values: \"any\", \"mon\", \"tue\", \"wed\", \"thu\", \"fri\", \"sat\", \"sun\"")
@@ -484,7 +489,7 @@ def _check_hours(time_of_day: str):
                 console.critical("Inavlid Parameters: \"--time\" must use the 24H format \"HH:MM\" (e.g., \"14:00\")")
                 return False
             else:
-                LOGGER.info(f"PARAMETER > time_of_day: {time_of_day}")
+                LOGGER.info(f"_check_hours: time_of_day: {time_of_day}")
                 return True
         except:
             console.critical("Inavlid Parameters: \"--time\" must use the 24H format \"HH:MM\" (e.g., \"14:00\")")
@@ -492,7 +497,7 @@ def _check_hours(time_of_day: str):
 
 def _check_version(version:str):
     if version in ["custom", "stable", "beta"]:
-        LOGGER.info(f"PARAMETER > version: {version}")
+        LOGGER.info(f"_check_version: version: {version}")
         return True
     else:
         console.critical("Inavlid Parameters: \"--version\" is only accepting the follwing values: \"custom\", \"stable\", \"beta\"")
@@ -501,9 +506,7 @@ def _check_version(version:str):
 def _check_custom(custom:str):
     custom_versions={}
     entries = custom.split(",")
-    if len(entries) == 0:
-        console.critical("Inavlid Parameters: \"--custom\" must a list of \"MODEL:VERSION\", commat separated (e.g., \"AP34:0.14.28548,AP45:0.14.28548\")")
-    else:
+    if len(entries) > 0:
         for entry in entries:
             model = entry.split(":")[0]
             version = entry.split(":")[1]
@@ -511,8 +514,11 @@ def _check_custom(custom:str):
                 custom_versions[model]=version
             else:
                 console.warning(f"Invalid Parameters: \"--custom\" has an invalid entry: {entry}")
-        LOGGER.info(f"PARAMETER > custom_versions: {custom_versions}")
+        LOGGER.info(f"_check_custom: custom_versions: {custom_versions}")
         return custom_versions
+
+    console.critical("Inavlid Parameters: \"--custom\" must a list of \"MODEL:VERSION\", commat separated (e.g., \"AP34:0.14.28548,AP45:0.14.28548\")")
+    return None
 
 ###############################################################################
 # ORG SELECTION
@@ -581,10 +587,11 @@ def start(apisession: mistapi.APISession, org_id: str = None, org_name: str = No
             auto_upgrade_rule["version"] = version
         else: return False
     if custom != None:
-        if _check_custom(custom):
-            auto_upgrade_rule["custom"] = custom
+        tmp_custom = _check_custom(custom)
+        if tmp_custom:
+            auto_upgrade_rule["custom_versions"] = tmp_custom
         else: return False
-
+    LOGGER.debug(f"start: auto_upgrade_rule: {auto_upgrade_rule}")
     _start_config(apisession, org_id, auto_upgrade_rule, all_sites, site_ids)
 
 #####################################################################
