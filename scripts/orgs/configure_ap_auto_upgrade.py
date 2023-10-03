@@ -53,7 +53,7 @@ Script Parameters:
                         must a list of "MODEL:VERSION", commat separated 
                         (e.g., "AP34:0.14.28548,AP45:0.14.28548")
 
---env=                  Optional, env file to use to access the src org (see
+-e, --env=              Optional, env file to use to access the src org (see
                         mistapi env file documentation here: 
                         https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
@@ -646,7 +646,7 @@ Script Parameters:
                         must a list of "MODEL:VERSION", commat separated 
                         (e.g., "AP34:0.14.28548,AP45:0.14.28548")
 
---env=                  Optional, env file to use to access the src org (see
+-e, --env=              Optional, env file to use to access the src org (see
                         mistapi env file documentation here: 
                         https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
