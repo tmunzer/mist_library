@@ -29,15 +29,10 @@ information about the available parameters).
 Script Parameters:
 -h, --help              display this help
 
---src_org_id=           Optional, org_id of the org to clone
---src_org_name=         Optional, name of the org to clone, for validation 
+-o, --org_id=           Optional, org_id of the org to clone
+-n, --org_name=         Optional, name of the org to clone, for validation 
                         purpose. Requires src_org_id to be defined
---dst_org_id=           Optional, org_id of the org where to clone the src_org,
-                        if the org already exists
---dst_org_name=         Optional, name of the org where to clone the src_org. 
-                        If dst_org_id is defined (org already exists), will be 
-                        used for validation, if dst_org_id is not defined, a
-                        new org will be created
+
 
 -a, --all_sites         Run the script for all the org sites
 -s, --site_ids=         Run the script only for the specified site_ids
@@ -628,15 +623,9 @@ information about the available parameters).
 Script Parameters:
 -h, --help              display this help
 
---src_org_id=           Optional, org_id of the org to clone
---src_org_name=         Optional, name of the org to clone, for validation 
+-o, --org_id=           Optional, org_id of the org to clone
+-n, --org_name=         Optional, name of the org to clone, for validation 
                         purpose. Requires src_org_id to be defined
---dst_org_id=           Optional, org_id of the org where to clone the src_org,
-                        if the org already exists
---dst_org_name=         Optional, name of the org where to clone the src_org. 
-                        If dst_org_id is defined (org already exists), will be 
-                        used for validation, if dst_org_id is not defined, a
-                        new org will be created
 
 -a, --all_sites         Run the script for all the org sites
 -s, --site_ids=         Run the script only for the specified site_ids
