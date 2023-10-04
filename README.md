@@ -48,7 +48,6 @@ An example of the environment file content is:
 ```
 MIST_HOST = api.mist.com
 MIST_APITOKEN = xxxxxx
-MIST_ORG_ID = 203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 ```
 
 # Scripts
