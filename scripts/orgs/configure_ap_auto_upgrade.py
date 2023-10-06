@@ -19,7 +19,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-The site(s) to update will can selected during the script execution.
+The site(s) to update can selected during the script execution.
 
 It is recomended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
