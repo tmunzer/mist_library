@@ -95,9 +95,9 @@ as the org_clone.py file:
 
 #####################################################################
 #### PARAMETERS #####
-backup_folder = "./org_backup"
-log_file = "./script.log"
-src_env_file = "~/.mist_env"
+BACKUP_FOLDER = "./org_backup"
+LOG_FILE = "./script.log"
+SRC_ENV_FILE = "~/.mist_env"
 
 #####################################################################
 #### LOGS ####
@@ -152,13 +152,16 @@ def start(
 
     PARAMS
     -------
-    :param  mistapi.APISession  apisession      - mistapi session with `Super User` access the source Org, already logged in
-    :param  str                 org_id          - Optional, org_id of the org to clone
-    :param  str                 backup_folder_param - Path to the folder where to save the org backup (a subfolder will be created with the org name). default is "./org_backup"
-
+    apisession : mistapi.APISession
+        mistapi session with `Super User` access the source Org, already logged in
+    org_id : str
+        Optional, org_id of the org to clone
+    backup_folder_param : str
+        Path to the folder where to save the org backup (a subfolder will be created
+        with the org name). default is "./org_backup"
     """
     if not backup_folder_param:
-        backup_folder_param = backup_folder
+        backup_folder_param = BACKUP_FOLDER
     if not org_id:
         org_id = mistapi.cli.select_org(apisession)[0]
 
@@ -170,6 +173,9 @@ def start(
 ###############################################################################
 #### USAGE ####
 def usage():
+    """
+    display script usage
+    """
     print(
         """
 -------------------------------------------------------------------------------
@@ -229,9 +235,13 @@ Script Parameters:
 
 
 def check_mistapi_version():
+    """
+    Function to check the mistapi package version
+    """
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
         logger.critical(
-            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+            f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, "
+            f"you are currently using version {mistapi.__version__}."
         )
         logger.critical(f"Please use the pip command to updated it.")
         logger.critical("")
@@ -256,7 +266,8 @@ def check_mistapi_version():
         sys.exit(2)
     else:
         logger.info(
-            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+            f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, "
+            f"you are currently using version {mistapi.__version__}."
         )
 
 
@@ -270,7 +281,6 @@ if __name__ == "__main__":
             [
                 "help",
                 "org_id=",
-                "org_name=",
                 "env=",
                 "src_env=",
                 "log_file=",
@@ -281,40 +291,35 @@ if __name__ == "__main__":
         console.error(err)
         usage()
 
-    org_id = None
-    org_name = None
-    backup_folder_param = None
+    ORG_ID = None
+    BACKUP_FOLDER_PARAM = BACKUP_FOLDER
     for o, a in opts:
-        if o in ["-a", "--unclaim_all"]:
-            unclaim_all = True
-        elif o in ["-b", "--backup_folder"]:
-            backup_folder_param = a
+        if o in ["-b", "--backup_folder"]:
+            BACKUP_FOLDER_PARAM = a
         elif o in ["-h", "--help"]:
             usage()
             sys.exit(0)
         elif o in ["-l", "--log_file"]:
-            log_file = a
+            LOG_FILE = a
         elif o in ["-e", "--env", "--src_env"]:
-            src_env_file = a
+            SRC_ENV_FILE = a
         elif o in ["--org_id"]:
-            org_id = a
-        elif o in ["--org_name"]:
-            org_name = a
+            ORG_ID = a
         else:
             assert False, "unhandled option"
 
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode="w")
+    logging.basicConfig(filename=LOG_FILE, filemode="w")
     logger.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### MIST SESSION ###
     print(" API Session to access the Source Org ".center(80, "_"))
-    apisession = mistapi.APISession(env_file=src_env_file)
+    apisession = mistapi.APISession(env_file=SRC_ENV_FILE)
     apisession.login()
 
     ### START ###
     start(
         apisession,
-        org_id=org_id,
-        backup_folder_param=backup_folder_param,
+        org_id=ORG_ID,
+        backup_folder_param=BACKUP_FOLDER_PARAM,
     )
