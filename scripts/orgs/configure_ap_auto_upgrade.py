@@ -19,7 +19,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-The site(s) to update will can selected during the script execution.
+The site(s) to update can selected during the script execution.
 
 It is recomended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
@@ -29,15 +29,10 @@ information about the available parameters).
 Script Parameters:
 -h, --help              display this help
 
---src_org_id=           Optional, org_id of the org to clone
---src_org_name=         Optional, name of the org to clone, for validation 
+-o, --org_id=           Optional, org_id of the org to clone
+-n, --org_name=         Optional, name of the org to clone, for validation 
                         purpose. Requires src_org_id to be defined
---dst_org_id=           Optional, org_id of the org where to clone the src_org,
-                        if the org already exists
---dst_org_name=         Optional, name of the org where to clone the src_org. 
-                        If dst_org_id is defined (org already exists), will be 
-                        used for validation, if dst_org_id is not defined, a
-                        new org will be created
+
 
 -a, --all_sites         Run the script for all the org sites
 -s, --site_ids=         Run the script only for the specified site_ids
@@ -58,7 +53,7 @@ Script Parameters:
                         must a list of "MODEL:VERSION", commat separated 
                         (e.g., "AP34:0.14.28548,AP45:0.14.28548")
 
---env=                  Optional, env file to use to access the src org (see
+-e, --env=              Optional, env file to use to access the src org (see
                         mistapi env file documentation here: 
                         https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
@@ -628,15 +623,9 @@ information about the available parameters).
 Script Parameters:
 -h, --help              display this help
 
---src_org_id=           Optional, org_id of the org to clone
---src_org_name=         Optional, name of the org to clone, for validation 
+-o, --org_id=           Optional, org_id of the org to clone
+-n, --org_name=         Optional, name of the org to clone, for validation 
                         purpose. Requires src_org_id to be defined
---dst_org_id=           Optional, org_id of the org where to clone the src_org,
-                        if the org already exists
---dst_org_name=         Optional, name of the org where to clone the src_org. 
-                        If dst_org_id is defined (org already exists), will be 
-                        used for validation, if dst_org_id is not defined, a
-                        new org will be created
 
 -a, --all_sites         Run the script for all the org sites
 -s, --site_ids=         Run the script only for the specified site_ids
@@ -657,7 +646,7 @@ Script Parameters:
                         must a list of "MODEL:VERSION", commat separated 
                         (e.g., "AP34:0.14.28548,AP45:0.14.28548")
 
---env=                  Optional, env file to use to access the src org (see
+-e, --env=              Optional, env file to use to access the src org (see
                         mistapi env file documentation here: 
                         https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
