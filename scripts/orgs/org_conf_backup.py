@@ -80,31 +80,31 @@ except:
 
 #####################################################################
 #### PARAMETERS #####
-backup_folder = "./org_backup"
-backup_file = "org_conf_file.json"
-log_file = "./script.log"
-file_prefix = ".".join(backup_file.split(".")[:-1])
-env_file = "~/.mist_env"
+BACKUP_FOLDER = "./org_backup"
+BACKUP_FILE = "org_conf_file.json"
+LOG_FILE = "./script.log"
+FILE_PREFIX = ".".join(BACKUP_FILE.split(".")[:-1])
+ENV_FILE = "~/.mist_env"
 
 #####################################################################
 #### LOGS ####
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 #####################################################################
 #### GLOBALS #####
-sys_exit = False
+SYS_EXIT = False
 
 
 def sigint_handler(signal, frame):
-    global sys_exit
-    sys_exit = True
+    global SYS_EXIT
+    SYS_EXIT = True
     ("[Ctrl C],KeyboardInterrupt exception occured.")
 
 
 signal.signal(signal.SIGINT, sigint_handler)
 #####################################################################
 # BACKUP OBJECTS REFS
-org_steps = {
+ORG_STEPS = {
     "data": {
         "mistapi_function": mistapi.api.v1.orgs.orgs.getOrg,
         "text": "Org info",
@@ -267,7 +267,7 @@ org_steps = {
         "check_next": True,
     },
 }
-site_steps = {
+SITE_STEPS = {
     "assets": {
         "mistapi_function": mistapi.api.v1.sites.assets.listSiteAssets,
         "text": "Site assets",
@@ -391,23 +391,23 @@ class ProgressBar:
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
     def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        logger.info(f"{message}: Success")
+        LOGGER.info(f"{message}: Success")
         self._pb_new_step(
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        logger.error(f"{message}: Failure")
+        LOGGER.error(f"{message}: Failure")
         self._pb_new_step(
             message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_title(self, message, end: bool = False, display_pbar: bool = True):
-        logger.info(message)
+        LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
 
-pb = ProgressBar()
+PB = ProgressBar()
 
 
 #####################################################################
@@ -416,35 +416,35 @@ def _backup_wlan_portal(org_id, site_id, wlans):
     for wlan in wlans:
         wlan_id = wlan["id"]
         if not site_id:
-            portal_file_name = f"{file_prefix}_org_{org_id}_wlan_{wlan_id}.json"
-            portal_image = f"{file_prefix}_org_{org_id}_wlan_{wlan_id}.png"
+            portal_file_name = f"{FILE_PREFIX}_org_{org_id}_wlan_{wlan_id}.json"
+            portal_image = f"{FILE_PREFIX}_org_{org_id}_wlan_{wlan_id}.png"
         else:
             portal_file_name = (
-                f"{file_prefix}_org_{org_id}_site_{site_id}_wlan_{wlan_id}.json"
+                f"{FILE_PREFIX}_org_{org_id}_site_{site_id}_wlan_{wlan_id}.json"
             )
             portal_image = (
-                f"{file_prefix}_org_{org_id}_site_{site_id}_wlan_{wlan_id}.png"
+                f"{FILE_PREFIX}_org_{org_id}_site_{site_id}_wlan_{wlan_id}.png"
             )
         if "portal_template_url" in wlan and wlan["portal_template_url"]:
             try:
                 message = f"portal template for wlan {wlan_id}"
-                pb.log_message(message)
+                PB.log_message(message)
                 urllib.request.urlretrieve(
                     wlan["portal_template_url"], portal_file_name
                 )
-                pb.log_success(message)
+                PB.log_success(message)
             except Exception as e:
-                pb.log_failure(message)
-                logger.error("Exception occurred", exc_info=True)
+                PB.log_failure(message)
+                LOGGER.error("Exception occurred", exc_info=True)
         if "portal_image" in wlan and wlan["portal_image"]:
             try:
                 message = f"portal image for wlan {wlan_id}"
-                pb.log_message(message)
+                PB.log_message(message)
                 urllib.request.urlretrieve(wlan["portal_image"], portal_image)
-                pb.log_success(message)
+                PB.log_success(message)
             except Exception as e:
-                pb.log_failure(message)
-                logger.error("Exception occurred", exc_info=True)
+                PB.log_failure(message)
+                LOGGER.error("Exception occurred", exc_info=True)
 
 
 def _do_backup(
@@ -455,10 +455,10 @@ def _do_backup(
     message,
     request_type: str = None,
 ):
-    if sys_exit:
+    if SYS_EXIT:
         sys.exit(0)
     try:
-        pb.log_message(message)
+        PB.log_message(message)
         if request_type:
             response = backup_function(mist_session, scope_id, type=request_type)
         else:
@@ -468,23 +468,22 @@ def _do_backup(
             data = mistapi.get_all(mist_session, response)
         else:
             data = response.data
-        pb.log_success(message, True)
+        PB.log_success(message, True)
         return data
     except Exception as e:
-        pb.log_failure(message, True)
-        logger.error("Exception occurred", exc_info=True)
+        PB.log_failure(message, True)
+        LOGGER.error("Exception occurred", exc_info=True)
         return None
 
 
 #### BACKUP ####
 def _backup_full_org(mist_session, org_id, org_name):
-    pb.log_title(f"Backuping Org {org_name}")
+    PB.log_title(f"Backuping Org {org_name}")
     backup = {}
     backup["org"] = {"id": org_id}
 
     ### ORG BACKUP
-    for step_name in org_steps:
-        step = org_steps[step_name]
+    for step_name, step in ORG_STEPS.items():
         request_type = step.get("request_type")
         backup["org"][step_name] = _do_backup(
             mist_session,
@@ -502,9 +501,8 @@ def _backup_full_org(mist_session, org_id, org_name):
         site_id = site["id"]
         site_name = site["name"]
         site_backup = {}
-        pb.log_title(f"Backuping Site {site_name}")
-        for step_name in site_steps:
-            step = site_steps[step_name]
+        PB.log_title(f"Backuping Site {site_name}")
+        for step_name, step in SITE_STEPS.items():
             site_backup[step_name] = _do_backup(
                 mist_session,
                 step["mistapi_function"],
@@ -518,7 +516,7 @@ def _backup_full_org(mist_session, org_id, org_name):
             _backup_wlan_portal(org_id, site_id, site_backup["wlans"])
 
         message = "Site map images"
-        pb.log_message(message)
+        PB.log_message(message)
         try:
             for xmap in site_backup["maps"]:
                 url = None
@@ -527,32 +525,32 @@ def _backup_full_org(mist_session, org_id, org_name):
                     xmap_id = xmap["id"]
                 if url:
                     image_name = (
-                        f"{file_prefix}_org_{org_id}_site_{site_id}_map_{xmap_id}.png"
+                        f"{FILE_PREFIX}_org_{org_id}_site_{site_id}_map_{xmap_id}.png"
                     )
                     urllib.request.urlretrieve(url, image_name)
-            pb.log_success(message)
+            PB.log_success(message)
         except Exception as e:
-            pb.log_failure(message)
-            logger.error("Exception occurred", exc_info=True)
+            PB.log_failure(message)
+            LOGGER.error("Exception occurred", exc_info=True)
 
-    pb.log_title("Backup Done", end=True)
+    PB.log_title("Backup Done", end=True)
     return backup
 
 
-def _save_to_file(backup_file, backup, org_name):
-    backup_path = os.path.join(backup_folder, org_name, backup_file)
+def _save_to_file(backup, org_name, backup_folder):
+    backup_path = os.path.join(backup_folder, org_name, BACKUP_FILE)
     message = f"Saving to file {backup_path} "
     print(f"{message}".ljust(79, "."), end="", flush=True)
     try:
-        with open(backup_file, "w") as f:
+        with open(BACKUP_FILE, "w") as f:
             json.dump(backup, f)
         print("\033[92m\u2714\033[0m\n")
     except Exception as e:
         print("\033[31m\u2716\033[0m\n")
-        logger.error("Exception occurred", exc_info=True)
+        LOGGER.error("Exception occurred", exc_info=True)
 
 
-def _start_org_backup(mist_session, org_id, org_name) -> bool:
+def _start_org_backup(mist_session, org_id, org_name, backup_folder) -> bool:
     # FOLDER
     try:
         if not os.path.exists(backup_folder):
@@ -563,26 +561,26 @@ def _start_org_backup(mist_session, org_id, org_name) -> bool:
         os.chdir(org_name)
     except Exception as e:
         print(e)
-        logger.error("Exception occurred", exc_info=True)
+        LOGGER.error("Exception occurred", exc_info=True)
         return False
 
     # PREPARE PROGRESS BAR
     try:
         response = mistapi.api.v1.orgs.sites.listOrgSites(mist_session, org_id)
         sites = mistapi.get_all(mist_session, response)
-        pb.set_steps_total(len(org_steps) + len(sites) * len(site_steps))
+        PB.set_steps_total(len(ORG_STEPS) + len(sites) * len(SITE_STEPS))
     except Exception as e:
         print(e)
-        logger.error("Exception occurred", exc_info=True)
+        LOGGER.error("Exception occurred", exc_info=True)
         return False
 
     # BACKUP
     try:
         backup = _backup_full_org(mist_session, org_id, org_name)
-        _save_to_file(backup_file, backup, org_name)
+        _save_to_file(backup, org_name, backup_folder)
     except Exception as e:
         print(e)
-        logger.error("Exception occurred", exc_info=True)
+        LOGGER.error("Exception occurred", exc_info=True)
         return False
 
     return True
@@ -606,12 +604,11 @@ def start(
     """
     current_folder = os.getcwd()
     if backup_folder_param:
-        global backup_folder
-        backup_folder = backup_folder_param
+        backup_folder_param = BACKUP_FOLDER
     if not org_id:
         org_id = mistapi.cli.select_org(mist_session)[0]
     org_name = mistapi.api.v1.orgs.orgs.getOrg(mist_session, org_id).data["name"]
-    success = _start_org_backup(mist_session, org_id, org_name)
+    success = _start_org_backup(mist_session, org_id, org_name, backup_folder_param)
     os.chdir(current_folder)
     return success
 
@@ -675,16 +672,17 @@ python3 ./org_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
 def check_mistapi_version():
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        logger.critical(
-            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+        LOGGER.critical(
+            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, '
+            f'you are currently using version {mistapi.__version__}.'
         )
-        logger.critical(f"Please use the pip command to updated it.")
-        logger.critical("")
-        logger.critical(f"    # Linux/macOS")
-        logger.critical(f"    python3 -m pip install --upgrade mistapi")
-        logger.critical("")
-        logger.critical(f"    # Windows")
-        logger.critical(f"    py -m pip install --upgrade mistapi")
+        LOGGER.critical(f"Please use the pip command to updated it.")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Linux/macOS")
+        LOGGER.critical(f"    python3 -m pip install --upgrade mistapi")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Windows")
+        LOGGER.critical(f"    py -m pip install --upgrade mistapi")
         print(
             f"""
     Critical: 
@@ -700,8 +698,9 @@ def check_mistapi_version():
         )
         sys.exit(2)
     else:
-        logger.info(
-            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+        LOGGER.info(
+            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, '
+            f'you are currently using version {mistapi.__version__}.'
         )
 
 
@@ -718,27 +717,27 @@ if __name__ == "__main__":
         console.error(err)
         usage()
 
-    org_id = None
-    backup_folder_param = None
+    ORG_ID = None
+    BACKUP_FOLDER_PARAM = None
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-o", "--org_id"]:
-            org_id = a
+            ORG_ID = a
         elif o in ["-e", "--env"]:
-            env_file = a
+            ENV_FILE = a
         elif o in ["-l", "--log_file"]:
-            log_file = a
+            LOG_FILE = a
         elif o in ["-b", "--backup_folder"]:
-            backup_folder_param = a
+            BACKUP_FOLDER_PARAM = a
         else:
             assert False, "unhandled option"
 
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode="w")
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(filename=LOG_FILE, filemode="w")
+    LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### START ###
-    apisession = mistapi.APISession(env_file=env_file)
-    apisession.login()
-    start(apisession, org_id, backup_folder_param)
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
+    start(APISESSION, ORG_ID, BACKUP_FOLDER_PARAM)

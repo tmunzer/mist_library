@@ -11,11 +11,11 @@ Python script to deploy organization backup/template file.
 You can use the script "org_conf_backup.py" to generate the backup file from an
 existing organization.
 
-This script will not overide existing objects. If you already configured objects in the 
-destination organisation, new objects will be created. If you want to "reset" the 
+This script will not overide existing objects. If you already configured objects in the
+destination organisation, new objects will be created. If you want to "reset" the
 destination organization, you can use the script "org_conf_zeroise.py".
-This script is trying to maintain objects integrity as much as possible. To do so, when 
-an object is referencing another object by its ID, the script will replace be ID from 
+This script is trying to maintain objects integrity as much as possible. To do so, when
+an object is referencing another object by its ID, the script will replace be ID from
 the original organization by the corresponding ID from the destination org.
 
 -------
@@ -29,19 +29,19 @@ If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
 It is recomended to use an environment file to store the required information
-to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
 information about the available parameters).
 
 -------
 Script Parameters:
 -h, --help              display this help
--o, --org_id=           Only if the destination org already exists. org_id where to 
+-o, --org_id=           Only if the destination org already exists. org_id where to
                         deploy the configuration
 -n, --org_name=         Org name where to deploy the configuration:
-                            - if org_id is provided (existing org), used to validate 
+                            - if org_id is provided (existing org), used to validate
                             the destination org
-                            - if org_id is not provided (new org), the script will 
-                            create a new org and name it with the org_name value                        
+                            - if org_id is not provided (new org), the script will
+                            create a new org and name it with the org_name value
 -f, --backup_folder=    Path to the folder where to save the org backup (a subfolder
                         will be created with the org name)
                         default is "./org_backup"
@@ -49,13 +49,13 @@ Script Parameters:
                         the folder where all the backup files are stored.
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
--e, --env=              define the env file to use (see mistapi env file documentation 
+-e, --env=              define the env file to use (see mistapi env file documentation
                         here: https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
 
 -------
 Examples:
-python3 ./org_conf_deploy.py     
+python3 ./org_conf_deploy.py
 python3 ./org_conf_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "my test org"
 
 '''
@@ -77,7 +77,7 @@ try:
     from mistapi.__logger import console
 except:
         print("""
-        Critical: 
+        Critical:
         \"mistapi\" package is missing. Please use the pip command to install it.
 
         # Linux/macOS
@@ -90,22 +90,22 @@ except:
 
 #####################################################################
 #### PARAMETERS #####
-backup_folder = "./org_backup"
-backup_file = "org_conf_file.json"
-log_file = "./script.log"
-file_prefix = ".".join(backup_file.split(".")[:-1])
-env_file = "~/.mist_env"
+BACKUP_FOLDER = "./org_backup"
+BACKUP_FILE = "org_conf_file.json"
+LOG_FILE = "./script.log"
+FILE_PREFIX = ".".join(BACKUP_FILE.split(".")[:-1])
+ENV_FILE = "~/.mist_env"
 
 #####################################################################
 #### LOGS ####
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 #####################################################################
 #### GLOBALS #####
-sys_exit=False
+SYS_EXIT=False
 def sigint_handler(signal, frame):
-    global sys_exit
-    sys_exit = True
+    global SYS_EXIT
+    SYS_EXIT = True
     ('[Ctrl C],KeyboardInterrupt exception occured.')
 signal.signal(signal.SIGINT, sigint_handler)
 
@@ -164,11 +164,13 @@ site_steps = {
 ##########################################################################################
 # CLASS TO MANAGE UUIDS UPDATES (replace UUIDs from source org to the newly created ones)
 class UUIDM():
-
+    """
+    CLASS TO MANAGE UUIDS UPDATES (replace UUIDs from source org to the newly created ones)
+    """
     def __init__(self):
         self.uuids = {}
         self.requests_to_replay = []
-    
+
     def add_uuid(self, new:str, old:str):
         if new and old: self.uuids[old] = new
 
@@ -211,7 +213,7 @@ class UUIDM():
 
 
     def find_and_replace(self, obj:dict, object_type:str):
-        # REMOVE READONLY FIELDS 
+        # REMOVE READONLY FIELDS
         ids_to_remove = [ "id", "msp_id", "org_id", "site_id", "site_ids", "url", "bg_image_url",
         "portal_template_url", "portal_sso_url", "thumbnail_url", "template_url", "ui_url" ]
 
@@ -235,13 +237,16 @@ class UUIDM():
 uuid_matching = UUIDM()
 #####################################################################
 # PROGRESS BAR AND DISPLAY
-class ProgressBar():    
-    def __init__(self):        
+class ProgressBar():
+    """
+    PROGRESS BAR AND DISPLAY
+    """
+    def __init__(self):
         self.steps_total = 0
         self.steps_count = 0
 
-    def _pb_update(self, size:int=80):   
-        if self.steps_count > self.steps_total: 
+    def _pb_update(self, size:int=80):
+        if self.steps_count > self.steps_total:
             self.steps_count = self.steps_total
 
         percent = self.steps_count/self.steps_total
@@ -261,7 +266,7 @@ class ProgressBar():
     def _pb_title(self, text:str, size:int=80, end:bool=False, display_pbar:bool=True):
         print("\033[A")
         print(f" {text} ".center(size, "-"),"\n")
-        if not end and display_pbar: 
+        if not end and display_pbar:
             print("".ljust(80))
             self._pb_update(size)
 
@@ -272,22 +277,22 @@ class ProgressBar():
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
     def log_debug(self, message):
-        logger.debug(f"{message}")        
+        LOGGER.debug(f"{message}")
 
     def log_success(self, message, inc:bool=False, display_pbar:bool=True):
-        logger.info(f"{message}: Success")
+        LOGGER.info(f"{message}: Success")
         self._pb_new_step(message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
 
     def log_warning(self, message, inc:bool=False, display_pbar:bool=True):
-        logger.warning(f"{message}")
+        LOGGER.warning(f"{message}")
         self._pb_new_step(message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
 
     def log_failure(self, message, inc:bool=False, display_pbar:bool=True):
-        logger.error(f"{message}: Failure")    
+        LOGGER.error(f"{message}: Failure")
         self._pb_new_step(message, '\033[31m\u2716\033[0m\n', inc=inc, display_pbar=display_pbar)
 
     def log_title(self, message, end:bool=False, display_pbar:bool=True):
-        logger.info(message)
+        LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
 pb = ProgressBar()
@@ -297,7 +302,7 @@ pb = ProgressBar()
 ##########################################################################################
 # COMMON FUNCTION
 def _common_deploy(apisession: mistapi.APISession, mistapi_function:Callable, scope_id: str, object_type: str, data: dict, retry:bool=False):
-    if sys_exit: sys.exit(0)
+    if SYS_EXIT: sys.exit(0)
     old_id = None
     new_id = None
     if "name" in data: object_name = f"\"{data['name']}\" "
@@ -309,7 +314,7 @@ def _common_deploy(apisession: mistapi.APISession, mistapi_function:Callable, sc
     message = f"Creating {object_type} {object_name}"
     pb.log_message(message)
     data, missing_uuids = uuid_matching.find_and_replace(data, object_type)
-    
+
     if missing_uuids and not retry:
         uuid_matching.add_replay(mistapi_function, scope_id, object_type, data)
         pb.log_warning(message, inc=True)
@@ -328,7 +333,7 @@ def _common_deploy(apisession: mistapi.APISession, mistapi_function:Callable, sc
 ##########################################################################################
 # WLAN FUNCTIONS
 def _deploy_wlan(apisession: mistapi.APISession, mistapi_function:Callable, scope_id: str, data: dict, old_org_id: str, old_site_id: str = None):
-    if sys_exit: sys.exit(0)
+    if SYS_EXIT: sys.exit(0)
     old_wlan_id = data["id"]
     new_wlan_id = _common_deploy(apisession, mistapi_function, scope_id, 'wlans', data)
     uuid_matching.add_uuid(new_wlan_id, old_wlan_id)
@@ -336,15 +341,15 @@ def _deploy_wlan(apisession: mistapi.APISession, mistapi_function:Callable, scop
 
 
 def _deploy_wlan_portal(apisession: mistapi.APISession, old_org_id:str, old_site_id:str, old_wlan_id:str, scope_id: str, new_wlan_id:str, wlan_name:str):
-    if sys_exit: sys.exit(0)
+    if SYS_EXIT: sys.exit(0)
     if old_site_id is None:
-        portal_file_name = f"{file_prefix}_org_{old_org_id}_wlan_{old_wlan_id}.json"
-        portal_image = f"{file_prefix}_org_{old_org_id}_wlan_{old_wlan_id}.png"
+        portal_file_name = f"{FILE_PREFIX}_org_{old_org_id}_wlan_{old_wlan_id}.json"
+        portal_image = f"{FILE_PREFIX}_org_{old_org_id}_wlan_{old_wlan_id}.png"
         upload_image_function = mistapi.api.v1.orgs.wlans.uploadOrgWlanPortalImageFile
         update_template_function = mistapi.api.v1.orgs.wlans.updateOrgWlanPortalTemplate
     else:
-        portal_file_name = f"{file_prefix}_org_{old_org_id}_site_{old_site_id}_wlan_{old_wlan_id}.json"
-        portal_image = f"{file_prefix}_org_{old_org_id}_site_{old_site_id}_wlan_{old_wlan_id}.png"
+        portal_file_name = f"{FILE_PREFIX}_org_{old_org_id}_site_{old_site_id}_wlan_{old_wlan_id}.json"
+        portal_image = f"{FILE_PREFIX}_org_{old_org_id}_site_{old_site_id}_wlan_{old_wlan_id}.png"
         upload_image_function = mistapi.api.v1.sites.wlans.uploadSiteWlanPortalImageFile
         update_template_function = mistapi.api.v1.sites.wlans.updateSiteWlanPortalTemplate
 
@@ -356,14 +361,14 @@ def _deploy_wlan_portal(apisession: mistapi.APISession, old_org_id:str, old_site
         except Exception as e:
             pb.log_failure(
                 f"Unable to open the template file \"{portal_file_name}\" ")
-            logger.error("Exception occurred", exc_info=True)
+            LOGGER.error("Exception occurred", exc_info=True)
             return
         try:
             template = json.load(template)
         except Exception as e:
             pb.log_failure(
                 f"Unable to read the template file \"{portal_file_name}\" ")
-            logger.error("Exception occurred", exc_info=True)
+            LOGGER.error("Exception occurred", exc_info=True)
             return
         try:
             update_template_function(apisession, scope_id, new_wlan_id, template)
@@ -371,7 +376,7 @@ def _deploy_wlan_portal(apisession: mistapi.APISession, old_org_id:str, old_site
         except Exception as e:
             pb.log_failure(
                 f"Unable to upload the template \"{portal_file_name}\" ")
-            logger.error("Exception occurred", exc_info=True)
+            LOGGER.error("Exception occurred", exc_info=True)
 
     else:
         pb.log_debug(f"No Portal template found for WLAN \"{wlan_name}\"")
@@ -383,19 +388,20 @@ def _deploy_wlan_portal(apisession: mistapi.APISession, old_org_id:str, old_site
             pb.log_success(message)
         except Exception as e:
             pb.log_failure(message)
-            logger.error("Exception occurred", exc_info=True)
+            LOGGER.error("Exception occurred", exc_info=True)
     else:
         pb.log_debug(f"No Portal Template image found for WLAN {wlan_name} ")
 
 ##########################################################################################
 # SITE FUNCTIONS
 def _deploy_site_maps(apisession: mistapi.APISession, old_org_id: str, old_site_id: str, new_site_id: str, data: dict):
-    if sys_exit: sys.exit(0)
+    if SYS_EXIT:
+        sys.exit(0)
     old_map_id = data["id"]
     new_map_id = _common_deploy(
         apisession, site_steps["maps"]["mistapi_function"], new_site_id, 'maps', data)
 
-    image_name = f"{file_prefix}_org_{old_org_id}_site_{old_site_id}_map_{old_map_id}.png"
+    image_name = f"{FILE_PREFIX}_org_{old_org_id}_site_{old_site_id}_map_{old_map_id}.png"
     if os.path.isfile(image_name):
         message = f"Uploading image floorplan  \"{data['name']}\""
         pb.log_message(message)
@@ -410,7 +416,8 @@ def _deploy_site_maps(apisession: mistapi.APISession, old_org_id: str, old_site_
 
 
 def _deploy_site(apisession: mistapi.APISession, org_id:str, old_org_id:str, site_info:dict, sites_backup:dict):
-    if sys_exit: sys.exit(0)
+    if SYS_EXIT:
+        sys.exit(0)
     old_site_id = site_info["id"]
     site_data = sites_backup.get(old_site_id, {})
 
@@ -418,8 +425,7 @@ def _deploy_site(apisession: mistapi.APISession, org_id:str, old_org_id:str, sit
     new_site_id = _common_deploy(
         apisession,org_steps["sites"]["mistapi_function"], org_id, "sites", site_info)
 
-    for step_name in site_steps:
-        step = site_steps[step_name]
+    for step_name, step in site_steps.items():
         if step_name == "settings":
             step_data = site_data.get(step_name, {})
             _common_deploy(apisession, step["mistapi_function"], new_site_id, step_name, step_data)
@@ -428,7 +434,7 @@ def _deploy_site(apisession: mistapi.APISession, org_id:str, old_org_id:str, sit
                 if step_name == "maps":
                     _deploy_site_maps(apisession, old_org_id, old_site_id, new_site_id, step_data)
                 elif step_name == "wlans":
-                    _deploy_wlan(apisession, step["mistapi_function"], org_id, step_data, old_org_id, old_site_id)
+                    _deploy_wlan(apisession, step["mistapi_function"], new_site_id, step_data, old_org_id, old_site_id)
                 else:
                     _common_deploy(apisession, step["mistapi_function"], new_site_id, step_name, step_data)
 
@@ -454,7 +460,7 @@ def _deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, backup
         pb.log_success(message, inc=True)
     except Exception as e:
         pb.log_failure(message, inc=True)
-        logger.error("Exception occurred", exc_info=True)
+        LOGGER.error("Exception occurred", exc_info=True)
 
     ########################
     ####  ORG SETTINGS  ####
@@ -465,14 +471,13 @@ def _deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, backup
         pb.log_success(message, inc=True)
     except Exception as e:
         pb.log_failure(message, inc=True)
-        logger.error("Exception occurred", exc_info=True)
+        LOGGER.error("Exception occurred", exc_info=True)
 
     #######################
     ####  ORG OBJECTS  ####
     pb.log_title(f"Deploying Common Org Objects")
-    for step_name in org_steps:
+    for step_name, step in org_steps.items():
         if step_name in org_backup:
-            step = org_steps[step_name]
             for step_data in org_backup[step_name]:
                 if step_name == "sites":
                     _deploy_site(apisession, org_id, old_org_id, step_data, sites_backup)
@@ -490,13 +495,13 @@ def _deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, backup
     pb.log_title("Deployment Done", end=True)
 
 
-def _start_deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, src_org_name:str=None, source_backup:str=None):
-    _go_to_backup_folder(src_org_name, source_backup)
+def _start_deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, backup_folder:str, src_org_name:str=None, source_backup:str=None):
+    _go_to_backup_folder(backup_folder, src_org_name, source_backup)
     print()
     try:
-        message = f"Loading template/backup file {backup_file} "
+        message = f"Loading template/backup file {BACKUP_FILE} "
         pb.log_message(message, display_pbar=False)
-        with open(backup_file) as f:
+        with open(BACKUP_FILE) as f:
             backup = json.load(f)
         pb.log_success(message, display_pbar=False)
     except:
@@ -505,15 +510,18 @@ def _start_deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, 
         sys.exit(1)
 
     try:
-        message = f"Analyzing template/backup file {backup_file} "
+        message = f"Analyzing template/backup file {BACKUP_FILE} "
         pb.log_message(message, display_pbar=False)
         steps_total = 2
         for step_name in org_steps:
-            if step_name in backup["org"]: steps_total += len(backup["org"][step_name])
+            if step_name in backup["org"]:
+                steps_total += len(backup["org"][step_name])
         for site_id in backup["sites"]:
             for step_name in site_steps:
-                if step_name == "settings": steps_total += 1
-                elif step_name in backup["sites"][site_id]: steps_total += len(backup["sites"][site_id][step_name])
+                if step_name == "settings":
+                    steps_total += 1
+                elif step_name in backup["sites"][site_id]:
+                    steps_total += len(backup["sites"][site_id][step_name])
         pb.set_steps_total(steps_total)
         pb.log_success(message, display_pbar=False)
         console.info(f"The process will deploy {steps_total} new objects")
@@ -523,8 +531,9 @@ def _start_deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, 
         sys.exit(1)
     if backup:
         _display_warning(
-            f"Are you sure about this? Do you want to import the configuration into the organization {org_name} with the id {org_id} (y/N)? ")
-        _deploy_org(apisession, org_id, org_name, backup)        
+            f"Are you sure about this? Do you want to import the configuration "
+            f"into the organization {org_name} with the id {org_id} (y/N)? ")
+        _deploy_org(apisession, org_id, org_name, backup)
 
 
 #####################################################################
@@ -534,13 +543,15 @@ def _chdir(path:str):
         os.chdir(path)
         return True
     except FileNotFoundError:
-        console.error("Le chemin spécifié n'existe pas.")        
+        console.error("Le chemin spécifié n'existe pas.")
         return False
     except NotADirectoryError:
         console.error("Le chemin spécifié n'est pas un répertoire.")
         return False
     except PermissionError:
-        console.error("Vous n'avez pas les autorisations nécessaires pour accéder au répertoire spécifié.")
+        console.error(
+            "Vous n'avez pas les autorisations nécessaires "
+            "pour accéder au répertoire spécifié.")
         return False
     except Exception as e:
         console.error(f"Une erreur s'est produite : {e}")
@@ -548,12 +559,12 @@ def _chdir(path:str):
 
 def _display_warning(message):
     resp = "x"
-    while not resp.lower() in ["y", "n", ""]:
+    while resp.lower() not in ["y", "n", ""]:
         print()
         resp = input(message)
-    if not resp.lower() == "y":
+    if resp.lower() != "y":
         console.error("Interruption... Exiting...")
-        logger.error("Interruption... Exiting...")
+        LOGGER.error("Interruption... Exiting...")
         sys.exit(0)
 
 
@@ -569,7 +580,7 @@ def _select_backup_folder(folders):
             f"Which template/backup do you want to deploy (0-{i - 1}, or q to quit)? ")
         if resp.lower() == "q":
             console.error("Interruption... Exiting...")
-            logger.error("Interruption... Exiting...")
+            LOGGER.error("Interruption... Exiting...")
             sys.exit(0)
         try:
             respi = int(resp)
@@ -583,7 +594,7 @@ def _select_backup_folder(folders):
     _chdir(folder)
 
 
-def _go_to_backup_folder(src_org_name:str=None, source_backup:str=None):
+def _go_to_backup_folder(backup_folder:str, src_org_name:str=None, source_backup:str=None):
     print()
     print(" Source Backup/Template ".center(80, "-"))
     print()
@@ -608,7 +619,8 @@ def _go_to_backup_folder(src_org_name:str=None, source_backup:str=None):
                     _select_backup_folder(folders)
     else:
         print(
-            f"No Template/Backup found for organization {src_org_name}. Please select a folder in the following list.")
+            f"No Template/Backup found for organization {src_org_name}. "
+            f"Please select a folder in the following list.")
         _select_backup_folder(folders)
 
 
@@ -619,7 +631,7 @@ def _check_org_name_in_script_param(apisession:mistapi.APISession, org_id:str, o
         sys.exit(3)
     org_name_from_mist = response.data["name"]
     return org_name == org_name_from_mist
-    
+
 
 def _check_org_name(apisession:mistapi.APISession, org_id:str, org_name:str=None):
     if not org_name:
@@ -649,7 +661,7 @@ def _create_org(apisession: mistapi.APISession, custom_dest_org_name:str=None):
                 pb.log_success(message, display_pbar=False)
             except Exception as e:
                 pb.log_failure(message, display_pbar=False)
-                logger.error("Exception occurred", exc_info=True)
+                LOGGER.error("Exception occurred", exc_info=True)
                 sys.exit(10)
             org_id = mistapi.api.v1.orgs.orgs.createOrg(
                 apisession, org).data["id"]
@@ -680,19 +692,29 @@ def start(apisession: mistapi.APISession, org_id: str=None, org_name: str=None, 
 
     PARAMS
     -------
-    :param  mistapi.APISession  apisession          - mistapi session, already logged in
-    :param  str                 org_id              - only if the destination org already exists. org_id where to deploy the configuration
-    :param  str                 org_name            - Org name where to deploy the configuration:
-                                                        * if org_id is provided (existing org), used to validate the destination org
-                                                        * if org_id is not provided (new org), the script will create a new org and name it with the org_name value     
-    :param  str                 backup_folder_param - Path to the folder where to save the org backup (a subfolder will be created with the org name). default is "./org_backup"
-    :param  str                 src_org_name     - Name of the backup/template to deploy. This is the name of the folder where all the backup files are stored. If the backup is found, the script will ask for a confirmation to use it
-    :param  str                 source_backup       - Name of the backup/template to deploy. This is the name of the folder where all the backup files are stored. If the backup is found, the script will NOT ask for a confirmation to use it
+    apisession : mistapi.APISession
+        mistapi session, already logged in
+    org_id : str
+        only if the destination org already exists. org_id where to deploy the configuration
+    org_name : str
+        Org name where to deploy the configuration:
+        * if org_id is provided (existing org), used to validate the destination org
+        * if org_id is not provided (new org), the script will create a new org and name it with
+        the org_name value
+    backup_folder_param : str
+        Path to the folder where to save the org backup (a subfolder will be created with the org
+        name). default is "./org_backup"
+    src_org_name : str
+        Name of the backup/template to deploy. This is the name of the folder where all the backup
+        files are stored. If the backup is found, the script will ask for a confirmation to use it
+    source_backup : str
+        Name of the backup/template to deploy. This is the name of the folder where all the backup
+        files are stored. If the backup is found, the script will NOT ask for a confirmation to use
+        it
     '''
     current_folder = os.getcwd()
-    if backup_folder_param:
-        global backup_folder
-        backup_folder = backup_folder_param
+    if not backup_folder_param:
+        backup_folder_param = BACKUP_FOLDER
 
     if org_id and org_name:
         if not _check_org_name_in_script_param(apisession, org_id, org_name):
@@ -706,8 +728,8 @@ def start(apisession: mistapi.APISession, org_id: str=None, org_name: str=None, 
         org_id, org_name = _select_dest_org(apisession)
     else: #should not since we covered all the possibilities...
         sys.exit(0)
-    
-    _start_deploy_org(apisession, org_id, org_name, src_org_name, source_backup)
+
+    _start_deploy_org(apisession, org_id, org_name, backup_folder_param, src_org_name, source_backup)
     os.chdir(current_folder)
 
 
@@ -727,11 +749,11 @@ Python script to deploy organization backup/template file.
 You can use the script "org_conf_backup.py" to generate the backup file from an
 existing organization.
 
-This script will not overide existing objects. If you already configured objects in the 
-destination organisation, new objects will be created. If you want to "reset" the 
+This script will not overide existing objects. If you already configured objects in the
+destination organisation, new objects will be created. If you want to "reset" the
 destination organization, you can use the script "org_conf_zeroise.py".
-This script is trying to maintain objects integrity as much as possible. To do so, when 
-an object is referencing another object by its ID, the script will replace be ID from 
+This script is trying to maintain objects integrity as much as possible. To do so, when
+an object is referencing another object by its ID, the script will replace be ID from
 the original organization by the corresponding ID from the destination org.
 
 -------
@@ -745,19 +767,19 @@ If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
 It is recomended to use an environment file to store the required information
-to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
 information about the available parameters).
 
 -------
 Script Parameters:
 -h, --help              display this help
--o, --org_id=           Only if the destination org already exists. org_id where to 
+-o, --org_id=           Only if the destination org already exists. org_id where to
                         deploy the configuration
 -n, --org_name=         Org name where to deploy the configuration:
-                            - if org_id is provided (existing org), used to validate 
+                            - if org_id is provided (existing org), used to validate
                             the destination org
-                            - if org_id is not provided (new org), the script will 
-                            create a new org and name it with the org_name value                        
+                            - if org_id is not provided (new org), the script will
+                            create a new org and name it with the org_name value
 -f, --backup_folder=    Path to the folder where to save the org backup (a subfolder
                         will be created with the org name)
                         default is "./org_backup"
@@ -765,13 +787,13 @@ Script Parameters:
                         the folder where all the backup files are stored.
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
--e, --env=              define the env file to use (see mistapi env file documentation 
+-e, --env=              define the env file to use (see mistapi env file documentation
                         here: https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
 
 -------
 Examples:
-python3 ./org_conf_deploy.py     
+python3 ./org_conf_deploy.py
 python3 ./org_conf_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "my test org"
 
 ''')
@@ -779,17 +801,19 @@ python3 ./org_conf_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "m
 
 def check_mistapi_version():
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        logger.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
-        logger.critical(f"Please use the pip command to updated it.")
-        logger.critical("")
-        logger.critical(f"    # Linux/macOS")
-        logger.critical(f"    python3 -m pip install --upgrade mistapi")
-        logger.critical("")
-        logger.critical(f"    # Windows")
-        logger.critical(f"    py -m pip install --upgrade mistapi")
+        LOGGER.critical(
+            f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, "
+            f"you are currently using version {mistapi.__version__}.")
+        LOGGER.critical(f"Please use the pip command to updated it.")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Linux/macOS")
+        LOGGER.critical(f"    python3 -m pip install --upgrade mistapi")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Windows")
+        LOGGER.critical(f"    py -m pip install --upgrade mistapi")
         print(f"""
-    Critical: 
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Critical:
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.
     Please use the pip command to updated it.
 
     # Linux/macOS
@@ -799,46 +823,49 @@ def check_mistapi_version():
     py -m pip install --upgrade mistapi
         """)
         sys.exit(2)
-    else: 
-        logger.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
-    
+    else:
+        LOGGER.info(
+            f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, "
+            f"you are currently using version {mistapi.__version__}.")
+
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(sys.argv[1:], "ho:n:e:l:f:b:", [
-                                   "help", "org_id=", "org_name=", "env=", "log_file=", "backup_folder=", "source_backup="])
+                                "help", "org_id=", "org_name=", "env=", "log_file=",
+                                "backup_folder=", "source_backup="])
     except getopt.GetoptError as err:
         console.error(err)
         usage()
 
-    org_id = None
-    org_name = None
-    backup_folder_param = None
-    source_backup = None
+    ORG_ID = None
+    ORG_NAME = None
+    BACKUP_FOLDER_PARAM = None
+    SOURCE_BACKUP = None
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-o", "--org_id"]:
-            org_id = a
+            ORG_ID = a
         elif o in ["-n", "--org_name"]:
-            org_name = a
+            ORG_NAME = a
         elif o in ["-e", "--env"]:
-            env_file = a
+            ENV_FILE = a
         elif o in ["-l", "--log_file"]:
-            log_file = a
+            LOG_FILE = a
         elif o in ["-f", "--backup_folder"]:
-            backup_folder_param = a
+            BACKUP_FOLDER_PARAM = a
         elif o in ["-b", "--source_backup"]:
-            source_backup = a
+            SOURCE_BACKUP = a
         else:
             assert False, "unhandled option"
-    
+
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode='w')
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(filename=LOG_FILE, filemode='w')
+    LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### START ###
-    apisession = mistapi.APISession(env_file=env_file)
-    apisession.login()
-    start(apisession, org_id, org_name, backup_folder_param, source_backup=source_backup)
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
+    start(APISESSION, ORG_ID, ORG_NAME, BACKUP_FOLDER_PARAM, source_backup=SOURCE_BACKUP)
