@@ -111,7 +111,7 @@ signal.signal(signal.SIGINT, sigint_handler)
 
 #####################################################################
 # DEPLOY OBJECTS REFS
-org_steps = {
+ORG_STEPS = {
     "assetfilters": {"mistapi_function": mistapi.api.v1.orgs.assetfilters.createOrgAssetFilters, "text": "Org assetfilters"},
     "deviceprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfiles, "text": "Org deviceprofiles"},
     "hubprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfiles, "text": "Org hubprofiles"},
@@ -144,7 +144,7 @@ org_steps = {
     "ssos": {"mistapi_function": mistapi.api.v1.orgs.ssos.createOrgSso, "text": "Org ssos"},
     "ssoroles": {"mistapi_function": mistapi.api.v1.orgs.ssoroles.createOrgSsoRole, "text": "Org ssoroles"},
 }
-site_steps = {
+SITE_STEPS = {
     "settings": {"mistapi_function": mistapi.api.v1.sites.setting.updateSiteSettings, "text": "Site settings"},
     "maps": {"mistapi_function": mistapi.api.v1.sites.maps.createSiteMap, "text": "Site maps"},
     "zones": {"mistapi_function": mistapi.api.v1.sites.zones.createSiteZone, "text": "Site zones"},
@@ -234,7 +234,7 @@ class UUIDM():
 
         return obj, missing_uuids
 
-uuid_matching = UUIDM()
+UUID_MATCHING = UUIDM()
 #####################################################################
 # PROGRESS BAR AND DISPLAY
 class ProgressBar():
@@ -295,53 +295,84 @@ class ProgressBar():
         LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
-pb = ProgressBar()
+PB = ProgressBar()
 ##########################################################################################
 ##########################################################################################
 # DEPLOY FUNCTIONS
 ##########################################################################################
 # COMMON FUNCTION
 def _common_deploy(apisession: mistapi.APISession, mistapi_function:Callable, scope_id: str, object_type: str, data: dict, retry:bool=False):
-    if SYS_EXIT: sys.exit(0)
+    LOGGER.debug("conf_deploy:_common_deploy")
+    if SYS_EXIT:
+        sys.exit(0)
     old_id = None
     new_id = None
-    if "name" in data: object_name = f"\"{data['name']}\" "
-    elif "ssid" in data: object_name = f"\"{data['ssid']}\" "
-    else: object_name = ""
-    if "id" in data: old_id = data["id"]
-    else: old_id = None
+    object_name = ""
+    if "name" in data:
+        object_name = f"\"{data['name']}\" "
+    elif "ssid" in data:
+        object_name = f"\"{data['ssid']}\" "
+    if "id" in data:
+        old_id = data["id"]
+    else: 
+        old_id = None
 
     message = f"Creating {object_type} {object_name}"
-    pb.log_message(message)
-    data, missing_uuids = uuid_matching.find_and_replace(data, object_type)
+    PB.log_message(message)
+    data, missing_uuids = UUID_MATCHING.find_and_replace(data, object_type)
 
     if missing_uuids and not retry:
-        uuid_matching.add_replay(mistapi_function, scope_id, object_type, data)
-        pb.log_warning(message, inc=True)
+        UUID_MATCHING.add_replay(mistapi_function, scope_id, object_type, data)
+        PB.log_warning(message, inc=True)
     else:
         try:
-            response = mistapi_function(apisession, scope_id, data).data
-            if "id" in response:
-                new_id = response["id"]
-            pb.log_success(message, inc=True)
+            response = mistapi_function(apisession, scope_id, data)
+            if response.status_code == 200:
+                new_id = response.data.get("id")
+                PB.log_success(message, inc=True)
+            else:
+                PB.log_failure(message, inc=True)
         except:
-            pb.log_failure(message, inc=True)
-        uuid_matching.add_uuid(new_id, old_id)
+            PB.log_failure(message, inc=True)
+        UUID_MATCHING.add_uuid(new_id, old_id)
         return new_id
+    return None
+##########################################################################################
+# COMMON FUNCTION
+def _import_psks(apisession: mistapi.APISession, mistapi_function:Callable, scope_id: str, data: dict):
+    LOGGER.debug("conf_deploy:_import_psks")
+    if SYS_EXIT:
+        sys.exit(0)
+
+    message = f"Importing PSKs"
+    PB.log_message(message)
+
+    try:
+        response = mistapi_function(apisession, scope_id, data)
+        if response.status_code == 200:
+            PB.log_success(message, inc=True)
+        else:
+            PB.log_failure(message, inc=True)
+    except:
+        PB.log_failure(message, inc=True)
     return None
 
 ##########################################################################################
 # WLAN FUNCTIONS
 def _deploy_wlan(apisession: mistapi.APISession, mistapi_function:Callable, scope_id: str, data: dict, old_org_id: str, old_site_id: str = None):
-    if SYS_EXIT: sys.exit(0)
+    LOGGER.debug("conf_deploy:_deploy_wlan")
+    if SYS_EXIT:
+        sys.exit(0)
     old_wlan_id = data["id"]
     new_wlan_id = _common_deploy(apisession, mistapi_function, scope_id, 'wlans', data)
-    uuid_matching.add_uuid(new_wlan_id, old_wlan_id)
+    UUID_MATCHING.add_uuid(new_wlan_id, old_wlan_id)
     _deploy_wlan_portal(apisession, old_org_id,old_site_id, old_wlan_id, scope_id, new_wlan_id, data["ssid"])
 
 
 def _deploy_wlan_portal(apisession: mistapi.APISession, old_org_id:str, old_site_id:str, old_wlan_id:str, scope_id: str, new_wlan_id:str, wlan_name:str):
-    if SYS_EXIT: sys.exit(0)
+    LOGGER.debug("conf_deploy:_deploy_wlan_portal")
+    if SYS_EXIT:
+        sys.exit(0)
     if old_site_id is None:
         portal_file_name = f"{FILE_PREFIX}_org_{old_org_id}_wlan_{old_wlan_id}.json"
         portal_image = f"{FILE_PREFIX}_org_{old_org_id}_wlan_{old_wlan_id}.png"
@@ -355,80 +386,86 @@ def _deploy_wlan_portal(apisession: mistapi.APISession, old_org_id:str, old_site
 
     if os.path.isfile(portal_file_name):
         message = f"Creating Portal Template for WLAN \"{wlan_name}\" "
-        pb.log_message(message)
+        PB.log_message(message)
         try:
             template = open(portal_file_name, 'r')
         except Exception as e:
-            pb.log_failure(
+            PB.log_failure(
                 f"Unable to open the template file \"{portal_file_name}\" ")
             LOGGER.error("Exception occurred", exc_info=True)
             return
         try:
             template = json.load(template)
         except Exception as e:
-            pb.log_failure(
+            PB.log_failure(
                 f"Unable to read the template file \"{portal_file_name}\" ")
             LOGGER.error("Exception occurred", exc_info=True)
             return
         try:
             update_template_function(apisession, scope_id, new_wlan_id, template)
-            pb.log_success(message)
+            PB.log_success(message)
         except Exception as e:
-            pb.log_failure(
+            PB.log_failure(
                 f"Unable to upload the template \"{portal_file_name}\" ")
             LOGGER.error("Exception occurred", exc_info=True)
 
     else:
-        pb.log_debug(f"No Portal template found for WLAN \"{wlan_name}\"")
+        PB.log_debug(f"No Portal template found for WLAN \"{wlan_name}\"")
 
     if os.path.isfile(portal_image):
         message = f"Uploading Portal image for WLAN \"{wlan_name}\" "
         try:
             upload_image_function(apisession, scope_id, new_wlan_id, portal_image)
-            pb.log_success(message)
+            PB.log_success(message)
         except Exception as e:
-            pb.log_failure(message)
+            PB.log_failure(message)
             LOGGER.error("Exception occurred", exc_info=True)
     else:
-        pb.log_debug(f"No Portal Template image found for WLAN {wlan_name} ")
+        PB.log_debug(f"No Portal Template image found for WLAN {wlan_name} ")
 
 ##########################################################################################
 # SITE FUNCTIONS
 def _deploy_site_maps(apisession: mistapi.APISession, old_org_id: str, old_site_id: str, new_site_id: str, data: dict):
+    LOGGER.debug("conf_deploy:_deploy_site_maps")
     if SYS_EXIT:
         sys.exit(0)
     old_map_id = data["id"]
     new_map_id = _common_deploy(
-        apisession, site_steps["maps"]["mistapi_function"], new_site_id, 'maps', data)
+        apisession, SITE_STEPS["maps"]["mistapi_function"], new_site_id, 'maps', data)
 
     image_name = f"{FILE_PREFIX}_org_{old_org_id}_site_{old_site_id}_map_{old_map_id}.png"
     if os.path.isfile(image_name):
         message = f"Uploading image floorplan  \"{data['name']}\""
-        pb.log_message(message)
+        PB.log_message(message)
         try:
             mistapi.api.v1.sites.maps.addSiteMapImageFile(
                 apisession, new_site_id, new_map_id, image_name)
-            pb.log_success(message)
+            PB.log_success(message)
         except:
-            pb.log_failure(message)
+            PB.log_failure(message)
     else:
-        pb.log_debug(f"No image found for \"{data['name']}\"")
+        PB.log_debug(f"No image found for \"{data['name']}\"")
 
 
 def _deploy_site(apisession: mistapi.APISession, org_id:str, old_org_id:str, site_info:dict, sites_backup:dict):
+    LOGGER.debug("conf_deploy:_deploy_site")
     if SYS_EXIT:
         sys.exit(0)
     old_site_id = site_info["id"]
     site_data = sites_backup.get(old_site_id, {})
 
-    pb.log_title(f" Deploying Site {site_info['name']} ".center(80, "_"))
+    PB.log_title(f" Deploying Site {site_info['name']} ".center(80, "_"))
     new_site_id = _common_deploy(
-        apisession,org_steps["sites"]["mistapi_function"], org_id, "sites", site_info)
-
-    for step_name, step in site_steps.items():
+        apisession,ORG_STEPS["sites"]["mistapi_function"], org_id, "sites", site_info)
+    LOGGER.debug(f"conf_deploy:_deploy_site:site {site_info['name']}, old id={old_site_id}, new id={new_site_id}")
+    for step_name, step in SITE_STEPS.items():
         if step_name == "settings":
             step_data = site_data.get(step_name, {})
             _common_deploy(apisession, step["mistapi_function"], new_site_id, step_name, step_data)
+        elif step_name == "psks":
+            step_data = site_data.get(step_name)
+            if step_data:
+                _import_psks(apisession, step["mistapi_function"], new_site_id, step_data)
         else:
             for step_data in site_data.get(step_name, []):
                 if step_name == "maps":
@@ -441,7 +478,8 @@ def _deploy_site(apisession: mistapi.APISession, org_id:str, old_org_id:str, sit
 ##########################################################################################
 #  ORG FUNCTIONS
 def _deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, backup:dict):
-    pb.log_title(f"Deploying Org {org_name}")
+    LOGGER.debug("conf_deploy:_deploy_org")
+    PB.log_title(f"Deploying Org {org_name}")
 
     ####################
     ####  ORG MAIN  ####
@@ -450,83 +488,87 @@ def _deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, backup
 
     org_data = org_backup["data"]
     old_org_id = org_data["id"]
-    uuid_matching.add_uuid(org_id, old_org_id)
+    UUID_MATCHING.add_uuid(org_id, old_org_id)
 
     message = "Org Info "
-    pb.log_message(message)
+    PB.log_message(message)
     try:
         org_data["name"] = org_name
         mistapi.api.v1.orgs.orgs.updateOrg(apisession, org_id, org_data)
-        pb.log_success(message, inc=True)
+        PB.log_success(message, inc=True)
     except Exception as e:
-        pb.log_failure(message, inc=True)
+        PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
 
     ########################
     ####  ORG SETTINGS  ####
     message = "Org Settings "
-    pb.log_message(message)
+    PB.log_message(message)
     try:
         mistapi.api.v1.orgs.setting.updateOrgSettings(apisession, org_id, org_data)
-        pb.log_success(message, inc=True)
+        PB.log_success(message, inc=True)
     except Exception as e:
-        pb.log_failure(message, inc=True)
+        PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
 
     #######################
     ####  ORG OBJECTS  ####
-    pb.log_title(f"Deploying Common Org Objects")
-    for step_name, step in org_steps.items():
+    PB.log_title(f"Deploying Common Org Objects")
+    for step_name, step in ORG_STEPS.items():
         if step_name in org_backup:
-            for step_data in org_backup[step_name]:
-                if step_name == "sites":
-                    _deploy_site(apisession, org_id, old_org_id, step_data, sites_backup)
-                elif step_name == "wlans":
-                    _deploy_wlan(apisession, step["mistapi_function"], org_id, step_data, old_org_id)
-                else:
-                    _common_deploy(apisession, step["mistapi_function"], org_id, step_name, step_data)
-            if step_name == "sites":
-                pb.log_title(f"Deploying Reamining Org Objects")
+            if step_name == "psks":
+                step_data = org_backup.get("psks")
+                if step_data:
+                    _import_psks(apisession, step["mistapi_function"], org_id, step_data)
+            else:
+                for step_data in org_backup[step_name]:
+                    if step_name == "sites":
+                        _deploy_site(apisession, org_id, old_org_id, step_data, sites_backup)
+                    elif step_name == "wlans":
+                        _deploy_wlan(apisession, step["mistapi_function"], org_id, step_data, old_org_id)
+                    else:
+                        _common_deploy(apisession, step["mistapi_function"], org_id, step_name, step_data)
 
-    pb.log_title(f"Retrying missing objects")
-    for replay in uuid_matching.get_replay():
+    PB.log_title(f"Retrying missing objects")
+    for replay in UUID_MATCHING.get_replay():
         _common_deploy(apisession, replay["mistapi_function"], replay["scope_id"], replay["object_type"], replay["data"], True)
 
-    pb.log_title("Deployment Done", end=True)
+    PB.log_title("Deployment Done", end=True)
 
 
 def _start_deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, backup_folder:str, src_org_name:str=None, source_backup:str=None):
+    LOGGER.debug("conf_deploy:_start_deploy_org")
     _go_to_backup_folder(backup_folder, src_org_name, source_backup)
     print()
     try:
         message = f"Loading template/backup file {BACKUP_FILE} "
-        pb.log_message(message, display_pbar=False)
+        PB.log_message(message, display_pbar=False)
         with open(BACKUP_FILE) as f:
             backup = json.load(f)
-        pb.log_success(message, display_pbar=False)
+        PB.log_success(message, display_pbar=False)
     except:
-        pb.log_failure(message, display_pbar=False)
+        PB.log_failure(message, display_pbar=False)
         console.critical("Unable to load the template/bakup")
         sys.exit(1)
 
     try:
         message = f"Analyzing template/backup file {BACKUP_FILE} "
-        pb.log_message(message, display_pbar=False)
+        PB.log_message(message, display_pbar=False)
         steps_total = 2
-        for step_name in org_steps:
+        for step_name in ORG_STEPS:
             if step_name in backup["org"]:
                 steps_total += len(backup["org"][step_name])
         for site_id in backup["sites"]:
-            for step_name in site_steps:
+            for step_name in SITE_STEPS:
                 if step_name == "settings":
                     steps_total += 1
                 elif step_name in backup["sites"][site_id]:
                     steps_total += len(backup["sites"][site_id][step_name])
-        pb.set_steps_total(steps_total)
-        pb.log_success(message, display_pbar=False)
+        PB.set_steps_total(steps_total)
+        PB.log_success(message, display_pbar=False)
         console.info(f"The process will deploy {steps_total} new objects")
     except:
-        pb.log_failure(message, display_pbar=False)
+        PB.log_failure(message, display_pbar=False)
         console.critical("Unable to parse the template/backup file")
         sys.exit(1)
     if backup:
@@ -656,11 +698,11 @@ def _create_org(apisession: mistapi.APISession, custom_dest_org_name:str=None):
                 "name": custom_dest_org_name
             }
             message = f"Creating the organisation \"{custom_dest_org_name}\" in {apisession.get_cloud()} "
-            pb.log_message(message, display_pbar=False)
+            PB.log_message(message, display_pbar=False)
             try:
-                pb.log_success(message, display_pbar=False)
+                PB.log_success(message, display_pbar=False)
             except Exception as e:
-                pb.log_failure(message, display_pbar=False)
+                PB.log_failure(message, display_pbar=False)
                 LOGGER.error("Exception occurred", exc_info=True)
                 sys.exit(10)
             org_id = mistapi.api.v1.orgs.orgs.createOrg(
