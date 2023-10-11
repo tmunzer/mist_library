@@ -130,12 +130,12 @@ as the org_clone.py file:
 #### PARAMETERS #####
 BACKUP_FOLDER = "./org_backup"
 LOG_FILE = "./script.log"
-SRC_ENV_FILE = "~/.mist_env"
+SRC_ENV_FILE = ""#"~/.mist_env"
 DST_ENV_FILE = None
 
 #####################################################################
 #### LOGS ####
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 #####################################################################
@@ -230,7 +230,7 @@ def _print_new_step(message):
     print(f" {message} ".center(80, "*"))
     print("".center(80, "*"))
     print()
-    logger.info(f"{message}")
+    LOGGER.info(f"{message}")
 
 
 #######
@@ -314,13 +314,10 @@ def _check_src_org(
 ):
     _print_new_step("SOURCE Org")
     if src_org_id and src_org_name:
-        if not _check_org_name_in_script_param(
-            src_apisession, src_org_id, src_org_name
-        ):
-            console.critical(
-                f"Org name {src_org_name} does not match the org {src_org_id}"
-            )
+        if not _check_org_name_in_script_param(src_apisession, src_org_id, src_org_name):
+            console.critical(f"Org name {src_org_name} does not match the org {src_org_id}")
             sys.exit(0)
+        return src_org_id, src_org_name
     elif src_org_id and not src_org_name:
         return _check_org_name(src_apisession, src_org_id, "Source")
     elif not src_org_id and not src_org_name:
@@ -337,25 +334,18 @@ def _check_src_org(
 
 def _check_dst_org(
     dst_apisession: mistapi.APISession,
-    src_org_id: str,
-    src_org_name: str,
     dst_org_id: str,
     dst_org_name: str,
 ):
     if dst_org_id and dst_org_name:
-        if not _check_org_name_in_script_param(
-            dst_apisession, dst_org_id, src_org_name
-        ):
-            console.critical(
-                f"Org name {src_org_name} does not match the org {src_org_id}"
-            )
+        if not _check_org_name_in_script_param(dst_apisession, dst_org_id, dst_org_name):
+            console.critical(f"Org name {dst_org_name} does not match the org {dst_org_id}")
             sys.exit(0)
+        return dst_org_id, dst_org_name
     elif dst_org_id and not dst_org_name:
-        return _check_org_name(dst_apisession, src_org_id, "Destination")
+        return _check_org_name(dst_apisession, dst_org_id, "Destination")
     elif not dst_org_id and dst_org_name:
-        response = mistapi.api.v1.orgs.orgs.createOrg(
-            dst_apisession, {"name": dst_org_name}
-        )
+        response = mistapi.api.v1.orgs.orgs.createOrg(dst_apisession, {"name": dst_org_name})
         if response.status_code == 200:
             dst_org_id = response.data["id"]
             dst_org_name = response.data["name"]
@@ -421,18 +411,12 @@ def start(
     if not dst_apisession:
         dst_apisession = src_apisession
     src_org_id, src_org_name = _check_src_org(src_apisession, src_org_id, src_org_name)
-    dst_org_id, dst_org_name = _check_dst_org(
-        dst_apisession, src_org_id, src_org_name, dst_org_id, dst_org_name
-    )
+    dst_org_id, dst_org_name = _check_dst_org(dst_apisession, dst_org_id, dst_org_name)
 
     _backup_org(src_apisession, src_org_id, backup_folder_param)
     _backup_inventory(src_apisession, src_org_id, backup_folder_param)
-    _deploy_org(
-        dst_apisession, dst_org_id, dst_org_name, src_org_name, backup_folder_param
-    )
-    _precheck_inventory(
-        dst_apisession, dst_org_id, dst_org_name, src_org_name, backup_folder_param
-    )
+    _deploy_org(dst_apisession, dst_org_id, dst_org_name, src_org_name, backup_folder_param)
+    _precheck_inventory(dst_apisession, dst_org_id, dst_org_name, src_org_name, backup_folder_param)
     if unclaim:
         _deploy_inventory(
             dst_mist_session=dst_apisession,
@@ -445,15 +429,19 @@ def start(
             unclaim_all=unclaim_all,
         )
 
-    _print_new_step("Process finised")
+    _print_new_step("Process finished")
     console.info(
-        f"The Org {src_org_name} ({src_apisession.get_cloud()}) has been clone to {dst_org_name} ({dst_apisession.get_cloud()}) with success"
+        f"The Org {src_org_name} ({src_apisession.get_cloud()}) has been cloned "
+        f"into the Org {dst_org_name} ({dst_apisession.get_cloud()}) with success"
     )
 
 
 ###############################################################################
 #### USAGE ####
 def usage():
+    """
+    display usage
+    """
     print(
         """
 -------------------------------------------------------------------------------
@@ -542,16 +530,16 @@ Script Parameters:
 
 def check_mistapi_version():
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        logger.critical(
+        LOGGER.critical(
             f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
         )
-        logger.critical(f"Please use the pip command to updated it.")
-        logger.critical("")
-        logger.critical(f"    # Linux/macOS")
-        logger.critical(f"    python3 -m pip install --upgrade mistapi")
-        logger.critical("")
-        logger.critical(f"    # Windows")
-        logger.critical(f"    py -m pip install --upgrade mistapi")
+        LOGGER.critical(f"Please use the pip command to updated it.")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Linux/macOS")
+        LOGGER.critical(f"    python3 -m pip install --upgrade mistapi")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Windows")
+        LOGGER.critical(f"    py -m pip install --upgrade mistapi")
         print(
             f"""
     Critical: 
@@ -567,7 +555,7 @@ def check_mistapi_version():
         )
         sys.exit(2)
     else:
-        logger.info(
+        LOGGER.info(
             f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, '
             f"you are currently using version {mistapi.__version__}."
         )
@@ -608,6 +596,8 @@ if __name__ == "__main__":
     for o, a in opts:
         if o in ["-a", "--unclaim_all"]:
             UNCLAIM_ALL = True
+        elif o in ["-u", "--unclaim"]:
+            UNCLAIM = True
         elif o in ["-b", "--backup_folder"]:
             BACKUP_FOLDER_PARAM = a
         elif o in ["-h", "--help"]:
@@ -627,27 +617,25 @@ if __name__ == "__main__":
             DST_ORG_ID = a
         elif o in ["--dst_org_name"]:
             DST_ORG_NAME = a
-        elif o in ["-u", "--unclaim"]:
-            UNCLAIM = True
         else:
             assert False, "unhandled option"
 
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")
-    logger.setLevel(logging.DEBUG)
+    LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### MIST SESSION ###
     print(" API Session to access the Source Org ".center(80, "_"))
-    src_apisession = mistapi.APISession(env_file=SRC_ENV_FILE)
-    src_apisession.login()
+    SRC_APISESSION = mistapi.APISession(env_file=SRC_ENV_FILE)
+    SRC_APISESSION.login()
     print(" API Session to access the Destination Org ".center(80, "_"))
-    dst_apisession = mistapi.APISession(env_file=DST_ENV_FILE)
-    dst_apisession.login()
+    DST_APISESSION = mistapi.APISession(env_file=DST_ENV_FILE)
+    DST_APISESSION.login()
 
     ### START ###
     start(
-        src_apisession,
-        dst_apisession,
+        SRC_APISESSION,
+        DST_APISESSION,
         src_org_id=SRC_ORG_ID,
         src_org_name=SRC_ORG_NAME,
         dst_org_id=DST_ORG_ID,
