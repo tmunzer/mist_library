@@ -50,12 +50,17 @@ Script Parameters:
                         subfolder will be created with the org name)
                         default is "./org_backup"
 
+-d, --datetime          append the current date and time (ISO format) to the
+                        backup name 
+-t, --timestamp         append the current timestamp to the backup 
+
 """
 #####################################################################
 #### IMPORTS ####
 import sys
 import logging
 import getopt
+import datetime
 
 MISTAPI_MIN_VERSION = "0.44.1"
 
@@ -95,23 +100,36 @@ as the org_clone.py file:
 
 #####################################################################
 #### PARAMETERS #####
-BACKUP_FOLDER = "./org_backup"
+DEFAULT_BACKUP_FOLDER = "./org_backup"
 LOG_FILE = "./script.log"
 SRC_ENV_FILE = "~/.mist_env"
 
 #####################################################################
 #### LOGS ####
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 #####################################################################
 #### ORG FUNCTIONS ####
 def _backup_org(
-    source_mist_session: mistapi.APISession, org_id: str, backup_folder_param=str
+    source_mist_session: mistapi.APISession,
+    org_id: str,
+    backup_folder_param:str,
+    backup_name:str
 ):
+    LOGGER.debug(f"org_complete_backup:_backup_org")
+    LOGGER.debug(f"org_complete_backup:_backup_org:parameter:org_id:{org_id}")
+    LOGGER.debug(f"org_complete_backup:_backup_org:parameter:backup_folder_param:{backup_folder_param}")
+    LOGGER.debug(f"org_complete_backup:_backup_org:parameter:backup_name:{backup_name}")
+
     try:
         _print_new_step("Backuping SOURCE Org Configuration")
-        org_conf_backup.start(source_mist_session, org_id, backup_folder_param)
+        org_conf_backup.start(
+            mist_session=source_mist_session,
+            org_id=org_id,
+            backup_folder_param=backup_folder_param,
+            backup_name=backup_name
+            )
     except:
         sys.exit(255)
 
@@ -121,10 +139,23 @@ def _backup_org(
 
 
 def _backup_inventory(
-    source_mist_session: mistapi.APISession, org_id: str, backup_folder_param: str
+    source_mist_session: mistapi.APISession,
+    org_id: str,
+    backup_folder_param: str,
+    backup_name:str
 ):
+    LOGGER.debug(f"org_complete_backup:_backup_inventory")
+    LOGGER.debug(f"org_complete_backup:_backup_inventory:parameter:org_id:{org_id}")
+    LOGGER.debug(f"org_complete_backup:_backup_inventory:parameter:backup_folder_param:{backup_folder_param}")
+    LOGGER.debug(f"org_complete_backup:_backup_inventory:parameter:backup_name:{backup_name}")
+
     _print_new_step("Backuping SOURCE Org Inventory")
-    org_inventory_backup.start(source_mist_session, org_id, backup_folder_param)
+    org_inventory_backup.start(
+        mist_session=source_mist_session,
+        org_id=org_id,
+        backup_folder=backup_folder_param,
+        backup_name=backup_name
+        )
 
 
 #######
@@ -137,7 +168,7 @@ def _print_new_step(message):
     print(f" {message} ".center(80, "*"))
     print("".center(80, "*"))
     print()
-    logger.info(f"{message}")
+    LOGGER.info(f"{message}")
 
 
 #######
@@ -146,6 +177,9 @@ def start(
     apisession: mistapi.APISession,
     org_id: str = None,
     backup_folder_param: str = None,
+    backup_name:str=None,
+    backup_name_date:bool=False,
+    backup_name_ts:bool=False,
 ):
     """
     Start the process to clone the src org to the dst org
@@ -159,20 +193,44 @@ def start(
     backup_folder_param : str
         Path to the folder where to save the org backup (a subfolder will be created
         with the org name). default is "./org_backup"
+    backup_name : str
+        Name of the subfolder where the the backup files will be saved
+        default is the org name
+    backup_name_date : bool, default = False
+        if `backup_name_date`==`True`, append the current date and time (ISO 
+        format) to the backup name 
+    backup_name_ts : bool, default = False
+        if `backup_name_ts`==`True`, append the current timestamp to the backup 
+        name 
     """
+    LOGGER.debug(f"org_complete_backup:start")
+    LOGGER.debug(f"org_complete_backup:start:parameter:org_id:{org_id}")
+    LOGGER.debug(f"org_complete_backup:start:parameter:backup_folder_param:{backup_folder_param}")
+    LOGGER.debug(f"org_complete_backup:start:parameter:backup_name:{backup_name}")
+    LOGGER.debug(f"org_complete_backup:start:parameter:backup_name_date:{backup_name_date}")
+    LOGGER.debug(f"org_complete_backup:start:parameter:backup_name_ts:{backup_name_ts}")
+
     if not backup_folder_param:
-        backup_folder_param = BACKUP_FOLDER
+        backup_folder_param = DEFAULT_BACKUP_FOLDER
     if not org_id:
         org_id = mistapi.cli.select_org(apisession)[0]
+    org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
 
-    _backup_org(apisession, org_id, backup_folder_param)
-    _backup_inventory(apisession, org_id, backup_folder_param)
+    if not backup_name:
+        backup_name = org_name
+    if backup_name_date:
+        backup_name = f"{backup_name}_{datetime.datetime.isoformat(datetime.datetime.now())}"
+    elif backup_name_ts:
+        backup_name = f"{backup_name}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}"
+
+    _backup_org(apisession, org_id, backup_folder_param, backup_name)
+    _backup_inventory(apisession, org_id, backup_folder_param, backup_name)
     _print_new_step("Process finished")
 
 
 ###############################################################################
 #### USAGE ####
-def usage():
+def usage(error_message:str=None):
     """
     display script usage
     """
@@ -229,8 +287,14 @@ Script Parameters:
                         subfolder will be created with the org name)
                         default is "./org_backup"
 
+-d, --datetime          append the current date and time (ISO format) to the
+                        backup name 
+-t, --timestamp         append the current timestamp to the backup 
+
 """
     )
+    if error_message:
+        console.critical(error_message)
     sys.exit(0)
 
 
@@ -239,17 +303,17 @@ def check_mistapi_version():
     Function to check the mistapi package version
     """
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        logger.critical(
+        LOGGER.critical(
             f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, "
             f"you are currently using version {mistapi.__version__}."
         )
-        logger.critical(f"Please use the pip command to updated it.")
-        logger.critical("")
-        logger.critical(f"    # Linux/macOS")
-        logger.critical(f"    python3 -m pip install --upgrade mistapi")
-        logger.critical("")
-        logger.critical(f"    # Windows")
-        logger.critical(f"    py -m pip install --upgrade mistapi")
+        LOGGER.critical(f"Please use the pip command to updated it.")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Linux/macOS")
+        LOGGER.critical(f"    python3 -m pip install --upgrade mistapi")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Windows")
+        LOGGER.critical(f"    py -m pip install --upgrade mistapi")
         print(
             f"""
     Critical: 
@@ -265,7 +329,7 @@ def check_mistapi_version():
         )
         sys.exit(2)
     else:
-        logger.info(
+        LOGGER.info(
             f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, "
             f"you are currently using version {mistapi.__version__}."
         )
@@ -277,7 +341,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "hl:b:e:",
+            "hl:b:e:td",
             [
                 "help",
                 "org_id=",
@@ -285,6 +349,7 @@ if __name__ == "__main__":
                 "src_env=",
                 "log_file=",
                 "backup_folder=",
+                "datetime", "timestamp"
             ],
         )
     except getopt.GetoptError as err:
@@ -292,10 +357,13 @@ if __name__ == "__main__":
         usage()
 
     ORG_ID = None
-    BACKUP_FOLDER_PARAM = BACKUP_FOLDER
+    BACKUP_FOLDER = DEFAULT_BACKUP_FOLDER
+    BACKUP_NAME = False
+    BACKUP_NAME_DATE = False
+    BACKUP_NAME_TS = False
     for o, a in opts:
         if o in ["-b", "--backup_folder"]:
-            BACKUP_FOLDER_PARAM = a
+            BACKUP_FOLDER = a
         elif o in ["-h", "--help"]:
             usage()
             sys.exit(0)
@@ -305,12 +373,22 @@ if __name__ == "__main__":
             SRC_ENV_FILE = a
         elif o in ["--org_id"]:
             ORG_ID = a
+        elif o in ["-d", "--datetime"]:
+            if BACKUP_NAME_TS:
+                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                BACKUP_NAME_DATE = True
+        elif o in ["-t", "--timestamp"]:
+            if BACKUP_NAME_DATE:
+                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                BACKUP_NAME_TS = True
         else:
             assert False, "unhandled option"
 
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")
-    logger.setLevel(logging.DEBUG)
+    LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### MIST SESSION ###
     print(" API Session to access the Source Org ".center(80, "_"))
@@ -321,5 +399,8 @@ if __name__ == "__main__":
     start(
         apisession,
         org_id=ORG_ID,
-        backup_folder_param=BACKUP_FOLDER_PARAM,
+        backup_folder_param=BACKUP_FOLDER,
+        backup_name=BACKUP_NAME,
+        backup_name_date=BACKUP_NAME_DATE,
+        backup_name_ts=BACKUP_NAME_TS,
     )

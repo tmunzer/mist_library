@@ -35,6 +35,11 @@ Script Parameters:
 -b, --backup_folder=    Path to the folder where to save the org backup (a 
                         subfolder will be created with the org name)
                         default is "./org_backup"
+
+-d, --datetime          append the current date and time (ISO format) to the
+                        backup name 
+-t, --timestamp         append the current timestamp to the backup 
+
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
 -e, --env=              define the env file to use (see mistapi env file 
@@ -52,6 +57,7 @@ python3 ./org_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 #### IMPORTS ####
 import logging
 import json
+import datetime
 import urllib.request
 import os
 import signal
@@ -80,7 +86,7 @@ except:
 
 #####################################################################
 #### PARAMETERS #####
-BACKUP_FOLDER = "./org_backup"
+DEFAULT_BACKUP_FOLDER = "./org_backup"
 BACKUP_FILE = "org_conf_file.json"
 LOG_FILE = "./script.log"
 FILE_PREFIX = ".".join(BACKUP_FILE.split(".")[:-1])
@@ -537,28 +543,38 @@ def _backup_full_org(mist_session, org_id, org_name):
     return backup
 
 
-def _save_to_file(backup, org_name, backup_folder):
-    backup_path = os.path.join(backup_folder, org_name, BACKUP_FILE)
+def _save_to_file(
+        backup:dict,
+        backup_folder:str,
+        backup_name:str
+        ):
+    backup_path = os.path.join(backup_folder, backup_name, BACKUP_FILE)
     message = f"Saving to file {backup_path} "
-    print(f"{message}".ljust(79, "."), end="", flush=True)
+    PB.log_title(message, end=True, display_pbar=False)
     try:
         with open(BACKUP_FILE, "w") as f:
             json.dump(backup, f)
-        print("\033[92m\u2714\033[0m\n")
+        PB.log_success(message, display_pbar=False)
     except Exception as e:
-        print("\033[31m\u2716\033[0m\n")
+        PB.log_failure(message, display_pbar=False)
         LOGGER.error("Exception occurred", exc_info=True)
 
 
-def _start_org_backup(mist_session, org_id, org_name, backup_folder) -> bool:
+def _start_org_backup(
+        mist_session:mistapi.APISession,
+        org_id:str,
+        org_name:str,
+        backup_folder:str,
+        backup_name:str
+        ) -> bool:
     # FOLDER
     try:
         if not os.path.exists(backup_folder):
             os.makedirs(backup_folder)
         os.chdir(backup_folder)
-        if not os.path.exists(org_name):
-            os.makedirs(org_name)
-        os.chdir(org_name)
+        if not os.path.exists(backup_name):
+            os.makedirs(backup_name)
+        os.chdir(backup_name)
     except Exception as e:
         print(e)
         LOGGER.error("Exception occurred", exc_info=True)
@@ -577,7 +593,7 @@ def _start_org_backup(mist_session, org_id, org_name, backup_folder) -> bool:
     # BACKUP
     try:
         backup = _backup_full_org(mist_session, org_id, org_name)
-        _save_to_file(backup, org_name, backup_folder)
+        _save_to_file(backup, backup_folder, backup_name)
     except Exception as e:
         print(e)
         LOGGER.error("Exception occurred", exc_info=True)
@@ -587,35 +603,67 @@ def _start_org_backup(mist_session, org_id, org_name, backup_folder) -> bool:
 
 
 def start(
-    mist_session: mistapi.APISession, org_id: str, backup_folder_param: str = None
+    mist_session: mistapi.APISession,
+    org_id: str,
+    backup_folder_param: str = None,
+    backup_name:str=None,
+    backup_name_date:bool=False,
+    backup_name_ts:bool=False,
 ):
     """
     Start the process to deploy a backup/template
 
     PARAMS
     -------
-    :param  mistapi.APISession  apisession          - mistapi session, already logged in
-    :param  str                 org_id              - only if the destination org already exists. org_id where to deploy the configuration
-    :param  str                 backup_folder_param - Path to the folder where to save the org backup (a subfolder will be created with the org name). default is "./org_backup"
+    apisession : mistapi.APISession 
+        mistapi session, already logged in
+    org_id : str 
+        only if the destination org already exists. org_id where to deploy the
+        configuration
+    backup_folder_param : str 
+        Path to the folder where to save the org backup (a subfolder will be
+        created with the org name). 
+        default is "./org_backup"
+    backup_name : str
+        Name of the subfolder where the the backup files will be saved
+        default is the org name
+    backup_name_date : bool, default = False
+        if `backup_name_date`==`True`, append the current date and time (ISO 
+        format) to the backup name 
+    backup_name_ts : bool, default = False
+        if `backup_name_ts`==`True`, append the current timestamp to the backup 
+        name 
 
     RETURNS
     -------
-    :return bool                success status of the backup process. Returns False if the process didn't ended well
+    bool
+        success status of the backup process. Returns False if the process
+        didn't ended well
     """
+    LOGGER.debug(f"org_conf_backup:start")
+    LOGGER.debug(f"org_conf_backup:start:received parameters: mist_session: {mist_session},org_id:{org_id},backup_folder_param:{backup_folder_param},backup_name:{backup_name},backup_name_date:{backup_name_date},backup_name_ts:{backup_name_ts}")
     current_folder = os.getcwd()
     if backup_folder_param:
-        backup_folder_param = BACKUP_FOLDER
+        backup_folder_param = DEFAULT_BACKUP_FOLDER
     if not org_id:
         org_id = mistapi.cli.select_org(mist_session)[0]
     org_name = mistapi.api.v1.orgs.orgs.getOrg(mist_session, org_id).data["name"]
-    success = _start_org_backup(mist_session, org_id, org_name, backup_folder_param)
+
+    if not backup_name:
+        backup_name = org_name
+    if backup_name_date:
+        backup_name = f"{backup_name}_{datetime.datetime.isoformat(datetime.datetime.now())}"
+    elif backup_name_ts:
+        backup_name = f"{backup_name}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}"
+
+    success = _start_org_backup(mist_session, org_id, org_name, backup_folder_param, backup_name)
     os.chdir(current_folder)
     return success
 
 
 #####################################################################
 # USAGE
-def usage():
+def usage(error_message:str=None):
     print(
         """
 -------------------------------------------------------------------------------
@@ -654,6 +702,11 @@ Script Parameters:
 -b, --backup_folder=    Path to the folder where to save the org backup (a 
                         subfolder will be created with the org name)
                         default is "./org_backup"
+
+-d, --datetime          append the current date and time (ISO format) to the
+                        backup name 
+-t, --timestamp         append the current timestamp to the backup 
+
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
 -e, --env=              define the env file to use (see mistapi env file 
@@ -667,6 +720,8 @@ python3 ./org_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
 """
     )
+    if error_message:
+        console.critical(error_message)
     sys.exit(0)
 
 
@@ -710,15 +765,18 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "ho:e:l:b:",
-            ["help", "org_id=", "env=", "log_file=", "backup_folder="],
+            "ho:e:l:b:dt",
+            ["help", "org_id=", "env=", "log_file=", "backup_folder=", "datetime", "timestamp"],
         )
     except getopt.GetoptError as err:
         console.error(err)
         usage()
 
     ORG_ID = None
-    BACKUP_FOLDER_PARAM = None
+    BACKUP_FOLDER = DEFAULT_BACKUP_FOLDER
+    BACKUP_NAME = False
+    BACKUP_NAME_DATE = False
+    BACKUP_NAME_TS = False
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -729,7 +787,17 @@ if __name__ == "__main__":
         elif o in ["-l", "--log_file"]:
             LOG_FILE = a
         elif o in ["-b", "--backup_folder"]:
-            BACKUP_FOLDER_PARAM = a
+            BACKUP_FOLDER = a
+        elif o in ["-d", "--datetime"]:
+            if BACKUP_NAME_TS:
+                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                BACKUP_NAME_DATE = True
+        elif o in ["-t", "--timestamp"]:
+            if BACKUP_NAME_DATE:
+                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                BACKUP_NAME_TS = True
         else:
             assert False, "unhandled option"
 
@@ -740,4 +808,6 @@ if __name__ == "__main__":
     ### START ###
     APISESSION = mistapi.APISession(env_file=ENV_FILE)
     APISESSION.login()
-    start(APISESSION, ORG_ID, BACKUP_FOLDER_PARAM)
+
+    ### START ###
+    start(APISESSION, ORG_ID, BACKUP_FOLDER, BACKUP_NAME, BACKUP_NAME_DATE, BACKUP_NAME_TS)

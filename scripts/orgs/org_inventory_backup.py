@@ -37,6 +37,11 @@ Script Parameters:
 -b, --backup_folder=    Path to the folder where to save the org backup (a 
                         subfolder will be created with the org name)
                         default is "./org_backup"
+
+-d, --datetime          append the current date and time (ISO format) to the
+                        backup name 
+-t, --timestamp         append the current timestamp to the backup 
+
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
 -e, --env=              define the env file to use (see mistapi env file 
@@ -54,6 +59,7 @@ python3 ./org_inventory_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 import logging
 import sys
 import os
+import datetime
 import json
 import getopt
 import urllib.request
@@ -81,7 +87,7 @@ except:
 
 #####################################################################
 #### PARAMETERS #####
-BACKUP_FOLDER = "./org_backup"
+DEFAULT_BACKUP_FOLDER = "./org_backup"
 BACKUP_FILE = "./org_inventory_file.json"
 FILE_PREFIX = ".".join(BACKUP_FILE.split(".")[:-1])
 LOG_FILE = "./script.log"
@@ -387,13 +393,13 @@ def _backup_inventory(
     print()
 
 
-def _save_to_file(backup_file, org_name: str, backup):
-    backup_path = f"./org_backup/{org_name}/{backup_file.replace('./','')}"
+def _save_to_file(backup_data:dict,backup_file:str,  backup_name:str):
+    backup_path = f"./org_backup/{backup_name}/{backup_file.replace('./','')}"
     message = f"Saving to file {backup_path} "
     PB.log_message(message, display_pbar=False)
     try:
         with open(backup_file, "w") as f:
-            json.dump(backup, f)
+            json.dump(backup_data, f)
         PB.log_success(message, display_pbar=False)
     except Exception as e:
         PB.log_failure(message, display_pbar=False)
@@ -401,16 +407,20 @@ def _save_to_file(backup_file, org_name: str, backup):
 
 
 def _start_inventory_backup(
-    mist_session: mistapi.APISession, org_id: str, org_name: str, backup_folder:str
+    mist_session: mistapi.APISession,
+    org_id: str,
+    org_name: str,
+    backup_folder:str,
+    backup_name:str
 ):
     # FOLDER
     try:
         if not os.path.exists(backup_folder):
             os.makedirs(backup_folder)
         os.chdir(backup_folder)
-        if not os.path.exists(org_name):
-            os.makedirs(org_name)
-        os.chdir(org_name)
+        if not os.path.exists(backup_name):
+            os.makedirs(backup_name)
+        os.chdir(backup_name)
     except Exception as e:
         print(e)
         LOGGER.error("Exception occurred", exc_info=True)
@@ -450,7 +460,7 @@ def _start_inventory_backup(
         }
     }
     _backup_inventory(mist_session, org_id, org_name, backup)
-    _save_to_file(BACKUP_FILE, org_name, backup)
+    _save_to_file(backup, BACKUP_FILE, backup_name)
     if backup["org"]["devices_without_magic"]:
         console.warning(
             "It was not possible to retrieve the claim codes for the following devices:"
@@ -463,7 +473,12 @@ def _start_inventory_backup(
 
 
 def start(
-    mist_session: mistapi.APISession, org_id: str, backup_folder: str = None
+    mist_session: mistapi.APISession,
+    org_id: str,
+    backup_folder: str = None,
+    backup_name:str=None,
+    backup_name_date:bool=False,
+    backup_name_ts:bool=False,
 ):
     """
     Start the backup process
@@ -479,21 +494,38 @@ def start(
     backup_folder_param : str
         Path to the folder where to save the org backup (a subfolder will be created with the 
         org name). default is "./org_backup"
+    backup_name : str
+        Name of the subfolder where the the backup files will be saved
+        default is the org name
+    backup_name_date : bool, default = False
+        if `backup_name_date`==`True`, append the current date and time (ISO 
+        format) to the backup name 
+    backup_name_ts : bool, default = False
+        if `backup_name_ts`==`True`, append the current timestamp to the backup 
+        name 
 
     """
     current_folder = os.getcwd()
     if backup_folder:
-        backup_folder = BACKUP_FOLDER
+        backup_folder = DEFAULT_BACKUP_FOLDER
     if not org_id:
         org_id = mistapi.cli.select_org(mist_session)[0]
     org_name = mistapi.api.v1.orgs.orgs.getOrg(mist_session, org_id).data["name"]
-    _start_inventory_backup(mist_session, org_id, org_name, backup_folder)
+
+    if not backup_name:
+        backup_name = org_name
+    if backup_name_date:
+        backup_name = f"{backup_name}_{datetime.datetime.isoformat(datetime.datetime.now())}"
+    elif backup_name_ts:
+        backup_name = f"{backup_name}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}"
+
+    _start_inventory_backup(mist_session, org_id, org_name, backup_folder, backup_name)
     os.chdir(current_folder)
 
 
 #####################################################################
 #### USAGE ####
-def usage():
+def usage(error_message:str=None):
     """
     display usage
     """
@@ -537,6 +569,11 @@ Script Parameters:
 -b, --backup_folder=    Path to the folder where to save the org backup (a 
                         subfolder will be created with the org name)
                         default is "./org_backup"
+
+-d, --datetime          append the current date and time (ISO format) to the
+                        backup name 
+-t, --timestamp         append the current timestamp to the backup 
+
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
 -e, --env=              define the env file to use (see mistapi env file 
@@ -550,6 +587,8 @@ python3 ./org_inventory_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
 """
     )
+    if error_message:
+        console.critical(error_message)
     sys.exit(0)
 
 
@@ -592,14 +631,18 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "ho:e:l:b:",
-            ["help", "org_id=", "env=", "log_file=", "backup_folder="],
+            "ho:e:l:b:dt",
+            ["help", "org_id=", "env=", "log_file=", "backup_folder=", "datetime", "timestamp"],
         )
     except getopt.GetoptError as err:
         console.error(err)
         usage()
 
     ORG_ID = None
+    BACKUP_FOLDER = DEFAULT_BACKUP_FOLDER
+    BACKUP_NAME = False
+    BACKUP_NAME_DATE = False
+    BACKUP_NAME_TS = False
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -611,6 +654,16 @@ if __name__ == "__main__":
             LOG_FILE = a
         elif o in ["-b", "--backup_folder"]:
             BACKUP_FOLDER = a
+        elif o in ["-d", "--datetime"]:
+            if BACKUP_NAME_TS:
+                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                BACKUP_NAME_DATE = True
+        elif o in ["-t", "--timestamp"]:
+            if BACKUP_NAME_DATE:
+                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                BACKUP_NAME_TS = True
         else:
             assert False, "unhandled option"
 
@@ -621,4 +674,5 @@ if __name__ == "__main__":
     ### START ###
     APISESSION = mistapi.APISession(env_file=ENV_FILE)
     APISESSION.login()
-    start(APISESSION, ORG_ID, BACKUP_FOLDER)
+    ### START ###
+    start(APISESSION, ORG_ID, BACKUP_FOLDER, BACKUP_NAME, BACKUP_NAME_DATE, BACKUP_NAME_TS)
