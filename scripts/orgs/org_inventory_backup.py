@@ -506,7 +506,7 @@ def start(
 
     """
     current_folder = os.getcwd()
-    if backup_folder:
+    if not backup_folder:
         backup_folder = DEFAULT_BACKUP_FOLDER
     if not org_id:
         org_id = mistapi.cli.select_org(mist_session)[0]
