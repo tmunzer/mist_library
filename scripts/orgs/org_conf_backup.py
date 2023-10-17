@@ -641,9 +641,13 @@ def start(
         didn't ended well
     """
     LOGGER.debug(f"org_conf_backup:start")
-    LOGGER.debug(f"org_conf_backup:start:received parameters: mist_session: {mist_session},org_id:{org_id},backup_folder_param:{backup_folder_param},backup_name:{backup_name},backup_name_date:{backup_name_date},backup_name_ts:{backup_name_ts}")
+    LOGGER.debug(f"org_conf_backup:start:parameters:org_id:{org_id}")
+    LOGGER.debug(f"org_conf_backup:start:parameters:backup_folder_param:{backup_folder_param}")
+    LOGGER.debug(f"org_conf_backup:start:parameters:backup_name:{backup_name}")
+    LOGGER.debug(f"org_conf_backup:start:parameters:backup_name_date:{backup_name_date}")
+    LOGGER.debug(f"org_conf_backup:start:parameters:backup_name_ts:{backup_name_ts}")
     current_folder = os.getcwd()
-    if backup_folder_param:
+    if not backup_folder_param:
         backup_folder_param = DEFAULT_BACKUP_FOLDER
     if not org_id:
         org_id = mistapi.cli.select_org(mist_session)[0]
