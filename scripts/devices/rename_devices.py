@@ -48,8 +48,8 @@ Example 1:
 
 Example 2:
 #serial,name
-5c:5b:35:c0:ff:ee,AP1
-2c:6b:f5:c0:ff:ee,SW02
+A012345678901,AP1
+HV0123456789,SW02
 
 -------
 Script Parameters:
@@ -416,8 +416,8 @@ Example 1:
 
 Example 2:
 #serial,name
-5c:5b:35:c0:ff:ee,AP1
-2c:6b:f5:c0:ff:ee,SW02
+A012345678901,AP1
+HV0123456789,SW02
 
 -------
 Script Parameters:
