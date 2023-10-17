@@ -7,8 +7,11 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to assign devices to sites from a CSV file. The devices MUST 
-already have been claimed on the org
+Python script to assign devices to sites from a CSV file. 
+If the devices are already in the Org Inventory, the device MAC Address, Serial
+Number or Claim Code can be provided.
+If devices are not yet in the Org Inventory, only Claim Codes can be used. The
+script will first claim the devices and then assign them to the sites.
 
 To allow the script to reassign a device from a previous site, please use the 
 `-r` flag.
@@ -463,8 +466,11 @@ def usage():
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to assign devices to sites from a CSV file. The devices MUST 
-already have been claimed on the org
+Python script to assign devices to sites from a CSV file. 
+If the devices are already in the Org Inventory, the device MAC Address, Serial
+Number or Claim Code can be provided.
+If devices are not yet in the Org Inventory, only Claim Codes can be used. The
+script will first claim the devices and then assign them to the sites.
 
 To allow the script to reassign a device from a previous site, please use the 
 `-r` flag.
