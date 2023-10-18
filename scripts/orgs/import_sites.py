@@ -938,7 +938,7 @@ def check_mistapi_version():
 if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(sys.argv[1:], "ho:n:g:f:e:l:", [
-                                   "help", "org_id=", "--org_name=", "google_api_key=", "file=", "env=", "log_file="])
+                                   "help", "org_id=", "org_name=", "google_api_key=", "file=", "env=", "log_file="])
     except getopt.GetoptError as err:
         console.error(err)
         usage()
