@@ -515,7 +515,7 @@ def start(
     if not backup_name:
         backup_name = org_name
     if backup_name_date:
-        backup_name = f"{backup_name}_{datetime.datetime.isoformat(datetime.datetime.now())}"
+        backup_name = f"{backup_name}_{datetime.datetime.isoformat(datetime.datetime.now()).split('.')[0].replace(':','.')}"
     elif backup_name_ts:
         backup_name = f"{backup_name}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}"
 
