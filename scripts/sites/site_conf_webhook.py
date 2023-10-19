@@ -161,7 +161,7 @@ def _remove_webhook(apisession, org_id, site_id=None):
         print("Available webhooks:")
         i = 0
         for webhook in webhooks:
-            print(f"{i}) {webhook['name']}: {webhook['url']} (id: {webhook['id']})")
+            print(f"{i}) {webhook.get('name')}: {webhook.get('url')} (id: {webhook.get('id')})")
             i += 1
         print()
         resp = input(
