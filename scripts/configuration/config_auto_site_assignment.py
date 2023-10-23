@@ -41,8 +41,8 @@ Options:
 
 -------
 Examples:
-python3 ./configure_auto_site_assignment.py                  
-python3 ./configure_auto_site_assignment.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --disable
+python3 ./config_auto_site_assignment.py                  
+python3 ./config_auto_site_assignment.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --disable
 
 '''
 
@@ -71,7 +71,7 @@ except:
 
 
 #### LOGS ####
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 #### PARAMETERS #####
 auto_site_assignment = {
@@ -79,10 +79,10 @@ auto_site_assignment = {
     "rules": []
 }
 
-log_file = "./script.log"
-env_file = "~/.mist_env"
+LOG_FILE = "./script.log"
+ENV_FILE = "~/.mist_env"
 #### GLOBAL VARIABLES ####
-auto_assignment_rules = ["name", "subnet", "lldp_system_name", "dns_suffix", "model" ]
+AUTO_ASSIGNMENT_RULES = ["name", "subnet", "lldp_system_name", "dns_suffix", "model" ]
 
 #### FUNCTIONS ####
 def create_rule(apisession, org_id):
@@ -106,19 +106,19 @@ def select_rule_type(apisession, org_id):
     while True:
         print("Type of auto assignement rule:")
         i = -1
-        for rule in auto_assignment_rules:
+        for rule in AUTO_ASSIGNMENT_RULES:
             i+=1
-            print("%s) %s" %(i, rule))
-        resp = input("Please select the type of rule (0-%s)" %i)
+            print(f"{i}) {rule}")
+        resp = input(f"Please select the type of rule (0-{i})")
         try:
             resp_num = int(resp)
         except:
-            print("Error. The value %s is not valid" % resp)
+            print(f"Error. The value {resp} is not valid")
         if resp_num >= 0 and resp_num <= i:
-            rule_conf['src'] = auto_assignment_rules[resp_num]
+            rule_conf['src'] = AUTO_ASSIGNMENT_RULES[resp_num]
             return configure_rule(apisession, org_id, rule_conf)
         else:
-            print("Error: %s is not authorized" % resp_num)
+            print(f"Error: {resp_num} is not authorized")
 
 
 def configure_rule(apisession, org_id, rule_conf):
@@ -128,7 +128,7 @@ def configure_rule(apisession, org_id, rule_conf):
         #     "src": "name",
         #     "expression": "[0:3]",           // "abcdef" -> "abc"
         #                   "split(.)[1]",     // "a.b.c" -> "b"
-        #                   "split(-)[1][0:3], // "a1234-b5678-c90" -> "b56"  
+        #                   "split(-)[1][0:3], // "a1234-b5678-c90" -> "b56"
         #     "prefix": "XX-",
         #     "suffix": "-YY"
         # },             
@@ -148,7 +148,7 @@ def configure_rule(apisession, org_id, rule_conf):
         # },
         rule_conf['subnet'] = input("Please enter the subnet value (ex: 10.1.2.0/18): ")
         site_id = mistapi.cli.select_site(apisession, org_id=org_id)[0]
-        rule_conf['value'] = mistapi.api.v1.sites.stats.getSiteStats(apisession, site_id).data['name'] 
+        rule_conf['value'] = mistapi.api.v1.sites.stats.getSiteStats(apisession, site_id).data['name']
     elif rule_conf['src'] == "lldp_system_name":
         # // use LLDP System Name
         # {
@@ -179,7 +179,7 @@ def configure_rule(apisession, org_id, rule_conf):
         # }       
         rule_conf['model'] = input("Please enter the model of AP: ")
         site_id = mistapi.cli.select_site(apisession, org_id=org_id)[0]
-        rule_conf['value'] = mistapi.api.v1.sites.stats.getSiteStats(apisession, site_id).data['name'] 
+        rule_conf['value'] = mistapi.api.v1.sites.stats.getSiteStats(apisession, site_id).data['name']
     return rule_conf
 
 
@@ -229,22 +229,22 @@ Options:
 
 -------
 Examples:
-python3 ./configure_auto_site_assignment.py                  
-python3 ./configure_auto_site_assignment.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --disable
+python3 ./config_auto_site_assignment.py                  
+python3 ./config_auto_site_assignment.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --disable
 
 ''')
     sys.exit(0)
 
 def check_mistapi_version():
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        logger.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
-        logger.critical(f"Please use the pip command to updated it.")
-        logger.critical("")
-        logger.critical(f"    # Linux/macOS")
-        logger.critical(f"    python3 -m pip install --upgrade mistapi")
-        logger.critical("")
-        logger.critical(f"    # Windows")
-        logger.critical(f"    py -m pip install --upgrade mistapi")
+        LOGGER.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+        LOGGER.critical(f"Please use the pip command to updated it.")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Linux/macOS")
+        LOGGER.critical(f"    python3 -m pip install --upgrade mistapi")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Windows")
+        LOGGER.critical(f"    py -m pip install --upgrade mistapi")
         print(f"""
     Critical: 
     \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
@@ -258,7 +258,7 @@ def check_mistapi_version():
         """)
         sys.exit(2)
     else: 
-        logger.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+        LOGGER.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
 
 
 ###############################################################################
@@ -270,62 +270,61 @@ if __name__ == "__main__":
         console.error(err)
         usage()
 
-    org_id=None
-    action=None
+    ORG_ID=None
+    ACTION=None
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-o", "--org_id"]:
-            org_id = a
+            ORG_ID = a
         elif o in ["-e", "--env"]:
             env_file=a
         elif o in ["-l", "--log_file"]:
-            log_file = a    
+            LOG_FILE = a
         elif o in ["-a", "--enable"]:
-            if action:
+            if ACTION:
                 console.error("Only one action \"enable\" or \"disable\" is allowed")
                 sys.exit(0)
-            action ="enable"
+            ACTION ="enable"
             auto_site_assignment["enable"] = True
         elif o in ["-b", "--disable"]:
-            if action:
+            if ACTION:
                 console.error("Only one action \"enable\" or \"disable\" is allowed")
                 sys.exit(0)
-            action ="disable"        
+            ACTION ="disable"
             auto_site_assignment["enable"] = False
         else:
             assert False, "unhandled option"
 
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode='w')
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(filename=LOG_FILE, filemode='w')
+    LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### MIST SESSION ###
-    apisession = mistapi.APISession(env_file=env_file)
-    apisession.login()
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
 
-    if not org_id:
-        org_id = mistapi.cli.select_org(apisession)
+    if not ORG_ID:
+        ORG_ID = mistapi.cli.select_org(APISESSION)
 
-    while not action:
+    while not ACTION:
         resp = input("Do you want to (E)nable of (D)isable auto site assignement (e/d)?")
         if resp.lower() == 'e':
             auto_site_assignment["enable"] = True
-            action = "enable"
+            ACTION = "enable"
         elif resp.lower() == 'd':
             auto_site_assignment["enable"] = False
-            action = "disable"
+            ACTION = "disable"
         else:
             console.error("Only \"e\" and \"d\" are allowed, to Enable or Disable auto site assignement")
 
     if auto_site_assignment["enable"] == True:
-        auto_site_assignment["rules"] = create_rule(apisession, org_id)
-
+        auto_site_assignment["rules"] = create_rule(APISESSION, ORG_ID)
 
 
     print("Configuration to upload".center(80, "-"))
     mistapi.cli.pretty_print({"auto_site_assignment": auto_site_assignment})
-    mistapi.api.v1.orgs.setting.updateOrgSettings(apisession, org_id, {"auto_site_assignment": auto_site_assignment})
+    mistapi.api.v1.orgs.setting.updateOrgSettings(APISESSION, ORG_ID, {"auto_site_assignment": auto_site_assignment})
     print("Configuration from Mist".center(80, "-"))
-    conf_from_mist = mistapi.api.v1.orgs.setting.getOrgSettings(apisession, org_id).data["auto_site_assignment"]
+    conf_from_mist = mistapi.api.v1.orgs.setting.getOrgSettings(APISESSION, ORG_ID).data["auto_site_assignment"]
     mistapi.cli.pretty_print({"auto_site_assignment": conf_from_mist})

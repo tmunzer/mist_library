@@ -128,7 +128,7 @@ as the org_clone.py file:
 
 #####################################################################
 #### PARAMETERS #####
-BACKUP_FOLDER = "./org_backup"
+DEFAULT_BACKUP_FOLDER = "./org_backup"
 LOG_FILE = "./script.log"
 SRC_ENV_FILE = ""#"~/.mist_env"
 DST_ENV_FILE = None
@@ -407,7 +407,7 @@ def start(
 
     """
     if not backup_folder_param:
-        backup_folder_param = BACKUP_FOLDER
+        backup_folder_param = DEFAULT_BACKUP_FOLDER
     if not dst_apisession:
         dst_apisession = src_apisession
     src_org_id, src_org_name = _check_src_org(src_apisession, src_org_id, src_org_name)
@@ -438,7 +438,7 @@ def start(
 
 ###############################################################################
 #### USAGE ####
-def usage():
+def usage(error_message:str=None):
     """
     display usage
     """
@@ -525,6 +525,8 @@ Script Parameters:
 
 """
     )
+    if error_message:
+        console.critical(error_message)
     sys.exit(0)
 
 
@@ -590,7 +592,7 @@ if __name__ == "__main__":
     SRC_ORG_NAME = None
     DST_ORG_ID = None
     DST_ORG_NAME = None
-    BACKUP_FOLDER_PARAM = None
+    BACKUP_FOLDER = DEFAULT_BACKUP_FOLDER
     UNCLAIM = False
     UNCLAIM_ALL = False
     for o, a in opts:
@@ -599,7 +601,7 @@ if __name__ == "__main__":
         elif o in ["-u", "--unclaim"]:
             UNCLAIM = True
         elif o in ["-b", "--backup_folder"]:
-            BACKUP_FOLDER_PARAM = a
+            BACKUP_FOLDER = a
         elif o in ["-h", "--help"]:
             usage()
             sys.exit(0)
@@ -640,7 +642,7 @@ if __name__ == "__main__":
         src_org_name=SRC_ORG_NAME,
         dst_org_id=DST_ORG_ID,
         dst_org_name=DST_ORG_NAME,
-        backup_folder_param=BACKUP_FOLDER_PARAM,
+        backup_folder_param=BACKUP_FOLDER,
         unclaim=UNCLAIM,
         unclaim_all=UNCLAIM_ALL,
     )

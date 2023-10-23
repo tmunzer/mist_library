@@ -27,16 +27,16 @@ except:
         sys.exit(2)
 
 #### PARAMETERS #####
-psk = {"name":'myUser', "passphrase":'myBadPassword', "ssid":'mySSID', "usage":'multi'}
-log_file = "./sites_scripts.log"
-env_file = "./.env"
+PSK = {"name":'myUser', "passphrase":'myBadPassword', "ssid":'mySSID', "usage":'multi'}
+LOG_FILE = "./sites_scripts.log"
+ENV_FILE = "./.env"
 #### LOGS ####
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 #### FUNCTIONS #####
 
 def start(apisession):
     site_id = mistapi.cli.select_site(apisession, allow_many=False)
-    mistapi.api.v1.sites.psks.createSitePsk(apisession, site_id, psk)
+    mistapi.api.v1.sites.psks.createSitePsk(apisession, site_id, PSK)
     response = mistapi.api.v1.sites.psks.listSitePsks(apisession, site_id)
     psks = mistapi.get_all(apisession, response)
     mistapi.cli.pretty_print(psks)
@@ -45,9 +45,9 @@ def start(apisession):
 
 if __name__ == "__main__":
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode='w')
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(filename=LOG_FILE, filemode='w')
+    LOGGER.setLevel(logging.DEBUG)
     ### START ###
-    apisession = mistapi.APISession(env_file=env_file)
-    apisession.login()
-    start(apisession)
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
+    start(APISESSION)

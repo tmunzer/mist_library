@@ -37,11 +37,10 @@ except:
         sys.exit(2)
 
 #### PARAMETERS #####
-csv_separator = ","
-log_file = "./sites_scripts.log"
-env_file = "./.env"
+LOG_FILE = "./sites_scripts.log"
+ENV_FILE = "./.env"
 #### LOGS ####
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 #### FUNCTIONS #####
 
@@ -60,7 +59,7 @@ def import_psk(apisession, site_id, psks):
         result = mistapi.api.v1.sites.psks.createSitePsk(apisession, site_id, body=body).data
         mistapi.cli.pretty_print(result)
 
-def read_csv(csv_file): 
+def read_csv(csv_file):
     print("")
     print("".center(80, "-"))
     print(f"Opening CSV file {csv_file}".center(80, "-"))
@@ -73,8 +72,8 @@ def read_csv(csv_file):
                 username = row[0]
                 passphrase = row[1]
                 ssid = row[2]
-                psks.append({"username": username,"passphrase": passphrase,"ssid": ssid})    
-        return psks 
+                psks.append({"username": username,"passphrase": passphrase,"ssid": ssid})
+        return psks
     except:
         print("Error while opening the CSV file... Aborting")
 
@@ -105,9 +104,9 @@ def start(apisession):
 #### SCRIPT ENTRYPOINT #####
 if __name__ == "__main__":
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode='w')
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(filename=LOG_FILE, filemode='w')
+    LOGGER.setLevel(logging.DEBUG)
     ### START ###
-    apisession = mistapi.APISession(env_file=env_file)
-    apisession.login()
-    start(apisession)
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
+    start(APISESSION)

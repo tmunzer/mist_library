@@ -56,6 +56,10 @@ There is a short desccription at the beginning of each script explaining the pur
 
 ## Clients
 - [import_guest.py](scripts/clients/import_guests.py): Python script import or update a list of Guests from a CSV file into a Mist Org or Mist Site
+## Configuraiton
+- [config_ap_auto_upgrade.py](scripts/orgs/config_ap_auto_upgrade.py): Python script update the Mist AP Auto_upgrade parameters in the site settings
+- [config_auto_site_assignment.py](scripts/orgs/config_auto_site_assignment.py): Python script to update the org auto assignement rules
+- [config_webhook.py](scripts/sites/config_webhook.py): This script can be used to list/add/delete Webhooks from Org/Site
 ## Devices
 - Common:
     - [rename_devices.py](scripts/devices/rename_devices.py): Python script to rename devices (AP, Switch, Router) from a CSV file. The script will automatically locate the site where the device is assigned, and update its name.
@@ -67,8 +71,6 @@ There is a short desccription at the beginning of each script explaining the pur
 - [export_inventory.py](scripts/exports/export_inventory.py): Python script to export the inventory from an organization. The export will include all the information available from the org inventory, including the claim codes.
 - [export_search.py](scripts/exports/export_search.py): Python script to export historical data from Mist API and save the result in CSV of JSON format.
 ## Orgs
-- [configure_ap_auto_upgrade.py](scripts/orgs/configure_ap_auto_upgrade.py): Python script update the Mist AP Auto_upgrade parameters in the site settings
-- [configure_auto_site_assignment.py](scripts/orgs/configure_auto_site_assignment.py): Python script to update the org auto assignement rules
 - [import_admins.py](scripts/orgs/import_admins.py): Python script to invite/add adminsitrators from a CSV file.
 - [import_floorplans.py](scripts/orgs/import_floorplans.py): Python script to import multiple Ekahau/iBwave project into Mist Organisation.
 - [import_sites.py](scripts/orgs/import_sites.py): Python script automate the sites creation in a Mist Org from a CSV file.
@@ -88,7 +90,6 @@ There is a short desccription at the beginning of each script explaining the pur
 - [site_conf_backup.py](scripts/sites/site_conf_backup.py): Python script to backup a whole site.
 - [site_conf_psk_import_csv.py](scripts/sites/site_conf_psk_import_csv.py): This script will import PSKs from a CSV file to one or multiple sites.
 - [site_conf_psk.py](scripts/sites/site_conf_psk.py):  
-- [site_conf_webhook.py](scripts/sites/site_conf_webhook.py): This script can be used to list/add/delete Webhooks from Org/Site
 - [site_conf_wlan.py](scripts/sites/site_conf_wlan.py): This script can be used to list/add/delete an SSID from Org/Site
 ## Reports
 - [report_app_usage.py](scripts/reports/report_app_usage.py): Python script to generate a report of the application usage on a specific site

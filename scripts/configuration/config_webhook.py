@@ -66,9 +66,9 @@ Script Parameters:
 
 -------
 Examples:
-python3 ./site_conf_webhook.py             
-python3 ./site_conf_webhook.py \
-    -f ./site_conf_webhook.json \
+python3 ./config_webhook.py             
+python3 ./config_webhook.py \
+    -f ./config_webhook.json \
     --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
 '''
@@ -99,7 +99,7 @@ except:
 
 #### PARAMETERS #####
 LOG_FILE = "./scripts.log"
-DEFAULT_WEBHOOK_FILE = "./site_conf_webhook_settings.json"
+DEFAULT_WEBHOOK_FILE = "./config_webhook_settings.json"
 ENV_FILE = "~/.mist_env"
 FIELDS = ["id", "enabled", "name", "url", "type", "topics", "verify_cert"]
 #### LOGS ####
@@ -344,9 +344,9 @@ Script Parameters:
 
 -------
 Examples:
-python3 ./site_conf_webhook.py             
-python3 ./site_conf_webhook.py \
-    -f ./site_conf_webhook.json \
+python3 ./config_webhook.py             
+python3 ./config_webhook.py \
+    -f ./config_webhook.json \
     --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 ''')
     if error_message:
@@ -420,6 +420,6 @@ if __name__ == "__main__":
     logging.basicConfig(filename=LOG_FILE, filemode='w')
     LOGGER.setLevel(logging.DEBUG)
     ### START ###
-    apisession = mistapi.APISession(env_file=ENV_FILE)
-    apisession.login()
-    start(apisession, ORG_ID, SITE_ID)
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
+    start(APISESSION, ORG_ID, SITE_ID)

@@ -29,21 +29,20 @@ except:
         sys.exit(2)
 
 #### PARAMETERS #####
-csv_separator = ","
-log_file = "./sites_scripts.log"
-default_wlan_file = "./site_conf_wlan_settings.json"
-env_file = "./.env"
+LOG_FILE = "./sites_scripts.log"
+DEFAULT_WLAN_FILE = "./site_conf_wlan_settings.json"
+ENV_FILE = "./.env"
 #### LOGS ####
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def add_wlan(apisession, site_id):
-    wlan_file = input(f"Path to the WLAN configuration JSON file (default: {default_wlan_file}): ")
-    if wlan_file == "": 
-        wlan_file = default_wlan_file
+    wlan_file = input(f"Path to the WLAN configuration JSON file (default: {DEFAULT_WLAN_FILE}): ")
+    if wlan_file == "":
+        wlan_file = DEFAULT_WLAN_FILE
     try:
         with open(wlan_file, "r") as f:
-            wlan  = json.load(f)       
+            wlan  = json.load(f)
     except:
         print("Error while loading the configuration file... exiting...")
         sys.exit(255)
@@ -57,14 +56,14 @@ def add_wlan(apisession, site_id):
 def remove_wlan(apisession, site_id):
     wlans = mistapi.api.v1.sites.wlans.listSiteWlans(apisession, site_id).data
     resp = -1
-    while True:    
-        print()    
+    while True:
+        print()
         print("Available WLANs:")
         i = 0
         for wlan in wlans:
             print(f"{i}) {wlan['ssid']} (id: {wlan['id']})")
             i+=1
-        print()        
+        print()
         resp = input(f"Which WLAN do you want to delete (0-{i-1}, or q to quit)? ")
         if resp.lower() == "q":
             sys.exit(0)
@@ -73,7 +72,7 @@ def remove_wlan(apisession, site_id):
                 resp_num = int(resp)
                 if resp_num >= 0 and resp_num <= i:
                     wlan = wlans[resp_num]
-                    print()    
+                    print()
                     confirmation = input(f"Are you sure you want to delete WLAN {wlan['ssid']} (y/N)? ")
                     if confirmation.lower() == "y":
                         break
@@ -81,17 +80,17 @@ def remove_wlan(apisession, site_id):
                     print(f"{resp_num} is not part of the possibilities.")
             except:
                 print("Only numbers are allowed.")
-    mistapi.api.v1.sites.wlans.deleteSiteWlan(apisession, site_id, wlan["id"])    
+    mistapi.api.v1.sites.wlans.deleteSiteWlan(apisession, site_id, wlan["id"])
 
 
 def display_wlan(apisession, site_id):
     fields = ["id","ssid", "enabled", "auth", "auth_servers", "acct_servers", "band", "interface", "vlan_id", "dynamic_vlan", "hide_ssid"]
-    site_wlans = mistapi.api.v1.sites.wlans.getSiteWlanDerived(apisession, site_id).data 
+    site_wlans = mistapi.api.v1.sites.wlans.getSiteWlanDerived(apisession, site_id).data
     mistapi.cli.display_list_of_json_as_table(site_wlans, fields)
 
 def start_site_conf_wlan(apisession, site_id):
     while True:
-        print()    
+        print()
         print(" ===================")
         print(" == CURRENT WLANS ==")
         display_wlan(apisession, site_id)
@@ -103,7 +102,7 @@ def start_site_conf_wlan(apisession, site_id):
         for action in actions:
             i+= 1
             print(f"{i}) {action}")
-        print()    
+        print()
         resp = input(f"Choice (0-{i}, q to quit): ")
         if resp.lower() == "q":
             sys.exit(0)
@@ -113,17 +112,17 @@ def start_site_conf_wlan(apisession, site_id):
             except:
                 print("Only numbers are allowed.")
             if resp_num >= 0 and resp_num <= i:
-                if actions[resp_num] == "add WLAN": 
+                if actions[resp_num] == "add WLAN":
                     add_wlan(apisession, site_id)
-                    print()    
+                    print()
                     print(" ========================")
                     print(" == WLANS AFTER CHANGE ==")
                     display_wlan(apisession, site_id)
-                    print(" ========================")              
+                    print(" ========================")
                     break
                 elif actions[resp_num] == "remove WLAN":
                     remove_wlan(apisession, site_id)
-                    print()    
+                    print()
                     print(" ========================")
                     print(" == WLANS AFTER CHANGE ==")
                     display_wlan(apisession, site_id)
@@ -141,9 +140,9 @@ def start(apisession):
 
 if __name__ == "__main__":
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode='w')
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(filename=LOG_FILE, filemode='w')
+    LOGGER.setLevel(logging.DEBUG)
     ### START ###
-    apisession = mistapi.APISession(env_file=env_file)
-    apisession.login()
-    start(apisession)
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
+    start(APISESSION)

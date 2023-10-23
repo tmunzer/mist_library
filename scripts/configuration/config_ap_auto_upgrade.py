@@ -61,8 +61,8 @@ Script Parameters:
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
 Examples:
-python3 ./configure_ap_auto_upgrade.py
-python3 ./configure_ap_auto_upgrade.py \
+python3 ./config_ap_auto_upgrade.py
+python3 ./config_ap_auto_upgrade.py \
         -e ~/.mist_env \
         -o c1a6c819-xxxxx-xxxxx-xxxxx-a93e0afcc6de \
         -n "Demo Org" \
@@ -654,8 +654,8 @@ Script Parameters:
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
 Examples:
-python3 ./configure_ap_auto_upgrade.py
-python3 ./configure_ap_auto_upgrade.py \
+python3 ./config_ap_auto_upgrade.py
+python3 ./config_ap_auto_upgrade.py \
         -e ~/.mist_env \
         -o c1a6c819-xxxxx-xxxxx-xxxxx-a93e0afcc6de \
         -n "Demo Org" \
@@ -751,8 +751,8 @@ if __name__ == "__main__":
     LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### MIST SESSION ###
-    apisession = mistapi.APISession(env_file=ENV_FILE)
-    apisession.login()
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
 
     ### START ###
-    start(apisession,  ORG_ID, ORG_NAME, ENABLED, DAY, TIME_OF_DAY, VERSION, CUSTOM, ALL_SITES, SITE_IDS)
+    start(APISESSION,  ORG_ID, ORG_NAME, ENABLED, DAY, TIME_OF_DAY, VERSION, CUSTOM, ALL_SITES, SITE_IDS)
