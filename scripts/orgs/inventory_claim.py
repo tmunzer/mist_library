@@ -266,7 +266,7 @@ def start(apisession:mistapi.APISession, file_path:str, org_id:str):
     :param  str                 org_id              - org_id of the org to backup
     :param  str                 file_path           - Path to the CSV file 
     '''   
-    if not org_id: org_id = mistapi.cli.select_org(apisession)
+    if not org_id: org_id = mistapi.cli.select_org(apisession)[0]
     claim_codes = _read_csv_file(file_path)
     if not claim_codes:
         console.error("Not able to get claim codes from the CSV file")
