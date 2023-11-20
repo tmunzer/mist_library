@@ -56,7 +56,7 @@ There is a short desccription at the beginning of each script explaining the pur
 
 ## Clients
 - [import_guest.py](scripts/clients/import_guests.py): Python script import or update a list of Guests from a CSV file into a Mist Org or Mist Site
-## Configuraiton
+## Configuration
 - [config_ap_auto_upgrade.py](scripts/orgs/config_ap_auto_upgrade.py): Python script update the Mist AP Auto_upgrade parameters in the site settings
 - [config_auto_site_assignment.py](scripts/orgs/config_auto_site_assignment.py): Python script to update the org auto assignement rules
 - [config_webhook.py](scripts/sites/config_webhook.py): This script can be used to list/add/delete Webhooks from Org/Site
@@ -70,6 +70,8 @@ There is a short desccription at the beginning of each script explaining the pur
 ## Exports
 - [export_inventory.py](scripts/exports/export_inventory.py): Python script to export the inventory from an organization. The export will include all the information available from the org inventory, including the claim codes.
 - [export_search.py](scripts/exports/export_search.py): Python script to export historical data from Mist API and save the result in CSV of JSON format.
+## NAC
+- [import_client_macs.py](scripts/nac/import_client_macs.py): Python script import import a list of MAC Address into "Client List" Mist NAC Labels from a CSV File.
 ## Orgs
 - [import_admins.py](scripts/orgs/import_admins.py): Python script to invite/add adminsitrators from a CSV file.
 - [import_floorplans.py](scripts/orgs/import_floorplans.py): Python script to import multiple Ekahau/iBwave project into Mist Organisation.
