@@ -264,7 +264,7 @@ def _retrieve_site_setting(apisession: mistapi.APISession, site_id: str):
 def _extract_from_template(templates: list, template_id: str, site_id: str):
     port_usages = []
     if template_id:
-        message = f"Extracting profilefrom template {template_id}"
+        message = f"Extracting profiles from template {template_id}"
         PB.log_message(message)
         try:
             template_setting = next(
