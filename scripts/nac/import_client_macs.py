@@ -28,17 +28,27 @@ information about the available parameters).
 
 -------
 CSV Example:
-Example:
+Example 1:
 #mac,label
 2E39D54797D9,Label1
 636ddded62af,label2
 AE2302F109F0,
 
+Example 2:
+#mac
+2E39D54797D9
+636ddded62af
+AE2302F109F0
+
 ------
 CSV Parameters
 Required:
-- mac                       MAC Address of the Wi-Fi client
-- label                     Name of the Label
+- mac               MAC Address of the Wi-Fi client
+
+Optional:
+- label             Name of the Label. If not provided, a default label value can be
+                    passed in the script parameter with the -d option or will be asked
+                    by the script
 
 
 -------
@@ -393,26 +403,21 @@ def _read_csv(csv_file:str):
                             )
                         sys.exit(255)
                     if "label" not in fields:
-                        LOGGER.critical(f"_read_csv:label not in CSV file... Exiting...")
-                        PB.log_failure(message, display_pbar=False)
-                        CONSOLE.critical(
-                            "CSV format invalid (Client List Label Name not found). "
-                            "Please double check it... Exiting..."
-                            )
-                        sys.exit(255)
+                        LOGGER.warning(f"_read_csv:label not in CSV file... Will use the default label")                        
                 else:
                     entry = {}
                     i = 0
                     for column in line:
                         field = fields[i]
                         if field == "label" and column == "":
-                            entries_without_label += 1
                             entry[field] = None
                         else:
                             entry[field] = column.lower().strip()
                         i += 1
                     entries.append(entry)
-                    LOGGER.debug(f"_read_csv:new entry processed: {entry['mac']} with label {entry['label']}")
+                    if not entry.get("label"):
+                        entries_without_label += 1                    
+                    LOGGER.debug(f"_read_csv:new entry processed: {entry['mac']} with label {entry.get('label')}")
         PB.log_success(message, display_pbar=False)
         return entries, entries_without_label
     except Exception as e:
@@ -425,7 +430,7 @@ def _optimize_labels(entries:list, default_label:str, nactags_from_mist:dict):
     print()
     for entry in entries:
         mac = entry["mac"]
-        label_name = entry["label"]
+        label_name = entry.get("label")
         message = f"MAC Address {mac}"
         PB.log_message(message, display_pbar=False)
         LOGGER.debug(f"_optimize_labels:processing {entry}")
@@ -552,17 +557,27 @@ information about the available parameters).
 
 -------
 CSV Example:
-Example:
+Example 1:
 #mac,label
 2E39D54797D9,Label1
 636ddded62af,label2
+AE2302F109F0,
+
+Example 2:
+#mac
+2E39D54797D9
+636ddded62af
+AE2302F109F0
 
 ------
 CSV Parameters
 Required:
-- mac                       MAC Address of the Wi-Fi client
-- label                     Name of the Label
+- mac               MAC Address of the Wi-Fi client
 
+Optional:
+- label             Name of the Label. If not provided, a default label value can be
+                    passed in the script parameter with the -d option or will be asked
+                    by the script
 
 -------
 Script Parameters:
