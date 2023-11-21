@@ -66,6 +66,7 @@ There is a short desccription at the beginning of each script explaining the pur
 - APs
     - [configure_ap_mgmt_vlan.py](scripts/devices/aps/configure_ap_mgmt_vlan.py): Python script reconfigure Management VLAN on all the Mist APs from one or multiple sites.
 - Switches
+    - [update_port_config.py](scripts/devices/switches/update_port_config.py)Python script to reconfigure switch interfaces based on a CSV file. The script will create or replace device override at the switch level to reconfigure the interfaces.
     - [toggle_poe.py](scripts/devices/switches/toggle_poe.py): Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template.
 ## Exports
 - [export_inventory.py](scripts/exports/export_inventory.py): Python script to export the inventory from an organization. The export will include all the information available from the org inventory, including the claim codes.
