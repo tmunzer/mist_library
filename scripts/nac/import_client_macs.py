@@ -32,6 +32,7 @@ Example:
 #mac,label
 2E39D54797D9,Label1
 636ddded62af,label2
+AE2302F109F0,
 
 ------
 CSV Parameters
@@ -56,6 +57,8 @@ Script Parameters:
 -c, --create        If True, the script will automatically create the tags if not 
                     already created in the org
                     default is False
+-d, --default=      default Label name to use if MAC addresses are not assigned to 
+                    any label name in the CSV file 
 
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
@@ -174,7 +177,7 @@ class ProgressBar:
         )
 
     def log_title(self, message, end: bool = False, display_pbar: bool = True):
-        LOGGER.info(message)
+        LOGGER.info(f"{message}")
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
 PB = ProgressBar()
@@ -194,116 +197,176 @@ def _process_org_nactags(nactags:list):
     return data
 
 def _retrieve_org_nactags(apisession:mistapi.APISession, org_id:str):
-    message = f"retrieving Org Client List Labels"
+    message = f"Retrieving Org Labels from Mist"
     try:
-        PB.log_message(message)
+        PB.log_message(message, display_pbar=False)
         resp = mistapi.api.v1.orgs.nactags.listOrgNacTags(apisession, org_id)
         nactags = mistapi.get_all(apisession, resp)
         if len(nactags) > 0:
-            PB.log_success(message, inc=True)
+            PB.log_success(message, display_pbar=False)
             return _process_org_nactags(nactags)
         else:
-            PB.log_failure(message, inc=True)
+            PB.log_failure(message, display_pbar=False)
             CONSOLE.critical(f"No Org Auth Policy Labels found... Exiting...")
     except Exception as e:
-        PB.log_failure(message, inc=True)
+        PB.log_failure(message, display_pbar=False)
         LOGGER.error("Exception occurred", exc_info=True)
 
-def _create_nactag(apisession:mistapi.APISession, org_id:str, mac: str, label:str, message:str):
-    message_create = f"creat NAT TAG {label}"
+def _create_nactag(apisession:mistapi.APISession, org_id:str, nactag:dict):
+    nactag_data = nactag["data"]
+    nactag_newmacs = nactag["newmacs"]
+    nactag_name = nactag_data["name"]
+    message = f"Creating label {nactag_name} with {len(nactag_newmacs)} MAC(s)"
     try:
-        PB.log_message(message_create)
-        nactag_body = {
-                "values": [ mac ],
-                "name": label,
-                "type": "match",
-                "match": "client_mac"
-            }
-        resp = mistapi.api.v1.orgs.nactags.createOrgNacTag(apisession, org_id, nactag_body)
+        PB.log_message(message)
+        resp = mistapi.api.v1.orgs.nactags.createOrgNacTag(
+            apisession,
+            org_id,
+            nactag_data
+        )
         if resp.status_code == 200:
             LOGGER.info(f"_create_nac_label:new nactag created with values {resp.data}")
-            PB.log_success(message_create, inc=True)
             PB.log_success(message, inc=True)
-            return resp.data
         else:
             LOGGER.error(
                 f"_create_nac_label:unable to create the new "
-                f"nactag with values {nactag_body}"
+                f"nactag with values {nactag_data}"
             )
-            PB.log_failure(message_create, inc=True)
             PB.log_failure(message, inc=True)
     except Exception as e:
-        PB.log_failure(message_create, inc=True)
         PB.log_failure(message, inc=True)
         LOGGER.error("_create_nac_label:Exception occurred", exc_info=True)
 
-def _update_nactag(apisession:mistapi.APISession, org_id:str, mac:str, nactag:dict, message:str):
+def _update_nactag(apisession:mistapi.APISession, org_id:str, nactag:dict):
+    nactag_data = nactag["data"]
+    nactag_newmacs = nactag["newmacs"]
+    nactag_id = nactag_data["id"]
+    nactag_name = nactag_data["name"]
+    message = f"Updating label {nactag_name} with {len(nactag_newmacs)} new MAC(s)"
     try:
-        nactag_values = nactag.get("values", [])
-        if mac in nactag_values:
-            PB.log_warning(message, inc=True)
-            LOGGER.warning(
-                f"_update_nactag:mac address {mac} is already in the nactag "
-                f"{nactag['id']} values. skipping it..."
-            )
+        PB.log_message(message)
+        resp = mistapi.api.v1.orgs.nactags.updateOrgNacTag(
+            apisession,
+            org_id,
+            nactag_id,
+            nactag_data
+        )
+        if resp.status_code == 200:
+            LOGGER.info(f"_update_nactag:nactag updated with new values {resp.data}")
+            PB.log_success(message, inc=True)
         else:
-            nactag_values.append(mac)
-            nactag["values"] = nactag_values
-            resp = mistapi.api.v1.orgs.nactags.updateOrgNacTag(
-                apisession,
-                org_id,
-                nactag["id"],
-                nactag
-            )
-            if resp.status_code == 200:
-                LOGGER.info(f"_update_nactag:nactag updated with new values {resp.data}")
-                PB.log_success(message, inc=True)
-            else:
-                LOGGER.error(f"_update_nactag:unable to updated nactag with new values {nactag}")
-                PB.log_failure(message, inc=True)
+            LOGGER.error(f"_update_nactag:unable to updated nactag with new values {nactag_data}")
+            PB.log_failure(message, inc=True)
     except Exception as e:
         PB.log_failure(message, inc=True)
         LOGGER.error("_update_nactag:Exception occurred", exc_info=True)
 
+def _update_nac_label(
+        apisession:mistapi.APISession,
+        org_id:str,
+        nactags_to_process:dict,
+        autocreate:bool
+        ):
 
-def _update_nac_label(apisession:mistapi.APISession, org_id:str, entries:list, nactags:dict, autocreate:bool):
     PB.log_title("Updating Client List Label")
-    for entry in entries:
-        message = f"create mac {entry['mac']}"
-        try:
+    for nactag_name in nactags_to_process:
+        nactag = nactags_to_process[nactag_name.lower()]
+        nactag_data = nactags_to_process[nactag_name.lower()]["data"]
+        nactag_newmacs = nactags_to_process[nactag_name.lower()]["newmacs"]
+        if len(nactag_newmacs) == 0:
+            LOGGER.debug(
+                f"_update_nac_label:nactag {nactag_name}. "
+                f"Nothing to do"
+            )
+            message = f"No MAC Address to add to label {nactag_name}"
             PB.log_message(message)
-            mac = entry["mac"]
-            label = entry["label"]
-            LOGGER.debug(f"_update_nac_label:looking for nactag_id for label {label}")
-            nactag = nactags.get(label, {})
-            if not nactag:
-                LOGGER.warning(
-                    f"_update_nac_label:unable to find the nactag_id "
-                    f"for label {label} in the org"
-                )
-                if autocreate:
-                    LOGGER.info(
-                        f"_update_nac_label:autocreate is set to True. "
-                        f"Will create the missing tag"
-                    )
-                    new_nactag = _create_nactag(apisession, org_id, mac, label, message)
-                    if new_nactag:
-                        nactags[label] = new_nactag
-                else:
-                    LOGGER.info(
-                        f"_update_nac_label:autocreate is set to False. "
-                        f"Marking as not created"
-                    )
-                    PB.log_failure(message, inc=True)
+            PB.log_warning(message, inc=True)
+        elif nactag_data.get("id"):
+            LOGGER.debug(
+                f"_update_nac_label:nactag_id is {nactag_data['id']}. "
+                f"Will create the label {nactag_name}"
+            )
+            _update_nactag(apisession, org_id, nactag)
+        elif autocreate:
+            LOGGER.info(
+                f"_update_nac_label:autocreate is set to True. "
+                f"Will create the label {nactag_name}"
+            )
+            _create_nactag(apisession, org_id, nactag)
+        else:
+            LOGGER.warning(
+                f"_update_nac_label:autocreate is set to False. "
+                f"Will NOT create the label {nactag_name}"
+            )
+            PB.log_failure(f"Label {nactag_name} does not exist", inc=True)
+
+def _default_label_menu(nactags_from_mist:dict):
+    label_names = []
+    for label_name in nactags_from_mist:
+        label_names.append(label_name)
+    label_names.sort()
+    while True:
+        i = -1
+        print()
+        print("Available Labels:")
+        for label in label_names:
+            i+=1
+            print(f"{i}) {label}")
+        print()
+        resp = input(f"Which default label do you want to apply (0-{i-1}, q to quit)? ")
+        if resp == "q":
+            sys.exit(0)
+        try:
+            resp_int = int(resp)
+            if resp_int < 0 or resp_int > i:
+                LOGGER.warning(f"_default_label_menu:invalid input {resp}. Not in 0-{i-1} range")
+                print(f"Invalid input {resp}. Only numbers in 0-{i-1} range are allowed.")
             else:
-                LOGGER.debug(
-                    f"_update_nac_label:nactag_id is {nactag['id']}. "
-                    f"values are {nactag.get('values')}"
-                )
-                _update_nactag(apisession, org_id, mac, nactag, message)
-        except Exception as e:
-            PB.log_failure(message, inc=True)
-            LOGGER.error("Exception occurred", exc_info=True)
+                return label_names[resp_int]
+        except:
+            LOGGER.warning(f"_default_label_menu:invalid input {resp}")
+            print(f"Invalid input {resp}. Only numbers and \"q\" are allowed.")
+
+def _set_default_label(default_label:str, nactags_from_mist:dict, autocreate:bool):
+    if default_label and nactags_from_mist.get(default_label):
+        CONSOLE.info(
+            f"default label {default_label} already exists "
+            f"and will be used"
+            )
+        LOGGER.info(
+            f"_set_default_label:default label {default_label} already exists "
+            f"and will be used"
+            )
+        return default_label
+    elif default_label and autocreate:
+        CONSOLE.info(
+            f"default label {default_label} does not exist "
+            f"but autocreate is set to True. {default_label} will be created"
+            )
+        LOGGER.info(
+            f"_set_default_label:default label {default_label} does not exist "
+            f"but autocreate is set to True. {default_label} will be created"
+            )
+        return default_label
+    elif default_label:
+        CONSOLE.warning(
+            f"default label {default_label} does not exist "
+            f"and autocreate is set to False. New default value will be asked"
+            )
+        LOGGER.warning(
+            f"_set_default_label:default label {default_label} does not exist "
+            f"and autocreate is set to False. New default value will be asked"
+            )
+    else:
+        CONSOLE.warning(
+            f"No default label have been configured "
+            "New default value will be asked"
+            )
+        LOGGER.warning(
+            f"_set_default_label:No default label have been configured. "
+            "New default value will be asked"
+            )
+    return _default_label_menu(nactags_from_mist)
 
 def _read_csv(csv_file:str):
     message = "Processing CSV File"
@@ -313,7 +376,8 @@ def _read_csv(csv_file:str):
         with open(csv_file, "r") as f:
             data = csv.reader(f, skipinitialspace=True, quotechar='"')
             fields = []
-            macs = []
+            entries = []
+            entries_without_label = 0
             for line in data:
                 LOGGER.debug(f"_read_csv:new csv line:{line}")
                 if not fields:
@@ -337,21 +401,77 @@ def _read_csv(csv_file:str):
                             )
                         sys.exit(255)
                 else:
-                    mac = {}
+                    entry = {}
                     i = 0
                     for column in line:
                         field = fields[i]
-                        mac[field] = column.lower().strip()
+                        if field == "label" and column == "":
+                            entries_without_label += 1
+                            entry[field] = None
+                        else:
+                            entry[field] = column.lower().strip()
                         i += 1
-                    LOGGER.debug(f"_read_csv:new mac added: {mac}")
-                    macs.append(mac)
-        PB.log_message(message, display_pbar=False)
-        return macs
+                    entries.append(entry)
+                    LOGGER.debug(f"_read_csv:new entry processed: {entry['mac']} with label {entry['label']}")
+        PB.log_success(message, display_pbar=False)
+        return entries, entries_without_label
     except Exception as e:
         PB.log_failure(message, display_pbar=False)
         LOGGER.error("Exception occurred", exc_info=True)
 
-def start(apisession:mistapi.APISession, org_id:str=None, csv_file:str=None, autocreate:bool=False):
+def _optimize_labels(entries:list, default_label:str, nactags_from_mist:dict):
+    nactags_out = {}
+    PB.log_title("Optimizing Labels", display_pbar=False)
+    print()
+    for entry in entries:
+        mac = entry["mac"]
+        label_name = entry["label"]
+        message = f"MAC Address {mac}"
+        PB.log_message(message, display_pbar=False)
+        LOGGER.debug(f"_optimize_labels:processing {entry}")
+
+        # if not label set, use the default label
+        if not label_name:
+            LOGGER.debug(f"_optimize_labels:set label_name to default value {default_label}")
+            label_name = default_label
+
+        # if current label has not been added to the out list yet, do it
+        if not nactags_out.get(label_name.lower()):
+            LOGGER.debug(f"_optimize_labels:generating new out value for label_name {label_name}")
+            nactag_mist = nactags_from_mist.get(label_name)
+            # if label is already created in Mist
+            if nactag_mist:
+                LOGGER.debug(f"_optimize_labels:{label_name} already in Mist Cloud")
+                if not nactag_mist.get("values"):
+                    nactag_mist["values"] = []
+            # if label is not yet created in Mist
+            else:
+                LOGGER.debug(f"_optimize_labels:{label_name} not yet in Mist Cloud")
+                nactag_mist = {
+                "values": [],
+                "name": label_name,
+                "type": "match",
+                "match": "client_mac"
+            }
+
+            nactag_data = {
+                "data": nactag_mist,
+                "newmacs":[]
+            }
+            LOGGER.debug(f"_optimize_labels:adding new nactag {label_name.lower()} to out data: {nactag_data}")
+            nactags_out[label_name.lower()] = nactag_data
+
+        if not mac in nactags_out[label_name.lower()]["data"]["values"]:
+            nactags_out[label_name.lower()]["data"]["values"].append(mac)
+            nactags_out[label_name.lower()]["newmacs"].append(mac)
+            LOGGER.debug(f"_optimize_labels:{mac} added to {label_name}")
+            PB.log_success(message, display_pbar=False)
+        else:
+            LOGGER.warning(f"_optimize_labels:{mac} is already in {label_name}")
+            PB.log_warning(message, display_pbar=False)
+    return nactags_out
+
+def start(apisession:mistapi.APISession, org_id:str=None, csv_file:str=None, autocreate:bool=False, default_label:str=None):
     """
     Start the process
 
@@ -368,6 +488,9 @@ def start(apisession:mistapi.APISession, org_id:str=None, csv_file:str=None, aut
         default is "./import_guests.csv"
     autocreate : bool
         If True, the script will automatically create the tags if not already created in the org
+    default_label : str
+        default Label name to use if MAC addresses are not assigned to any label name in the CSV
+        file 
 
     """
     if not org_id:
@@ -376,13 +499,21 @@ def start(apisession:mistapi.APISession, org_id:str=None, csv_file:str=None, aut
     if not csv_file:
         csv_file = CSV_FILE
 
-    macs = _read_csv(csv_file)
+    PB.log_title("Preparing data", display_pbar=False)
+    print()
+    entries, entries_without_label = _read_csv(csv_file)
+    nactags_from_mist = _retrieve_org_nactags(apisession, org_id)
 
-    PB.set_steps_total(len(macs))
+    if entries_without_label > 0:
+        CONSOLE.info(f"{entries_without_label} mac(s) in the CSV file without label.")
+        default_label = _set_default_label(default_label, nactags_from_mist, autocreate)
+        print()
 
-    if org_id:
-        nactags = _retrieve_org_nactags(apisession, org_id)
-        _update_nac_label(apisession, org_id, macs, nactags, autocreate)
+    nactags_to_process = _optimize_labels(entries, default_label, nactags_from_mist)
+
+    PB.set_steps_total(len(nactags_to_process))
+
+    _update_nac_label(apisession, org_id, nactags_to_process, autocreate)
 
 
 ###############################################################################
@@ -449,6 +580,8 @@ Script Parameters:
 -c, --create        If True, the script will automatically create the tags if not 
                     already created in the org
                     default is False
+-d, --default=      default Label name to use if MAC addresses are not assigned to 
+                    any label name in the CSV file 
 
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
@@ -504,14 +637,15 @@ def check_mistapi_version():
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:f:e:l:c", [
-                                   "help", "org_id=", "file=", "env=", "log_file=", "create"])
+        opts, args = getopt.getopt(sys.argv[1:], "ho:f:e:l:cd:", [
+                                   "help", "org_id=", "file=", "env=", "log_file=", "create", "default="])
     except getopt.GetoptError as err:
         CONSOLE.error(err)
         usage()
 
     ORG_ID = None
     AUTOCREATE = False
+    DEFAULT_LABEL = None
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -521,6 +655,8 @@ if __name__ == "__main__":
             CSV_FILE = a
         elif o in ["-c", "--create"]:
             AUTOCREATE = True
+        elif o in ["-d", "--default"]:
+            DEFAULT_LABEL = a
         elif o in ["-e", "--env"]:
             ENV_FILE = a
         elif o in ["-l", "--log_file"]:
@@ -534,5 +670,5 @@ if __name__ == "__main__":
     ### START ###
     apisession = mistapi.APISession(env_file=ENV_FILE)
     apisession.login()
-    start(apisession, ORG_ID, CSV_FILE, AUTOCREATE)
+    start(apisession, ORG_ID, CSV_FILE, AUTOCREATE, DEFAULT_LABEL)
 
