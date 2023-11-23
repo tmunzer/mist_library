@@ -321,6 +321,7 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id:str):
     use_site_name = False
     use_serial = False
     use_claimcode = False
+    use_name = False
     claimcodes = []
     row_site = -1
     row_device = -1
@@ -338,7 +339,7 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id:str):
                             row_site = i
                         else:
                             console.error("Either \"site_name\" or \"site_id\" can be used, not both.")
-                    elif column in ["serial", "mac", "claimcode"]:
+                    elif column in ["serial", "mac", "claimcode", "name"]:
                         if row_device < 0:
                             row_device = i
                         else:
@@ -362,15 +363,22 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id:str):
 
                 if "claimcode" in fields:
                     use_claimcode = True
-                elif "serial" in fields:
-                    use_serial = True
+                elif "serial" or "name" in fields:  
+                    if "serial" in fields:
+                        use_serial = True
+                    elif "name" in fields:
+                        use_name = True
+
                     message = "Retrieving device list from Mist"
                     pb.log_message(message, display_pbar=False)
                     try:
                         response  = mistapi.api.v1.orgs.inventory.getOrgInventory(apisession, org_id, limit=1000)
                         devices_from_mist = mistapi.get_all(apisession, response)
-                        for device in devices_from_mist:                        
-                            inventory[device["serial"]] = device["mac"]
+                        for device in devices_from_mist:
+                            if "serial" in fields:                        
+                                inventory[device["serial"]] = device["mac"]
+                            elif "name" in fields:
+                                inventory[device["name"]] = device["mac"] 
                         pb.log_success(message, inc=False, display_pbar=False)
                         pb.log_message("Processing CSV file", display_pbar=False)
                     except:
@@ -381,9 +389,8 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id:str):
                     console.error("Unable to find `site_id` or `site_name` in the CSV file. Please check the file format")
                     sys.exit(0)
                 if row_device < 0: 
-                    console.error("Unable to find `mac` or `serial` in the CSV file. Please check the file format")
+                    console.error("Unable to find `mac` or `serial` or `name` in the CSV file. Please check the file format")
                     sys.exit(0)
-                
             else:
                 device_mac = None
                 if use_site_name:
@@ -391,7 +398,7 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id:str):
                 else:
                     site_id = line[row_site]
 
-                if use_serial:
+                if use_serial or use_name:
                     device_mac = inventory.get(line[row_device])
                 elif use_claimcode:
                     claimcodes.append(line[row_device])
@@ -522,11 +529,18 @@ Example 4:
 #site_id, serial
 de45d851-xxxx-xxxx-xxxx-93b0cc52b435,A113454322345
 ...
+
+       
+Example 5 (only possible if the names in inventory are unique):
+#site_name, name
+"Site 2", device01
+          
+""
 -------
 CSV Parameters:
 Required:
 - site_id or site_name
-- mac, serial or claimcode
+- mac, serial, name or claimcode
 
 -------
 Script Parameters:
