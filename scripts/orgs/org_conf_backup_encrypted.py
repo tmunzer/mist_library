@@ -7,7 +7,7 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to backup a whole organization AES encrypted file.
+Python script to backup a whole organization as an AES encrypted file.
 You can use the script "org_conf_deploy.py" to restore the generated backup 
 files to an existing organization (empty or not) or to a new one.
 
@@ -57,7 +57,7 @@ Examples:
 python3 ./org_conf_backup.py
 python3 ./org_conf_backup.py \
     --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 \
-    -k ./rsa.pub
+    -p ./rsa.pub
 
 """
 
@@ -960,7 +960,7 @@ def usage(error_message:str=None):
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to backup a whole organization AES encrypted file.
+Python script to backup a whole organization as an AES encrypted file.
 You can use the script "org_conf_deploy.py" to restore the generated backup 
 files to an existing organization (empty or not) or to a new one.
 
@@ -1010,7 +1010,7 @@ Examples:
 python3 ./org_conf_backup.py
 python3 ./org_conf_backup.py \
     --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 \
-    -k ./rsa.pub
+    -p ./rsa.pub
 
 """
     )
