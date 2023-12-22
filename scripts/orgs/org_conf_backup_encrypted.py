@@ -825,7 +825,7 @@ def _save_to_file(
             message = f"Saving to encrypted backup to {backup_path} "
             PB.log_title(message, end=True, display_pbar=False)
             eh = EncryptionHandler("./", BACKUP_FILE)
-            eh.encrypt_memory(str(backup), puk_path)
+            eh.encrypt_memory(json.dumps(backup), puk_path)
             PB.log_success(message, display_pbar=False)
         else:
             message = f"Saving to file {backup_path} "
