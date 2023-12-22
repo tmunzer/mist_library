@@ -128,12 +128,10 @@ LOGGER = logging.getLogger(__name__)
 #### GLOBALS #####
 SYS_EXIT = False
 
-
 def sigint_handler(signal, frame):
     global SYS_EXIT
     SYS_EXIT = True
     ("[Ctrl C],KeyboardInterrupt exception occured.")
-
 
 signal.signal(signal.SIGINT, sigint_handler)
 #####################################################################
@@ -374,7 +372,6 @@ SITE_STEPS = {
     },
 }
 
-
 #####################################################################
 # PROGRESS BAR AND DISPLAY
 class ProgressBar:
@@ -440,13 +437,10 @@ class ProgressBar:
         LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
-
 PB = ProgressBar()
-
 
 #####################################################################
 #### ENCRYPTION/DECRYPTION
-
 class EncryptionHandler:
     """
     class to manage Mist library encryption/decryption
@@ -722,7 +716,6 @@ def _backup_wlan_portal(org_id, site_id, wlans):
                 PB.log_failure(message)
                 LOGGER.error("Exception occurred", exc_info=True)
 
-
 def _do_backup(
     mist_session,
     backup_function,
@@ -750,7 +743,6 @@ def _do_backup(
         PB.log_failure(message, True)
         LOGGER.error("Exception occurred", exc_info=True)
         return None
-
 
 #### BACKUP ####
 def _backup_full_org(mist_session, org_id, org_name):
@@ -812,7 +804,6 @@ def _backup_full_org(mist_session, org_id, org_name):
     PB.log_title("Backup Done", end=True)
     return backup
 
-
 def _save_to_file(
         backup:dict,
         backup_folder:str,
@@ -836,7 +827,6 @@ def _save_to_file(
     except Exception as e:
         PB.log_failure(message, display_pbar=False)
         LOGGER.error("Exception occurred", exc_info=True)
-
 
 def _start_org_backup(
         mist_session:mistapi.APISession,
@@ -879,7 +869,6 @@ def _start_org_backup(
         return False
 
     return True
-
 
 def start(
     mist_session: mistapi.APISession,
@@ -946,10 +935,10 @@ def start(
     os.chdir(current_folder)
     return success
 
-
 #####################################################################
 # USAGE
 def usage(error_message:str=None):
+    """display usage"""
     print(
         """
 -------------------------------------------------------------------------------
@@ -1060,7 +1049,16 @@ if __name__ == "__main__":
         opts, args = getopt.getopt(
             sys.argv[1:],
             "ho:e:l:b:dtp:",
-            ["help", "org_id=", "env=", "log_file=", "backup_folder=", "datetime", "timestamp", "puk="],
+            [
+                "help",
+                "org_id=",
+                "env=",
+                "log_file=",
+                "backup_folder=",
+                "datetime",
+                "timestamp",
+                "puk="
+            ]
         )
     except getopt.GetoptError as err:
         console.error(err)
@@ -1107,4 +1105,12 @@ if __name__ == "__main__":
     APISESSION.login()
 
     ### START ###
-    start(APISESSION, ORG_ID, BACKUP_FOLDER, BACKUP_NAME, BACKUP_NAME_DATE, BACKUP_NAME_TS, PUK_PATH)
+    start(
+        APISESSION,
+        ORG_ID,
+        BACKUP_FOLDER,
+        BACKUP_NAME,
+        BACKUP_NAME_DATE,
+        BACKUP_NAME_TS,
+        PUK_PATH
+    )
