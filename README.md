@@ -104,5 +104,5 @@ There is a short desccription at the beginning of each script explaining the pur
 - [report_switch_snapshot.py](scripts/reports/report_switch_snapshot.py): Python script to gerenates a list of all the switches for a specified org/site
 - [report_wlans.py](scripts/reports/report_wlans.py): Python script to list all WLANs from orgs/sites and their parameters, and save it to a CSV file.
 ## Utils
-- [encryption.py](scripts/utils/encryption.py): Python script manage encryption of the generated files. This file can be used to generate RSA Private and Public keys for encryption, to encrypt file (AES encryption, AES key is RSA Protected) or to decrypt encryted files.
+- [encryption.py](scripts/utils/encryption.py): Python script to manage backup encryption. This file can be used to generate RSA Private and Public keys for encryption, to encrypt file (AES encryption, AES key is RSA Protected) or to decrypt encryted files.
 

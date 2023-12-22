@@ -7,7 +7,7 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script manage encryption of the generated files.
+Python script to manage backup encryption.
 
 This file can be used:
 - to generate RSA Private and Public keys for encryption
