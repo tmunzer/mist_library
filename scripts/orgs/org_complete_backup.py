@@ -9,11 +9,8 @@
 -------------------------------------------------------------------------------
 Python script to backup a whole organization configuration and devices. 
 
-IMPORTANT:
-By default, the script will not migrade the devices. Please use the -u/--uclaim
-option to migrate them (AP ONLY). 
-Please use -u/--uclaim AND -a/--unclaim_all to also migrate the switches and
-the gateways
+This script will not change/create/delete/touch any existing objects. It will 
+just retrieve every single object from the organization.
 
 -------
 Requirements:
@@ -37,7 +34,7 @@ information about the available parameters).
 Script Parameters:
 -h, --help              display this help
 
---org_id=               Optional, org_id of the org to clone
+-o, --org_id=           Optional, org_id of the org to clone
 
 --src_env=              Optional, env file to use to access the src org (see
                         mistapi env file documentation here: 
@@ -54,6 +51,12 @@ Script Parameters:
                         backup name 
 -t, --timestamp         append the current timestamp to the backup 
 
+-------
+Examples:
+python3 ./org_complete_backup.py
+python3 ./org_complete_backup.py \
+    --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
+
 """
 #####################################################################
 #### IMPORTS ####
@@ -63,7 +66,6 @@ import getopt
 import datetime
 
 MISTAPI_MIN_VERSION = "0.44.1"
-
 try:
     import mistapi
     from mistapi.__logger import console
@@ -107,7 +109,6 @@ SRC_ENV_FILE = "~/.mist_env"
 #####################################################################
 #### LOGS ####
 LOGGER = logging.getLogger(__name__)
-
 
 #####################################################################
 #### ORG FUNCTIONS ####
@@ -246,11 +247,8 @@ def usage(error_message:str=None):
 -------------------------------------------------------------------------------
 Python script to backup a whole organization configuration and devices. 
 
-IMPORTANT:
-By default, the script will not migrade the devices. Please use the -u/--uclaim
-option to migrate them (AP ONLY). 
-Please use -u/--uclaim AND -a/--unclaim_all to also migrate the switches and
-the gateways
+This script will not change/create/delete/touch any existing objects. It will 
+just retrieve every single object from the organization.
 
 -------
 Requirements:
@@ -290,6 +288,12 @@ Script Parameters:
 -d, --datetime          append the current date and time (ISO format) to the
                         backup name 
 -t, --timestamp         append the current timestamp to the backup 
+
+-------
+Examples:
+python3 ./org_complete_backup.py
+python3 ./org_complete_backup.py \
+    --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
 """
     )
@@ -341,7 +345,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "hl:b:e:td",
+            "ho:l:b:e:td",
             [
                 "help",
                 "org_id=",
@@ -353,8 +357,7 @@ if __name__ == "__main__":
             ],
         )
     except getopt.GetoptError as err:
-        console.error(err)
-        usage()
+        usage(err)
 
     ORG_ID = None
     BACKUP_FOLDER = DEFAULT_BACKUP_FOLDER
@@ -371,7 +374,7 @@ if __name__ == "__main__":
             LOG_FILE = a
         elif o in ["-e", "--env", "--src_env"]:
             SRC_ENV_FILE = a
-        elif o in ["--org_id"]:
+        elif o in ["-o", "--org_id"]:
             ORG_ID = a
         elif o in ["-d", "--datetime"]:
             if BACKUP_NAME_TS:
