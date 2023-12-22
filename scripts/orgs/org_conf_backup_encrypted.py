@@ -18,6 +18,9 @@ The backup is AES encrypted with a randomly generated key. The encryption key
 is stored in a RSA encrypted file (encrypted with a RSA public key). The RSA
 Private key is required to be able to decrypt AES encryption key. 
 
+The encrypted backup can be decrypted with the following script:
+https://github.com/tmunzer/mist_library/blob/master/scripts/utils/encryption.py
+
 -------
 Requirements:
 mistapi: https://pypi.org/project/mistapi/
@@ -959,6 +962,9 @@ just retrieve every single object from the organization.
 The backup is AES encrypted with a randomly generated key. The encryption key
 is stored in a RSA encrypted file (encrypted with a RSA public key). The RSA
 Private key is required to be able to decrypt AES encryption key. 
+
+The encrypted backup can be decrypted with the following script:
+https://github.com/tmunzer/mist_library/blob/master/scripts/utils/encryption.py
 
 -------
 Requirements:

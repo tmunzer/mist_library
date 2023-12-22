@@ -21,6 +21,9 @@ The backup is AES encrypted with a randomly generated key. The encryption key
 is stored in a RSA encrypted file (encrypted with a RSA public key). The RSA
 Private key is required to be able to decrypt AES encryption key. 
 
+The encrypted backup can be decrypted with the following script:
+https://github.com/tmunzer/mist_library/blob/master/scripts/utils/encryption.py
+
 -------
 Requirements:
 mistapi: https://pypi.org/project/mistapi/
@@ -852,6 +855,9 @@ be asked by the script or the default values will be used.
 It is recomended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
+
+The encrypted backup can be decrypted with the following script:
+https://github.com/tmunzer/mist_library/blob/master/scripts/utils/encryption.py
 
 -------
 Script Parameters:
