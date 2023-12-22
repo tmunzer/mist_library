@@ -7,8 +7,8 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to backup all the devices from an organization as an AES
-encrypted file.
+Python script to backup all the devices from an organization in AES encrypted
+file.
 It will backup the devices claim codes (if any), configuration (including
 position on the maps) and  pictures.
 You can use the script "org_inventory_deploy.py" to restore the generated backup 
@@ -827,8 +827,8 @@ def usage(error_message:str=None):
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to backup all the devices from an organization as an AES
-encrypted file.
+Python script to backup all the devices from an organization in AES encrypted
+file.
 It will backup the devices claim codes (if any), configuration (including
 position on the maps) and  pictures.
 You can use the script "org_inventory_deploy.py" to restore the generated backup 
