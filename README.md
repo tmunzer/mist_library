@@ -82,10 +82,13 @@ There is a short desccription at the beginning of each script explaining the pur
 - [org_clone.py](scripts/orgs/org_clone.py): Python script to clone a whole organization to another one. The destination org can be an existing org, or it can be created during the process.
 - [org_migration.py](scripts/orgs/org_migration.py): Python script to migrate a whole organization and the devices to another one. The destination org can be an existing org, or it can be created during the process.
 - [org_complete_backup.py](scripts/orgs/org_complete_backup.py): Python script to backup a whole organization configuration and devices. 
+- [org_complete_backup_encrypted.py](scripts/orgs/org_complete_backup_encrypted.py): Python script to backup a whole organization configuration and devices  in AES encrypted file.
 - [org_conf_backup.py](scripts/orgs/org_conf_backup.py): Python script to backup a whole organization.
+- [org_conf_backup_encrypted.py](scripts/orgs/org_conf_backup_encrypted.py): Python script to backup a whole organization in AES encrypted file.
 - [org_conf_deploy.py](scripts/orgs/org_conf_deploy.py): Python script to deploy organization backup/template file.
 - [org_conf_zeroize.py](scripts/orgs/org_conf_zeroize.py): Python script to zeroise an organization. This scrip will remove all the configuration, all the sites and all the objects from the organization.
 - [org_inventory_backup.py](scripts/orgs/org_inventory_backup.py): Python script to backup all the devices from an organization. It will backup the devices claim codes (if any), configuration (including position on the maps) and pictures.
+- [org_inventory_backup_encrypted.py](scripts/orgs/org_inventory_backup_encrypted.py): Python script to backup all the devices from an organization in AES encrypted file. It will backup the devices claim codes (if any), configuration (including position on the maps) and pictures.
 - [org_inventory_deploy.py](scripts/orgs/org_inventory_deploy.py): Python script to deploy organization inventory backup file. By default, this script can run in "Dry Run" mode to validate the destination org configuration and raise warning if any object from the source org is missing in the destination org.
 - [org_inventory_restore_pictures.py](scripts/orgs/org_inventory_restore_pictures.py): Python script to restore device images from an inventory backup file.
 - [validate_site_variables.py](scripts/orgs/validate_site_variables.py): Python script to validate that all the variables used in the templates used by each site are configured at the site level. The result is displayed on the console and saved in a CSV file.
@@ -100,4 +103,6 @@ There is a short desccription at the beginning of each script explaining the pur
 - [report_rogues.py](scripts/reports/report_rogues.py): Python script to gerenate a Rogue AP report.
 - [report_switch_snapshot.py](scripts/reports/report_switch_snapshot.py): Python script to gerenates a list of all the switches for a specified org/site
 - [report_wlans.py](scripts/reports/report_wlans.py): Python script to list all WLANs from orgs/sites and their parameters, and save it to a CSV file.
+## Utils
+- [encryption.py](scripts/utils/encryption.py): Python script manage encryption of the generated files. This file can be used to generate RSA Private and Public keys for encryption, to encrypt file (AES encryption, AES key is RSA Protected) or to decrypt encryted files.
 
