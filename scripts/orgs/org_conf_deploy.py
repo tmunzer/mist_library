@@ -558,7 +558,7 @@ def _start_deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, 
         steps_total = 2
         for step_name in ORG_STEPS:
             last_step = f"backup>org>{step_name}"
-            if step_name in backup["org"]:
+            if backup["org"].get(step_name):
                 steps_total += len(backup["org"][step_name])
         for site_id in backup["sites"]:
             last_step = f"backup>site>{site_id}"
@@ -566,7 +566,7 @@ def _start_deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, 
                 last_step = f"backup>site>{site_id}>{step_name}"
                 if step_name == "settings":
                     steps_total += 1
-                elif step_name in backup["sites"][site_id]:
+                elif backup["sites"][site_id].get(step_name):
                     steps_total += len(backup["sites"][site_id][step_name])
         PB.set_steps_total(steps_total)
         PB.log_success(message, display_pbar=False)
