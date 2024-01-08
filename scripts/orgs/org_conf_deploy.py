@@ -552,14 +552,18 @@ def _start_deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, 
         sys.exit(1)
 
     try:
+        last_step = None
         message = f"Analyzing template/backup file {BACKUP_FILE} "
         PB.log_message(message, display_pbar=False)
         steps_total = 2
         for step_name in ORG_STEPS:
+            last_step = f"backup>org>{step_name}"
             if step_name in backup["org"]:
                 steps_total += len(backup["org"][step_name])
         for site_id in backup["sites"]:
+            last_step = f"backup>site>{site_id}"
             for step_name in SITE_STEPS:
+                last_step = f"backup>site>{site_id}>{step_name}"
                 if step_name == "settings":
                     steps_total += 1
                 elif step_name in backup["sites"][site_id]:
@@ -569,7 +573,7 @@ def _start_deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, 
         console.info(f"The process will deploy {steps_total} new objects")
     except:
         PB.log_failure(message, display_pbar=False)
-        console.critical("Unable to parse the template/backup file")
+        console.critical(f"Unable to parse the template/backup file. Last step was {last_step}")
         sys.exit(1)
     if backup:
         _display_warning(
