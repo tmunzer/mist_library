@@ -72,6 +72,10 @@ Optional:
                                             If multiple vars, must be enclosed
                                             by double quote and comma separated
                                             (e.g. "key1:var1,key2:var2, ...")
+- subnet                                    if set, will add this subnet in the
+                                            auto assignment rules to automatically 
+                                            assign the APs deployed on this subnet
+                                            to this site
 
 -------
 Script Parameters:
@@ -158,8 +162,6 @@ TZFINDER = None
 # PROGRESS BAR
 #####################################################################
 # PROGRESS BAR AND DISPLAY
-
-
 class ProgressBar():
     def __init__(self):
         self.steps_total = 0
@@ -223,7 +225,6 @@ class ProgressBar():
         LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
-
 pb = ProgressBar()
 
 #####################################################################
@@ -231,8 +232,6 @@ pb = ProgressBar()
 #####################################################################
 ##################
 # GOOGLE LAT/LNG
-
-
 def _get_google_geocoding(address, google_api_key):
     try:
         data = {"location": None, "country_code": ""}
@@ -294,8 +293,6 @@ def _geocoding_google(site, google_api_key:str):
 
 ################
 # OPEN LAT/LNG
-
-
 def _import_tzfinder():
     try:
         global TZFINDER
@@ -370,10 +367,75 @@ def _geocoding_open(site):
     return data
 
 #####################################################################
+# Auto Assignment Rules
+#####################################################################
+def _get_current_org_config(apisession:mistapi.APISession, org_id:str):
+    message = "Retrieving current Org Rules"
+    pb.log_message(message, display_pbar=False)
+    try:
+        res = mistapi.api.v1.orgs.setting.getOrgSettings(apisession, org_id)
+        if res.status_code == 200:
+            pb.log_success(message, inc=True)
+            auto_site_assignment = res.data.get("auto_site_assignment", {"enable": True})
+            return auto_site_assignment
+        else:
+            pb.log_failure(message, inc=True)
+    except:
+        pb.log_failure(message, inc=True)
+        LOGGER.error("Exception occurred", exc_info=True)
+
+def _set_new_org_config(apisession:mistapi.APISession, org_id:str, auto_site_assignment:dict):
+    message = "Updating Org Rules"
+    pb.log_message(message, display_pbar=False)
+    try:
+        res = mistapi.api.v1.orgs.setting.updateOrgSettings(apisession, org_id, {"auto_site_assignment": auto_site_assignment})
+        if res.status_code == 200:
+            pb.log_success(message, inc=True)
+        else:
+            pb.log_failure(message, inc=True)
+    except:
+        pb.log_failure(message, inc=True)
+        LOGGER.error("Exception occurred", exc_info=True)
+
+def _compare_rules(org_rules:list, new_rules:list):
+    errors = []
+    if not org_rules:
+        org_rules = []
+    for rule in new_rules:
+        message = f"Checking subnet {rule.get('subnet')}"
+        pb.log_message(message)
+        try:
+            subnet_exists = list(r for r in org_rules if r.get("subnet") == rule.get("subnet"))
+            if subnet_exists:
+                LOGGER.warning(
+                    f"_compare_rules:subnet {rule.get('subnet')} configured for site {rule.get('value')} already exists: {subnet_exists}"
+                    )
+                errors.append(
+                    f"subnet {rule.get('subnet')} configured for site {rule.get('value')} already exists: {subnet_exists}"
+                    )
+            else:
+                org_rules.append(rule)
+        except:
+            LOGGER.error("Exception occurred", exc_info=True)
+            errors.append(
+                f"error when processing subnet {rule.get('subnet')} configured for site {rule.get('value')}"
+                )
+    if errors:
+        pb.log_warning(message, inc=True)
+    return org_rules
+
+
+def _update_org_rules(apisession:mistapi.APISession, org_id:str, new_rules:list):
+    pb.log_title("Updating Autoprovisioning Rules")
+    auto_site_assignment = _get_current_org_config(apisession, org_id)
+    auto_site_assignment["rules"] = _compare_rules(auto_site_assignment.get("rules", {}), new_rules)
+    _set_new_org_config(apisession, org_id, auto_site_assignment)
+
+
+
+#####################################################################
 # Site  Management
 #####################################################################
-
-
 def _get_geo_info(site: dict, google_api_key:str) -> dict:
     message = f"Site {site['name']}: Retrievning geo information"
     pb.log_message(message)
@@ -451,7 +513,8 @@ def _clone_src_site_settings(apisession:mistapi.APISession, src_site_id:str, dst
             pb.log_failure(message, True)
         else:
             src_site = resp.data
-            if "vars" in src_site: del src_site["vars"]            
+            if "vars" in src_site:
+                del src_site["vars"]            
     except:
         pb.log_failure(message, True)
 
@@ -459,7 +522,10 @@ def _clone_src_site_settings(apisession:mistapi.APISession, src_site_id:str, dst
         message= f"Site {site_name}: Deploying settings from src site"
         pb.log_message(message)
         try:
-            resp = mistapi.api.v1.sites.setting.updateSiteSettings(apisession, dst_site_id, src_site)
+            resp = mistapi.api.v1.sites.setting.updateSiteSettings(
+                apisession,
+                dst_site_id, src_site
+                )
             if resp.status_code != 200:
                 pb.log_failure(message, True)
             else:
@@ -538,7 +604,6 @@ def _retrieve_objects(apisession: mistapi.APISession, org_id: str, parameters_in
     Get the list of the current templates, policies and sitegoups
     '''
     parameters = {}
-    print(parameters_in_use)
     for parameter_type in parameters_in_use:
         message = f"Retrieving {parameter_type} from Mist"
         pb.log_message(message, display_pbar=False)
@@ -665,6 +730,40 @@ def _process_sites_data(apisession: mistapi.APISession, org_id: str, sites: list
     parameters = _retrieve_objects(apisession, org_id, parameters_in_use)
     return parameters
 
+def _check_sites(apisession:mistapi.APISession, org_id:str, sites:list):
+    '''
+    function to remove sites already created in the Org (based on the site name)
+    '''
+    message = "Retrieving Sites from Org"
+    pb.log_message(message)
+    try:
+        res = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id, limit=1000)
+        sites_from_mist = mistapi.get_all(apisession, res)
+        pb.log_success(message, inc=True)
+    except:
+        pb.log_failure(message, inc=True)
+        sys.exit(1)
+
+    sites_to_create = []
+    if not sites_from_mist:
+        sites_to_create = sites
+    else:
+        site_already_created = []
+        for site in sites:
+            try:
+                site_exists = list(s for s in sites_from_mist if s.get("name").lower() == site.get("name").lower())
+                if site_exists:
+                    LOGGER.warn(
+                        f"_check_sites:site {site.get('name')} already exists. Won't be created..."
+                        )
+                    site_already_created.append(site.get("name"))
+                else:
+                    sites_to_create.append(site)
+            except:
+                sites_to_create.append(site)
+
+    return sites_to_create
+
 
 def _create_sites(apisession: mistapi.APISession, org_id: str, sites: list, parameters: dict, google_api_key:str):
     '''
@@ -688,8 +787,10 @@ def _create_sites(apisession: mistapi.APISession, org_id: str, sites: list, para
 def _read_csv_file(file_path: str):
     with open(file_path, "r") as f:
         data = csv.reader(f, skipinitialspace=True, quotechar='"')
+        data = [[c.replace('\ufeff', '') for c in row] for row in data]
         fields = []
         sites = []
+        auto_assignment_rules = []
         for line in data:
             if not fields:
                 for column in line:
@@ -697,14 +798,25 @@ def _read_csv_file(file_path: str):
             else:
                 site = {}
                 i = 0
+                subnet = None
                 for column in line:
+
                     field = fields[i]
-                    if field.startswith("sitegroup_"):
-                        column = _extract_groups(column)
-                    site[field] = column
+                    if field == "subnet":
+                        subnet = column
+                    else:
+                        if field.startswith("sitegroup_"):
+                            column = _extract_groups(column)
+                        site[field] = column
                     i += 1
+                if subnet:
+                    auto_assignment_rules.append({
+                        "src": "subnet",
+                        "subnet": subnet,
+                        "value": site["name"]
+                    })
                 sites.append(site)
-        return sites
+        return sites, auto_assignment_rules
 
 
 def _check_org_name_in_script_param(apisession: mistapi.APISession, org_id: str, org_name: str = None):
@@ -791,19 +903,30 @@ def start(apisession: mistapi.APISession, file_path: str, org_id: str = None, or
     else:  # should not since we covered all the possibilities...
         sys.exit(0)
 
-    sites = _read_csv_file(file_path)
+    sites, auto_assignment_rules = _read_csv_file(file_path)
     # 4 = IDs +  geocoding + site creation + clone site settings + site settings update
-    pb.set_steps_total(len(sites) * 5)
+    addition_steps = 0
+    if auto_assignment_rules:
+        addition_steps += 3
+    pb.set_steps_total(len(sites) * 5 + addition_steps)
 
+    sites = _check_sites(apisession, org_id, sites)
     parameters = _process_sites_data(apisession, org_id, sites)
 
     _create_sites(apisession, org_id, sites, parameters, google_api_key)
+
+    if auto_assignment_rules:
+        _update_org_rules(apisession, org_id, auto_assignment_rules)
+
     pb.log_title("Site Import Done", end=True)
 
 
 ###############################################################################
 # USAGE
-def usage():
+def usage(error:str=None):
+    """
+    display script usage
+    """
     print('''
 -------------------------------------------------------------------------------
 
@@ -878,6 +1001,10 @@ Optional:
                                             If multiple vars, must be enclosed
                                             by double quote and comma separated
                                             (e.g. "key1:var1,key2:var2, ...")
+- subnet                                    if set, will add this subnet in the
+                                            auto assignment rules to automatically 
+                                            assign the APs deployed on this subnet
+                                            to this site
 
 -------
 Script Parameters:
@@ -905,6 +1032,8 @@ python3 ./import_sites.py -f ./my_new_sites.csv
 python3 ./import_sites.py -f ./my_new_sites.csv --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
 ''')
+    if error:
+        console.error(error)
     sys.exit(0)
 
 def check_mistapi_version():
@@ -929,7 +1058,7 @@ def check_mistapi_version():
     py -m pip install --upgrade mistapi
         """)
         sys.exit(2)
-    else: 
+    else:
         LOGGER.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
 
 
@@ -940,46 +1069,42 @@ if __name__ == "__main__":
         opts, args = getopt.getopt(sys.argv[1:], "ho:n:g:f:e:l:", [
                                    "help", "org_id=", "org_name=", "google_api_key=", "file=", "env=", "log_file="])
     except getopt.GetoptError as err:
-        console.error(err)
-        usage()
+        usage(err)
 
-    csv_file = None
-    org_id = None
-    org_name = None
-    env_file = ENV_FILE
-    log_file = LOG_FILE
-    google_api_key = GOOGLE_API_KEY
+    CSV_FILE = None
+    ORG_ID = None
+    ORG_NAME = None
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-o", "--org_id"]:
-            org_id = a
+            ORG_ID = a
         elif o in ["-n", "--org_name"]:
-            org_name = a
+            ORG_NAME = a
         elif o in ["-g", "--google_api_key"]:
-            google_api_key = a
+            GOOGLE_API_KEY = a
         elif o in ["-f", "--file"]:
-            csv_file = a
+            CSV_FILE = a
         elif o in ["-e", "--env"]:
-            env_file = a
+            ENV_FILE = a
         elif o in ["-l", "--log_file"]:
-            log_file = a
+            LOG_FILE = a
         else:
             assert False, "unhandled option"
 
-    if not google_api_key:
+    if not GOOGLE_API_KEY:
         _import_open_geocoding()
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode='w')
+    logging.basicConfig(filename=LOG_FILE, filemode='w')
     LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### MIST SESSION ###
-    apisession = mistapi.APISession(env_file=env_file)
+    apisession = mistapi.APISession(env_file=ENV_FILE)
     apisession.login()
 
     ### START ###
-    if not csv_file:
+    if not CSV_FILE:
         console.error("CSV File is missing")
         usage()
     else:
-        start(apisession, csv_file, org_id, org_name, google_api_key)
+        start(apisession, CSV_FILE, ORG_ID, ORG_NAME, GOOGLE_API_KEY)
