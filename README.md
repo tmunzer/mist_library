@@ -97,6 +97,7 @@ There is a short desccription at the beginning of each script explaining the pur
 - [site_conf_psk_import_csv.py](scripts/sites/site_conf_psk_import_csv.py): This script will import PSKs from a CSV file to one or multiple sites.
 - [site_conf_psk.py](scripts/sites/site_conf_psk.py):  
 - [site_conf_wlan.py](scripts/sites/site_conf_wlan.py): This script can be used to list/add/delete an SSID from Org/Site
+- [update_sites_templates.py](scripts/sites/update_sites_templates.py): Python script update the templates assigned to Mist Sites based on a CSV file, and/or update the auto assignment rules based on IP Subnet.
 ## Reports
 - [report_app_usage.py](scripts/reports/report_app_usage.py): Python script to generate a report of the application usage on a specific site
 - [report_bssids.py](scripts/reports/report_bssids.py): Python script to list all Access Points from orgs/sites and their associated BSSIDs. 
