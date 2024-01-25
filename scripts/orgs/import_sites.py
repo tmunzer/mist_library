@@ -89,8 +89,6 @@ Script Parameters:
                         - if org_id is not provided (new org), the script will 
                         create a new org and name it with the org_name value   
 
--s, --site_ids=     list of sites to use, comma separated
-
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
 -e, --env=          define the env file to use (see mistapi env file documentation 
@@ -1017,8 +1015,6 @@ Script Parameters:
                         the destination org
                         - if org_id is not provided (new org), the script will 
                         create a new org and name it with the org_name value   
-
--s, --site_ids=     list of sites to use, comma separated
 
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
