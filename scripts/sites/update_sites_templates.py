@@ -10,6 +10,10 @@
 Python script update the templates assigned to Mist Sites based on a CSV file, 
 and/or update the auto assignment rules based on IP Subnet.
 
+WARNING: if a template type is set in the CSV file, but it's value is empty, it 
+will push is as-is to the site (and potentially remove the configured template)
+If you don't need a type of template, DO NOT add it in the CSV file.
+
 -------
 Requirements:
 mistapi: https://pypi.org/project/mistapi/
@@ -50,6 +54,7 @@ Optional:
 - networktemplate_id or networktemplate_name
 - rftemplate_id or rftemplate_name
 - secpolicy_id or secpolicy_name
+- sitetemplate_id or sitetemplate_name
 - subnet                                    if set, will add this subnet in the
                                             auto assignment rules to automatically 
                                             assign the APs deployed on this subnet
@@ -123,7 +128,7 @@ PARAMETER_TYPES = [
     "networktemplate",
     "rftemplate",
     "secpolicy",
-    "sitegroup"
+    "sitetemplate"
 ]
 GEOLOCATOR = None
 TZFINDER = None
@@ -353,6 +358,9 @@ def _retrieve_objects(apisession: mistapi.APISession, org_id: str, parameters_in
             elif parameter_type == "secpolicy":
                 response = mistapi.api.v1.orgs.secpolicies.listOrgSecPolicies(
                     apisession, org_id)
+            elif parameter_type == "sitetemplate":
+                response = mistapi.api.v1.orgs.sitetemplates.listOrgSiteTemplates(
+                    apisession, org_id)
             data = mistapi.get_all(apisession, response)
             for entry in data:
                 parameter_values[entry["name"]] = entry["id"]
@@ -562,6 +570,7 @@ def usage(error:str=None):
     display script usage
     """
     print('''
+
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -572,6 +581,10 @@ def usage(error:str=None):
 -------------------------------------------------------------------------------
 Python script update the templates assigned to Mist Sites based on a CSV file, 
 and/or update the auto assignment rules based on IP Subnet.
+
+WARNING: if a template type is set in the CSV file, but it's value is empty, it 
+will push is as-is to the site (and potentially remove the configured template)
+If you don't need a type of template, DO NOT add it in the CSV file.
 
 -------
 Requirements:
@@ -613,6 +626,7 @@ Optional:
 - networktemplate_id or networktemplate_name
 - rftemplate_id or rftemplate_name
 - secpolicy_id or secpolicy_name
+- sitetemplate_id
 - subnet                                    if set, will add this subnet in the
                                             auto assignment rules to automatically 
                                             assign the APs deployed on this subnet
