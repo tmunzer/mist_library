@@ -727,6 +727,7 @@ def _read_csv(csv_file: str):
                 LOGGER.debug(f"_read_csv:new csv line:{line}")
                 if not fields:
                     for column in line:
+                        column = re.sub("[^a-zA-Z_]", "", column)
                         fields.append(column.replace("#", "").strip())
                     LOGGER.debug(f"_read_csv:detected CSV fields: {fields}")
                     if "switch_mac" not in fields:
