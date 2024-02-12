@@ -459,14 +459,14 @@ def _deploy_site(apisession: mistapi.APISession, org_id:str, old_org_id:str, sit
         apisession,ORG_STEPS["sites"]["mistapi_function"], org_id, "sites", site_info)
     LOGGER.debug(f"conf_deploy:_deploy_site:site {site_info['name']}, old id={old_site_id}, new id={new_site_id}")
     for step_name, step in SITE_STEPS.items():
+        LOGGER.debug(f"conf_deploy:_deploy_site:site {site_info['name']} - {step_name}")
         if step_name == "settings":
             step_data = site_data.get(step_name, {})
             _common_deploy(apisession, step["mistapi_function"], new_site_id, step_name, step_data)
-        elif step_name == "psks":
+        elif step_name == "psks" and site_data.get(step_name):
             step_data = site_data.get(step_name)
-            if step_data:
-                _import_psks(apisession, step["mistapi_function"], new_site_id, step_data)
-        else:
+            _import_psks(apisession, step["mistapi_function"], new_site_id, step_data)
+        elif site_data.get(step_name):
             for step_data in site_data.get(step_name, []):
                 if step_name == "maps":
                     _deploy_site_maps(apisession, old_org_id, old_site_id, new_site_id, step_data)
@@ -474,7 +474,9 @@ def _deploy_site(apisession: mistapi.APISession, org_id:str, old_org_id:str, sit
                     _deploy_wlan(apisession, step["mistapi_function"], new_site_id, step_data, old_org_id, old_site_id)
                 else:
                     _common_deploy(apisession, step["mistapi_function"], new_site_id, step_name, step_data)
-
+        else:
+            LOGGER.debug(f"conf_deploy:_deploy_site:site {site_info['name']} - {step_name} > No data for this site")
+            
 ##########################################################################################
 #  ORG FUNCTIONS
 def _deploy_org(apisession: mistapi.APISession, org_id:str, org_name:str, backup:dict):
