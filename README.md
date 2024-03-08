@@ -74,6 +74,7 @@ There is a short desccription at the beginning of each script explaining the pur
 ## NAC
 - [import_client_macs.py](scripts/nac/import_client_macs.py): Python script import import a list of MAC Address into "Client List" Mist NAC Labels from a CSV File.
 ## Orgs
+- [clone_template.py](scripts/orgs/clone_template.py): Python script to clone a specific template from an organization to another (or the same) organization.
 - [import_admins.py](scripts/orgs/import_admins.py): Python script to invite/add adminsitrators from a CSV file.
 - [import_floorplans.py](scripts/orgs/import_floorplans.py): Python script to import multiple Ekahau/iBwave project into Mist Organisation.
 - [import_sites.py](scripts/orgs/import_sites.py): Python script automate the sites creation in a Mist Org from a CSV file.
