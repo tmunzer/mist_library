@@ -574,14 +574,15 @@ def start(src_apisession: mistapi.APISession, dst_apisession: mistapi.APISession
 
     PARAMS
     -------
-    :param  mistapi.APISession  src_apisession      - mistapi session with `Super User` access the source Org, already logged in
-    :param  mistapi.APISession  dst_apisession      - Optional, mistapi session with `Super User` access the source Org, already logged in. If not defined, the src_apissession will be reused
-    :param  str                 src_org_id          - Optional, org_id of the org where the template to clone is
-    :param  str                 dst_org_id          - Optional, org_id of the org where to clone the tempalte
-    :param  str                 dst_org_name        - Optional, name of the org where to clone the template (used for validation)
-    :param  str                 template_type       - Optional, type of template to clone (wlan, lan, wan, hub)
-    :param  str                 template_id         - Optional, id of the template to clone
-    :param  str                 dst_template_name   - Optional, name of the cloned template (required if the template is clone into the same org)
+    :param  mistapi.APISession  src_apisession      mistapi session with `Super User` access the source Org, already logged in
+    :param  mistapi.APISession  dst_apisession      Optional, mistapi session with `Super User` access the source Org, already logged in. 
+                                                    If not defined, the src_apissession will be reused
+    :param  str                 src_org_id          Optional, org_id of the org where the template to clone is
+    :param  str                 dst_org_id          Optional, org_id of the org where to clone the tempalte
+    :param  str                 dst_org_name        Optional, name of the org where to clone the template (used for validation)
+    :param  str                 template_type       Optional, type of template to clone (wlan, lan, wan, hub)
+    :param  str                 template_id         Optional, id of the template to clone
+    :param  str                 dst_template_name   Optional, name of the cloned template (required if the template is clone into the same org)
     
     '''
     if not dst_apisession:
@@ -790,12 +791,10 @@ if __name__ == "__main__":
     print(" API Session to access the Source Org ".center(80, "_"))
     SRC_APISESSION = mistapi.APISession(env_file=SRC_ENV_FILE)
     SRC_APISESSION.login()
-    if not DST_ENV_FILE:
-        DST_APISESSION = SRC_APISESSION
-    else:
-        print(" API Session to access the Destination Org ".center(80, "_"))
-        DST_APISESSION = mistapi.APISession(env_file=DST_ENV_FILE)
-        DST_APISESSION.login()
+    
+    print(" API Session to access the Destination Org ".center(80, "_"))
+    DST_APISESSION = mistapi.APISession(env_file=DST_ENV_FILE)
+    DST_APISESSION.login()
 
     ### START ###
     start(
