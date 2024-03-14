@@ -10,6 +10,14 @@
 Python script check if all the sites have geo information configured (lat/lng,
 country_code, timezone), and update the site information when missing.
 
+The script is retrieving the sites from the organization, and checking for each
+of them if the lat/lng, country and timezone are set.
+If not, it is generating these information (with Geopy + Timezonefinder Python 
+packages or Google Map APIs) and updating the site.
+It is saving the result in a csv file (by default fix_sites_geocoding.csv) and
+can be run in dry-run mode.
+
+
 **NOTE**
 This Script can use Google APIs (optional) to retrieve lat/lng, tz and country code. 
 To be able to use Google API, you need an API Key first. Mode information available 
@@ -591,6 +599,13 @@ def usage(error:str=None):
 -------------------------------------------------------------------------------
 Python script check if all the sites have geo information configured (lat/lng,
 country_code, timezone), and update the site information when missing.
+
+The script is retrieving the sites from the organization, and checking for each
+of them if the lat/lng, country and timezone are set.
+If not, it is generating these information (with Geopy + Timezonefinder Python 
+packages or Google Map APIs) and updating the site.
+It is saving the result in a csv file (by default fix_sites_geocoding.csv) and
+can be run in dry-run mode.
 
 **NOTE**
 This Script can use Google APIs (optional) to retrieve lat/lng, tz and country code. 
