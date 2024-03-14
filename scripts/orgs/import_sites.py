@@ -9,10 +9,13 @@
 -------------------------------------------------------------------------------
 Python script automate the sites creation in a Mist Org from a CSV file.
 
+**NOTE**
 This Script can use Google APIs (optional) to retrieve lat/lng, tz and country code. 
 To be able to use Google API, you need an API Key first. Mode information available 
 here: https://developers.google.com/maps/documentation/javascript/get-api-key?hl=en
 
+If the Google API Key is not provided, the script will use geopy and timezonefinder
+packages to generate the required information.
 
 -------
 Requirements:
@@ -87,7 +90,11 @@ Script Parameters:
                         - if org_id is provided (existing org), used to validate 
                         the destination org
                         - if org_id is not provided (new org), the script will 
-                        create a new org and name it with the org_name value   
+                        create a new org and name it with the org_name value
+
+-g, --google_api_key=   Google API key used for geocoding
+                        If not set, the script will use timezonefinder and geopy
+                        package to generate the geo information 
 
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
@@ -223,176 +230,179 @@ class ProgressBar():
         LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
-pb = ProgressBar()
+PB = ProgressBar()
 
 #####################################################################
 # Geocoding
 #####################################################################
 ##################
 # GOOGLE LAT/LNG
-def _get_google_geocoding(address, google_api_key):
-    try:
-        data = {"location": None, "country_code": ""}
-        url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={google_api_key}"
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            if data["status"] == "OK":
-                if len(data["results"]) > 0:
-                    data["location"] = {
-                        "address": data["results"][0]["formatted_address"],
-                        "latitude": data["results"][0]["geometry"]["location"]["lat"],
-                         "longitude": data["results"][0]["geometry"]["location"]["lng"]
-                    }
-                    for entry in data["results"][0]["address_components"]:
-                        if "country" in entry["types"]:
-                            data["country_code"] = entry["short_name"]
+class GoogleGeocoding:
+
+    def __init__(self, google_api_key:str) -> None:
+        self.google_api_key = google_api_key
+
+    def _get_google_geocoding(self, address):
+        try:
+            data = {"location": None, "country_code": ""}
+            url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={self.google_api_key}"
+            response = requests.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                if data["status"] == "OK":
+                    if len(data["results"]) > 0:
+                        data["location"] = {
+                            "address": data["results"][0]["formatted_address"],
+                            "latitude": data["results"][0]["geometry"]["location"]["lat"],
+                            "longitude": data["results"][0]["geometry"]["location"]["lng"]
+                        }
+                        for entry in data["results"][0]["address_components"]:
+                            if "country" in entry["types"]:
+                                data["country_code"] = entry["short_name"]
+                        return data
+                elif data["status"] == "REQUEST_DENIED":
+                    console.error(data["error_message"])
                     return data
-            elif data["status"] == "REQUEST_DENIED":
-                console.error(data["error_message"])
+            else:
+                PB.log_warning("Unable to get the location from Google API")
                 return data
-        else:
-            pb.log_warning("Unable to get the location from Google API")
-            return data
-    except:
-        pb.log_warning("Unable to get the location from Google API")
-        return None
-
-
-def _get_google_tz(location, google_api_key):
-    try:
-        ts = int(time.time())
-        url = f"https://maps.googleapis.com/maps/api/timezone/json?location={location['latitude']},{location['longitude']}&timestamp={ts}&key={google_api_key}"
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            if data["status"] == "OK":
-                tz = data["timeZoneId"]
-                return tz
-            elif data["status"] == "REQUEST_DENIED":
-                console.error(data["error_message"])
-        else:
-            pb.log_warning("Unable to find the site timezone")
+        except:
+            PB.log_warning("Unable to get the location from Google API")
             return None
-    except:
-        pb.log_warning("Unable to find the site timezone")
-        return None
 
 
-def _geocoding_google(site, google_api_key:str):
-    message = "Retrievning geo information"
-    pb.log_message(message)
-    data = _get_google_geocoding(site["address"], google_api_key)
-    if data["location"] is not None:
-        tz = _get_google_tz(data["location"], google_api_key)
-        if tz:
-            data["tz"] = tz
-    return data
+    def _get_google_tz(self, location):
+        try:
+            ts = int(time.time())
+            url = f"https://maps.googleapis.com/maps/api/timezone/json?location={location['latitude']},{location['longitude']}&timestamp={ts}&key={self.google_api_key}"
+            response = requests.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                if data["status"] == "OK":
+                    tz = data["timeZoneId"]
+                    return tz
+                elif data["status"] == "REQUEST_DENIED":
+                    console.error(data["error_message"])
+            else:
+                PB.log_warning("Unable to find the site timezone")
+                return None
+        except:
+            PB.log_warning("Unable to find the site timezone")
+            return None
+
+
+    def geocoding(self, site):
+        message = "Retrievning geo information"
+        PB.log_message(message)
+        data = self._get_google_geocoding(site["address"])
+        if data["location"] is not None:
+            tz = self._get_google_tz(data["location"])
+            if tz:
+                data["tz"] = tz
+        LOGGER.debug(data)
+        return data
 
 ################
 # OPEN LAT/LNG
-def _import_tzfinder():
-    try:
-        global TZFINDER
-        from timezonefinder import TimezoneFinder
-        TZFINDER = TimezoneFinder()
-    except:
-        print("""
-    Critical: 
-    \"timezonefinder\" package is required when \"google_api_key\" is not defined.
-    Please use the pip command to install it.
+class OpenGeocoding:
 
-    # Linux/macOS
-    python3 -m pip install timezonefinder
+    def __init__(self) -> None:
+        try:
+            from timezonefinder import TimezoneFinder
+            self.tzfinder = TimezoneFinder()
+        except:
+            print("""
+        Critical: 
+        \"timezonefinder\" package is required when \"google_api_key\" is not defined.
+        Please use the pip command to install it.
 
-    # Windows
-    py -m pip install timezonefinder
-        """)
-        sys.exit(2)
+        # Linux/macOS
+        python3 -m pip install timezonefinder
 
+        # Windows
+        py -m pip install timezonefinder
+            """)
+            sys.exit(2)
+        try:
+            from geopy import Nominatim
+            self.geolocator = Nominatim(user_agent="import_app")
+        except:
+            print("""
+        Critical: 
+        \"geopy\" package is required when \"google_api_key\" is not defined.
+        Please use the pip command to install it.
 
-def _import_geopy():
-    try:
-        global GEOLOCATOR
-        from geopy import Nominatim
-        GEOLOCATOR = Nominatim(user_agent="import_app")
-    except:
-        print("""
-    Critical: 
-    \"geopy\" package is required when \"google_api_key\" is not defined.
-    Please use the pip command to install it.
+        # Linux/macOS
+        python3 -m pip install geopy
 
-    # Linux/macOS
-    python3 -m pip install geopy
-
-    # Windows
-    py -m pip install geopy
-        """)
-        sys.exit(2)
+        # Windows
+        py -m pip install geopy
+            """)
+            sys.exit(2)
 
 
-def _import_open_geocoding():
-    _import_geopy()
-    _import_tzfinder()
+    def _get_open_geocoding(self, site):
+        location = self.geolocator.geocode(site["address"], addressdetails=True)
+        if isinstance(location, None):
+            PB.log_warning(f"Site {site['name']}: Unable to find the address")
+            return None
+        else:
+            return location
 
 
-def _get_open_geocoding(site):
-    location = GEOLOCATOR.geocode(site["address"], addressdetails=True)
-    if type(location) == "NoneType":
-        pb.log_warning(f"Site {site['name']}: Unable to find the address")
-        return None
-    else:
-        return location
+    def _get_open_tz(self, location):
+        tz = self.tzfinder.timezone_at(lat=location.latitude, lng=location.longitude)
+        country_code = str(location.raw["address"]["country_code"]).upper()
+        return {"tz": tz, "country_code": country_code}
 
 
-def _get_open_tz(location):
-    tz = TZFINDER.timezone_at(lat=location.latitude, lng=location.longitude)
-    country_code = str(location.raw["address"]["country_code"]).upper()
-    return {"tz": tz, "country_code": country_code}
+    def geocoding(self, site):
+        data = {}
+        location = self._get_open_geocoding(site)
+        if location:
+            data = {
+                "location": {
+                    "latitude": location.latitude,
+                    "longitude": location.longitude
+                },
+                **self._get_open_tz(location)
+            }
+        LOGGER.debug(data)
+        return data
 
 
-def _geocoding_open(site):
-    data = {}
-    location = _get_open_geocoding(site)
-    if location:
-        data = {
-            "location": {
-                "latitude": location.latitude,
-                "longitude": location.longitude
-            },
-            **_get_open_tz(location)
-        }
-    return data
 
 #####################################################################
 # Auto Assignment Rules
 #####################################################################
 def _get_current_org_config(apisession:mistapi.APISession, org_id:str):
     message = "Retrieving current Org Rules"
-    pb.log_message(message, display_pbar=False)
+    PB.log_message(message, display_pbar=False)
     try:
         res = mistapi.api.v1.orgs.setting.getOrgSettings(apisession, org_id)
         if res.status_code == 200:
-            pb.log_success(message, inc=True)
+            PB.log_success(message, inc=True)
             auto_site_assignment = res.data.get("auto_site_assignment", {"enable": True})
             return auto_site_assignment
         else:
-            pb.log_failure(message, inc=True)
+            PB.log_failure(message, inc=True)
     except:
-        pb.log_failure(message, inc=True)
+        PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
 
 def _set_new_org_config(apisession:mistapi.APISession, org_id:str, auto_site_assignment:dict):
     message = "Updating Org Rules"
-    pb.log_message(message, display_pbar=False)
+    PB.log_message(message, display_pbar=False)
     try:
-        res = mistapi.api.v1.orgs.setting.updateOrgSettings(apisession, org_id, {"auto_site_assignment": auto_site_assignment})
+        res = mistapi.api.v1.orgs.setting.updateOrgSettings(
+                apisession, org_id, {"auto_site_assignment": auto_site_assignment}
+            )
         if res.status_code == 200:
-            pb.log_success(message, inc=True)
+            PB.log_success(message, inc=True)
         else:
-            pb.log_failure(message, inc=True)
+            PB.log_failure(message, inc=True)
     except:
-        pb.log_failure(message, inc=True)
+        PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
 
 def _compare_rules(org_rules:list, new_rules:list):
@@ -401,7 +411,7 @@ def _compare_rules(org_rules:list, new_rules:list):
         org_rules = []
     for rule in new_rules:
         message = f"Checking subnet {rule.get('subnet')}"
-        pb.log_message(message)
+        PB.log_message(message)
         try:
             subnet_exists = list(r for r in org_rules if r.get("subnet") == rule.get("subnet"))
             if subnet_exists:
@@ -419,12 +429,12 @@ def _compare_rules(org_rules:list, new_rules:list):
                 f"error when processing subnet {rule.get('subnet')} configured for site {rule.get('value')}"
                 )
     if errors:
-        pb.log_warning(message, inc=True)
+        PB.log_warning(message, inc=True)
     return org_rules
 
 
 def _update_org_rules(apisession:mistapi.APISession, org_id:str, new_rules:list):
-    pb.log_title("Updating Autoprovisioning Rules")
+    PB.log_title("Updating Autoprovisioning Rules")
     auto_site_assignment = _get_current_org_config(apisession, org_id)
     auto_site_assignment["rules"] = _compare_rules(auto_site_assignment.get("rules", {}), new_rules)
     _set_new_org_config(apisession, org_id, auto_site_assignment)
@@ -434,13 +444,10 @@ def _update_org_rules(apisession:mistapi.APISession, org_id:str, new_rules:list)
 #####################################################################
 # Site  Management
 #####################################################################
-def _get_geo_info(site: dict, google_api_key:str) -> dict:
+def _get_geo_info(site: dict, geocoder:callable) -> dict:
     message = f"Site {site['name']}: Retrievning geo information"
-    pb.log_message(message)
-    if google_api_key:
-        data = _geocoding_google(site, google_api_key)
-    if not google_api_key or data is None:
-        data = _geocoding_open(site)
+    PB.log_message(message)
+    data = geocoder.geococing(site)
     if data:
         site["latlng"] = {
             "lat": data["location"]["latitude"],
@@ -448,39 +455,39 @@ def _get_geo_info(site: dict, google_api_key:str) -> dict:
         }
         site["timezone"] = data["tz"]
         site["country_code"] = data["country_code"]
-        pb.log_success(message, True)
+        PB.log_success(message, True)
     else:
-        pb.log_warning(message, True)
+        PB.log_warning(message, True)
     return site
 
 
-def _create_site(apisession: mistapi.APISession, org_id: str, site: dict, google_api_key:str):
-    site = _get_geo_info(site, google_api_key).copy()
+def _create_site(apisession: mistapi.APISession, org_id: str, site: dict, geocoder:callable):
+    site = _get_geo_info(site, geocoder).copy()
     if site:
         message = f"Site {site['name']}: Site creation"
-        pb.log_message(message)
+        PB.log_message(message)
         try:
             if "vars" in site:
                 del site["vars"]
             response = mistapi.api.v1.orgs.sites.createOrgSite(
                 apisession, org_id, site)
             if response.status_code == 200:
-                pb.log_success(
+                PB.log_success(
                     f"Site {site['name']}: Created (ID {response.data['id']})", True)
                 return response.data
             else:
-                pb.log_failure(message, True)
+                PB.log_failure(message, True)
         except:
-            pb.log_failure(message, True)
+            PB.log_failure(message, True)
     else:
-        pb.inc()
+        PB.inc()
         return None
 
 
 def _update_site(apisession: mistapi.APISession, site: dict, site_id: str):
     if "vars" in site and site["vars"]:
         message = f"Site {site['name']}: Updating Site settings"
-        pb.log_message(message)
+        PB.log_message(message)
         try:
             vars = site["vars"]
             site_vars = {}
@@ -490,46 +497,48 @@ def _update_site(apisession: mistapi.APISession, site: dict, site_id: str):
                 site_vars[key] = val
             mistapi.api.v1.sites.setting.updateSiteSettings(
                 apisession, site_id, {"vars": site_vars})
-            pb.log_success(message, True)
+            PB.log_success(message, True)
         except:
-            pb.log_failure(message, True)
+            PB.log_failure(message, True)
     else:
-        pb.log_success(
+        PB.log_success(
             f"Site {site['name']}: No Site settings to update", True)
 
 
 ###############################################################################
 # CLONING FROM SOURCE SITE
 ###############################################################################
-def _clone_src_site_settings(apisession:mistapi.APISession, src_site_id:str, dst_site_id:str, site_name:str):
+def _clone_src_site_settings(
+        apisession:mistapi.APISession, src_site_id:str, dst_site_id:str, site_name:str
+    ):
     src_site = None
     message= f"Site {site_name}: Retrievning settings from src site"
-    pb.log_message(message)
+    PB.log_message(message)
     try:
         resp = mistapi.api.v1.sites.setting.getSiteSetting(apisession, src_site_id)
         if resp.status_code != 200:
-            pb.log_failure(message, True)
+            PB.log_failure(message, True)
         else:
             src_site = resp.data
             if "vars" in src_site:
-                del src_site["vars"]            
+                del src_site["vars"]
     except:
-        pb.log_failure(message, True)
+        PB.log_failure(message, True)
 
     if src_site:
         message= f"Site {site_name}: Deploying settings from src site"
-        pb.log_message(message)
+        PB.log_message(message)
         try:
             resp = mistapi.api.v1.sites.setting.updateSiteSettings(
                 apisession,
                 dst_site_id, src_site
                 )
             if resp.status_code != 200:
-                pb.log_failure(message, True)
+                PB.log_failure(message, True)
             else:
-                pb.log_success(f"Site {site_name}: Cloning settings from src site", True)
+                PB.log_success(f"Site {site_name}: Cloning settings from src site", True)
         except:
-            pb.log_failure(message, True)
+            PB.log_failure(message, True)
 
 
 
@@ -537,7 +546,9 @@ def _clone_src_site_settings(apisession:mistapi.APISession, src_site_id:str, dst
 # MATCHING OBJECT NAME / OBJECT ID
 ###############################################################################
 # SPECIFIC TO SITE GROUPS
-def _replace_sitegroup_names(apisession: mistapi.APISession, org_id: str, sitegroups: dict, sitegroup_names: dict) -> Tuple[dict, str]:
+def _replace_sitegroup_names(
+        apisession: mistapi.APISession, org_id: str, sitegroups: dict, sitegroup_names: dict
+    ) -> Tuple[dict, str]:
     sitegroup_ids = []
     for sitegroup_name in sitegroup_names:
         if sitegroup_name not in sitegroups:
@@ -546,7 +557,7 @@ def _replace_sitegroup_names(apisession: mistapi.APISession, org_id: str, sitegr
             if response.status_code == 200:
                 sitegroups[sitegroup_name] = response.data["id"]
             else:
-                pb.log_warning(
+                PB.log_warning(
                     f"Unable to create site group {sitegroup_name}", inc=False)
         sitegroup_ids.append(sitegroups[sitegroup_name])
     return sitegroups, sitegroup_ids
@@ -554,14 +565,16 @@ def _replace_sitegroup_names(apisession: mistapi.APISession, org_id: str, sitegr
 # GENERIC REPLACE FUNCTION
 
 
-def _replace_object_names_by_ids(apisession: mistapi.APISession, org_id: str, site: dict, parameters: dict) -> dict:
+def _replace_object_names_by_ids(
+        apisession: mistapi.APISession, org_id: str, site: dict, parameters: dict
+    ) -> dict:
     '''
     replace the template/policy/groups names by the corresponding ids
     '''
     warning = False
     source_site_id = None
     message = f"Site {site['name']}: updating IDs"
-    pb.log_message(message)
+    PB.log_message(message)
 
 
     if "site_id" in site:
@@ -570,7 +583,7 @@ def _replace_object_names_by_ids(apisession: mistapi.APISession, org_id: str, si
     elif "site_name" in site:
         source_site_id = parameters["site"].get(site["site_name"], None)
         if not source_site_id:
-            pb.log_warning(f"Site {site['name']}: Source site {site['site_name']} not found")
+            PB.log_warning(f"Site {site['name']}: Source site {site['site_name']} not found")
         del site["site_name"]
 
     if "sitegroup_names" in site:
@@ -586,12 +599,12 @@ def _replace_object_names_by_ids(apisession: mistapi.APISession, org_id: str, si
                 del site[f"{parameter}_name"]
         except:
             warning = True
-            pb.log_warning(
+            PB.log_warning(
                 f"Site {site['name']}: Missing {parameter} on dest org", inc=False)
     if not warning:
-        pb.log_success(message, True)
+        PB.log_success(message, True)
     else:
-        pb.log_warning(message, True)
+        PB.log_warning(message, True)
     return site, source_site_id
 
 # GET FROM MIST
@@ -604,7 +617,7 @@ def _retrieve_objects(apisession: mistapi.APISession, org_id: str, parameters_in
     parameters = {}
     for parameter_type in parameters_in_use:
         message = f"Retrieving {parameter_type} from Mist"
-        pb.log_message(message, display_pbar=False)
+        PB.log_message(message, display_pbar=False)
         parameter_values = {}
         data = []
         response = None
@@ -636,9 +649,9 @@ def _retrieve_objects(apisession: mistapi.APISession, org_id: str, parameters_in
             for entry in data:
                 parameter_values[entry["name"]] = entry["id"]
             parameters[parameter_type] = parameter_values
-            pb.log_success(message, display_pbar=False)
+            PB.log_success(message, display_pbar=False)
         except:
-            pb.log_failure(message, display_pbar=False)
+            PB.log_failure(message, display_pbar=False)
     return parameters
 
 
@@ -676,25 +689,25 @@ def _extract_groups(data: str) -> list:
 
 def _check_settings(sites: list):
     message = "Validating Sites data"
-    pb.log_title(message, display_pbar=False)
+    PB.log_title(message, display_pbar=False)
     site_name = []
     parameters_in_use = []
     line = 1
     for site in sites:
         line +=1
         if "name" not in site:
-            pb.log_failure(message, display_pbar=False)
+            PB.log_failure(message, display_pbar=False)
             console.error(f"Line {line}: Missing site parameter \"name\"")
             sys.exit(0)
         elif site["name"] in site_name:
-            pb.log_failure(message, display_pbar=False)
+            PB.log_failure(message, display_pbar=False)
             console.error(f"Line {line}: Site Name \"{site['name']}\" duplicated")
             sys.exit(0)
         else:
             site_name.append(site["name"])
 
         if "address" not in site:
-            pb.log_failure(message, display_pbar=False)
+            PB.log_failure(message, display_pbar=False)
             console.error(f"Line {line}: Missing site parameter \"address\"")
             sys.exit(0)
 
@@ -703,7 +716,7 @@ def _check_settings(sites: list):
             if key in [ "name", "address", "vars", "country_code", "timezone"]:
                 pass
             elif key in [ "sitegroup_names", "sitegroup_ids"]:
-                if not "sitegroup" in parameters_in_use:
+                if "sitegroup" not in parameters_in_use:
                     parameters_in_use.append("sitegroup")
                 pass
             elif parameter_name[0] in PARAMETER_TYPES and parameter_name[1] in ["name", "id"]:
@@ -711,19 +724,21 @@ def _check_settings(sites: list):
                     parameters_in_use.append(parameter_name[0])
                 pass
             else:
-                pb.log_failure(message, display_pbar=False)
+                PB.log_failure(message, display_pbar=False)
                 console.error(f"Line {line}: Invalid site parameter \"{key}\"")
                 sys.exit(0)
-    pb.log_success(message, display_pbar=False)
+    PB.log_success(message, display_pbar=False)
     return parameters_in_use
 
 
-def _process_sites_data(apisession: mistapi.APISession, org_id: str, sites: list) -> dict:
+def _process_sites_data(
+        apisession: mistapi.APISession, org_id: str, sites: list, geocoder:callable
+    ) -> dict:
     '''
     Function to validate sites data and retrieve the required object from Mist
     '''
     parameters = {}
-    pb.log_title("Preparing Sites Import", display_pbar=False)
+    PB.log_title("Preparing Sites Import", display_pbar=False)
     parameters_in_use = _check_settings(sites)
     parameters = _retrieve_objects(apisession, org_id, parameters_in_use)
     return parameters
@@ -733,13 +748,13 @@ def _check_sites(apisession:mistapi.APISession, org_id:str, sites:list):
     function to remove sites already created in the Org (based on the site name)
     '''
     message = "Retrieving Sites from Org"
-    pb.log_message(message)
+    PB.log_message(message)
     try:
         res = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id, limit=1000)
         sites_from_mist = mistapi.get_all(apisession, res)
-        pb.log_success(message, inc=True)
+        PB.log_success(message, inc=True)
     except:
-        pb.log_failure(message, inc=True)
+        PB.log_failure(message, inc=True)
         sys.exit(1)
 
     sites_to_create = []
@@ -763,22 +778,30 @@ def _check_sites(apisession:mistapi.APISession, org_id:str, sites:list):
     return sites_to_create
 
 
-def _create_sites(apisession: mistapi.APISession, org_id: str, sites: list, parameters: dict, google_api_key:str):
+def _create_sites(
+        apisession: mistapi.APISession,
+        org_id: str,
+        sites: list,
+        parameters: dict,
+        geocoder:callable
+    ):
     '''
     Function to create and update all the sites
     '''
-    pb.log_title("Creating Sites", display_pbar=True)
-    for site in sites:        
+    PB.log_title("Creating Sites", display_pbar=True)
+    for site in sites:
         site, source_site_id = _replace_object_names_by_ids(
             apisession, org_id, site, parameters)
-        new_site = _create_site(apisession, org_id, site, google_api_key)
+        new_site = _create_site(apisession, org_id, site, geocoder)
         if not new_site:
-            pb.inc()
+            PB.inc()
         else:
             if source_site_id:
-                _clone_src_site_settings(apisession, source_site_id, new_site["id"], new_site["name"])
+                _clone_src_site_settings(
+                        apisession, source_site_id, new_site["id"], new_site["name"]
+                    )
             else:
-                pb.inc()
+                PB.inc()
             _update_site(apisession, site, new_site["id"])
 
 
@@ -817,7 +840,9 @@ def _read_csv_file(file_path: str):
         return sites, auto_assignment_rules
 
 
-def _check_org_name_in_script_param(apisession: mistapi.APISession, org_id: str, org_name: str = None):
+def _check_org_name_in_script_param(
+        apisession: mistapi.APISession, org_id: str, org_name: str = None
+    ):
     response = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id)
     if response.status_code != 200:
         console.critical(
@@ -855,11 +880,11 @@ def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None
                 "name": custom_dest_org_name
             }
             message = f"Creating the organisation \"{custom_dest_org_name}\" in {apisession.get_cloud()} "
-            pb.log_message(message, display_pbar=False)
+            PB.log_message(message, display_pbar=False)
             try:
-                pb.log_success(message, display_pbar=False)
+                PB.log_success(message, display_pbar=False)
             except Exception as e:
-                pb.log_failure(message, display_pbar=False)
+                PB.log_failure(message, display_pbar=False)
                 LOGGER.error("Exception occurred", exc_info=True)
                 sys.exit(10)
             org_id = mistapi.api.v1.orgs.orgs.createOrg(
@@ -886,7 +911,28 @@ def _select_dest_org(apisession: mistapi.APISession):
             return _create_org(apisession)
 
 
-def start(apisession: mistapi.APISession, file_path: str, org_id: str = None, org_name: str = None, google_api_key:str = None):
+def start(
+        apisession: mistapi.APISession,
+        file_path: str,
+        org_id: str = None,
+        org_name: str = None,
+        google_api_key:str = None
+    ):
+    '''
+    Start the process to create the sites
+
+    PARAMS
+    -------
+    :param  mistapi.APISession  apisession      mistapi session with `Super User` access the source 
+                                                Org, already logged in
+    :param  str                 file_path       path to the CSV file with all the sites to create
+    :param  str                 org_id          Optional, org_id of the org where to process the sites
+    :param  str                 org_name        Optional, name of the org where to process the sites
+                                                (used for validation)
+    :param  str                 google_api_key  Optional, Google API key used for geocoding. 
+                                                If not set, the script will use timezonefinder and
+                                                geopy package to generate the geo information
+    '''
     if org_id and org_name:
         if not _check_org_name_in_script_param(apisession, org_id, org_name):
             console.critical(
@@ -901,22 +947,38 @@ def start(apisession: mistapi.APISession, file_path: str, org_id: str = None, or
     else:  # should not since we covered all the possibilities...
         sys.exit(0)
 
+
+    message = "Loading Geocoder"
+    PB.log_message(message, display_pbar=False)
+    try:
+        geocoder = None
+        if google_api_key:
+            geocoder = GoogleGeocoding(google_api_key)
+            PB.log_success(f"{message}: Google", display_pbar=False)
+        else:
+            geocoder = OpenGeocoding()
+            PB.log_success(f"{message}: Open", display_pbar=False)
+    except:
+            PB.log_failure(message, display_pbar=False)
+            LOGGER.error("Exception occurred", exc_info=True)
+            sys.exit(0)
+
     sites, auto_assignment_rules = _read_csv_file(file_path)
     # 4 = IDs +  geocoding + site creation + clone site settings + site settings update
     addition_steps = 0
     if auto_assignment_rules:
         addition_steps += 3
-    pb.set_steps_total(len(sites) * 5 + addition_steps)
+    PB.set_steps_total(len(sites) * 5 + addition_steps)
 
     sites = _check_sites(apisession, org_id, sites)
-    parameters = _process_sites_data(apisession, org_id, sites)
+    parameters = _process_sites_data(apisession, org_id, sites, geocoder)
 
     _create_sites(apisession, org_id, sites, parameters, google_api_key)
 
     if auto_assignment_rules:
         _update_org_rules(apisession, org_id, auto_assignment_rules)
 
-    pb.log_title("Site Import Done", end=True)
+    PB.log_title("Site Import Done", end=True)
 
 
 ###############################################################################
@@ -1006,21 +1068,25 @@ Optional:
 
 -------
 Script Parameters:
--h, --help          display this help
--f, --file=         REQUIRED: path to the CSV file
+-h, --help              display this help
+-f, --file=             REQUIRED: path to the CSV file
 
--o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
--n, --org_name=     Org name where to deploy the configuration:
+-o, --org_id=           Set the org_id (only one of the org_id or site_id can be defined)
+-n, --org_name=         Org name where to deploy the configuration:
                         - if org_id is provided (existing org), used to validate 
                         the destination org
                         - if org_id is not provided (new org), the script will 
-                        create a new org and name it with the org_name value   
+                        create a new org and name it with the org_name value
 
--l, --log_file=     define the filepath/filename where to write the logs
-                    default is "./script.log"
--e, --env=          define the env file to use (see mistapi env file documentation 
-                    here: https://pypi.org/project/mistapi/)
-                    default is "~/.mist_env"
+-g, --google_api_key=   Google API key used for geocoding
+                        If not set, the script will use timezonefinder and geopy
+                        package to generate the geo information
+
+-l, --log_file=         define the filepath/filename where to write the logs
+                        default is "./script.log"
+-e, --env=              define the env file to use (see mistapi env file documentation 
+                        here: https://pypi.org/project/mistapi/)
+                        default is "~/.mist_env"
 
 -------
 Examples:
@@ -1033,6 +1099,9 @@ python3 ./import_sites.py -f ./my_new_sites.csv --org_id=203d3d02-xxxx-xxxx-xxxx
     sys.exit(0)
 
 def check_mistapi_version():
+    """
+    Function to check the mistapi package version
+    """
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
         LOGGER.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
         LOGGER.critical(f"Please use the pip command to updated it.")
@@ -1062,8 +1131,18 @@ def check_mistapi_version():
 # ENTRY POINT
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:n:g:f:e:l:", [
-                                   "help", "org_id=", "org_name=", "google_api_key=", "file=", "env=", "log_file="])
+        opts, args = getopt.getopt(sys.argv[1:],
+                                    "ho:n:g:f:e:l:", 
+                                    [
+                                        "help",
+                                        "org_id=",
+                                        "org_name=",
+                                        "google_api_key=",
+                                        "file=",
+                                        "env=",
+                                        "log_file="
+                                    ]
+                                )
     except getopt.GetoptError as err:
         usage(err)
 
@@ -1088,8 +1167,6 @@ if __name__ == "__main__":
         else:
             assert False, "unhandled option"
 
-    if not GOOGLE_API_KEY:
-        _import_open_geocoding()
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode='w')
     LOGGER.setLevel(logging.DEBUG)
