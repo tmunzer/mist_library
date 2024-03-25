@@ -81,8 +81,9 @@ import sys
 import csv
 import getopt
 import logging
-from typing import Tuple
+import signal
 import requests
+import urllib.parse
 
 MISTAPI_MIN_VERSION = "0.44.1"
 
@@ -107,6 +108,7 @@ except:
 ENV_FILE = "~/.mist_env"
 LOG_FILE = "./script.log"
 CSV_FILE = "fix_sites_geocoding.csv"
+MAX_RETRY = 3
 # This Script can use Google APIs (optional) to retrieve lat/lng, tz and country code. To be
 # able to use Google API, you need an API Key first. Mode information available here:
 # https://developers.google.com/maps/documentation/javascript/get-api-key?hl=en
@@ -117,16 +119,14 @@ LOGGER = logging.getLogger(__name__)
 
 #####################################################################
 #### GLOBALS #####
-PARAMETER_TYPES = [
-    "site",
-    "alarmtemplate",
-    "aptemplate",
-    "gatewaytemplate",
-    "networktemplate",
-    "rftemplate",
-    "secpolicy",
-    "sitegroup"
-]
+SYS_EXIT = False
+
+def sigint_handler(signal, frame):
+    global SYS_EXIT
+    SYS_EXIT = True
+    ("[Ctrl C],KeyboardInterrupt exception occured.")
+
+signal.signal(signal.SIGINT, sigint_handler)
 #####################################################################
 # PROGRESS BAR
 #####################################################################
@@ -206,70 +206,99 @@ class GoogleGeocoding:
     def __init__(self, google_api_key:str) -> None:
         self.google_api_key = google_api_key
 
-    def _get_google_geocoding(self, address):
-        try:
-            data = {"location": None, "country_code": ""}
-            url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={self.google_api_key}"
-            response = requests.get(url)
-            LOGGER.debug(f"_get_google_geocoding: Response: {response.content}")
-            if response.status_code == 200:
-                data = response.json()
-                if data["status"] == "OK":
-                    if len(data["results"]) > 0:
-                        data["location"] = {
-                            "address": data["results"][0]["formatted_address"],
-                            "latitude": data["results"][0]["geometry"]["location"]["lat"],
-                            "longitude": data["results"][0]["geometry"]["location"]["lng"]
-                        }
-                        for entry in data["results"][0]["address_components"]:
-                            if "country" in entry["types"]:
-                                data["country_code"] = entry["short_name"]
-                        LOGGER.info("_get_google_geocoding: Request succeed with Data")
-                        return data
+    def _log_url(self, url):
+        query_params = url.split("?")[1].split("&")
+        for param in query_params:
+            key = param.split("=")[0]
+            value = param.split("=")[1]
+            if key == "key":
+                value = f"{value[0:3]}...{value[-3:len(value)]}"
+                url = url.replace(param, f"{key}:{value}")
+        return url
+
+    def _get_google_geocoding(self, address, retry:int=0):
+        if retry == MAX_RETRY:
+            LOGGER.error(f"_get_google_geocoding: too many retries...")
+            return None
+        else:
+            try:
+                data = {"location": None, "country_code": ""}
+                url = f"https://maps.googleapis.com/maps/api/geocode/json?address={urllib.parse.quote(address)}&key={self.google_api_key}"
+                LOGGER.debug(f"_get_google_geocoding: URL: {self._log_url(url)}")
+                response = requests.get(url)
+                LOGGER.debug(f"_get_google_geocoding: Response: {response.content}")
+                if response.status_code == 200:
+                    data = response.json()
+                    if data["status"] == "OK":
+                        if len(data["results"]) > 0:
+                            data["location"] = {
+                                "address": data["results"][0]["formatted_address"],
+                                "latitude": data["results"][0]["geometry"]["location"]["lat"],
+                                "longitude": data["results"][0]["geometry"]["location"]["lng"]
+                            }
+                            for entry in data["results"][0]["address_components"]:
+                                if "country" in entry["types"]:
+                                    data["country_code"] = entry["short_name"]
+                            LOGGER.info("_get_google_geocoding: Request succeed with Data")
+                            return data
+                        else:
+                            LOGGER.warning("_get_google_geocoding: Request succeed without Data")
+                            LOGGER.info(f"_get_google_geocoding: retrying")
+                            return self._get_google_geocoding(address, retry + 1)
+                    elif data["status"] == "REQUEST_DENIED":
+                        LOGGER.warning(f"_get_google_geocoding: Request failed: {data['error_message']}")
+                        LOGGER.warning(response.content)
+                        LOGGER.info(f"_get_google_geocoding: retrying")
+                        return self._get_google_geocoding(address, retry + 1)
                     else:
-                        LOGGER.warning("_get_google_geocoding: Request succeed without Data")
-                        return data
-                elif data["status"] == "REQUEST_DENIED":
-                    LOGGER.warning(f"_get_google_geocoding: Request failed: {data['error_message']}")
-                    LOGGER.warning()
-                    return data
+                        LOGGER.warning("_get_google_geocoding: Request failed without Data")
+                        LOGGER.info(f"_get_google_geocoding: retrying")
+                        return self._get_google_geocoding(address, retry + 1)
                 else:
-                    LOGGER.warning("_get_google_geocoding: Request failed without Data")
-                    return data
-            else:
+                    LOGGER.warning("_get_google_geocoding: Unable to get the location from Google API")
+                    LOGGER.warning(response.content)
+                    LOGGER.info(f"_get_google_geocoding: retrying")
+                    return self._get_google_geocoding(address, retry + 1)
+            except:
                 LOGGER.warning("_get_google_geocoding: Unable to get the location from Google API")
-                LOGGER.warning(response.content)
-                return data
-        except:
-            LOGGER.warning("_get_google_geocoding: Unable to get the location from Google API")
-            LOGGER.error("Exception occurred", exc_info=True)
+                LOGGER.error("Exception occurred", exc_info=True)
+                LOGGER.info(f"_get_google_geocoding: retrying")
+                return self._get_google_geocoding(address, retry + 1)
+
+
+    def _get_google_tz(self, location, retry:int=0):
+        if retry == MAX_RETRY:
+            LOGGER.error(f"_get_google_tz: too many retries...")
             return None
-
-
-    def _get_google_tz(self, location):
-        try:
-            ts = int(time.time())
-            url = f"https://maps.googleapis.com/maps/api/timezone/json?location={location['latitude']},{location['longitude']}&timestamp={ts}&key={self.google_api_key}"
-            response = requests.get(url)
-            LOGGER.debug(f"_get_google_tz: Response: {response.content}")
-            if response.status_code == 200:
-                data = response.json()
-                if data["status"] == "OK":
-                    tz = data["timeZoneId"]
-                    LOGGER.info("_get_google_tz: Request succeed with Data")
-                    return tz
-                elif data["status"] == "REQUEST_DENIED":
-                    LOGGER.warning(f"_get_google_tz: Request failed: {data['error_message']}")
+        else:
+            try:
+                ts = int(time.time())
+                url = f"https://maps.googleapis.com/maps/api/timezone/json?location={urllib.parse.quote(location['latitude'])},{urllib.parse.quote(location['longitude'])}&timestamp={urllib.parse.quote(ts)}&key={self.google_api_key}"
+                response = requests.get(url)
+                LOGGER.debug(f"_get_google_tz: Response: {response.content}")
+                if response.status_code == 200:
+                    data = response.json()
+                    if data["status"] == "OK":
+                        tz = data["timeZoneId"]
+                        LOGGER.info("_get_google_tz: Request succeed with Data")
+                        return tz
+                    elif data["status"] == "REQUEST_DENIED":
+                        LOGGER.warning(f"_get_google_tz: Request failed: {data['error_message']}")
+                        LOGGER.info(f"_get_google_tz: retrying")
+                        return self._get_google_tz(location, retry + 1)
+                    else:
+                        LOGGER.warning("_get_google_tz: Request failed without Data")
+                        LOGGER.info(f"_get_google_tz: retrying")
+                        return self._get_google_tz(location, retry + 1)
                 else:
-                    LOGGER.warning("_get_google_tz: Request failed without Data")
-                    return data
-            else:
+                    LOGGER.warning("_get_google_tz: Unable to find the site timezone")
+                    LOGGER.info(f"_get_google_tz: retrying")
+                    return self._get_google_tz(location, retry + 1)
+            except:
                 LOGGER.warning("_get_google_tz: Unable to find the site timezone")
-                return None
-        except:
-            LOGGER.warning("_get_google_tz: Unable to find the site timezone")
-            LOGGER.error("Exception occurred", exc_info=True)
-            return None
+                LOGGER.error("Exception occurred", exc_info=True)
+                LOGGER.info(f"_get_google_tz: retrying")
+                return self._get_google_tz(location, retry + 1)
 
 
     def geocoding(self, site):
@@ -431,6 +460,8 @@ def _process_sites(apisession: mistapi.APISession, sites:dict, geocoder:callable
             ]
         ]
     for site in sites:
+        if SYS_EXIT:
+            sys.exit(0)
         site_id = site.get("id")
         site_name = site.get("name")
         site_data ={
@@ -450,7 +481,7 @@ def _process_sites(apisession: mistapi.APISession, sites:dict, geocoder:callable
         LOGGER.debug(f"_process_sites: Site {site_name} (id: {site_id}): address: {site_data['address']}, latlnt:{site_data['latlng']}, country_code: {site_data['country_code']}, tz: {site_data['timezone']}")
         message = f"Site {site_name}: Checking Info"
         PB.log_message(message)
-        if not site['address']:
+        if not site.get('address'):
             PB.log_failure(f"{message} > address missing", inc=True)
             csv_entry += ['', '', '', '', True, False]
             PB.inc()
