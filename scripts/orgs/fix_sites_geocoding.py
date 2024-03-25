@@ -82,6 +82,7 @@ import csv
 import getopt
 import logging
 import signal
+import types
 import requests
 import urllib.parse
 
@@ -352,7 +353,7 @@ class OpenGeocoding:
     def _get_open_geocoding(self, site):
         try:
             location = self.geolocator.geocode(site["address"], addressdetails=True)
-            if isinstance(None, location):
+            if isinstance(location, types.NoneType):
                 LOGGER.warning(f"_get_open_geocoding: Unable to find the address")
                 return None
             else:
