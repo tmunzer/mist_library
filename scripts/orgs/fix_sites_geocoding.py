@@ -12,8 +12,8 @@ country_code, timezone), and update the site information when missing.
 
 The script is retrieving the sites from the organization, and checking for each
 of them if the lat/lng, country and timezone are set.
-If not, it is generating these information (with Geopy + Timezonefinder Python 
-packages or Google Map APIs) and updating the site.
+If not, it is generating these information with OpenStreetMap (Geopy and
+Timezonefinder Python packages or Google Map APIs) and updating the site.
 It is saving the result in a csv file (by default fix_sites_geocoding.csv) and
 can be run in dry-run mode.
 
@@ -23,8 +23,12 @@ This Script can use Google APIs (optional) to retrieve lat/lng, tz and country c
 To be able to use Google API, you need an API Key first. Mode information available 
 here: https://developers.google.com/maps/documentation/javascript/get-api-key?hl=en
 
-If the Google API Key is not provided, the script will use geopy and timezonefinder
-packages to generate the required information.
+The required API Key usages are:
+- Geocoding API
+- Time Zone API
+
+If the Google API Key is not provided, the script will use OpenStreetMap (geopy and
+timezonefinder packages) to generate the required information.
 
 -------
 Requirements:
@@ -76,6 +80,7 @@ python3 ./fix_sites_geocoding.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 \
 '''
 
 #### IMPORTS #####
+import urllib.parse
 import time
 import sys
 import csv
@@ -84,7 +89,6 @@ import logging
 import signal
 import types
 import requests
-import urllib.parse
 
 MISTAPI_MIN_VERSION = "0.44.1"
 
@@ -352,7 +356,8 @@ class OpenGeocoding:
 
     def _get_open_geocoding(self, site):
         try:
-            location = self.geolocator.geocode(site["address"], addressdetails=True)
+            time.sleep(.01)
+            location = self.geolocator.geocode(site["address"], addressdetails=True, timeout=5)
             if isinstance(location, types.NoneType):
                 LOGGER.warning(f"_get_open_geocoding: Unable to find the address")
                 return None
@@ -665,18 +670,23 @@ country_code, timezone), and update the site information when missing.
 
 The script is retrieving the sites from the organization, and checking for each
 of them if the lat/lng, country and timezone are set.
-If not, it is generating these information (with Geopy + Timezonefinder Python 
-packages or Google Map APIs) and updating the site.
+If not, it is generating these information with OpenStreetMap (Geopy and
+Timezonefinder Python packages or Google Map APIs) and updating the site.
 It is saving the result in a csv file (by default fix_sites_geocoding.csv) and
 can be run in dry-run mode.
+
 
 **NOTE**
 This Script can use Google APIs (optional) to retrieve lat/lng, tz and country code. 
 To be able to use Google API, you need an API Key first. Mode information available 
 here: https://developers.google.com/maps/documentation/javascript/get-api-key?hl=en
 
-If the Google API Key is not provided, the script will use geopy and timezonefinder
-packages to generate the required information.
+The required API Key usages are:
+- Geocoding API
+- Time Zone API
+
+If the Google API Key is not provided, the script will use OpenStreetMap (geopy and
+timezonefinder packages) to generate the required information.
 
 -------
 Requirements:
