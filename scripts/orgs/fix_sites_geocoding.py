@@ -234,6 +234,7 @@ class GoogleGeocoding:
                 LOGGER.debug(f"_get_google_geocoding: Response: {response.content}")
                 if response.status_code == 200:
                     data = response.json()
+                    LOGGER.debug(f"_get_google_geocoding: Response JSON: {data}")
                     if data["status"] == "OK":
                         if len(data["results"]) > 0:
                             data["location"] = {
@@ -278,11 +279,12 @@ class GoogleGeocoding:
         else:
             try:
                 ts = int(time.time())
-                url = f"https://maps.googleapis.com/maps/api/timezone/json?location={urllib.parse.quote(location['latitude'])},{urllib.parse.quote(location['longitude'])}&timestamp={urllib.parse.quote(ts)}&key={self.google_api_key}"
+                url = f"https://maps.googleapis.com/maps/api/timezone/json?location={location['latitude']},{location['longitude']}&timestamp={ts}&key={self.google_api_key}"
                 response = requests.get(url)
                 LOGGER.debug(f"_get_google_tz: Response: {response.content}")
                 if response.status_code == 200:
                     data = response.json()
+                    LOGGER.debug(f"_get_google_geocoding: Response JSON: {data}")
                     if data["status"] == "OK":
                         tz = data["timeZoneId"]
                         LOGGER.info("_get_google_tz: Request succeed with Data")
