@@ -447,7 +447,7 @@ def _update_org_rules(apisession:mistapi.APISession, org_id:str, new_rules:list)
 def _get_geo_info(site: dict, geocoder:callable) -> dict:
     message = f"Site {site['name']}: Retrievning geo information"
     PB.log_message(message)
-    data = geocoder.geococing(site)
+    data = geocoder.geocoding(site)
     if data:
         site["latlng"] = {
             "lat": data["location"]["latitude"],
