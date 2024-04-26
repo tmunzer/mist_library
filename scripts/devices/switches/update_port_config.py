@@ -396,6 +396,27 @@ def _update_switch_config(
 
 
 def _decompose_interface(interface: str):
+    '''
+    decompose interface range
+
+    PARAMS
+    -------
+    interface : str
+        interface name (e.g. ge-0/1/2) or interface range (e.g. ge-0/1/2-10)
+
+    RETURNS:
+    -------
+    str
+        interface type (e.g. "ge")
+    str
+        interface fpc id (e.g. "0")
+    str
+        interface pic number (e.g. "1")
+    str 
+        interface number or interface range starting index (e.g. "2")
+    str
+        interface number or interface range ending index (e.g. "10")
+    '''
     out_phy = interface.split("-", 1)[0]
     out_fpc = interface.split("-", 1)[1].split("/")[0]
     out_pic = interface.split("-", 1)[1].split("/")[1]
@@ -415,15 +436,43 @@ def _define_new_port_range(phy:str, fpc:str, pic:str, num_min:int, num_max:int):
         return f"{phy}-{fpc}/{pic}/{num_min}-{num_max}"
 
 def _process_port_range(mist_port_config_dict:dict, csv_port:str, csv_port_config:dict):
+    '''
+    Function to check if a switch port (csv_port) we want to configure is part of a port 
+    range in the port_config, and, if it's the case, split the port range to exclude the new port
+
+    PARAMS
+    -------
+    mist_port_config_dict : dict
+        port_config dict from the switch configuration
+
+    csv_port : str
+        interface to check/configure (e.g. "ge-0/0/0")
+
+    csv_port_config : dict
+        configuration to apply to the csv_port
+        
+    RETURNS:
+    -------
+    dict
+        new port_config dict to apply to the switch
+    bool
+        True if the port_config configuration has been updated and must be pushed
+        to Mist
+    '''
     config_updated = False
+    # create a copy of the mist port_config
     copy_port_config_dict = mist_port_config_dict.copy()
     csv_phy, csv_fpc, csv_pic, csv_num, not_used = _decompose_interface(csv_port)
+    # for each interface/range in the port_config
     for mist_range in mist_port_config_dict:
         LOGGER.debug(f"_process_port_range:checking range '{mist_range}' from Mist")
         mist_range_splitted = mist_range.replace(" ", "").split(",")
         mist_port_config = mist_port_config_dict[mist_range]
+        # split the comma separated list (if any) and go over each item
         for mist_port in mist_range_splitted:
+            # get the decomposed inteface/interface range values (fpc, pic, nums)
             mist_phy,mist_fpc,mist_pic,mist_num_min,mist_num_max = _decompose_interface(mist_port)
+            # check if the new interace (csv_port) is part if the interface range
             if (
                 mist_phy == csv_phy
                 and mist_fpc == csv_fpc
@@ -432,8 +481,14 @@ def _process_port_range(mist_port_config_dict:dict, csv_port:str, csv_port_confi
                 and mist_num_max >= csv_num
             ):
                 LOGGER.info(f"_process_port_range:'{csv_port}' is part of '{mist_port}'")
+                # CASE 1
+                # if it is a single interface (mist configuration)
+                # remove the current configuration (must be replaced by the new one)
                 if mist_num_min == csv_num and mist_num_max == csv_num:
                     new_port = None
+                # CASE 2
+                # if the new interface is the low end of the interface range (mist configuration)
+                # remove the low end interface of the range
                 elif mist_num_min == csv_num:
                     new_port = [
                         _define_new_port_range(
@@ -444,6 +499,9 @@ def _process_port_range(mist_port_config_dict:dict, csv_port:str, csv_port_confi
                             mist_num_max
                         )
                     ]
+                # CASE 3
+                # if the new interface is the high end of the interface range (mist configuration)
+                # remove the high end interface of the range
                 elif mist_num_max == csv_num:
                     new_port = [
                         _define_new_port_range(
@@ -454,6 +512,9 @@ def _process_port_range(mist_port_config_dict:dict, csv_port:str, csv_port_confi
                             int(mist_num_max)-1
                         )
                     ]
+                # CASE 4
+                # else, means if the new interface is "inside" the interface range (mist configuration)
+                # split the interface range in two parts, removing the new interface
                 else:
                     new_port = [
                         _define_new_port_range(
@@ -473,15 +534,19 @@ def _process_port_range(mist_port_config_dict:dict, csv_port:str, csv_port_confi
                     ]
 
                 LOGGER.debug(f"_process_port_range:new port is {new_port}")
+                # remove the interface/interface range which is including the new port from the port_config key
                 new_mist_range_splitted = mist_range_splitted
                 index = new_mist_range_splitted.index(mist_port)
                 new_mist_range_splitted.pop(index)
+                # if the interface range still exists (cases 2 to 4), add the newly generated port range(s) 
                 if new_port:
                     new_mist_range_splitted += new_port
                 LOGGER.info(
                     f"_process_port_range:new port range is {new_mist_range_splitted}"
                 )
+                # delete the port range from the copy of the port_config
                 del copy_port_config_dict[mist_range]
+                # add the new ranges
                 if new_mist_range_splitted:
                     new_mist_range = ",".join(new_mist_range_splitted)
                     copy_port_config_dict[new_mist_range] = mist_port_config
@@ -489,6 +554,7 @@ def _process_port_range(mist_port_config_dict:dict, csv_port:str, csv_port_confi
                         f"_process_port_range:new port config for '{new_mist_range}' "
                         f"is {copy_port_config_dict[new_mist_range]}"
                     )
+                # add the new port (port we want to configure)
                 copy_port_config_dict[csv_port] = csv_port_config
                 LOGGER.debug(
                         f"_process_port_range:new port config for '{csv_port}' "
