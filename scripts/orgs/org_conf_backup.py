@@ -146,6 +146,12 @@ ORG_STEPS = {
         "text": "Org deviceprofiles",
         "check_next": True,
     },
+    "switchprofiles": {
+        "mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles,
+        "text": "Org switchprofiles",
+        "request_type": "switch",
+        "check_next": True,
+    },
     "hubprofiles": {
         "mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles,
         "text": "Org hubprofiles",

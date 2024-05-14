@@ -88,10 +88,10 @@ except:
         \"pycryptodome\" package is missing. Please use the pip command to install it.
 
         # Linux/macOS
-        python3 -m pip install pycryptodome
+        python3 -m pip install pycryptodomex
 
         # Windows
-        py -m pip install pycryptodome
+        py -m pip install pycryptodomex
         """
     )
     sys.exit(3)
@@ -173,6 +173,12 @@ ORG_STEPS = {
     "deviceprofiles": {
         "mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles,
         "text": "Org deviceprofiles",
+        "check_next": True,
+    },
+    "switchprofiles": {
+        "mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles,
+        "text": "Org switchprofiles",
+        "request_type": "switch",
         "check_next": True,
     },
     "hubprofiles": {

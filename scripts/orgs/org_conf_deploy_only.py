@@ -113,6 +113,7 @@ signal.signal(signal.SIGINT, sigint_handler)
 org_steps = {
     "assetfilters": {"mistapi_function": mistapi.api.v1.orgs.assetfilters.createOrgAssetFilters, "text": "Org assetfilters"},
     "deviceprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfiles, "text": "Org deviceprofiles"},
+    "switchprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfiles, "text": "Org switchprofiles"},
     "hubprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfiles, "text": "Org hubprofiles"},
     "evpn_topologies": {"mistapi_function": mistapi.api.v1.orgs.evpn_topologies.createOrgEvpnTopology, "text": "Org evpn_topologies"},
     "secpolicies": {"mistapi_function": mistapi.api.v1.orgs.secpolicies.createOrgSecPolicies, "text": "Org secpolicies"},
