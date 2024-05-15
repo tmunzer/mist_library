@@ -305,6 +305,11 @@ SITE_STEPS = {
         "text": "Site psks",
         "check_next": True,
     },
+    "evpn_topologies": {
+        "mistapi_function": mistapi.api.v1.sites.evpn_topologies.getSiteEvpnTopology,
+        "text": "Site EVPN Topologies",
+        "check_next": True,
+    },
     "rssizones": {
         "mistapi_function": mistapi.api.v1.sites.rssizones.listSiteRssiZones,
         "text": "Site rssizones",
