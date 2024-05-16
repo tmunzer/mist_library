@@ -56,6 +56,7 @@ Optional:
                                             the new site. The name, address, 
                                             groups, vars and template will not
                                             be copied from the source site
+- sitetemplate_id or sitetemplate_name
 - alarmtemplate_id or alarmtemplate_name
 - aptemplate_id or aptemplate_name
 - gatewaytemplate_id or gatewaytemplate_name
@@ -155,6 +156,7 @@ LOGGER = logging.getLogger(__name__)
 #### GLOBALS #####
 PARAMETER_TYPES = [
     "site",
+    "sitetemplate",
     "alarmtemplate",
     "aptemplate",
     "gatewaytemplate",
@@ -706,6 +708,9 @@ def _retrieve_objects(apisession: mistapi.APISession, org_id: str, parameters_in
             elif parameter_type == "sitegroup":
                 response = mistapi.api.v1.orgs.sitegroups.listOrgSiteGroups(
                     apisession, org_id)
+            elif parameter_type == "sitetemplate":
+                response = mistapi.api.v1.orgs.sitetemplates.listOrgSiteTemplates(
+                    apisession, org_id)
             data = mistapi.get_all(apisession, response)
             for entry in data:
                 parameter_values[entry["name"]] = entry["id"]
@@ -728,6 +733,7 @@ def _extract_groups(data: str) -> list:
 ###############################################################################
 # Optional site parameters (if id and name is defined, the name will
 # be used):
+# - sitetemplate_id or sitetemplate_name
 # - alarmtemplate_id or alarmtemplate_name
 # - aptemplate_id or aptemplate_name
 # - gatewaytemplate_id or gatewaytemplate_name
@@ -1104,6 +1110,7 @@ Optional:
                                             the new site. The name, address, 
                                             vars and template will not be 
                                             copied from the source site
+- sitetemplate_id or sitetemplate_name
 - alarmtemplate_id or alarmtemplate_name
 - aptemplate_id or aptemplate_name
 - gatewaytemplate_id or gatewaytemplate_name
