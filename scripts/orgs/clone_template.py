@@ -588,7 +588,7 @@ def start(src_apisession: mistapi.APISession, dst_apisession: mistapi.APISession
     if not dst_apisession:
         dst_apisession = src_apisession
     if not src_org_id:
-        src_org_id = mistapi.cli.select_org(src_apisession)
+        src_org_id = mistapi.cli.select_org(src_apisession)[0]
     dst_org_id, dst_org_name = _check_dst_org(dst_apisession, dst_org_id, dst_org_name)
 
     if not template_type or not template_type in TEMPLATE_VALUES:
