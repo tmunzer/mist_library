@@ -240,7 +240,7 @@ class UUIDM:
         return obj_str, missing_uuids
 
     def _uuid_list(self, obj_str: str, missing_uuids: list):
-        uuid_list_re = '("[a-zA_Z_-]*": \["[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}"[^\]]*)]'
+        uuid_list_re = r"(\"[a-zA_Z_-]*\": \[\"[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}\"[^\]]*)]"
         uuid_lists_to_replace = re.findall(uuid_list_re, obj_str)
         if uuid_lists_to_replace:
             for uuid_list in uuid_lists_to_replace:
