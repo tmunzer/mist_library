@@ -127,7 +127,7 @@ ORG_STEPS = {
         "text": "Org deviceprofiles",
     },
     "switchprofiles": {
-        "mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles,
+        "mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfiles,
         "text": "Org switchprofiles",
         "request_type": "switch",
         "check_next": True,
@@ -286,7 +286,6 @@ SITE_STEPS = {
         "mistapi_function": mistapi.api.v1.sites.vbeacons.createSiteVBeacon,
         "text": "Site vbeacons",
     },
-
     "evpn_topologies": {
         "mistapi_function": mistapi.api.v1.sites.evpn_topologies.createSiteEvpnTopology,
         "text": "Site EVPN Topologies",
@@ -327,7 +326,10 @@ class UUIDM:
 
     def add_uuid(self, new: str, old: str):
         if new and old:
+            LOGGER.debug(f"add_uuid: old_id {old} matching new_id {new}")
             self.uuids[old] = new
+        else:
+            LOGGER.warning(f"add_uuid: old_id {old} matching new_id {new}")
 
     def get_new_uuid(self, old: str):
         return self.uuids.get(old)
@@ -349,7 +351,8 @@ class UUIDM:
         return self.requests_to_replay
 
     def _uuid_string(self, obj_str: str, missing_uuids: list):
-        uuid_re = '"[a-zA_Z_-]*": "[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}"'
+        #        uuid_re = '"[a-zA-Z_-]*": "[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}"'
+        uuid_re = r"\"[a-zA-Z_-]*\": \"[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}\""
         uuids_to_replace = re.findall(uuid_re, obj_str)
         if uuids_to_replace:
             for uuid in uuids_to_replace:
@@ -369,7 +372,9 @@ class UUIDM:
         return obj_str, missing_uuids
 
     def _uuid_list(self, obj_str: str, missing_uuids: list):
-        uuid_list_re = '("[a-zA_Z_-]*": \["[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}"[^\]]*)]'
+        #        uuid_list_re = '("[a-zA-Z_-]*": \["[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}"[^\]]*)\]'
+        uuid_list_re = r"(\"[a-zA-Z_-]*\": \[\"[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}\"[^\]]*)\]"
+
         uuid_lists_to_replace = re.findall(uuid_list_re, obj_str)
         if uuid_lists_to_replace:
             for uuid_list in uuid_lists_to_replace:
@@ -529,9 +534,9 @@ def _common_deploy(
     new_id = None
     object_name = ""
     if "name" in data:
-        object_name = f"\"{data['name']}\" "
+        object_name = f"\"{data.get('name', '<unknown>')}\""
     elif "ssid" in data:
-        object_name = f"\"{data['ssid']}\" "
+        object_name = f"\"{data.get('ssid', '<unknown>')}\""
     if "id" in data:
         old_id = data["id"]
     else:
@@ -541,7 +546,7 @@ def _common_deploy(
     PB.log_message(message)
     data, missing_uuids = UUID_MATCHING.find_and_replace(data, object_type)
 
-    if missing_uuids and not retry:
+    if missing_uuids and not retry:        
         UUID_MATCHING.add_replay(mistapi_function, scope_id, object_type, data)
         PB.log_warning(message, inc=True)
     else:
@@ -608,7 +613,7 @@ def _deploy_wlan(
         old_wlan_id,
         scope_id,
         new_wlan_id,
-        data["ssid"],
+        data.get("ssid"),
     )
 
 
@@ -622,9 +627,10 @@ def _deploy_wlan_portal(
     wlan_name: str,
 ):
     LOGGER.debug("conf_deploy:_deploy_wlan_portal")
+    portal_file_name = ""
     if SYS_EXIT:
         sys.exit(0)
-    if old_site_id is None:
+    elif not old_site_id:
         portal_file_name = f"{FILE_PREFIX}_org_{old_org_id}_wlan_{old_wlan_id}.json"
         portal_image = f"{FILE_PREFIX}_org_{old_org_id}_wlan_{old_wlan_id}.png"
         upload_image_function = mistapi.api.v1.orgs.wlans.uploadOrgWlanPortalImageFile
@@ -691,10 +697,24 @@ def _deploy_site_maps(
     if SYS_EXIT:
         sys.exit(0)
     old_map_id = data["id"]
+
+    for area in data.get("intended_coverage_areas", []):
+        LOGGER.info(f"_deploy_site_maps:removing ids from intended_coverage_areas")
+        del area["id"]
+        del area["map_id"]
+    if data.get("sitesurvey_path"):
+        LOGGER.info(f"_deploy_site_maps:removing sitesurvey_path")
+        del data["sitesurvey_path"]
+
     new_map_id = _common_deploy(
         apisession, SITE_STEPS["maps"]["mistapi_function"], new_site_id, "maps", data
     )
 
+    if not new_map_id:
+        LOGGER.warning(f"new id not returned for old_id {old_map_id}, trying to find a match")
+        new_map_id = UUID_MATCHING.get_new_uuid(old_map_id)
+    if not new_map_id:
+        LOGGER.error(f"no match for old_id {old_map_id}")
     image_name = (
         f"{FILE_PREFIX}_org_{old_org_id}_site_{old_site_id}_map_{old_map_id}.png"
     )
@@ -733,24 +753,39 @@ def _deploy_site(
         f"conf_deploy:_deploy_site:site {site_info['name']}, old id={old_site_id}, new id={new_site_id}"
     )
     for step_name, step in SITE_STEPS.items():
-        if step_name == "settings":
-            step_data = site_data.get(step_name, {})
-            _common_deploy(
-                apisession, step["mistapi_function"], new_site_id, step_name, step_data
-            )
-        elif step_name == "psks":
-            step_data = site_data.get(step_name)
-            if step_data:
-                _import_psks(
-                    apisession, step["mistapi_function"], new_site_id, step_data
-                )
+        if not site_data.get(step_name):
+            LOGGER.debug(f"{site_info['name']} > {step_name}: nothing to process")
         else:
-            for step_data in site_data.get(step_name, []):
-                if step_name == "maps":
-                    _deploy_site_maps(
-                        apisession, old_org_id, old_site_id, new_site_id, step_data
+            LOGGER.debug(f"{site_info['name']} > {step_name}: processing")
+            if step_name == "settings":
+                step_data = site_data.get(step_name, {})
+                _common_deploy(
+                    apisession,
+                    step["mistapi_function"],
+                    new_site_id,
+                    step_name,
+                    step_data
+                )
+            elif step_name == "psks":
+                step_data = site_data.get(step_name)
+                if step_data:
+                    _import_psks(
+                        apisession,
+                        step["mistapi_function"],
+                        new_site_id,
+                        step_data
                     )
-                elif step_name == "wlans":
+            elif step_name == "maps":
+                for step_data in site_data.get(step_name, []):
+                    _deploy_site_maps(
+                        apisession,
+                        old_org_id,
+                        old_site_id,
+                        new_site_id,
+                        step_data
+                    )
+            elif step_name == "wlans":
+                for step_data in site_data.get(step_name, []):
                     _deploy_wlan(
                         apisession,
                         step["mistapi_function"],
@@ -759,7 +794,8 @@ def _deploy_site(
                         old_org_id,
                         old_site_id,
                     )
-                else:
+            else:
+                for step_data in site_data.get(step_name, []):
                     _common_deploy(
                         apisession,
                         step["mistapi_function"],
@@ -875,6 +911,7 @@ def _start_deploy_org(
     except:
         PB.log_failure(message, display_pbar=False)
         console.critical("Unable to load the template/bakup")
+        LOGGER.error("Exception occurred", exc_info=True)
         sys.exit(1)
 
     try:
@@ -888,14 +925,15 @@ def _start_deploy_org(
             for step_name in SITE_STEPS:
                 if step_name == "settings":
                     steps_total += 1
-                elif step_name in backup["sites"][site_id]:
-                    steps_total += len(backup["sites"][site_id][step_name])
+                elif backup["sites"][site_id].get("step_name"):
+                    steps_total += len(backup["sites"][site_id].get("step_name", []))
         PB.set_steps_total(steps_total)
         PB.log_success(message, display_pbar=False)
         console.info(f"The process will deploy {steps_total} new objects")
     except:
         PB.log_failure(message, display_pbar=False)
         console.critical("Unable to parse the template/backup file")
+        LOGGER.error("Exception occurred", exc_info=True)
         sys.exit(1)
     if backup:
         _display_warning(
@@ -1030,7 +1068,9 @@ def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None
             custom_dest_org_name = input("Organization name? ")
         if custom_dest_org_name:
             org = {"name": custom_dest_org_name}
-            message = f'Creating the organisation "{custom_dest_org_name}" in {apisession.get_cloud()} '
+            print("")
+            print("")
+            message = f'Creating the organisation "{custom_dest_org_name}" on {apisession.get_cloud()} '
             PB.log_message(message, display_pbar=False)
             try:
                 PB.log_success(message, display_pbar=False)
@@ -1039,6 +1079,7 @@ def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None
                 LOGGER.error("Exception occurred", exc_info=True)
                 sys.exit(10)
             org_id = mistapi.api.v1.orgs.orgs.createOrg(apisession, org).data["id"]
+            print(f"New Org id: {org_id}")
             return org_id, custom_dest_org_name
 
 
@@ -1048,9 +1089,11 @@ def _select_dest_org(apisession: mistapi.APISession):
     print()
     while True:
         res = input(
-            "Do you want to create a (n)ew organisation or (r)estore to an existing one? "
+            "Do you want to create a (n)ew organisation or (r)estore to an existing one, (q)uit ? "
         )
-        if res.lower() == "r":
+        if res.lower() == "q":
+            sys.exit(0)
+        elif res.lower() == "r":
             org_id = mistapi.cli.select_org(apisession)[0]
             org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
             if _check_org_name(apisession, org_id, org_name):
