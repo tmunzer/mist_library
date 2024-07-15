@@ -306,7 +306,7 @@ SITE_STEPS = {
         "check_next": True,
     },
     "evpn_topologies": {
-        "mistapi_function": mistapi.api.v1.sites.evpn_topologies.getSiteEvpnTopology,
+        "mistapi_function": mistapi.api.v1.sites.evpn_topologies.listSiteEvpnTopologies,
         "text": "Site EVPN Topologies",
         "check_next": True,
     },
