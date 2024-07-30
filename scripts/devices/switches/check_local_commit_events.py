@@ -301,7 +301,7 @@ def _save_events(events: dict, site_id: str) -> None:
                 os.makedirs(site_id)
             for mac, switch_events in events.items():
                 file_path = f"./{site_id}/{mac}"
-                sorted_switch_events = sorted(switch_events, key=lambda d: d["timestamp"])
+                sorted_switch_events = sorted(switch_events, key=lambda d: d["timestamp"], reverse=True)
                 with open(file_path, 'w') as f:
                     for e in sorted_switch_events:
                         f.write(f"-------------- commit at {e.get('timestamp')} - user {e.get('commit_user')} --------------\n")
