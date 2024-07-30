@@ -144,3 +144,5 @@ dmypy.json
 *.py~
 test2.py
 .dccache
+scripts/orgs/org_conf_deploy_v2.py
+scripts/devices/switches/cli_commit_events/

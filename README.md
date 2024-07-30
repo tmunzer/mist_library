@@ -54,6 +54,10 @@ MIST_APITOKEN = xxxxxx
 The scripts are located in the `scripts` folder. They can be used as-is, or customized if needed.
 There is a short desccription at the beginning of each script explaining the purpose of the script, the available options, and how to use it. They are also accepting the `-h` option which will display the script help.
 
+**IMPORTANT NOTE**:
+Each script has description and documentation at the beginning of the file. Please check this information first, it is providing useful information on how to use each script.
+
+
 ## Clients
 - [import_guest.py](scripts/clients/import_guests.py): Python script import or update a list of Guests from a CSV file into a Mist Org or Mist Site
 ## Configuration
@@ -66,6 +70,7 @@ There is a short desccription at the beginning of each script explaining the pur
 - APs
     - [configure_ap_mgmt_vlan.py](scripts/devices/aps/configure_ap_mgmt_vlan.py): Python script reconfigure Management VLAN on all the Mist APs from one or multiple sites.
 - Switches
+    - [check_local_commit_events.py](scripts/devices/switches/check_local_commit_events.py) This script can be used to retrieve and save into a file the CLI Commit events (commit done localy one the switches) for all the switches belonging to a Mist Organization.
     - [update_port_config.py](scripts/devices/switches/update_port_config.py)Python script to reconfigure switch interfaces based on a CSV file. The script will create or replace device override at the switch level to reconfigure the interfaces.
     - [toggle_poe.py](scripts/devices/switches/toggle_poe.py): Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template.
 ## Exports
