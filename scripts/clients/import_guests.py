@@ -87,6 +87,7 @@ import sys
 import csv
 import getopt
 import logging
+import datetime
 
 MISTAPI_MIN_VERSION = "0.44.1"
 
@@ -193,6 +194,14 @@ def _create_site_guest(apisession:mistapi.APISession, site_id:str, guests:list):
             PB.log_message(message)
             mac = guest["mac"]
             del guest["mac"]
+
+            # Tmp fix. seems that "authorized_expiring_time" is not usable anymore at the site level. Use the "minutes" field instead
+            expire_time = guest.get("authorized_expiring_time")
+            if expire_time and not guest.get("minutes"):
+                now = datetime.datetime.now().timestamp()
+                minutes = (expire_time - now)/60
+                guest["minutes"] = minutes
+
             resp = mistapi.api.v1.sites.guests.updateSiteGuestAuthorization(apisession, site_id, mac, guest)
             if resp.status_code == 200:
                 PB.log_success(message, inc=True)
@@ -238,7 +247,7 @@ def _create_org_guest(apisession:mistapi.APISession, org_id:str, guests:list, wl
         try:
             PB.log_message(message)
 
-            mac = guest["mac"]
+            mac = guest["mac"].replace(":", "")
             del guest["mac"]
 
             if "ssid" in guest:
