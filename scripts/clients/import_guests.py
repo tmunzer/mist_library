@@ -249,6 +249,13 @@ def _create_org_guest(apisession:mistapi.APISession, org_id:str, guests:list, wl
 
             mac = guest["mac"].replace(":", "")
             del guest["mac"]
+            
+            # Tmp fix. seems that "authorized_expiring_time" is not usable anymore at the site level. Use the "minutes" field instead
+            expire_time = guest.get("authorized_expiring_time")
+            if expire_time and not guest.get("minutes"):
+                now = datetime.datetime.now().timestamp()
+                minutes = (expire_time - now)/60
+                guest["minutes"] = minutes
 
             if "ssid" in guest:
                 ssid = guest["ssid"]
