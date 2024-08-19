@@ -78,6 +78,7 @@ Each script has description and documentation at the beginning of the file. Plea
 - [export_search.py](scripts/exports/export_search.py): Python script to export historical data from Mist API and save the result in CSV of JSON format.
 ## NAC
 - [import_client_macs.py](scripts/nac/import_client_macs.py): Python script import import a list of MAC Address into "Client List" Mist NAC Labels from a CSV File.
+- [import_user_macs.py](scripts/nac/import_user_macs.py): Python script import import a list of MAC Address as "NAC Endpoints" from a CSV File.
 ## Orgs
 - [clone_template.py](scripts/orgs/clone_template.py): Python script to clone a specific template from an organization to another (or the same) organization.
 - [fix_sites_geocoding.py](scripts/orgs/fix_sites_geocoding.py): Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing.
