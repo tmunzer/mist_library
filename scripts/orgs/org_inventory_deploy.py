@@ -802,19 +802,20 @@ def _deploy(
                     unclaim,
                     unclaim_all,
                 )
-    _restore_unassigned_devices(
-        src_apisession,
-        dst_apisession,
-        src_org_id,
-        dst_org_id,
-        processed_macs,
-        org_backup["magics"],
-        org_backup["devices"],
-        failed_devices,
-        proceed,
-        unclaim,
-        unclaim_all,
-    )
+    if not filter_site_names:
+        _restore_unassigned_devices(
+            src_apisession,
+            dst_apisession,
+            src_org_id,
+            dst_org_id,
+            processed_macs,
+            org_backup["magics"],
+            org_backup["devices"],
+            failed_devices,
+            proceed,
+            unclaim,
+            unclaim_all,
+        )
     return _result(failed_devices, proceed)
 
 
