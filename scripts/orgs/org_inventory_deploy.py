@@ -78,6 +78,9 @@ Script Parameters:
 -e, --env=              define the env file to use (see mistapi env file 
                         documentation here: https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
+--source_env=           when using -u/--unclaim option, allows to define a 
+                        different env file to access the Source Organization.
+                        default is to use the env file from -e/--env
 
 -------
 Examples:
@@ -1225,6 +1228,9 @@ Script Parameters:
 -e, --env=              define the env file to use (see mistapi env file 
                         documentation here: https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
+--source_env=           when using -u/--unclaim option, allows to define a 
+                        different env file to access the Source Organization.
+                        default is to use the env file from -e/--env
 
 -------
 Examples:
