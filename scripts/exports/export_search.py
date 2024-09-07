@@ -46,13 +46,18 @@ Options:
                         discovered_switches_metrics, discovered_switches
 -q, --q_params=     list of query parameters. Please see the possible filters
                     in https://doc.mist-lab.fr
-                    format: key1:value1,key2:value2,...
--l, --log_file=     define the filepath/filename where to write the logs
-                    default is "./script.log"
--f, --out_file=     define the filepath/filename where to save the data
-                    default is "./export.csv"
+                    format: -q key1:value1 -q key2:value2 -q ...
+
 --out_format=       define the output format (csv or json)
                     default is csv
+-f, --file_prefix=  define the filepath/prefix filename of the file where to save
+                    the data. The extension .csv or .json will automatically be 
+                    added
+                    default is "./export.csv"
+-t, --timestamp     append the timestamp at the end of the report and summary files
+
+-l, --log_file=     define the filepath/filename where to write the logs
+                    default is "./script.log"
 -e, --env=          define the env file to use (see mistapi env file documentation 
                     here: https://pypi.org/project/mistapi/)
                     default is "~/.mist_env"
@@ -60,13 +65,17 @@ Options:
 -------
 Examples:
 python3 ./export_search.py                  
-python3 ./export_searchs.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --report=client_sessions_wireless --q_params=duration:1w           
+    --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 \
+    --report=client_sessions_wireless \
+    --q_params=duration:1w  \
+    --q_params=type:GW_ARP_UNRESOLVED,GW_ARP_UNRESOLVED        
 
 """
 
 #### IMPORTS ####
 import sys
 import json
+import datetime
 import csv
 import os
 import logging
@@ -99,7 +108,7 @@ except:
 LOG_FILE = "./script.log"
 ENV_FILE = os.path.join(os.path.expanduser("~"), ".mist_env")
 OUT_FILE_FORMAT = "csv"
-OUT_FILE_PATH = "./export.csv"
+OUT_FILE_PREFIX = "./export"
 
 #### LOGS ####
 logger = logging.getLogger(__name__)
@@ -1218,7 +1227,7 @@ def _process_request(
 
 ####################
 ## SAVE TO FILE
-def _save_as_csv(start: float, end: float, data: list, report: str, query_params: dict):
+def _save_as_csv(start: float, end: float, data: list, report: str, query_params: dict, file_prefix:str,timestamp: bool):
     headers = []
     size = 50
     total = len(data)
@@ -1236,7 +1245,11 @@ def _save_as_csv(start: float, end: float, data: list, report: str, query_params
     print()
     print("Saving to file ".ljust(80, "."))
     i = 0
-    with open(OUT_FILE_PATH, "w", encoding="UTF8", newline="") as f:
+    if timestamp:
+        backup_name = (f"{file_prefix}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.csv")
+    else:
+        backup_name = (f"{file_prefix}.csv")
+    with open(backup_name, "w", encoding="UTF8", newline="") as f:
         csv_writer = csv.writer(f)
         csv_writer.writerow(
             [
@@ -1258,9 +1271,7 @@ def _save_as_csv(start: float, end: float, data: list, report: str, query_params
         print()
 
 
-def _save_as_json(
-    start: float, end: float, data: list, report: str, query_params: dict
-):
+def _save_as_json(start: float, end: float, data: list, report: str, query_params: dict,file_prefix:str,timestamp: bool):
     print(" Saving Data ".center(80, "-"))
     print()
     json_data = {
@@ -1270,7 +1281,11 @@ def _save_as_json(
         "end": end,
         "data": data,
     }
-    with open(os.path.abspath(OUT_FILE_PATH), "w") as f:
+    if timestamp:
+        backup_name = (f"{file_prefix}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.json")
+    else:
+        backup_name = (f"{file_prefix}.csv")
+    with open(os.path.abspath(backup_name), "w") as f:
         json.dump(json_data, f)
     print("Done.")
 
@@ -1368,18 +1383,20 @@ def start(
     scope_id: str | None = None,
     report: str | None = None,
     query_params: dict | None = None,
+    file_prefix: str = OUT_FILE_PREFIX,
+    timestamp: bool = False
 ):
     scope, scope_id, report = _menu(apisession, scope, scope_id, report)
     start, end, data = _process_request(apisession, scope, scope_id, report, query_params)  # type: ignore
     if OUT_FILE_FORMAT == "csv":
-        _save_as_csv(start, end, data, report, query_params)  # type: ignore
+        _save_as_csv(start, end, data, report, query_params, file_prefix, timestamp)  # type: ignore
     elif OUT_FILE_FORMAT == "json":
-        _save_as_json(start, end, data, report, query_params)  # type: ignore
+        _save_as_json(start, end, data, report, query_params, file_prefix, timestamp)  # type: ignore
     else:
         console.error(f"file format {OUT_FILE_FORMAT} not supported")
 
 
-def usage():
+def usage(message: str = None):
     """Function to display Help"""
     print(
         f"""
@@ -1431,13 +1448,18 @@ Options:
                         discovered_switches_metrics, discovered_switches
 -q, --q_params=     list of query parameters. Please see the possible filters
                     in https://doc.mist-lab.fr
-                    format: key1:value1,key2:value2,...
--l, --log_file=     define the filepath/filename where to write the logs
-                    default is {LOG_FILE}
--f, --out_file=     define the filepath/filename where to save the data
-                    default is {OUT_FILE_PATH}
+                    format: -q key1:value1 -q key2:value2 -q ...
+
 --out_format=       define the output format (csv or json)
                     default is csv
+-f, --file_prefix=  define the filepath/prefix filename of the file where to save
+                    the data. The extension .csv or .json will automatically be 
+                    added
+                    default is {OUT_FILE_PREFIX}
+-t, --timestamp     append the timestamp at the end of the report and summary files
+
+-l, --log_file=     define the filepath/filename where to write the logs
+                    default is {LOG_FILE}
 -e, --env=          define the env file to use (see mistapi env file documentation 
                     here: https://pypi.org/project/mistapi/)
                     default is {ENV_FILE}
@@ -1445,9 +1467,15 @@ Options:
 -------
 Examples:
 python3 ./export_search.py                  
-python3 ./export_searchs.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --report=client_sessions_wireless --q_params=duration:1w  
+python3 ./export_searchs.py \
+    --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 \
+    --report=client_sessions_wireless \
+    --q_params=duration:1w  \
+    --q_params=type:GW_ARP_UNRESOLVED,GW_ARP_UNRESOLVED
     """
     )
+    if message:
+        console.error(message)
     sys.exit(0)
 
 
@@ -1489,7 +1517,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "hm:o:s:r:f:e:l:q:",
+            "hm:o:s:r:f:e:l:q:t",
             [
                 "help",
                 "msp_id=",
@@ -1497,10 +1525,11 @@ if __name__ == "__main__":
                 "site_id=",
                 "report=",
                 "out_format=",
-                "out_file=",
+                "file_prefix=",
                 "env=",
                 "log_file=",
                 "q_params=",
+                "timestamp"
             ],
         )
     except getopt.GetoptError as err:
@@ -1511,25 +1540,23 @@ if __name__ == "__main__":
     SCOPE_ID = None
     REPORT = None
     QUERY_PARAMS = {}
+    TIMESTAMP = False
     for o, a in opts:  # type: ignore
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-m", "--msp_id"]:
             if SCOPE:
-                console.error(f"Only one id can be configured")
-                usage()
+                usage("Only one id can be configured")
             SCOPE = "msp"
             SCOPE_ID = a
         elif o in ["-o", "--org_id"]:
             if SCOPE:
-                console.error(f"Only one id can be configured")
-                usage()
+                usage("Only one id can be configured")
             SCOPE = "org"
             SCOPE_ID = a
         elif o in ["-s", "--site_id"]:
             if SCOPE:
-                console.error(f"Only one id can be configured")
-                usage()
+                usage("Only one id can be configured")
             SCOPE = "site"
             SCOPE_ID = a
         elif o in ["-r", "--report"]:
@@ -1538,16 +1565,18 @@ if __name__ == "__main__":
             if a in ["csv", "json"]:
                 OUT_FILE_FORMAT = a
             else:
-                console.error(f"Out format {a} not supported")
-                usage()
-        elif o in ["-f", "--out_file"]:
-            OUT_FILE_PATH = a
+                usage(f"Out format {a} not supported")
+        elif o in ["-f", "--file_prefix"]:
+            OUT_FILE_PREFIX = a
+        elif o in ["-t", "--timestamp"]:
+            TIMESTAMP = True
         elif o in ["-e", "--env"]:
             ENV_FILE = a
         elif o in ["-q", "--q_params"]:
-            params = a.split(",")
-            for p in params:
-                QUERY_PARAMS[p.split(":")[0]] = p.split(":")[1]
+            if a.count(":") != 1:
+                usage(f"Unable to process param {a}")
+            else:
+                QUERY_PARAMS[a.split(":")[0]] = a.split(":")[1]
         elif o in ["-l", "--log_file"]:
             LOG_FILE = a
         else:
@@ -1560,4 +1589,4 @@ if __name__ == "__main__":
     ### START ###
     apisession = mistapi.APISession(env_file=ENV_FILE)
     apisession.login()
-    start(apisession, SCOPE, SCOPE_ID, REPORT, QUERY_PARAMS)
+    start(apisession, SCOPE, SCOPE_ID, REPORT, QUERY_PARAMS, OUT_FILE_PREFIX, TIMESTAMP)
