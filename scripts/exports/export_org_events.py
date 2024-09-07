@@ -47,8 +47,13 @@ Options:
 
 -------
 Examples:
-python3 ./export_search.py                  
-python3 ./export_searchs.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --report=client_sessions_wireless --q_params=duration:1w  
+python3 ././export_org_events.py               
+python3 ././export_org_events.py \
+        --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 \
+        --q_params=duration:1w \
+        --q_params=type:GW_CONFIG_FAILED,GW_ARP_UNRESOLVED \
+        -t 
+        
     """
 
 #### IMPORTS ####
@@ -406,8 +411,13 @@ Options:
 
 -------
 Examples:
-python3 ./export_search.py                  
-python3 ./export_searchs.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --report=client_sessions_wireless --q_params=duration:1w  
+python3 ././export_org_events.py               
+python3 ././export_org_events.py \
+        --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 \
+        --q_params=duration:1w \
+        --q_params=type:GW_CONFIG_FAILED,GW_ARP_UNRESOLVED \
+        -t 
+        
     """
     )
     if message:
@@ -488,7 +498,6 @@ if __name__ == "__main__":
                 usage(f"Unable to process param {a}")
             else:
                 QUERY_PARAMS[a.split(":")[0]] = a.split(":")[1]
-            print(QUERY_PARAMS)
         elif o in ["-l", "--log_file"]:
             LOG_FILE = a
         else:
