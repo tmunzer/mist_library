@@ -596,7 +596,6 @@ def _searchDeviceEvents(
             model=query_params.get("model"),
             text=query_params.get("text"),
             type=query_params.get("type"),
-            device_type=query_params.get("device_type"),
             duration=query_params.get("duration", "1d"),
             limit=query_params.get("limit", 1000),
         )
@@ -709,7 +708,6 @@ def _searchDeviceLastConfigs(
         return mistapi.api.v1.orgs.devices.searchOrgDeviceLastConfigs(
             apisession,
             scope_id,
-            device_type=query_params.get("device_type"),
             mac=query_params.get("mac"),
             duration=query_params.get("duration", "1d"),
             limit=query_params.get("limit", 1000),
@@ -718,7 +716,6 @@ def _searchDeviceLastConfigs(
         return mistapi.api.v1.sites.devices.searchSiteDeviceLastConfigs(
             apisession,
             scope_id,
-            device_type=query_params.get("device_type"),
             mac=query_params.get("mac"),
             duration=query_params.get("duration", "1d"),
             limit=query_params.get("limit", 1000),
@@ -877,7 +874,6 @@ def _searchSiteDeviceConfigHistory(
     return mistapi.api.v1.sites.devices.searchSiteDeviceConfigHistory(
         apisession,
         site_id,
-        device_type=query_params.get("device_type"),
         mac=query_params.get("mac"),
         duration=query_params.get("duration", "1d"),
         limit=query_params.get("limit", 1000),
