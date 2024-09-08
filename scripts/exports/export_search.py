@@ -1290,7 +1290,7 @@ def _save_as_json(start: float, end: float, data: list, report: str, query_param
     elif append_ts:
         backup_name = f"{file_prefix}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.json"
     else:
-        backup_name = (f"{file_prefix}.csv")
+        backup_name = (f"{file_prefix}.json")
     with open(os.path.abspath(backup_name), "w") as f:
         json.dump(json_data, f)
     print("Done.")
