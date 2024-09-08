@@ -31,6 +31,9 @@ Script Parameters:
 -o, --org_id=           Mist Org ID 
 -c, --csv_file=         output file (csv)
                         default: ./cluster_node_check.csv
+-d, --datetime          append the current date and time (ISO format) to the
+                        backup name 
+-t, --timestamp         append the timestamp at the end of the report and summary files
 
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
@@ -49,6 +52,7 @@ python3 ./cluster_node_check.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 import logging
 import sys
 import getopt
+import datetime
 import tabulate
 
 MISTAPI_MIN_VERSION = "0.46.1"
@@ -218,10 +222,16 @@ def process_device_stats(data: list):
     PB.log_success(message, inc=False, display_pbar=False)
     return clusters
 
-def save_result(clusters: list, csv_file: str):
+def save_result(clusters: list, csv_file: str, append_dt:bool, append_ts:bool):
     message=f"saving result to {csv_file}"
     PB.log_message(message, display_pbar=False)
     try:
+        if append_dt:
+            dt = datetime.datetime.isoformat(datetime.datetime.now()).split('.')[0].replace(':','.')
+            csv_file = f"{csv_file.replace('.csv', f'_{dt}')}.csv"
+        elif append_ts:
+            ts = round(datetime.datetime.timestamp(datetime.datetime.now()))
+            csv_file = f"{csv_file.replace('.csv', f'_{ts}')}.csv"
         with open(csv_file, "w") as f:
             f.write("site_id,hostname,device_id,node0_mac,node0_role,node1_mac,node1_role\n")
             for c in clusters:
@@ -233,7 +243,7 @@ def save_result(clusters: list, csv_file: str):
 
 
 def start(
-    apisession: mistapi.APISession, org_id: str, csv_file: str="./cluster_node_check.csv"):
+    apisession: mistapi.APISession, org_id: str, csv_file: str="./cluster_node_check.csv", append_dt:bool=False, append_ts:bool=False):
     """
     Start the process to rename the devices
 
@@ -244,6 +254,10 @@ def start(
     org_id : str
     csv_file : str, defailt: ./cluster_node_check.csv
         output file (csv)
+    append_dt : bool
+        append the current date and time (ISO format) to the backup name 
+    append_ts : bool
+        append the timestamp at the end of the report and summary files
     """
     LOGGER.debug("start")
     LOGGER.debug(f"start:parameter:org_id:{org_id}")
@@ -257,7 +271,7 @@ def start(
 
     data = get_device_stats(apisession, org_id)
     clusters = process_device_stats(data)
-    save_result(clusters, csv_file)
+    save_result(clusters, csv_file, append_dt, append_ts)
 
     print(tabulate.tabulate(clusters, headers={
         "site_id":"site_id",
@@ -318,6 +332,9 @@ Script Parameters:
 -o, --org_id=           Mist Org ID 
 -c, --csv_file=         output file (csv)
                         default: ./cluster_node_check.csv
+-d, --datetime          append the current date and time (ISO format) to the
+                        backup name 
+-t, --timestamp         append the timestamp at the end of the report and summary files
 
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
@@ -375,13 +392,17 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "ho:c:e:l:",
-            ["help", "org_id=", "csv_file=", "env=", "log_file="],
+            "ho:c:e:l:dt",
+            ["help", "org_id=", "csv_file=", "env=", "log_file=","timestamp","datetime"],
         )
     except getopt.GetoptError as err:
         console.error(err)
         usage()
+
     ORG_ID = None
+    APPEND_DT = False
+    APPEND_TS = False
+
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -389,6 +410,16 @@ if __name__ == "__main__":
             ORG_ID = a
         elif o in ["-c", "--csv_file"]:
             CSV_FILE = a
+        elif o in ["-d", "--datetime"]:
+            if APPEND_TS:
+                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                APPEND_DT = True
+        elif o in ["-t", "--timestamp"]:
+            if APPEND_DT:
+                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                APPEND_TS = True
         elif o in ["-e", "--env"]:
             ENV_FILE = a
         elif o in ["-l", "--log_file"]:
@@ -403,4 +434,4 @@ if __name__ == "__main__":
     ### START ###
     APISESSION = mistapi.APISession(env_file=ENV_FILE, show_cli_notif=False)
     APISESSION.login()
-    start(APISESSION, ORG_ID, CSV_FILE)
+    start(APISESSION, ORG_ID, CSV_FILE, APPEND_DT, APPEND_TS)
