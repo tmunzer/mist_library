@@ -37,6 +37,8 @@ Options:
                     <prefix>_report.csv: list all the events
                     <prefix>_summary.csv: list all the sites (with the dashboad URL)
                     default is "org_events"
+-d, --datetime      append the current date and time (ISO format) to the
+                    backup name 
 -t, --timestamp     append the timestamp at the end of the report and summary files
 
 -l, --log_file=     define the filepath/filename where to write the logs
@@ -53,13 +55,13 @@ python3 ././export_org_events.py \
         --q_params=duration:1w \
         --q_params=type:GW_CONFIG_FAILED,GW_ARP_UNRESOLVED \
         -t 
-        
+
     """
 
 #### IMPORTS ####
 import sys
-import json
 import csv
+import datetime
 import os
 import logging
 import getopt
@@ -279,7 +281,7 @@ def _process_request(
 
 ####################
 ## SAVE TO FILE
-def _save_as_csv(start: float, end: float, query_params: dict, data: list, prefix: str, timestamp: bool):
+def _save_as_csv(start: float, end: float, query_params: dict, data: list, prefix: str, append_dt: bool, append_ts:bool):
     headers = []
     size = 50
     total = len(data)
@@ -297,50 +299,60 @@ def _save_as_csv(start: float, end: float, query_params: dict, data: list, prefi
     print()
     print("Saving report to file ".ljust(80, "."))
     i = 0
-    if timestamp:
-        backup_name = (f"{prefix}_report_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.csv")
+    if append_dt:
+        backup_name = f"{prefix}_report_{datetime.datetime.isoformat(datetime.datetime.now()).split('.')[0].replace(':','.')}.csv"
+    elif append_ts:
+        backup_name = f"{prefix}_report_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.csv"
     else:
         backup_name = (f"{prefix}_report.csv")
-    with open(backup_name, "w", encoding="UTF8", newline="") as f:
-        csv_writer = csv.writer(f)
-        csv_writer.writerow(
-            [
-                f"Params: {query_params}",
-                f"start: {start}",
-                f"end:{end}",
-            ]
-        )
-        csv_writer.writerow(headers)
-        for entry in data:
-            tmp = []
-            for header in headers:
-                tmp.append(entry.get(header, ""))
-            csv_writer.writerow(tmp)
-            i += 1
-            _progress_bar_update(i, total, size)
-        _progress_bar_end(total, size)
+    try:
+        with open(backup_name, "w", encoding="UTF8", newline="") as f:
+            csv_writer = csv.writer(f)
+            csv_writer.writerow(
+                [
+                    f"Params: {query_params}",
+                    f"start: {start}",
+                    f"end:{end}",
+                ]
+            )
+            csv_writer.writerow(headers)
+            for entry in data:
+                tmp = []
+                for header in headers:
+                    tmp.append(entry.get(header, ""))
+                csv_writer.writerow(tmp)
+                i += 1
+                _progress_bar_update(i, total, size)
+            _progress_bar_end(total, size)
+    except:
+        logger.error("Exception occurred", exc_info=True)
 
 
-def _save_summary(start: float, end: float, query_params: dict, summary: list, prefix: str, timestamp: bool):
+def _save_summary(start: float, end: float, query_params: dict, summary: list, prefix: str, append_dt: bool, append_ts:bool):
     headers = ["site", "link"]
     print("Saving summary to file ".ljust(80, "."))
-    if timestamp:
-        backup_name = (f"{prefix}_summary_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.csv")
+    if append_dt:
+        backup_name = f"{prefix}_summary_{datetime.datetime.isoformat(datetime.datetime.now()).split('.')[0].replace(':','.')}.csv"
+    elif append_ts:
+        backup_name = f"{prefix}_summary_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.csv"
     else:
-        backup_name = (f"{prefix}_summary.csv")
-    with open(backup_name, "w", encoding="UTF8", newline="") as f:
-        csv_writer = csv.writer(f)
-        csv_writer.writerow(
-            [
-                f"Params: {query_params}",
-                f"start: {start}",
-                f"end:{end}",
-            ]
-        )
-        csv_writer.writerow(headers)
-        for entry in summary:
-            csv_writer.writerow([entry.get("site"), entry.get("link")])
-        print()
+        backup_name = (f"{prefix}_summary_.csv")
+    try:
+        with open(backup_name, "w", encoding="UTF8", newline="") as f:
+            csv_writer = csv.writer(f)
+            csv_writer.writerow(
+                [
+                    f"Params: {query_params}",
+                    f"start: {start}",
+                    f"end:{end}",
+                ]
+            )
+            csv_writer.writerow(headers)
+            for entry in summary:
+                csv_writer.writerow([entry.get("site"), entry.get("link")])
+            print()
+    except:
+        logger.error("Exception occurred", exc_info=True)
 
 
 def start(
@@ -348,15 +360,16 @@ def start(
     org_id: str | None = None,
     query_params: dict | None = None,
     prefix: str = "org_events",
-    timestamp: bool = False,
+    append_dt: bool = False,
+    append_ts: bool = False,
 ):
     if not org_id:
         org_id = mistapi.cli.select_org(apisession)[0]
     start, end, data = _process_request(apisession, org_id, query_params)
     sites = _searchSites(apisession, org_id)
-    _save_as_csv(start, end, query_params, data, prefix, timestamp)
+    _save_as_csv(start, end, query_params, data, prefix, append_dt, append_ts)
     summary = _gen_summary(apisession.get_cloud(), org_id, data, sites)
-    _save_summary(start, end, query_params, summary, prefix, timestamp)
+    _save_summary(start, end, query_params, summary, prefix, append_dt, append_ts)
 
 
 def usage(message: str = None):
@@ -401,6 +414,8 @@ Options:
                     <prefix>_report.csv: list all the events
                     <prefix>_summary.csv: list all the sites (with the dashboad URL)
                     default is "org_events"
+-d, --datetime      append the current date and time (ISO format) to the
+                    backup name 
 -t, --timestamp     append the timestamp at the end of the report and summary files
 
 -l, --log_file=     define the filepath/filename where to write the logs
@@ -463,7 +478,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "ho:p:e:l:q:t",
+            "ho:p:e:l:q:td",
             [
                 "help",
                 "org_id=",
@@ -472,6 +487,7 @@ if __name__ == "__main__":
                 "log_file=",
                 "q_params=",
                 "timestamp",
+                "datetime"
             ],
         )
     except getopt.GetoptError as err:
@@ -480,7 +496,8 @@ if __name__ == "__main__":
 
     ORG_ID = None
     QUERY_PARAMS = {}
-    TIMESTAMP = False
+    APPEND_DT = False
+    APPEND_TS = False
     FILE_PREFIX = "org_events"
     for o, a in opts:  # type: ignore
         if o in ["-h", "--help"]:
@@ -489,8 +506,16 @@ if __name__ == "__main__":
             ORG_ID = a
         elif o in ["-f", "--prefix"]:
             FILE_PREFIX = a
+        elif o in ["-d", "--datetime"]:
+            if APPEND_TS:
+                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                APPEND_DT = True
         elif o in ["-t", "--timestamp"]:
-            TIMESTAMP = True
+            if APPEND_DT:
+                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                APPEND_TS = True
         elif o in ["-e", "--env"]:
             ENV_FILE = a
         elif o in ["-q", "--q_params"]:
@@ -510,4 +535,4 @@ if __name__ == "__main__":
     ### START ###
     apisession = mistapi.APISession(env_file=ENV_FILE)
     apisession.login()
-    start(apisession, ORG_ID, QUERY_PARAMS, FILE_PREFIX, TIMESTAMP)
+    start(apisession, ORG_ID, QUERY_PARAMS, FILE_PREFIX, APPEND_DT, APPEND_TS)
