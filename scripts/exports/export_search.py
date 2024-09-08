@@ -50,6 +50,8 @@ Options:
 
 --out_format=       define the output format (csv or json)
                     default is csv
+-d, --datetime      append the current date and time (ISO format) to the
+                    backup name 
 -f, --file_prefix=  define the filepath/prefix filename of the file where to save
                     the data. The extension .csv or .json will automatically be 
                     added
@@ -1227,7 +1229,7 @@ def _process_request(
 
 ####################
 ## SAVE TO FILE
-def _save_as_csv(start: float, end: float, data: list, report: str, query_params: dict, file_prefix:str,timestamp: bool):
+def _save_as_csv(start: float, end: float, data: list, report: str, query_params: dict, file_prefix:str,append_dt: bool, append_ts:bool):
     headers = []
     size = 50
     total = len(data)
@@ -1245,8 +1247,10 @@ def _save_as_csv(start: float, end: float, data: list, report: str, query_params
     print()
     print("Saving to file ".ljust(80, "."))
     i = 0
-    if timestamp:
-        backup_name = (f"{file_prefix}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.csv")
+    if append_dt:
+        backup_name = f"{file_prefix}_{datetime.datetime.isoformat(datetime.datetime.now()).split('.')[0].replace(':','.')}.csv"
+    elif append_ts:
+        backup_name = f"{file_prefix}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.csv"
     else:
         backup_name = (f"{file_prefix}.csv")
     with open(backup_name, "w", encoding="UTF8", newline="") as f:
@@ -1271,7 +1275,7 @@ def _save_as_csv(start: float, end: float, data: list, report: str, query_params
         print()
 
 
-def _save_as_json(start: float, end: float, data: list, report: str, query_params: dict,file_prefix:str,timestamp: bool):
+def _save_as_json(start: float, end: float, data: list, report: str, query_params: dict,file_prefix:str,append_dt: bool, append_ts:bool):
     print(" Saving Data ".center(80, "-"))
     print()
     json_data = {
@@ -1281,8 +1285,10 @@ def _save_as_json(start: float, end: float, data: list, report: str, query_param
         "end": end,
         "data": data,
     }
-    if timestamp:
-        backup_name = (f"{file_prefix}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.json")
+    if append_dt:
+        backup_name = f"{file_prefix}_{datetime.datetime.isoformat(datetime.datetime.now()).split('.')[0].replace(':','.')}.json"
+    elif append_ts:
+        backup_name = f"{file_prefix}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.json"
     else:
         backup_name = (f"{file_prefix}.csv")
     with open(os.path.abspath(backup_name), "w") as f:
@@ -1384,14 +1390,15 @@ def start(
     report: str | None = None,
     query_params: dict | None = None,
     file_prefix: str = OUT_FILE_PREFIX,
-    timestamp: bool = False
+    append_dt: bool = False,
+    append_ts: bool = False
 ):
     scope, scope_id, report = _menu(apisession, scope, scope_id, report)
     start, end, data = _process_request(apisession, scope, scope_id, report, query_params)  # type: ignore
     if OUT_FILE_FORMAT == "csv":
-        _save_as_csv(start, end, data, report, query_params, file_prefix, timestamp)  # type: ignore
+        _save_as_csv(start, end, data, report, query_params, file_prefix, append_dt,append_ts )  # type: ignore
     elif OUT_FILE_FORMAT == "json":
-        _save_as_json(start, end, data, report, query_params, file_prefix, timestamp)  # type: ignore
+        _save_as_json(start, end, data, report, query_params, file_prefix, append_dt,append_ts)  # type: ignore
     else:
         console.error(f"file format {OUT_FILE_FORMAT} not supported")
 
@@ -1456,6 +1463,8 @@ Options:
                     the data. The extension .csv or .json will automatically be 
                     added
                     default is {OUT_FILE_PREFIX}
+-d, --datetime      append the current date and time (ISO format) to the
+                    backup name 
 -t, --timestamp     append the timestamp at the end of the report and summary files
 
 -l, --log_file=     define the filepath/filename where to write the logs
@@ -1517,7 +1526,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "hm:o:s:r:f:e:l:q:t",
+            "hm:o:s:r:f:e:l:q:dt",
             [
                 "help",
                 "msp_id=",
@@ -1529,7 +1538,8 @@ if __name__ == "__main__":
                 "env=",
                 "log_file=",
                 "q_params=",
-                "timestamp"
+                "timestamp",
+                "datetime"
             ],
         )
     except getopt.GetoptError as err:
@@ -1540,7 +1550,8 @@ if __name__ == "__main__":
     SCOPE_ID = None
     REPORT = None
     QUERY_PARAMS = {}
-    TIMESTAMP = False
+    APPEND_TS = False
+    APPEND_DT = False
     for o, a in opts:  # type: ignore
         if o in ["-h", "--help"]:
             usage()
@@ -1568,8 +1579,16 @@ if __name__ == "__main__":
                 usage(f"Out format {a} not supported")
         elif o in ["-f", "--file_prefix"]:
             OUT_FILE_PREFIX = a
+        elif o in ["-d", "--datetime"]:
+            if APPEND_TS:
+                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                APPEND_DT = True
         elif o in ["-t", "--timestamp"]:
-            TIMESTAMP = True
+            if APPEND_DT:
+                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                APPEND_TS = True
         elif o in ["-e", "--env"]:
             ENV_FILE = a
         elif o in ["-q", "--q_params"]:
@@ -1589,4 +1608,4 @@ if __name__ == "__main__":
     ### START ###
     apisession = mistapi.APISession(env_file=ENV_FILE)
     apisession.login()
-    start(apisession, SCOPE, SCOPE_ID, REPORT, QUERY_PARAMS, OUT_FILE_PREFIX, TIMESTAMP)
+    start(apisession, SCOPE, SCOPE_ID, REPORT, QUERY_PARAMS, OUT_FILE_PREFIX, APPEND_DT, APPEND_TS)
