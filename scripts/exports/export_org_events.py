@@ -49,8 +49,8 @@ Options:
 
 -------
 Examples:
-python3 ././export_org_events.py               
-python3 ././export_org_events.py \
+python3 ./export_org_events.py               
+python3 ./export_org_events.py \
         --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 \
         --q_params=duration:1w \
         --q_params=type:GW_CONFIG_FAILED,GW_ARP_UNRESOLVED \
@@ -329,7 +329,7 @@ def _save_as_csv(start: float, end: float, query_params: dict, data: list, prefi
 
 
 def _save_summary(start: float, end: float, query_params: dict, summary: list, prefix: str, append_dt: bool, append_ts:bool):
-    headers = ["site", "link"]
+    headers = ["#site", "link"]
     print("Saving summary to file ".ljust(80, "."))
     if append_dt:
         backup_name = f"{prefix}_summary_{datetime.datetime.isoformat(datetime.datetime.now()).split('.')[0].replace(':','.')}.csv"
@@ -426,8 +426,8 @@ Options:
 
 -------
 Examples:
-python3 ././export_org_events.py               
-python3 ././export_org_events.py \
+python3 ./export_org_events.py               
+python3 ./export_org_events.py \
         --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 \
         --q_params=duration:1w \
         --q_params=type:GW_CONFIG_FAILED,GW_ARP_UNRESOLVED \
