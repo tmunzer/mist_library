@@ -67,7 +67,7 @@ import logging
 import getopt
 import datetime
 
-MISTAPI_MIN_VERSION = "0.45.1"
+MISTAPI_MIN_VERSION = "0.52.4"
 
 try:
     import mistapi
@@ -196,21 +196,23 @@ def _searchSites(apisession: mistapi.APISession, org_id: str):
 
 def _gen_summary(host: str, org_id: str, data: dict, sites: dict):
     sites_map = {}
-    sites_done = []
-    output = []
+    output = {}
     for site in sites:
-        sites_map[site["id"]] = site
+        sites_map[site["id"]] = site.get("name")
     for e in data:
-        if e.get("site_id") and e.get("site_id") not in sites_done:
-            sites_done.append(e.get("site_id"))
-            site = sites_map.get(e["site_id"])
-            if site:
-                output.append(
-                    {
-                        "site": site.get("name"),
-                        "link": f"https://{host.replace('api', 'manage')}/admin/?org_id={org_id}#!dashboard/insights/{site.get('id')}",
-                    }
-                )
+        if e.get("site_id"):
+            site_id = e["site_id"]
+            if not output.get(e["site_id"]):
+                site_name = sites_map.get(site_id, "unknown")
+                e_type = e["type"]
+                output[site_id] = {
+                    "site": site_name,
+                    "link": f"https://{host.replace('api', 'manage')}/admin/?org_id={org_id}#!dashboard/insights/{site_id}",
+                }
+            if not output[site_id].get(e_type):
+                output[site_id][e_type] = 1
+            else:
+                output[site_id][e_type] += 1
     return output
 
 
@@ -281,11 +283,19 @@ def _process_request(
 
 ####################
 ## SAVE TO FILE
-def _save_as_csv(start: float, end: float, query_params: dict, data: list, prefix: str, append_dt: bool, append_ts:bool):
+def _save_as_csv(
+    start: float,
+    end: float,
+    query_params: dict,
+    data: list,
+    prefix: str,
+    append_dt: bool,
+    append_ts: bool,
+):
     headers = []
     size = 50
     total = len(data)
-    print(" Saving Data ".center(80, "-"))
+    print(" Saving Report Data ".center(80, "-"))
     print()
     print("Generating CSV Headers ".ljust(80, "."))
     i = 0
@@ -304,7 +314,7 @@ def _save_as_csv(start: float, end: float, query_params: dict, data: list, prefi
     elif append_ts:
         backup_name = f"{prefix}_report_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.csv"
     else:
-        backup_name = (f"{prefix}_report.csv")
+        backup_name = f"{prefix}_report.csv"
     try:
         with open(backup_name, "w", encoding="UTF8", newline="") as f:
             csv_writer = csv.writer(f)
@@ -328,15 +338,38 @@ def _save_as_csv(start: float, end: float, query_params: dict, data: list, prefi
         logger.error("Exception occurred", exc_info=True)
 
 
-def _save_summary(start: float, end: float, query_params: dict, summary: list, prefix: str, append_dt: bool, append_ts:bool):
-    headers = ["#site", "link"]
+def _save_summary(
+    start: float,
+    end: float,
+    query_params: dict,
+    data: list,
+    prefix: str,
+    append_dt: bool,
+    append_ts: bool,
+):
+    headers = ["site", "link"]
+    size = 50
+    total = len(data)
+    print(" Saving Summary Data ".center(80, "-"))
+    print()
+    print("Generating CSV Headers ".ljust(80, "."))
+    i = 0
+    for site_id, entry in data.items():
+        for key in entry:
+            if not key in headers:
+                headers.append(key)
+        i += 1
+        _progress_bar_update(i, total, size)
+    _progress_bar_end(total, size)
+    print()
     print("Saving summary to file ".ljust(80, "."))
+    i = 0
     if append_dt:
         backup_name = f"{prefix}_summary_{datetime.datetime.isoformat(datetime.datetime.now()).split('.')[0].replace(':','.')}.csv"
     elif append_ts:
         backup_name = f"{prefix}_summary_{round(datetime.datetime.timestamp(datetime.datetime.now()))}.csv"
     else:
-        backup_name = (f"{prefix}_summary_.csv")
+        backup_name = f"{prefix}_summary.csv"
     try:
         with open(backup_name, "w", encoding="UTF8", newline="") as f:
             csv_writer = csv.writer(f)
@@ -348,9 +381,14 @@ def _save_summary(start: float, end: float, query_params: dict, summary: list, p
                 ]
             )
             csv_writer.writerow(headers)
-            for entry in summary:
-                csv_writer.writerow([entry.get("site"), entry.get("link")])
-            print()
+            for site_id, entry in data.items():
+                tmp = []
+                for header in headers:
+                    tmp.append(entry.get(header, "0"))
+                csv_writer.writerow(tmp)
+                i += 1
+                _progress_bar_update(i, total, size)
+            _progress_bar_end(total, size)
     except:
         logger.error("Exception occurred", exc_info=True)
 
@@ -487,7 +525,7 @@ if __name__ == "__main__":
                 "log_file=",
                 "q_params=",
                 "timestamp",
-                "datetime"
+                "datetime",
             ],
         )
     except getopt.GetoptError as err:
@@ -508,12 +546,16 @@ if __name__ == "__main__":
             FILE_PREFIX = a
         elif o in ["-d", "--datetime"]:
             if APPEND_TS:
-                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+                usage(
+                    'Inavlid Parameters: "-d"/"--date" and "-t"/"--timestamp" are exclusive'
+                )
             else:
                 APPEND_DT = True
         elif o in ["-t", "--timestamp"]:
             if APPEND_DT:
-                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+                usage(
+                    'Inavlid Parameters: "-d"/"--date" and "-t"/"--timestamp" are exclusive'
+                )
             else:
                 APPEND_TS = True
         elif o in ["-e", "--env"]:
