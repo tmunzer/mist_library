@@ -30,30 +30,73 @@ python3 ./compare_org_events_summary \
 import sys
 import csv
 import getopt
-import datetime
+import tabulate
 
 def _load_data(file:str):
-    #try:
+    """
+    format summaries
+    output should be something like
+    data{"site_a": {"link": "...", "event_types": ["e_type_a", "e_type_b"]}, "site_b": ...}
+    """
+    try:
         with open(file, 'r') as f:
-            data = []
+            data = {}
+            headers = {}
             rows = csv.reader(f, delimiter=",")
-            i = 0
+            i = -1
             for row in rows:
                 i+=1
-                if i > 2:
-                    data.append(row)
-            return data
-    # except:
-    #     print(f"Error: Unable to read {file}")
-    #     sys.exit(1)
+                if i == 0:
+                    pass
+                elif i == 1:
+                    for header_name in row:
+                        if header_name not in ["site", "link"]:
+                            headers[header_name] = row.index(header_name)
+                else:
+                    event_types = []
+                    for header_name, header_index in headers.items():
+                        try:
+                            val = int(row[header_index])
+                            if val > 0:
+                                event_types.append(header_name)
+                        except: 
+                            pass
+                    if event_types:
+                        event_types = sorted(event_types)
+                        data[row[0]] = {
+                            "link": row[1],
+                            "event_types": event_types
+                        }
+        return data
+    except:
+        print(f"Error: Unable to read {file}")
+        sys.exit(1)
 
 def _compare(new:str, old:str):
+    """
+    create a diff. 
+    add a new line with the site name, site link, and the list of new events for the site
+    """
     new_data = _load_data(new)
     old_data = _load_data(old)
     diff = []
-    for d in new_data:
-        if d not in old_data:
-            diff.append(d)
+    for site_name, new_site_data in new_data.items():
+        new_events = []
+        new_site_events = new_site_data.get("event_types")
+        if old_data.get(site_name):
+            old_site_events = old_data[site_name].get("event_types")
+            for event_type in new_site_events:
+                if event_type not in old_site_events:
+                    new_events.append(event_type)
+        else:
+            for event_type in new_site_events:
+                new_events.append(event_type)
+        if new_events:
+            diff.append([
+                site_name,
+                new_site_data.get("link"),
+                ", ".join(new_events)
+            ])
     return diff
 
 def _save(new:str, old: str, data:list):
@@ -61,9 +104,10 @@ def _save(new:str, old: str, data:list):
     with open(filename, "w") as f:
         csv_writer = csv.writer(f)
         csv_writer.writerow([f"#compare between {new} and {old}"])
-        csv_writer.writerow(["#site","link"])
+        csv_writer.writerow(["#site","link", "new events"])
         for r in data:
             csv_writer.writerow(r)
+    return filename
 
 def start(
     new: str,
@@ -74,8 +118,16 @@ def start(
     if not old:
         print("Error: missing old file parameter")
     diff = _compare(new, old)
-    _save(new, old, diff)
-    print(diff)    
+    filename = _save(new, old, diff)
+    print()
+    print(" Result ".center(80, "-"))
+    print(tabulate.tabulate(diff[1:], headers={
+    "site":"site",
+    "link":"link",
+    "new events":"new events"
+    }))
+    print()
+    print(f"Saved into {filename}")
 
 def usage(message: str = None):
     """Function to display Help"""
