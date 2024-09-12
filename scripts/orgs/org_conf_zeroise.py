@@ -477,7 +477,7 @@ def start(apisession, org_id, org_name_from_user):
 
     print()
     console.info(
-        f"All objects removed... Organization {org_name} is back to default..."
+        f"All objects removed... Organization {org_name_from_mist} is back to default..."
     )
 
 

@@ -82,7 +82,6 @@ Each script has description and documentation at the beginning of the file. Plea
 ## Orgs
 - [clone_template.py](scripts/orgs/clone_template.py): Python script to clone a specific template from an organization to another (or the same) organization.
 - [fix_sites_geocoding.py](scripts/orgs/fix_sites_geocoding.py): Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing.
-- [import_admins.py](scripts/orgs/import_admins.py): Python script to invite/add adminsitrators from a CSV file.
 - [import_floorplans.py](scripts/orgs/import_floorplans.py): Python script to import multiple Ekahau/iBwave project into Mist Organisation.
 - [import_sites.py](scripts/orgs/import_sites.py): Python script automate the sites creation in a Mist Org from a CSV file.
 - [inventory_assign.py](scripts/orgs/inventory_assign.py): Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org.
@@ -100,6 +99,8 @@ Each script has description and documentation at the beginning of the file. Plea
 - [org_inventory_deploy.py](scripts/orgs/org_inventory_deploy.py): Python script to deploy organization inventory backup file. By default, this script can run in "Dry Run" mode to validate the destination org configuration and raise warning if any object from the source org is missing in the destination org.
 - [org_inventory_restore_pictures.py](scripts/orgs/org_inventory_restore_pictures.py): Python script to restore device images from an inventory backup file.
 - [validate_site_variables.py](scripts/orgs/validate_site_variables.py): Python script to validate that all the variables used in the templates used by each site are configured at the site level. The result is displayed on the console and saved in a CSV file.
+### Org Admins
+- [import_admins.py](scripts/orgs/admins/import_admins.py): Python script to invite/add adminsitrators from a CSV file.
 ## Sites
 - [site_conf_backup.py](scripts/sites/site_conf_backup.py): Python script to backup a whole site.
 - [site_conf_psk_import_csv.py](scripts/sites/site_conf_psk_import_csv.py): This script will import PSKs from a CSV file to one or multiple sites.
