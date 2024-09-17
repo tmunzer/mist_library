@@ -232,6 +232,7 @@ def _read_csv_file(file_path: str):
     pb.log_message("Processing CSV file", display_pbar=False)
     with open(file_path, "r") as f:
         data_from_csv = csv.reader(f, skipinitialspace=True, quotechar='"')
+        data_from_csv = [[c.replace("\ufeff", "") for c in row] for row in data_from_csv]
         for line in data_from_csv:
             if not fields:
                 i=0

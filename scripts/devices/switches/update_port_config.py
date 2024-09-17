@@ -785,6 +785,7 @@ def _read_csv(csv_file: str):
         LOGGER.debug(f"_read_csv:opening CSV file {csv_file}")
         with open(csv_file, "r") as f:
             data = csv.reader(f, skipinitialspace=True, quotechar='"')
+            data = [[c.replace("\ufeff", "") for c in row] for row in data]
             fields = []
             entries = []
             line_number = 0

@@ -328,6 +328,7 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id:str):
     pb.log_message("Processing CSV file", display_pbar=False)
     with open(file_path, "r") as f:
         data_from_csv = csv.reader(f, skipinitialspace=True, quotechar='"')
+        data = [[c.replace("\ufeff", "") for c in row] for row in data]
         for line in data_from_csv:
             if not fields:
                 i=0

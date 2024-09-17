@@ -230,6 +230,7 @@ def _read_csv_file(csv_file:str):
     PB.log_message("Processing CSV file", display_pbar=False)
     with open(csv_file, "r") as f:
         data_from_csv = csv.reader(f, skipinitialspace=True, quotechar='"')
+        data_from_csv = [[c.replace("\ufeff", "") for c in row] for row in data_from_csv]
         for line in data_from_csv:
             LOGGER.debug(f"_read_csv_file:{line}")
             # this is for the first line of the CSV file

@@ -68,6 +68,7 @@ def read_csv(csv_file):
     try:
         with open(sys.argv[1], 'r') as my_file:
             ppsk_file = csv.reader(my_file, delimiter=',')
+            ppsk_file = [[c.replace("\ufeff", "") for c in row] for row in ppsk_file]
             for row in ppsk_file:
                 username = row[0]
                 passphrase = row[1]
