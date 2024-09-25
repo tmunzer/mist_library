@@ -835,9 +835,10 @@ def _deploy_org(
     ########################
     ####  ORG SETTINGS  ####
     message = "Org Settings "
+    org_settings = org_backup["settings"]
     PB.log_message(message)
     try:
-        mistapi.api.v1.orgs.setting.updateOrgSettings(apisession, org_id, org_data)
+        mistapi.api.v1.orgs.setting.updateOrgSettings(apisession, org_id, org_settings)
         PB.log_success(message, inc=True)
     except Exception as e:
         PB.log_failure(message, inc=True)
