@@ -176,9 +176,8 @@ def _vpn_peer_up(events: list, vpn_downs: dict):
         for r in e.get("reasons", []):
             peer_ip = r.replace("Tunnel to peer ", "").replace(" established", "")
             if (
-                vpn_downs[gateway]
-                and vpn_downs[gateway]
-                and vpn_downs[gateway]["peers"][peer_ip]
+                vpn_downs.get(gateway)
+                and vpn_downs[gateway]["peers"].get(peer_ip)
                 and vpn_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen
             ):
                 vpn_downs[gateway]["hostname"] = hostname
