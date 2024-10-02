@@ -96,7 +96,8 @@ except:
     )
     sys.exit(3)
 
-MISTAPI_MIN_VERSION = "0.44.1"
+MISTAPI_MIN_VERSION = "0.52.0"
+
 try:
     import mistapi
     from mistapi.__logger import console
