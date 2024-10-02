@@ -176,7 +176,7 @@ def _process_vpn_peer(events, raised_timeout):
     vpn_downs = _vpn_peer_down(events)
     vpn_downs = _vpn_peer_up(events, vpn_downs)
     now_ts = round(datetime.timestamp(datetime.now()))
-    vpn_headers = ["GW Gostname" ,"GW MAC", "Peer IP", "VPN down for (sec)"]
+    vpn_headers = ["GW Hostname" ,"GW MAC", "Peer IP", "VPN down for (sec)"]
     vpn_results = []
     for gateway_mac, gateway_data in vpn_downs.items():
         gateway_name = gateway_data["hostname"]
@@ -255,7 +255,7 @@ def _process_bgp_peer(events, raised_timeout):
     bgp_downs = _gw_bgp_neighbor_down(events)
     bgp_downs = _gw_bgp_neighbor_up(events, bgp_downs)
     now_ts = round(datetime.timestamp(datetime.now()))
-    bgp_headers = ["GW Gostname" ,"GW MAC", "BGP Peer IP", "VPN Instance", "VPN down for (sec)"]
+    bgp_headers = ["GW Hostname" ,"GW MAC", "BGP Peer IP", "VPN Instance", "VPN down for (sec)"]
     bgp_results = []
     for gateway_mac, gateway_data in bgp_downs.items():
         gateway_name = gateway_data["hostname"]
