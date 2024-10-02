@@ -211,7 +211,7 @@ def _process_vpn_peer(events, raised_timeout):
 ###################################################################################################
 ################################# BGP
 def _gw_bgp_neighbor_down(events: list):
-    vpn_downs = {}
+    bgp_downs = {}
     tmp = list(filter(lambda event: event["type"] == "gw_bgp_neighbor_down", events))
     for e in tmp:
         gateway = e.get("gateways", ["unknown"])[0]
@@ -222,8 +222,8 @@ def _gw_bgp_neighbor_down(events: list):
             res = re.findall(bgp_re, r)
             peer_ip = res[0][0]
             vpn_instance = res[0][1]
-            if not vpn_downs.get(gateway):
-                vpn_downs[gateway] = {
+            if not bgp_downs.get(gateway):
+                bgp_downs[gateway] = {
                     "hostname": hostname,
                     "peers": {
                         peer_ip: {
@@ -233,19 +233,19 @@ def _gw_bgp_neighbor_down(events: list):
                         }
                     },
                 }
-            elif not vpn_downs[gateway]["peers"].get(peer_ip):
-                vpn_downs[gateway]["peers"][peer_ip] = {
+            elif not bgp_downs[gateway]["peers"].get(peer_ip):
+                bgp_downs[gateway]["peers"][peer_ip] = {
                     "last_seen": last_seen,
                     "vpn_instance": vpn_instance,
                     "cleared": -1,
                 }
-            elif vpn_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen:
-                vpn_downs[gateway]["hostname"] = hostname
-                vpn_downs[gateway]["peers"][peer_ip]["last_seen"] = last_seen
-    return vpn_downs
+            elif bgp_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen:
+                bgp_downs[gateway]["hostname"] = hostname
+                bgp_downs[gateway]["peers"][peer_ip]["last_seen"] = last_seen
+    return bgp_downs
 
 
-def _gw_bgp_neighbor_up(events: list, vpn_downs: dict):
+def _gw_bgp_neighbor_up(events: list, bgp_downs: dict):
     tmp = list(filter(lambda event: event["type"] == "gw_bgp_neighbor_up", events))
     for e in tmp:
         gateway = e.get("gateways", ["unknown"])[0]
@@ -255,10 +255,13 @@ def _gw_bgp_neighbor_up(events: list, vpn_downs: dict):
             bgp_re = r"(?P<ip>[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}) .* \(instance (?P<vpn_instance>\S+)\)"
             res = re.findall(bgp_re, r)
             peer_ip = res[0][0]
-            if vpn_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen:
-                vpn_downs[gateway]["hostname"] = hostname
-                vpn_downs[gateway]["peers"][peer_ip]["cleared"] = last_seen
-    return vpn_downs
+            if (bgp_downs.get(gateway)
+                and bgp_downs[gateway]["peers"].get(peer_ip)
+                and bgp_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen
+            ):
+                bgp_downs[gateway]["hostname"] = hostname
+                bgp_downs[gateway]["peers"][peer_ip]["cleared"] = last_seen
+    return bgp_downs
 
 
 def _process_bgp_peer(events, raised_timeout):
