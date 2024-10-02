@@ -1,4 +1,4 @@
-'''
+"""
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -73,7 +73,8 @@ python3 ./list_open_events.py \
         -o 9777c1a0-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
         -d 1w -t vpn_peer_down,vpn_peer_up,gw_bgp_neighbor_down,gw_bgp_neighbor_up
 
-'''
+"""
+
 #### IMPORTS ####
 import sys
 import getopt
@@ -87,7 +88,8 @@ try:
     import mistapi
     from mistapi.__logger import console as CONSOLE
 except:
-        print("""
+    print(
+        """
         Critical: 
         \"mistapi\" package is missing. Please use the pip command to install it.
 
@@ -96,12 +98,13 @@ except:
 
         # Windows
         py -m pip install mistapi
-        """)
-        sys.exit(2)
+        """
+    )
+    sys.exit(2)
 
 #### PARAMETERS #####
-ENV_FILE="~/.mist_env"
-CSV_FILE="./import_user_macs.csv"
+ENV_FILE = "~/.mist_env"
+CSV_FILE = "./import_user_macs.csv"
 LOG_FILE = "./script.log"
 
 #####################################################################
@@ -110,9 +113,18 @@ LOGGER = logging.getLogger(__name__)
 
 #### FUNCTIONS ####
 
-def _retrieve_events(mist_session:mistapi.APISession, org_id:str, alarm_types:str=None, duration:str="1d", retry=False):
+
+def _retrieve_events(
+    mist_session: mistapi.APISession,
+    org_id: str,
+    alarm_types: str = None,
+    duration: str = "1d",
+    retry=False,
+):
     try:
-        resp = mistapi.api.v1.orgs.alarms.searchOrgAlarms(mist_session, org_id, type=alarm_types, duration=duration, limit=1000)
+        resp = mistapi.api.v1.orgs.alarms.searchOrgAlarms(
+            mist_session, org_id, type=alarm_types, duration=duration, limit=1000
+        )
         if resp.status_code == 200:
             events = mistapi.get_all(mist_session, resp)
             return True, events
@@ -127,11 +139,12 @@ def _retrieve_events(mist_session:mistapi.APISession, org_id:str, alarm_types:st
         else:
             return False, None
 
+
 ###################################################################################################
 ################################# VPN
-def _vpn_peer_down(events:list):
+def _vpn_peer_down(events: list):
     vpn_downs = {}
-    tmp = list(filter(lambda event: event['type'] == 'vpn_peer_down' , events))
+    tmp = list(filter(lambda event: event["type"] == "vpn_peer_down", events))
     for e in tmp:
         gateway = e.get("gateways", ["unknown"])[0]
         hostname = e.get("hostnames", ["unknown"])[0]
@@ -141,32 +154,33 @@ def _vpn_peer_down(events:list):
             if not vpn_downs.get(gateway):
                 vpn_downs[gateway] = {
                     "hostname": hostname,
-                    "peers": {
-                        peer_ip: {
-                            "last_seen": last_seen,
-                            "cleared": -1
-                        }
-                    }
+                    "peers": {peer_ip: {"last_seen": last_seen, "cleared": -1}},
                 }
             elif not vpn_downs[gateway]["peers"].get(peer_ip):
                 vpn_downs[gateway]["peers"][peer_ip] = {
-                            "last_seen": last_seen,
-                            "cleared": -1
-                        }
+                    "last_seen": last_seen,
+                    "cleared": -1,
+                }
             elif vpn_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen:
                 vpn_downs[gateway]["hostname"] = hostname
                 vpn_downs[gateway]["peers"][peer_ip]["last_seen"] = last_seen
     return vpn_downs
 
-def _vpn_peer_up(events:list, vpn_downs:dict):
-    tmp = list(filter(lambda event: event['type'] == 'vpn_peer_up' , events))
+
+def _vpn_peer_up(events: list, vpn_downs: dict):
+    tmp = list(filter(lambda event: event["type"] == "vpn_peer_up", events))
     for e in tmp:
         gateway = e.get("gateways", ["unknown"])[0]
         hostname = e.get("hostnames", ["unknown"])[0]
         last_seen = e.get("last_seen", -1)
         for r in e.get("reasons", []):
             peer_ip = r.replace("Tunnel to peer ", "").replace(" established", "")
-            if vpn_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen:
+            if (
+                vpn_downs[gateway]
+                and vpn_downs[gateway]
+                and vpn_downs[gateway]["peers"][peer_ip]
+                and vpn_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen
+            ):
                 vpn_downs[gateway]["hostname"] = hostname
                 vpn_downs[gateway]["peers"][peer_ip]["cleared"] = last_seen
     return vpn_downs
@@ -176,40 +190,36 @@ def _process_vpn_peer(events, raised_timeout):
     vpn_downs = _vpn_peer_down(events)
     vpn_downs = _vpn_peer_up(events, vpn_downs)
     now_ts = round(datetime.timestamp(datetime.now()))
-    vpn_headers = ["GW Hostname" ,"GW MAC", "Peer IP", "VPN down for (sec)"]
+    vpn_headers = ["GW Hostname", "GW MAC", "Peer IP", "VPN down for (sec)"]
     vpn_results = []
     for gateway_mac, gateway_data in vpn_downs.items():
         gateway_name = gateway_data["hostname"]
         for peer_ip, peer_data in gateway_data.get("peers", {}).items():
             down = peer_data.get("last_seen", -1)
             cleared = peer_data.get("cleared", -1)
-            delta = (now_ts - down)
-            if cleared < 0 and delta > raised_timeout*60:
+            delta = now_ts - down
+            if cleared < 0 and delta > raised_timeout * 60:
                 # if delta > raised_timeout*60 :
                 #     delta_str = f"\033[31m{delta}\033[0m"
                 # else:
                 #     delta_str = f"\033[92m{delta}\033[0m"
                 delta_str = f"{delta}"
-                vpn_results.append([
-                    gateway_name,
-                    gateway_mac,
-                    peer_ip,
-                    delta_str
-                ])
-    res = sorted(vpn_results, key=lambda x:x[3], reverse=False)
+                vpn_results.append([gateway_name, gateway_mac, peer_ip, delta_str])
+    res = sorted(vpn_results, key=lambda x: x[3], reverse=False)
     return vpn_headers, res
+
 
 ###################################################################################################
 ################################# BGP
-def _gw_bgp_neighbor_down(events:list):
+def _gw_bgp_neighbor_down(events: list):
     vpn_downs = {}
-    tmp = list(filter(lambda event: event['type'] == 'gw_bgp_neighbor_down' , events))
+    tmp = list(filter(lambda event: event["type"] == "gw_bgp_neighbor_down", events))
     for e in tmp:
         gateway = e.get("gateways", ["unknown"])[0]
         hostname = e.get("hostnames", ["unknown"])[0]
         last_seen = e.get("last_seen", -1)
         for r in e.get("reasons", []):
-            bgp_re = r'(?P<ip>[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}) .* \(instance (?P<vpn_instance>\S+)\)'
+            bgp_re = r"(?P<ip>[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}) .* \(instance (?P<vpn_instance>\S+)\)"
             res = re.findall(bgp_re, r)
             peer_ip = res[0][0]
             vpn_instance = res[0][1]
@@ -220,29 +230,30 @@ def _gw_bgp_neighbor_down(events:list):
                         peer_ip: {
                             "last_seen": last_seen,
                             "vpn_instance": vpn_instance,
-                            "cleared": -1
+                            "cleared": -1,
                         }
-                    }
+                    },
                 }
             elif not vpn_downs[gateway]["peers"].get(peer_ip):
                 vpn_downs[gateway]["peers"][peer_ip] = {
-                            "last_seen": last_seen,
-                            "vpn_instance": vpn_instance,
-                            "cleared": -1
-                        }
+                    "last_seen": last_seen,
+                    "vpn_instance": vpn_instance,
+                    "cleared": -1,
+                }
             elif vpn_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen:
                 vpn_downs[gateway]["hostname"] = hostname
                 vpn_downs[gateway]["peers"][peer_ip]["last_seen"] = last_seen
     return vpn_downs
 
-def _gw_bgp_neighbor_up(events:list, vpn_downs:dict):
-    tmp = list(filter(lambda event: event['type'] == 'gw_bgp_neighbor_up' , events))
+
+def _gw_bgp_neighbor_up(events: list, vpn_downs: dict):
+    tmp = list(filter(lambda event: event["type"] == "gw_bgp_neighbor_up", events))
     for e in tmp:
         gateway = e.get("gateways", ["unknown"])[0]
         hostname = e.get("hostnames", ["unknown"])[0]
         last_seen = e.get("last_seen", -1)
         for r in e.get("reasons", []):
-            bgp_re = r'(?P<ip>[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}) .* \(instance (?P<vpn_instance>\S+)\)'
+            bgp_re = r"(?P<ip>[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}) .* \(instance (?P<vpn_instance>\S+)\)"
             res = re.findall(bgp_re, r)
             peer_ip = res[0][0]
             if vpn_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen:
@@ -255,7 +266,13 @@ def _process_bgp_peer(events, raised_timeout):
     bgp_downs = _gw_bgp_neighbor_down(events)
     bgp_downs = _gw_bgp_neighbor_up(events, bgp_downs)
     now_ts = round(datetime.timestamp(datetime.now()))
-    bgp_headers = ["GW Hostname" ,"GW MAC", "BGP Peer IP", "VPN Instance", "VPN down for (sec)"]
+    bgp_headers = [
+        "GW Hostname",
+        "GW MAC",
+        "BGP Peer IP",
+        "VPN Instance",
+        "VPN down for (sec)",
+    ]
     bgp_results = []
     for gateway_mac, gateway_data in bgp_downs.items():
         gateway_name = gateway_data["hostname"]
@@ -263,28 +280,30 @@ def _process_bgp_peer(events, raised_timeout):
             vpn_instance = peer_data.get("vpn_instance")
             down = peer_data.get("last_seen", -1)
             cleared = peer_data.get("cleared", -1)
-            delta = (now_ts - down)
-            if cleared < 0 and delta > raised_timeout*60:
+            delta = now_ts - down
+            if cleared < 0 and delta > raised_timeout * 60:
                 # if delta > raised_timeout*60 :
                 #     delta_str = f"\033[31m{delta}\033[0m"
                 # else:
                 #     delta_str = f"\033[92m{delta}\033[0m"
                 delta_str = f"{delta}"
-                bgp_results.append([
-                    gateway_name,
-                    gateway_mac,
-                    peer_ip,
-                    vpn_instance,
-                    delta_str
-                ])
-    res = sorted(bgp_results, key=lambda x:x[4], reverse=False)
+                bgp_results.append(
+                    [gateway_name, gateway_mac, peer_ip, vpn_instance, delta_str]
+                )
+    res = sorted(bgp_results, key=lambda x: x[4], reverse=False)
     return bgp_headers, res
 
 
-def start(mist_session:mistapi.APISession, org_id:str, alarm_types:str=None, duration:str="1d", raised_timeout:int=5):
+def start(
+    mist_session: mistapi.APISession,
+    org_id: str,
+    alarm_types: str = None,
+    duration: str = "1d",
+    raised_timeout: int = 5,
+):
     if not org_id:
         org_id = mistapi.cli.select_org(mist_session)[0]
-    
+
     success, events = _retrieve_events(mist_session, org_id, alarm_types, duration)
     vpn_headers, vpn_results = _process_vpn_peer(events, raised_timeout)
     bgp_headers, bgp_results = _process_bgp_peer(events, raised_timeout)
@@ -306,11 +325,13 @@ def start(mist_session:mistapi.APISession, org_id:str, alarm_types:str=None, dur
     print()
     print()
 
-def usage(error_message:str=None):
+
+def usage(error_message: str = None):
     """
     show script usage
     """
-    print('''
+    print(
+        """
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -384,17 +405,21 @@ python3 ./list_open_events.py \
         -e ~/.mist_env \
         -o 9777c1a0-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
         -d 1w -t vpn_peer_down,vpn_peer_up,gw_bgp_neighbor_down,gw_bgp_neighbor_up
-''')
+"""
+    )
     if error_message:
         CONSOLE.critical(error_message)
     sys.exit(0)
+
 
 def check_mistapi_version():
     """
     check the current version of the mistapi package
     """
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        LOGGER.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+        LOGGER.critical(
+            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+        )
         LOGGER.critical(f"Please use the pip command to updated it.")
         LOGGER.critical("")
         LOGGER.critical(f"    # Linux/macOS")
@@ -402,7 +427,8 @@ def check_mistapi_version():
         LOGGER.critical("")
         LOGGER.critical(f"    # Windows")
         LOGGER.critical(f"    py -m pip install --upgrade mistapi")
-        print(f"""
+        print(
+            f"""
     Critical: 
     \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.
     Please use the pip command to updated it.
@@ -412,26 +438,41 @@ def check_mistapi_version():
 
     # Windows
     py -m pip install --upgrade mistapi
-        """)
+        """
+        )
         sys.exit(2)
-    else: 
-        LOGGER.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+    else:
+        LOGGER.info(
+            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+        )
+
 
 ###############################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "he:o:a:d:t:l:", [
-                                   "help", "env_file=", "org_id=", "alarm_types=", "duration=", "trigger_timeout=", "log_file="])
+        opts, args = getopt.getopt(
+            sys.argv[1:],
+            "he:o:a:d:t:l:",
+            [
+                "help",
+                "env_file=",
+                "org_id=",
+                "alarm_types=",
+                "duration=",
+                "trigger_timeout=",
+                "log_file=",
+            ],
+        )
     except getopt.GetoptError as err:
         usage(err)
 
-    ENV_FILE=None
-    ORG_ID=None
-    ALARM_TYPES=None
-    DURATION=None
-    TIMEOUT=5
+    ENV_FILE = None
+    ORG_ID = None
+    ALARM_TYPES = None
+    DURATION = None
+    TIMEOUT = 5
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -451,7 +492,7 @@ if __name__ == "__main__":
             assert False, "unhandled option"
 
     #### LOGS ####
-    logging.basicConfig(filename=LOG_FILE, filemode='w')
+    logging.basicConfig(filename=LOG_FILE, filemode="w")
     LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### START ###
