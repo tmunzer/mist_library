@@ -40,23 +40,23 @@ values are listed below.
 -------
 CSV Examples:
 Example 1:
-#site_id, mac
+#site_id,mac
 0f661715-xxxx-xxxx-xxxx-cea446308f64,a4:e1:1a:00:00:00
 de45d851-xxxx-xxxx-xxxx-93b0cc52b435,d4:20:b0:11:11:11
 ...
 
 Example 2:
-#site_name, mac
+#site_name,mac
 "Site 2",a4:e1:1a:00:00:00
 ...
 
 Example 3:
-#site_name, serial
+#site_name,serial
 "Site 2",A113454322345
 ...
 
 Example 4:
-#site_id, serial
+#site_id,serial
 de45d851-xxxx-xxxx-xxxx-93b0cc52b435,A113454322345
 ...
 -------
@@ -398,12 +398,13 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id: str):
     PB.log_message("Processing CSV file", display_pbar=False)
     with open(file_path, "r") as f:
         data_from_csv = csv.reader(f, skipinitialspace=True, quotechar='"')
-        data = [[c.replace("\ufeff", "") for c in row] for row in data]
+        data_from_csv = [[c.replace("\ufeff", "") for c in row] for row in data_from_csv]
         for line in data_from_csv:
+            LOGGER.debug(f"_read_csv_file:new line {line}")
             if not fields:
                 i = 0
                 for column in line:
-                    column = re.sub("[^a-zA-Z_]", "", column)
+                    column = re.sub("[^a-zA-Z_] ", "", column)
                     fields.append(column)
                     if "site" in column:
                         if row_site < 0:
@@ -492,6 +493,7 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id: str):
                     if not site_id in data:
                         data[site_id] = [device_mac.replace(":", "").replace("-", "")]
                     else:
+                        data[site_id] = []
                         data[site_id].append(
                             device_mac.replace(":", "").replace("-", "")
                         )
@@ -612,23 +614,23 @@ de45d851-xxxx-xxxx-xxxx-93b0cc52b435,d4:20:b0:11:11:11
 ...
 
 Example 2:
-#site_name, mac
+#site_name,mac
 "Site 2",a4:e1:1a:00:00:00
 ...
 
 Example 3:
-#site_name, serial
+#site_name,serial
 "Site 2",A113454322345
 ...
 
 Example 4:
-#site_id, serial
+#site_id,serial
 de45d851-xxxx-xxxx-xxxx-93b0cc52b435,A113454322345
 ...
 
 
 Example 5 (only possible if the names in inventory are unique):
-#site_name, name
+#site_name,name
 "Site 2", device01
 
 ""
