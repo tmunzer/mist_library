@@ -1,4 +1,4 @@
-'''
+"""
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -90,7 +90,7 @@ Examples:
 python3 ./inventory_assign.py -f my_csv_file.csv
 python3 ./inventory_assign.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -f my_csv_file.csv
 
-'''
+"""
 
 #### IMPORTS ####
 import logging
@@ -104,9 +104,10 @@ MISTAPI_MIN_VERSION = "0.44.1"
 
 try:
     import mistapi
-    from mistapi.__logger import console
+    from mistapi.__logger import console as CONSOLE
 except:
-        print("""
+    print(
+        """
         Critical: 
         \"mistapi\" package is missing. Please use the pip command to install it.
 
@@ -115,52 +116,68 @@ except:
 
         # Windows
         py -m pip install mistapi
-        """)
-        sys.exit(2)
+        """
+    )
+    sys.exit(2)
 
 #####################################################################
 #### PARAMETERS #####
-csv_separator = ","
-env_file="~/.mist_env"
-log_file = "./script.log"
+CSV_SEPARATOR = ","
+ENV_FILE = "~/.mist_env"
+LOG_FILE = "./script.log"
 
 #####################################################################
 #### LOGS ####
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 #####################################################################
 # BACKUP OBJECTS REFS
-device_types = ["ap","switch","gateway","mxedge"]
+DEVICE_TYPES = ["ap", "switch", "gateway", "mxedge"]
+
 
 #####################################################################
 # PROGRESS BAR AND DISPLAY
-class ProgressBar():
-    def __init__(self):        
+class ProgressBar:
+    """
+    PROGRESS BAR AND DISPLAY
+    """
+    def __init__(self):
         self.steps_total = 0
         self.steps_count = 0
 
-    def _pb_update(self, size:int=80):   
-        if self.steps_count > self.steps_total: 
+    def _pb_update(self, size: int = 80):
+        if self.steps_count > self.steps_total:
             self.steps_count = self.steps_total
 
-        percent = self.steps_count/self.steps_total
+        percent = self.steps_count / self.steps_total
         delta = 17
-        x = int((size-delta)*percent)
+        x = int((size - delta) * percent)
         print(f"Progress: ", end="")
         print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
         print(f"{int(percent*100)}%".rjust(5), end="")
 
-    def _pb_new_step(self, message:str, result:str, inc:bool=False, size:int=80, display_pbar:bool=True):
-        if inc: self.steps_count += 1
+    def _pb_new_step(
+        self,
+        message: str,
+        result: str,
+        inc: bool = False,
+        size: int = 80,
+        display_pbar: bool = True,
+    ):
+        if inc:
+            self.steps_count += 1
         text = f"\033[A\033[F{message}"
         print(f"{text} ".ljust(size + 4, "."), result)
         print("".ljust(80))
-        if display_pbar: self._pb_update(size)
+        if display_pbar:
+            self._pb_update(size)
 
-    def _pb_title(self, text:str, size:int=80, end:bool=False, display_pbar:bool=True):
+    def _pb_title(
+        self, text: str, size: int = 80, end: bool = False, display_pbar: bool = True
+    ):
         print("\033[A")
-        print(f" {text} ".center(size, "-"),"\n")
-        if not end and display_pbar: 
+        print(f" {text} ".center(size, "-"), "\n")
+        if not end and display_pbar:
             print("".ljust(80))
             self._pb_update(size)
 
@@ -169,150 +186,203 @@ class ProgressBar():
         self.steps_count += 1
         self._pb_update(size)
 
-    def set_steps_total(self, steps_total:int):
+    def set_steps_total(self, steps_total: int):
         self.steps_total = steps_total
 
-    def log_message(self, message, display_pbar:bool=True):
+    def log_message(self, message, display_pbar: bool = True):
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
-    def log_success(self, message, inc:bool=False, display_pbar:bool=True):
-        logger.info(f"{message}: Success")
-        self._pb_new_step(message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
+    def log_success(self, message, inc: bool = False, display_pbar: bool = True):
+        LOGGER.info(f"{message}: Success")
+        self._pb_new_step(
+            message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
 
     def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
-        logger.warning(f"{message}")
+        LOGGER.warning(f"{message}")
         self._pb_new_step(
-            message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
+            message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
 
-    def log_failure(self, message, inc:bool=False, display_pbar:bool=True):
-        logger.error(f"{message}: Failure")
-        self._pb_new_step(message, '\033[31m\u2716\033[0m\n', inc=inc, display_pbar=display_pbar)
+    def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
+        LOGGER.error(f"{message}: Failure")
+        self._pb_new_step(
+            message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
 
-    def log_title(self, message, end:bool=False, display_pbar:bool=True):
-        logger.info(message)
+    def log_title(self, message, end: bool = False, display_pbar: bool = True):
+        LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
-pb = ProgressBar()
+
+PB = ProgressBar()
+
 
 #####################################################################
-def _result(failed_messages:list):
-    pb.log_title("Result", end=True, display_pbar=False)    
+def _result(failed_messages: list):
+    PB.log_title("Result", end=True, display_pbar=False)
     if not failed_messages:
-        console.info("All devices assigned successfully")
+        CONSOLE.info("All devices assigned successfully")
     else:
         for message in failed_messages:
-            console.error(message)
+            CONSOLE.error(message)
 
-    
 
 #####################################################################
 ## CLAIM
-def _generate_failed_claim_messages(claim_codes:list, reasons:list):
+def _generate_failed_claim_messages(claim_codes: list, reasons: list):
     failed_messages = []
     i = 0
     while i < len(claim_codes):
         claim_code = claim_codes[i]
-        if not claim_code: claim_code = "unknown"
+        if not claim_code:
+            claim_code = "unknown"
         mess = reasons[i]
-        if not mess: mess = "Unknown reason"
+        if not mess:
+            mess = "Unknown reason"
         failed_messages.append(f"device {claim_code}: {mess}")
-        i+=1
+        i += 1
     return failed_messages
 
-def _claim_devices(apisession:mistapi.APISession, org_id:str,claim_codes:list):
+
+def _claim_devices(apisession: mistapi.APISession, org_id: str, claim_codes: list):
     message = f"Claiming {len(claim_codes)} device(s)"
-    pb.log_message(message, display_pbar=False) 
+    PB.log_message(message, display_pbar=False)
     try:
 
-        resp = mistapi.api.v1.orgs.inventory.addOrgInventory(apisession, org_id, claim_codes)
+        resp = mistapi.api.v1.orgs.inventory.addOrgInventory(
+            apisession, org_id, claim_codes
+        )
         if resp.status_code == 200:
             device_macs = {}
             added = resp.data.get("added", [])
             duplicated = resp.data.get("duplicated", [])
             error = resp.data.get("error", [])
             if duplicated or error:
-                pb.log_warning(message, display_pbar=False)
+                PB.log_warning(message, display_pbar=False)
             else:
-                pb.log_success(message, display_pbar=False)
+                PB.log_success(message, display_pbar=False)
             if added:
                 for device in resp.data.get("inventory_added", []):
                     device_macs[device["magic"]] = device["mac"]
-            return {"added": device_macs, "error": _generate_failed_claim_messages(resp.data.get("error", []), resp.data.get("reason",[])), "duplicated": resp.data.get("duplicated", [])}
+            return {
+                "added": device_macs,
+                "error": _generate_failed_claim_messages(
+                    resp.data.get("error", []), resp.data.get("reason", [])
+                ),
+                "duplicated": resp.data.get("duplicated", []),
+            }
         else:
-            pb.log_failure(message, display_pbar=False)
-            return {"error": _generate_failed_claim_messages(resp.data.get("error", []),  resp.data.get("reason",[])), "duplicated":resp.data.get("duplicated", [])}
+            PB.log_failure(message, display_pbar=False)
+            return {
+                "error": _generate_failed_claim_messages(
+                    resp.data.get("error", []), resp.data.get("reason", [])
+                ),
+                "duplicated": resp.data.get("duplicated", []),
+            }
     except:
-        pb.log_failure(message, display_pbar=False)
-        return {"error": resp.data.get("error", [f"Unknown error for devices {claim_codes}"]), "duplicated": resp.data.get("duplicated", [])}
+        PB.log_failure(message, display_pbar=False)
+        return {
+            "error": resp.data.get(
+                "error", [f"Unknown error for devices {claim_codes}"]
+            ),
+            "duplicated": resp.data.get("duplicated", []),
+        }
+
 
 #####################################################################
 ## ASSIGN
 
 
-def _generate_failed_assign_messages(macs:list, reasons:list):
+def _generate_failed_assign_messages(macs: list, reasons: list):
     failed_messages = []
     i = 0
     while i < len(macs):
         mac = macs[i]
-        if not mac: mac = "unknown"
+        if not mac:
+            mac = "unknown"
         mess = reasons[i]
-        if not mess: mess = "Unknown reason"
+        if not mess:
+            mess = "Unknown reason"
         failed_messages.append(f"device {mac}: {mess}")
-        i+=1
+        i += 1
     return failed_messages
 
-def _assign_devices(apisession:mistapi.APISession, org_id:str, site_id:str, macs:list, managed:bool=False, no_reassign:bool=True):
+
+def _assign_devices(
+    apisession: mistapi.APISession,
+    org_id: str,
+    site_id: str,
+    macs: list,
+    managed: bool = False,
+    no_reassign: bool = True,
+):
     message = f"Assigning {len(macs)} device(s)"
-    pb.log_message(message) 
+    PB.log_message(message)
     try:
-        body =  {
+        body = {
             "op": "assign",
             "site_id": site_id,
             "macs": macs,
             "managed": managed,
             "disable_auto_config": not managed,
-            "no_reassign": no_reassign
+            "no_reassign": no_reassign,
         }
-        resp = mistapi.api.v1.orgs.inventory.updateOrgInventoryAssignment(apisession, org_id, body)
+        resp = mistapi.api.v1.orgs.inventory.updateOrgInventoryAssignment(
+            apisession, org_id, body
+        )
         if resp.status_code == 200:
             if not resp.data.get("error", []):
-                pb.log_success(message, inc=False)
+                PB.log_success(message, inc=False)
                 return []
             else:
-                pb.log_warning(message, inc=False)
-                return _generate_failed_assign_messages(resp.data.get("error", []), resp.data.get("reason",[]))
+                PB.log_warning(message, inc=False)
+                return _generate_failed_assign_messages(
+                    resp.data.get("error", []), resp.data.get("reason", [])
+                )
         else:
-            pb.log_failure(message, inc=False)
-            return _generate_failed_assign_messages(resp.data.get("error", []), resp.data.get("reason",[]))
+            PB.log_failure(message, inc=False)
+            return _generate_failed_assign_messages(
+                resp.data.get("error", []), resp.data.get("reason", [])
+            )
     except:
-        pb.log_failure(message, inc=False)
+        PB.log_failure(message, inc=False)
         return resp.data.get("reason", [f"Unknown error for devices {macs}"])
 
 
-def _process_devices(apisession:mistapi.APISession, org_id:str, data:object, managed:bool=False, no_reassign:bool=True):
-    '''
+def _process_devices(
+    apisession: mistapi.APISession,
+    org_id: str,
+    data: object,
+    managed: bool = False,
+    no_reassign: bool = True,
+):
+    """
     create all the administrators from the "file_path" file.
-    '''
+    """
     failed_messages = []
     limit = 100
     for site_id in data:
-        pb.log_title(f"Site {site_id}")
-        device_macs = data[site_id]          
+        PB.log_title(f"Site {site_id}")
+        device_macs = data[site_id]
         i = 0
         while i * limit < len(device_macs):
             mac_start = i * limit
-            mac_end = (i+1)*limit
-            if mac_end > len(device_macs): mac_end = len(device_macs)
+            mac_end = (i + 1) * limit
+            if mac_end > len(device_macs):
+                mac_end = len(device_macs)
             macs = device_macs[mac_start:mac_end]
-            failed = _assign_devices(apisession, org_id, site_id, macs, managed, no_reassign)
+            failed = _assign_devices(
+                apisession, org_id, site_id, macs, managed, no_reassign
+            )
             if failed:
-                failed_messages+=failed                
-            i+=1
-        pb.inc()
+                failed_messages += failed
+            i += 1
+        PB.inc()
     return failed_messages
 
 
-def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id:str):
+def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id: str):
     fields = []
     data = {}
     data_cc = {}
@@ -325,13 +395,13 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id:str):
     claimcodes = []
     row_site = -1
     row_device = -1
-    pb.log_message("Processing CSV file", display_pbar=False)
+    PB.log_message("Processing CSV file", display_pbar=False)
     with open(file_path, "r") as f:
         data_from_csv = csv.reader(f, skipinitialspace=True, quotechar='"')
         data = [[c.replace("\ufeff", "") for c in row] for row in data]
         for line in data_from_csv:
             if not fields:
-                i=0
+                i = 0
                 for column in line:
                     column = re.sub("[^a-zA-Z_]", "", column)
                     fields.append(column)
@@ -339,58 +409,70 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id:str):
                         if row_site < 0:
                             row_site = i
                         else:
-                            console.error("Either \"site_name\" or \"site_id\" can be used, not both.")
+                            CONSOLE.error(
+                                'Either "site_name" or "site_id" can be used, not both.'
+                            )
                     elif column in ["serial", "mac", "claimcode", "name"]:
                         if row_device < 0:
                             row_device = i
                         else:
-                            console.error("Either \"serial\" or \"mac\" can be used, not both.")
-                    i+=1
-                    
+                            CONSOLE.error(
+                                'Either "serial" or "mac" can be used, not both.'
+                            )
+                    i += 1
+
                 if "site_name" in fields:
                     use_site_name = True
                     message = "Retrieving site list from Mist"
-                    pb.log_message(message, display_pbar=False)
+                    PB.log_message(message, display_pbar=False)
                     try:
-                        response = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id, limit=1000)
+                        response = mistapi.api.v1.orgs.sites.listOrgSites(
+                            apisession, org_id, limit=1000
+                        )
                         sites_from_mist = mistapi.get_all(apisession, response)
-                        for site in sites_from_mist:                        
+                        for site in sites_from_mist:
                             sites[site["name"]] = site["id"]
-                        pb.log_success(message, inc=False, display_pbar=False)
-                        pb.log_message("Processing CSV file", display_pbar=False)
+                        PB.log_success(message, inc=False, display_pbar=False)
+                        PB.log_message("Processing CSV file", display_pbar=False)
                     except:
-                        pb.log_failure(message, inc=False, display_pbar=False)
+                        PB.log_failure(message, inc=False, display_pbar=False)
                         sys.exit(0)
 
                 if "claimcode" in fields:
                     use_claimcode = True
-                elif "serial" or "name" in fields:  
+                elif "serial" or "name" in fields:
                     if "serial" in fields:
                         use_serial = True
                     elif "name" in fields:
                         use_name = True
 
                     message = "Retrieving device list from Mist"
-                    pb.log_message(message, display_pbar=False)
+                    PB.log_message(message, display_pbar=False)
                     try:
-                        response  = mistapi.api.v1.orgs.inventory.getOrgInventory(apisession, org_id, limit=1000)
+                        response = mistapi.api.v1.orgs.inventory.getOrgInventory(
+                            apisession, org_id, limit=1000
+                        )
                         devices_from_mist = mistapi.get_all(apisession, response)
                         for device in devices_from_mist:
-                            if "serial" in fields:                        
+                            if "serial" in fields:
                                 inventory[device["serial"]] = device["mac"]
                             elif "name" in fields:
-                                inventory[device["name"]] = device["mac"] 
-                        pb.log_success(message, inc=False, display_pbar=False)
-                        pb.log_message("Processing CSV file", display_pbar=False)
+                                inventory[device["name"]] = device["mac"]
+                        PB.log_success(message, inc=False, display_pbar=False)
+                        PB.log_message("Processing CSV file", display_pbar=False)
                     except:
-                        pb.log_failure(message, inc=False, display_pbar=False)
+                        PB.log_failure(message, inc=False, display_pbar=False)
                         sys.exit(0)
 
-                if row_site < 0: 
-                    console.error("Unable to find `site_id` or `site_name` in the CSV file. Please check the file format")
+                if row_site < 0:
+                    CONSOLE.error(
+                        "Unable to find `site_id` or `site_name` in the CSV file. Please check the file format"
+                    )
                     sys.exit(0)
-                if row_device < 0: 
-                    console.error("Unable to find `mac` or `serial` or `name` in the CSV file. Please check the file format")
+                if row_device < 0:
+                    CONSOLE.error(
+                        "Unable to find `mac` or `serial` or `name` in the CSV file. Please check the file format"
+                    )
                     sys.exit(0)
             else:
                 device_mac = None
@@ -406,66 +488,79 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id:str):
                 else:
                     device_mac = line[row_device]
 
-                if (site_id and device_mac):
+                if site_id and device_mac:
                     if not site_id in data:
                         data[site_id] = [device_mac.replace(":", "").replace("-", "")]
                     else:
-                        data[site_id].append(device_mac.replace(":", "").replace("-", ""))
-                elif (site_id and use_claimcode):
+                        data[site_id].append(
+                            device_mac.replace(":", "").replace("-", "")
+                        )
+                elif site_id and use_claimcode:
                     if not site_id in data_cc:
                         data_cc[site_id] = [line[row_device]]
                     else:
                         data_cc[site_id].append(line[row_device])
-                elif (not site_id):
-                    console.error(f"Unable to get site_id for line {line}")
+                elif not site_id:
+                    CONSOLE.error(f"Unable to get site_id for line {line}")
                     sys.exit(0)
-                elif (not device_mac):
-                    console.error(f"Unable to get device mac for line {line}")
+                elif not device_mac:
+                    CONSOLE.error(f"Unable to get device mac for line {line}")
                     sys.exit(0)
 
-    
-        pb.log_success("Processing CSV file", display_pbar=False, inc=False)
+        PB.log_success("Processing CSV file", display_pbar=False, inc=False)
 
         if use_claimcode:
             _claim_devices(apisession, org_id, claimcodes)
-            response  = mistapi.api.v1.orgs.inventory.getOrgInventory(apisession, org_id, limit=1000)
+            response = mistapi.api.v1.orgs.inventory.getOrgInventory(
+                apisession, org_id, limit=1000
+            )
             devices_from_mist = mistapi.get_all(apisession, response)
-            for device in devices_from_mist:                        
+            for device in devices_from_mist:
                 inventory[device["magic"]] = device["mac"]
-            for site_id in data_cc:
+            for site_id, claimcodes in data_cc.items():
                 data[site_id] = []
-                for claimcode in data_cc[site_id]:
+                for claimcode in claimcodes:
                     device_mac = inventory.get(claimcode)
                     data[site_id].append(device_mac)
 
-
         return data
 
-def start(apisession:mistapi.APISession, file_path:str, org_id:str, managed:bool=False, no_reassign:bool=True):
-    '''
+
+def start(
+    apisession: mistapi.APISession,
+    file_path: str,
+    org_id: str,
+    managed: bool = False,
+    no_reassign: bool = True,
+):
+    """
     Start the backup process
 
     PARAMS
     -------
     :param  mistapi.APISession  apisession          - mistapi session with `Super User` access the Org, already logged in
     :param  str                 org_id              - org_id of the org to backup
-    :param  str                 file_path           - Path to the CSV file 
+    :param  str                 file_path           - Path to the CSV file
     :param  bool                managed             - If `False`, an adopted switch/gateway will not be managed/configured by Mist
     :param  bool                no_reassign         - If `True`,  treat site assignment against an already assigned AP as error
-    '''   
-    if not org_id: 
+    """
+    if not org_id:
         org_id = mistapi.cli.select_org(apisession)[0]
         print("\n\n")
     data = _read_csv_file(apisession, file_path, org_id)
-    pb.set_steps_total(len(data))
+    PB.set_steps_total(len(data))
     failed_messages = _process_devices(apisession, org_id, data, managed, no_reassign)
     _result(failed_messages)
 
 
 #####################################################################
 #### USAGE ####
-def usage():
-    print('''
+def usage(error_message:str=None):
+    """
+    show script usage
+    """
+    print(
+        """
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -531,11 +626,11 @@ Example 4:
 de45d851-xxxx-xxxx-xxxx-93b0cc52b435,A113454322345
 ...
 
-       
+
 Example 5 (only possible if the names in inventory are unique):
 #site_name, name
 "Site 2", device01
-          
+
 ""
 -------
 CSV Parameters:
@@ -568,20 +663,30 @@ Examples:
 python3 ./inventory_assign.py -f my_csv_file.csv
 python3 ./inventory_assign.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -f my_csv_file.csv
 
-''')
+"""
+    )
+    if error_message:
+        CONSOLE.critical(error_message)
     sys.exit(0)
 
+
 def check_mistapi_version():
+    """
+    check the current version of the mistapi package
+    """
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
-        logger.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
-        logger.critical(f"Please use the pip command to updated it.")
-        logger.critical("")
-        logger.critical(f"    # Linux/macOS")
-        logger.critical(f"    python3 -m pip install --upgrade mistapi")
-        logger.critical("")
-        logger.critical(f"    # Windows")
-        logger.critical(f"    py -m pip install --upgrade mistapi")
-        print(f"""
+        LOGGER.critical(
+            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+        )
+        LOGGER.critical(f"Please use the pip command to updated it.")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Linux/macOS")
+        LOGGER.critical(f"    python3 -m pip install --upgrade mistapi")
+        LOGGER.critical("")
+        LOGGER.critical(f"    # Windows")
+        LOGGER.critical(f"    py -m pip install --upgrade mistapi")
+        print(
+            f"""
     Critical: 
     \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
     Please use the pip command to updated it.
@@ -591,53 +696,59 @@ def check_mistapi_version():
 
     # Windows
     py -m pip install --upgrade mistapi
-        """)
+        """
+        )
         sys.exit(2)
-    else: 
-        logger.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+    else:
+        LOGGER.info(
+            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+        )
+
 
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:f:mre:l:", [
-                                   "help", "org_id=", "file=", "managed", "reassign", "env=", "log_file="])
+        opts, args = getopt.getopt(
+            sys.argv[1:],
+            "ho:f:mre:l:",
+            ["help", "org_id=", "file=", "managed", "reassign", "env=", "log_file="],
+        )
     except getopt.GetoptError as err:
-        console.error(err)
-        usage()
+        usage(err)
 
-    org_id = None
-    csv_file = None
-    managed= False
-    no_reassign = True
+    ORG_ID = None
+    CSV_FILE = None
+    MANAGED = False
+    NO_REASSIGN = True
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-o", "--org_id"]:
-            org_id = a      
+            ORG_ID = a
         elif o in ["-f", "--file"]:
-            csv_file = a      
+            CSV_FILE = a
         elif o in ["-m", "--managed"]:
-            managed = True
+            MANAGED = True
         elif o in ["-r", "--reassign"]:
-            no_reassign = False
+            NO_REASSIGN = False
         elif o in ["-l", "--log_file"]:
-            log_file = a
+            LOG_FILE = a
         elif o in ["-e", "--env"]:
-            env_file = a
+            ENV_FILE = a
         else:
             assert False, "unhandled option"
-    
+
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode='w')
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(filename=LOG_FILE, filemode="w")
+    LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### START ###
-    apisession = mistapi.APISession(env_file=env_file)
-    apisession.login()
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
     ### START ###
-    if not csv_file:
-        console.error("CSV File is missing")
+    if not CSV_FILE:
+        CONSOLE.error("CSV File is missing")
         usage()
     else:
-        start(apisession, csv_file, org_id, managed, no_reassign)
+        start(APISESSION, CSV_FILE, ORG_ID, MANAGED, NO_REASSIGN)

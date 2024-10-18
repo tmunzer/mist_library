@@ -656,8 +656,7 @@ if __name__ == "__main__":
         opts, args = getopt.getopt(sys.argv[1:], "ho:f:e:l:cd:", [
                                    "help", "org_id=", "file=", "env=", "log_file=", "create", "default="])
     except getopt.GetoptError as err:
-        CONSOLE.error(err)
-        usage()
+        usage(err)
 
     ORG_ID = None
     AUTOCREATE = False
@@ -684,7 +683,7 @@ if __name__ == "__main__":
     LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### START ###
-    apisession = mistapi.APISession(env_file=ENV_FILE)
-    apisession.login()
-    start(apisession, ORG_ID, CSV_FILE, AUTOCREATE, DEFAULT_LABEL)
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
+    start(APISESSION, ORG_ID, CSV_FILE, AUTOCREATE, DEFAULT_LABEL)
 
