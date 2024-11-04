@@ -674,7 +674,7 @@ def _retrieve_switch_inventory(apisession: mistapi.APISession, org_id: str):
     PB.log_message(message, display_pbar=False)
     try:
         response = mistapi.api.v1.orgs.inventory.getOrgInventory(
-            apisession, org_id, limit=1000
+            apisession, org_id, type="switch", vc=True, limit=1000
         )
         inventory = mistapi.get_all(apisession, response)
         if inventory:
@@ -689,6 +689,23 @@ def _retrieve_switch_inventory(apisession: mistapi.APISession, org_id: str):
         sys.exit(0)
 
 
+def _locate_vc_master(inventory:list, vc_mac:str):
+    message = f"Locating VC Primary switch {vc_mac}"
+    PB.log_message(message, display_pbar=False)
+    try:           
+        switch_data = next(
+            item for item in inventory if item.get("mac") == vc_mac
+        )
+        PB.log_success(message, display_pbar=False, inc=False)
+        return switch_data
+    except:
+        PB.log_failure(message, display_pbar=False, inc=False)
+        LOGGER.error(
+            f"_locate_vc_master:vc_mac {vc_mac} not found"
+        )
+        return
+
+
 def _locate_switches(
     apisession: mistapi.APISession, org_id: str, switches_to_process: dict
 ):
@@ -701,10 +718,14 @@ def _locate_switches(
             switch_data = next(
                 item for item in inventory if item.get("mac") == switch_mac
             )
-            site_id = switch_data.get("site_id")
+
+            if switch_data.get("vc_mac"):
+                switch_data = _locate_vc_master(inventory, switch_data["vc_mac"])
+            
             id = switch_data.get("id")
+            site_id = switch_data.get("site_id")
             LOGGER.debug(
-                f"_locate_switches:switch {site_id} has the id {id} and is assigned to {site_id}"
+                f"_locate_switches:switch {switch_mac} has the id {id} and is assigned to {site_id}"
             )
             if not site_id:
                 PB.log_failure(message, display_pbar=False)
