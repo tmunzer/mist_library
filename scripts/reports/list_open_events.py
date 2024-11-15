@@ -220,28 +220,31 @@ def _gw_bgp_neighbor_down(events: list):
         for r in e.get("reasons", []):
             bgp_re = r"(?P<ip>[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}) .* \(instance (?P<vpn_instance>\S+)\)"
             res = re.findall(bgp_re, r)
-            peer_ip = res[0][0]
-            vpn_instance = res[0][1]
-            if not bgp_downs.get(gateway):
-                bgp_downs[gateway] = {
-                    "hostname": hostname,
-                    "peers": {
-                        peer_ip: {
-                            "last_seen": last_seen,
-                            "vpn_instance": vpn_instance,
-                            "cleared": -1,
-                        }
-                    },
-                }
-            elif not bgp_downs[gateway]["peers"].get(peer_ip):
-                bgp_downs[gateway]["peers"][peer_ip] = {
-                    "last_seen": last_seen,
-                    "vpn_instance": vpn_instance,
-                    "cleared": -1,
-                }
-            elif bgp_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen:
-                bgp_downs[gateway]["hostname"] = hostname
-                bgp_downs[gateway]["peers"][peer_ip]["last_seen"] = last_seen
+            if len(res) < 1 or len(res[0]) < 2:
+                LOGGER.warning(f"_gw_bgp_neighbor_down: fields not found in the event reasons: {r}")
+            else:
+                peer_ip = res[0][0]
+                vpn_instance = res[0][1]
+                if not bgp_downs.get(gateway):
+                    bgp_downs[gateway] = {
+                        "hostname": hostname,
+                        "peers": {
+                            peer_ip: {
+                                "last_seen": last_seen,
+                                "vpn_instance": vpn_instance,
+                                "cleared": -1,
+                            }
+                        },
+                    }
+                elif not bgp_downs[gateway]["peers"].get(peer_ip):
+                    bgp_downs[gateway]["peers"][peer_ip] = {
+                        "last_seen": last_seen,
+                        "vpn_instance": vpn_instance,
+                        "cleared": -1,
+                    }
+                elif bgp_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen:
+                    bgp_downs[gateway]["hostname"] = hostname
+                    bgp_downs[gateway]["peers"][peer_ip]["last_seen"] = last_seen
     return bgp_downs
 
 
@@ -254,13 +257,16 @@ def _gw_bgp_neighbor_up(events: list, bgp_downs: dict):
         for r in e.get("reasons", []):
             bgp_re = r"(?P<ip>[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}) .* \(instance (?P<vpn_instance>\S+)\)"
             res = re.findall(bgp_re, r)
-            peer_ip = res[0][0]
-            if (bgp_downs.get(gateway)
-                and bgp_downs[gateway]["peers"].get(peer_ip)
-                and bgp_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen
-            ):
-                bgp_downs[gateway]["hostname"] = hostname
-                bgp_downs[gateway]["peers"][peer_ip]["cleared"] = last_seen
+            if len(res) < 1 or len(res[0]) < 1:
+                LOGGER.warning(f"_gw_bgp_neighbor_up: fields not found in the event reasons: {r}")
+            else:
+                peer_ip = res[0][0]
+                if (bgp_downs.get(gateway)
+                    and bgp_downs[gateway]["peers"].get(peer_ip)
+                    and bgp_downs[gateway]["peers"][peer_ip]["last_seen"] < last_seen
+                ):
+                    bgp_downs[gateway]["hostname"] = hostname
+                    bgp_downs[gateway]["peers"][peer_ip]["cleared"] = last_seen
     return bgp_downs
 
 
