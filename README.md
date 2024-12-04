@@ -10,11 +10,6 @@ These scripts are using the [mistapi Python package](https://pypi.org/project/mi
   - 1.1 [Usage](#usage)
   - 1.2 [Environment File](#environment-file)
 - 2 [Scripts](#scripts)
-  - 2.1 [Devices](#devices)
-  - 2.2 [Exports](#exports)
-  - 2.3 [Orgs](#orgs)
-  - 2.4 [Sites](#sites)
-  - 2.5 [Reports](#reports)
 
 ## MIT LICENSE
 
@@ -59,7 +54,7 @@ MIST_APITOKEN = xxxxxx
 # Scripts
 
 The scripts are located in the `scripts` folder. They can be used as-is, or customized if needed.
-There is a short desccription at the beginning of each script explaining the purpose of the script, the available options, and how to use it. They are also accepting the `-h` option which will display the script help.
+There is a short description at the beginning of each script explaining the purpose of the script, the available options, and how to use it. They are also accepting the `-h` option which will display the script help.
 
 > **IMPORTANT NOTE**:
 Each script has description and documentation at the beginning of the file. Please check this information first, it is providing useful information on how to use each script.
@@ -79,11 +74,11 @@ Each script has description and documentation at the beginning of the file. Plea
 | NAC | [import_client_macs.py](scripts/nac/import_client_macs.py) | Python script import import a list of MAC Address into "Client List" Mist NAC Labels from a CSV File. |
 | NAC | [import_user_macs.py](scripts/nac/import_user_macs.py) | Python script import import a list of MAC Address as "NAC Endpoints" from a CSV File. |
 | Orgs | [clone_template.py](scripts/orgs/clone_template.py) | Python script to clone a specific template from an organization to another (or the same) organization. |
-| Orgs | [fix_sites_geocoding.py](scripts/orgs/fix_sites_geocoding.py) | Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing. |
-| Orgs | [import_floorplans.py](scripts/orgs/import_floorplans.py) | Python script to import multiple Ekahau/iBwave project into Mist Organization. |
-| Orgs | [import_sites.py](scripts/orgs/import_sites.py) | Python script automate the sites creation in a Mist Org from a CSV file. |
-| Orgs | [inventory_assign.py](scripts/orgs/inventory_assign.py) | Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org. |
-| Orgs | [inventory_claim.py](scripts/orgs/inventory_claim.py) | Python script to claim devices to an org from a CSV file. |
+| Orgs  - Sites| [fix_sites_geocoding.py](scripts/orgs/fix_sites_geocoding.py) | Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing. |
+| Orgs - Sites | [import_floorplans.py](scripts/orgs/import_floorplans.py) | Python script to import multiple Ekahau/iBwave project into Mist Organization. |
+| Orgs - Sites | [import_sites.py](scripts/orgs/import_sites.py) | Python script automate the sites creation in a Mist Org from a CSV file. |
+| Orgs - Inventory | [inventory_assign.py](scripts/orgs/inventory_assign.py) | Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org. |
+| Orgs - Inventory | [inventory_claim.py](scripts/orgs/inventory_claim.py) | Python script to claim devices to an org from a CSV file. |
 | Orgs | [org_clone.py](scripts/orgs/org_clone.py) | Python script to clone a whole organization to another one. The destination org can be an existing org, or it can be created during the process. |
 | Orgs | [org_migration.py](scripts/orgs/org_migration.py) | Python script to migrate a whole organization and the devices to another one. The destination org can be an existing org, or it can be created during the process. |
 | Orgs | [org_complete_backup.py](scripts/orgs/org_complete_backup.py) | Python script to backup a whole organization configuration and devices. |
