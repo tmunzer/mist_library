@@ -61,81 +61,54 @@ MIST_APITOKEN = xxxxxx
 The scripts are located in the `scripts` folder. They can be used as-is, or customized if needed.
 There is a short desccription at the beginning of each script explaining the purpose of the script, the available options, and how to use it. They are also accepting the `-h` option which will display the script help.
 
-**IMPORTANT NOTE**:
+> **IMPORTANT NOTE**:
 Each script has description and documentation at the beginning of the file. Please check this information first, it is providing useful information on how to use each script.
 
-## Clients
 
-- [import_guest.py](scripts/clients/import_guests.py): Python script import or update a list of Guests from a CSV file into a Mist Org or Mist Site
-  ## Configuration
-- [config_ap_auto_upgrade.py](scripts/orgs/config_ap_auto_upgrade.py): Python script update the Mist AP Auto_upgrade parameters in the site settings
-- [config_auto_site_assignment.py](scripts/orgs/config_auto_site_assignment.py): Python script to update the org auto assignment rules
-- [config_webhook.py](scripts/sites/config_webhook.py): This script can be used to list/add/delete Webhooks from Org/Site
-
-## Devices
-
-- Common:
-  - [rename_devices.py](scripts/devices/rename_devices.py): Python script to rename devices (AP, Switch, Router) from a CSV file. The script will automatically locate the site where the device is assigned, and update its name.
-- APs
-  - [configure_ap_mgmt_vlan.py](scripts/devices/aps/configure_ap_mgmt_vlan.py): Python script reconfigure Management VLAN on all the Mist APs from one or multiple sites.
-- Switches
-  - [check_local_commit_events.py](scripts/devices/switches/check_local_commit_events.py) This script can be used to retrieve and save into a file the CLI Commit events (commit done locally one the switches) for all the switches belonging to a Mist Organization.
-  - [update_port_config.py](scripts/devices/switches/update_port_config.py)Python script to reconfigure switch interfaces based on a CSV file. The script will create or replace device override at the switch level to reconfigure the interfaces.
-  - [toggle_poe.py](scripts/devices/switches/toggle_poe.py): Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template.
-
-## Exports
-
-- [export_inventory.py](scripts/exports/export_inventory.py): Python script to export the inventory from an organization. The export will include all the information available from the org inventory, including the claim codes.
-- [export_search.py](scripts/exports/export_search.py): Python script to export historical data from Mist API and save the result in CSV of JSON format.
-
-## NAC
-
-- [import_client_macs.py](scripts/nac/import_client_macs.py): Python script import import a list of MAC Address into "Client List" Mist NAC Labels from a CSV File.
-- [import_user_macs.py](scripts/nac/import_user_macs.py): Python script import import a list of MAC Address as "NAC Endpoints" from a CSV File.
-
-## Orgs
-
-- [clone_template.py](scripts/orgs/clone_template.py): Python script to clone a specific template from an organization to another (or the same) organization.
-- [fix_sites_geocoding.py](scripts/orgs/fix_sites_geocoding.py): Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing.
-- [import_floorplans.py](scripts/orgs/import_floorplans.py): Python script to import multiple Ekahau/iBwave project into Mist Organization.
-- [import_sites.py](scripts/orgs/import_sites.py): Python script automate the sites creation in a Mist Org from a CSV file.
-- [inventory_assign.py](scripts/orgs/inventory_assign.py): Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org.
-- [inventory_claim.py](scripts/orgs/inventory_claim.py): Python script to claim devices to an org from a CSV file.
-- [org_clone.py](scripts/orgs/org_clone.py): Python script to clone a whole organization to another one. The destination org can be an existing org, or it can be created during the process.
-- [org_migration.py](scripts/orgs/org_migration.py): Python script to migrate a whole organization and the devices to another one. The destination org can be an existing org, or it can be created during the process.
-- [org_complete_backup.py](scripts/orgs/org_complete_backup.py): Python script to backup a whole organization configuration and devices.
-- [org_complete_backup_encrypted.py](scripts/orgs/org_complete_backup_encrypted.py): Python script to backup a whole organization configuration and devices in AES encrypted file.
-- [org_conf_backup.py](scripts/orgs/org_conf_backup.py): Python script to backup a whole organization.
-- [org_conf_backup_encrypted.py](scripts/orgs/org_conf_backup_encrypted.py): Python script to backup a whole organization in AES encrypted file.
-- [org_conf_deploy.py](scripts/orgs/org_conf_deploy.py): Python script to deploy organization backup/template file.
-- [org_conf_zeroize.py](scripts/orgs/org_conf_zeroize.py): Python script to zeroise an organization. This scrip will remove all the configuration, all the sites and all the objects from the organization.
-- [org_inventory_backup.py](scripts/orgs/org_inventory_backup.py): Python script to backup all the devices from an organization. It will backup the devices claim codes (if any), configuration (including position on the maps) and pictures.
-- [org_inventory_backup_encrypted.py](scripts/orgs/org_inventory_backup_encrypted.py): Python script to backup all the devices from an organization in AES encrypted file. It will backup the devices claim codes (if any), configuration (including position on the maps) and pictures.
-- [org_inventory_deploy.py](scripts/orgs/org_inventory_deploy.py): Python script to deploy organization inventory backup file. By default, this script can run in "Dry Run" mode to validate the destination org configuration and raise warning if any object from the source org is missing in the destination org.
-- [org_inventory_restore_pictures.py](scripts/orgs/org_inventory_restore_pictures.py): Python script to restore device images from an inventory backup file.
-- [validate_site_variables.py](scripts/orgs/validate_site_variables.py): Python script to validate that all the variables used in the templates used by each site are configured at the site level. The result is displayed on the console and saved in a CSV file.
-
-### Org Admins
-
-- [import_admins.py](scripts/orgs/admins/import_admins.py): Python script to invite/add administrators from a CSV file.
-
-## Sites
-
-- [site_conf_backup.py](scripts/sites/site_conf_backup.py): Python script to backup a whole site.
-- [site_conf_psk_import_csv.py](scripts/sites/site_conf_psk_import_csv.py): This script will import PSKs from a CSV file to one or multiple sites.
-- [site_conf_psk.py](scripts/sites/site_conf_psk.py):
-- [site_conf_wlan.py](scripts/sites/site_conf_wlan.py): This script can be used to list/add/delete an SSID from Org/Site
-- [update_sites_templates.py](scripts/sites/update_sites_templates.py): Python script update the templates assigned to Mist Sites based on a CSV file, and/or update the auto assignment rules based on IP Subnet.
-
-## Reports
-
-- [list_open_events.py](https://github.com/tmunzer/mist_library/blob/master/scripts/reports/list_open_events.py): Python script to display the list of events/alarms that are not cleared. The script is trying to correlate the different events to identify the "opening" and the "closing" events, and only display the event if it is not "cleared" for more than the `trigger_timeout`.
-- [report_app_usage.py](scripts/reports/report_app_usage.py): Python script to generate a report of the application usage on a specific site
-- [report_bssids.py](scripts/reports/report_bssids.py): Python script to list all Access Points from orgs/sites and their associated BSSIDs.
-- [report_rogues.py](scripts/reports/report_rogues.py): Python script to generate a Rogue AP report.
-- [report_switch_snapshot.py](scripts/reports/report_switch_snapshot.py): Python script to generates a list of all the switches for a specified org/site
-- [report_wlans.py](scripts/reports/report_wlans.py): Python script to list all WLANs from orgs/sites and their parameters, and save it to a CSV file.
-
-## Utils
-
-- [encryption.py](scripts/utils/encryption.py): Python script to manage backup encryption. This file can be used to generate RSA Private and Public keys for encryption, to encrypt file (AES encryption, AES key is RSA Protected) or to decrypt encrypted files.
+| Category | Script | Description |
+| ---- | ---- | ---- |
+| Clients | [import_guest.py](scripts/clients/import_guests.py) | Python script import or update a list of Guests from a CSV file into a Mist Org or Mist Site |
+|  Configuration | [config_ap_auto_upgrade.py](scripts/orgs/config_ap_auto_upgrade.py) | Python script update the Mist AP Auto_upgrade parameters in the site settings |
+|  Configuration | [config_auto_site_assignment.py](scripts/orgs/config_auto_site_assignment.py) | Python script to update the org auto assignment rules |
+|  Configuration | [config_webhook.py](scripts/sites/config_webhook.py) | This script can be used to list/add/delete Webhooks from Org/Site |
+| Devices | [rename_devices.py](scripts/devices/rename_devices.py) | Python script to rename devices (AP, Switch, Router) from a CSV file. The script will automatically locate the site where the device is assigned, and update its name. |
+| Devices - AP | [configure_ap_mgmt_vlan.py](scripts/devices/aps/configure_ap_mgmt_vlan.py) | Python script reconfigure Management VLAN on all the Mist APs from one or multiple sites. |
+| Devices - Switch | [check_local_commit_events.py](scripts/devices/switches/check_local_commit_events.py) | This script can be used to retrieve and save into a file the CLI Commit events (commit done locally one the switches) for all the switches belonging to a Mist Organization. |
+| Devices - Switch | [update_port_config.py](scripts/devices/switches/update_port_config.py) | Python script to reconfigure switch interfaces based on a CSV file. The script will create or replace device override at the switch level to reconfigure the interfaces. |
+| Devices - Switch | [toggle_poe.py](scripts/devices/switches/toggle_poe.py) | Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template. |
+| NAC | [import_client_macs.py](scripts/nac/import_client_macs.py) | Python script import import a list of MAC Address into "Client List" Mist NAC Labels from a CSV File. |
+| NAC | [import_user_macs.py](scripts/nac/import_user_macs.py) | Python script import import a list of MAC Address as "NAC Endpoints" from a CSV File. |
+| Orgs | [clone_template.py](scripts/orgs/clone_template.py) | Python script to clone a specific template from an organization to another (or the same) organization. |
+| Orgs | [fix_sites_geocoding.py](scripts/orgs/fix_sites_geocoding.py) | Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing. |
+| Orgs | [import_floorplans.py](scripts/orgs/import_floorplans.py) | Python script to import multiple Ekahau/iBwave project into Mist Organization. |
+| Orgs | [import_sites.py](scripts/orgs/import_sites.py) | Python script automate the sites creation in a Mist Org from a CSV file. |
+| Orgs | [inventory_assign.py](scripts/orgs/inventory_assign.py) | Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org. |
+| Orgs | [inventory_claim.py](scripts/orgs/inventory_claim.py) | Python script to claim devices to an org from a CSV file. |
+| Orgs | [org_clone.py](scripts/orgs/org_clone.py) | Python script to clone a whole organization to another one. The destination org can be an existing org, or it can be created during the process. |
+| Orgs | [org_migration.py](scripts/orgs/org_migration.py) | Python script to migrate a whole organization and the devices to another one. The destination org can be an existing org, or it can be created during the process. |
+| Orgs | [org_complete_backup.py](scripts/orgs/org_complete_backup.py) | Python script to backup a whole organization configuration and devices. |
+| Orgs | [org_complete_backup_encrypted.py](scripts/orgs/org_complete_backup_encrypted.py) | Python script to backup a whole organization configuration and devices in AES encrypted file. |
+| Orgs | [org_conf_backup.py](scripts/orgs/org_conf_backup.py) | Python script to backup a whole organization. |
+| Orgs | [org_conf_backup_encrypted.py](scripts/orgs/org_conf_backup_encrypted.py) | Python script to backup a whole organization in AES encrypted file. |
+| Orgs | [org_conf_deploy.py](scripts/orgs/org_conf_deploy.py) | Python script to deploy organization backup/template file. |
+| Orgs | [org_conf_zeroize.py](scripts/orgs/org_conf_zeroize.py) | Python script to zeroise an organization. This scrip will remove all the configuration, all the sites and all the objects from the organization. |
+| Orgs | [org_inventory_backup.py](scripts/orgs/org_inventory_backup.py) | Python script to backup all the devices from an organization. It will backup the devices claim codes (if any), configuration (including position on the maps) and pictures. |
+| Orgs | [org_inventory_backup_encrypted.py](scripts/orgs/org_inventory_backup_encrypted.py) | Python script to backup all the devices from an organization in AES encrypted file. It will backup the devices claim codes (if any), configuration (including position on the maps) and pictures. |
+| Orgs | [org_inventory_deploy.py](scripts/orgs/org_inventory_deploy.py) | Python script to deploy organization inventory backup file. By default, this script can run in "Dry Run" mode to validate the destination org configuration and raise warning if any object from the source org is missing in the destination org. |
+| Orgs | [org_inventory_restore_pictures.py](scripts/orgs/org_inventory_restore_pictures.py) | Python script to restore device images from an inventory backup file. |
+| Orgs | [validate_site_variables.py](scripts/orgs/validate_site_variables.py) | Python script to validate that all the variables used in the templates used by each site are configured at the site level. The result is displayed on the console and saved in a CSV file. |
+| Org Admins | [import_admins.py](scripts/orgs/admins/import_admins.py) | Python script to invite/add administrators from a CSV file. |
+| Sites | [site_conf_backup.py](scripts/sites/site_conf_backup.py) | Python script to backup a whole site. |
+| Sites | [site_conf_psk_import_csv.py](scripts/sites/site_conf_psk_import_csv.py) | This script will import PSKs from a CSV file to one or multiple sites. |
+| Sites | [site_conf_psk.py](scripts/sites/site_conf_psk.py) |  |
+| Sites | [site_conf_wlan.py](scripts/sites/site_conf_wlan.py) | This script can be used to list/add/delete an SSID from Org/Site |
+| Sites | [update_sites_templates.py](scripts/sites/update_sites_templates.py) | Python script update the templates assigned to Mist Sites based on a CSV file, and/or update the auto assignment rules based on IP Subnet. |
+| Reports | [export_inventory.py](scripts/exports/export_inventory.py) | Python script to export the inventory from an organization. The export will include all the information available from the org inventory, including the claim codes. |
+| Reports | [export_search.py](scripts/exports/export_search.py) | Python script to export historical data from Mist API and save the result in CSV of JSON format. |
+| Reports | [list_open_events.py](https://github.com/tmunzer/mist_library/blob/master/scripts/reports/list_open_events.py) | Python script to display the list of events/alarms that are not cleared. The script is trying to correlate the different events to identify the "opening" and the "closing" events, and only display the event if it is not "cleared" for more than the `trigger_timeout`. |
+| Reports | [report_app_usage.py](scripts/reports/report_app_usage.py) | Python script to generate a report of the application usage on a specific site |
+| Reports | [report_bssids.py](scripts/reports/report_bssids.py) | Python script to list all Access Points from orgs/sites and their associated BSSIDs. |
+| Reports | [report_rogues.py](scripts/reports/report_rogues.py) | Python script to generate a Rogue AP report. |
+| Reports | [report_switch_snapshot.py](scripts/reports/report_switch_snapshot.py) | Python script to generates a list of all the switches for a specified org/site |
+| Reports | [report_wlans.py](scripts/reports/report_wlans.py) | Python script to list all WLANs from orgs/sites and their parameters, and save it to a CSV file. |
+| Utils | [encryption.py](scripts/utils/encryption.py) | Python script to manage backup encryption. This file can be used to generate RSA Private and Public keys for encryption, to encrypt file (AES encryption, AES key is RSA Protected) or to decrypt encrypted files. |
