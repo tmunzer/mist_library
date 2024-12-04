@@ -12,9 +12,9 @@ The destination org can be an existing org, or it can be created during the
 process.
 
 IMPORTANT:
-By default, the script will not migrade the devices. Please use the -u/--uclaim
+By default, the script will not migrate the devices. Please use the -u/--unclaim
 option to migrate them (AP ONLY). 
-Please use -u/--uclaim AND -a/--unclaim_all to also migrate the switches and
+Please use -u/--unclaim AND -a/--unclaim_all to also migrate the switches and
 the gateways
 
 -------
@@ -33,7 +33,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -242,7 +242,7 @@ def _create_org(mist_session: mistapi.APISession):
             org = {"name": custom_dest_org_name}
             print()
             print(
-                f'Creating the organisation "{custom_dest_org_name}"'
+                f'Creating the organization "{custom_dest_org_name}"'
                 f" in {mist_session.get_cloud()} ".ljust(79, "."),
                 end="",
                 flush=True,
@@ -262,7 +262,7 @@ def _create_org(mist_session: mistapi.APISession):
 def select_or_create_org(mist_session: mistapi.APISession = None):
     while True:
         res = input(
-            "Do you want to create a (n)ew organisation, (r)estore to an existing one, or (q)uit? "
+            "Do you want to create a (n)ew organization, (r)estore to an existing one, or (q)uit? "
         )
         if res.lower() == "r":
             return _select_org("destination", mist_session)
@@ -457,9 +457,9 @@ The destination org can be an existing org, or it can be created during the
 process.
 
 IMPORTANT:
-By default, the script will not migrade the devices. Please use the -u/--uclaim
+By default, the script will not migrate the devices. Please use the -u/--unclaim
 option to migrate them (AP ONLY). 
-Please use -u/--uclaim AND -a/--unclaim_all to also migrate the switches and
+Please use -u/--unclaim AND -a/--unclaim_all to also migrate the switches and
 the gateways
 
 -------
@@ -477,7 +477,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 

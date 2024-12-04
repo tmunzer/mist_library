@@ -7,7 +7,7 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to gerenates a list of all the switches for a specified org/site
+Python script to generates a list of all the switches for a specified org/site
 with, for each FPC:
         - VC name
         - VC reported Version
@@ -29,7 +29,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -234,7 +234,7 @@ def usage():
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to gerenates a list of all the switches for a specified org/site
+Python script to generates a list of all the switches for a specified org/site
 with, for each FPC:
         - VC name
         - VC reported Version
@@ -256,7 +256,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -317,23 +317,23 @@ if __name__ == "__main__":
         console.error(err)
         usage()
 
-    scope=None
-    scope_id=None
+    SCOPE=None
+    SCOPE_ID=None
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-o", "--org_id"]:
-            if scope:
+            if SCOPE:
                 console.error("Only one of org_id or site_id can be defined.")
                 usage()
-            scope = "org"
-            scope_id = a
+            SCOPE = "org"
+            SCOPE_ID = a
         elif o in ["-s", "--site_id"]:
-            if scope:
+            if SCOPE:
                 console.error("Only one of org_id or site_id can be defined.")
                 usage()
-            scope = "site"
-            scope_id = a
+            SCOPE = "site"
+            SCOPE_ID = a
         elif o in ["-f", "--out_file"]:
             csv_file=a    
         elif o in ["-e", "--env"]:
@@ -349,25 +349,28 @@ if __name__ == "__main__":
     logger.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### MIST SESSION ###
-    apisession = mistapi.APISession(env_file=env_file)
-    apisession.login()
+    APISESSION = mistapi.APISession(env_file=env_file)
+    APISESSION.login()
     ### SCOPE SELECTION ###
-    if not scope:
+    if not SCOPE:
         menu = ["org", "site"]
-        scope = _show_menu("", menu)
-        if scope == "org":
-            scope_id = mistapi.cli.select_org(apisession)[0]
-        elif scope == "site":
-            scope_id = mistapi.cli.select_site(apisession)[0]
+        SCOPE = _show_menu("", menu)
+        if SCOPE == "org":
+            SCOPE_ID = mistapi.cli.select_org(APISESSION)[0]
+        elif SCOPE == "site":
+            SCOPE_ID = mistapi.cli.select_site(APISESSION)[0]
     ### START ###
-    if scope == "org":
-        switches = _get_org_switches(apisession, scope_id)
-    elif scope == "site":
-        switches = _get_site_switches(apisession, scope_id)
-    print(" Processing Switcches ".center(80, '-'))
-    data = _process_switches(switches)
+    SWITCHES = None
+    DATA = None
+    if SCOPE == "org":
+        SWITCHES = _get_org_switches(APISESSION, SCOPE_ID)
+    elif SCOPE == "site":
+        SWITCHES = _get_site_switches(APISESSION, SCOPE_ID)
+    print(" Processing switches ".center(80, '-'))
+    if SWITCHES:
+        DATA = _process_switches(SWITCHES)
 
-
-    print(" Process Done ".center(80, '-'))
-    _save_as_csv(data, scope, scope_id)
-    mistapi.cli.pretty_print(data)
+    if DATA:
+        print(" Process Done ".center(80, '-'))
+        _save_as_csv(DATA, SCOPE, SCOPE_ID)
+        mistapi.cli.pretty_print(DATA)

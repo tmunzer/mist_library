@@ -7,9 +7,9 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to invite/add adminsitrators from a CSV file.
+Python script to invite/add administrators from a CSV file.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 

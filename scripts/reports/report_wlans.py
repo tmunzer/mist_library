@@ -9,7 +9,7 @@ You can run the script with the command "python3 org_report_wlans.py"
 
 The script has 2 different steps:
 1) admin login
-2) select the organisation/site from where you want to retrieve the information
+2) select the organization/site from where you want to retrieve the information
 
 
 available fields:

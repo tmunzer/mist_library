@@ -7,7 +7,7 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to list APs with power contraints (with limited power supply).
+Python script to list APs with power constraints (with limited power supply).
 The result is displayed on the console and saved in a CSV file.
 
 -------
@@ -20,7 +20,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -335,7 +335,7 @@ def usage():
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to list APs with power contraints (with limited power supply).
+Python script to list APs with power constraints (with limited power supply).
 The result is displayed on the console and saved in a CSV file.
 
 -------
@@ -348,7 +348,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 

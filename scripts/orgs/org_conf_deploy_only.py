@@ -11,7 +11,7 @@ Python script to deploy organization backup/template file.
 You can use the script "org_conf_backup.py" to generate the backup file from an
 existing organization.
 
-This script cannot restore the configuration to an existing organisation, and 
+This script cannot restore the configuration to an existing organization, and 
 will only allow to deploy the configuration to a new org.
 This script is trying to maintain objects integrity as much as possible. To do
 so, when an object is referencing another object by its ID, the script will 
@@ -28,7 +28,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -697,7 +697,7 @@ def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None
             org = {
                 "name": custom_dest_org_name
             }
-            message = f"Creating the organisation \"{custom_dest_org_name}\" in {apisession.get_cloud()} "
+            message = f"Creating the organization \"{custom_dest_org_name}\" in {apisession.get_cloud()} "
             pb.log_message(message, display_pbar=False)
             try:
                 pb.log_success(message, display_pbar=False)
@@ -727,17 +727,17 @@ def start(apisession: mistapi.APISession,  org_name: str = None, backup_folder_p
     :param  str                 source_backup       - Name of the backup/template to deploy. This is the name of the folder where all the backup files are stored. If the backup is found, the script will NOT ask for a confirmation to use it
     '''
     current_folder = os.getcwd()
+    org_id = None
     if backup_folder_param:
         global backup_folder
         backup_folder = backup_folder_param
-
     elif org_name:
         org_id, org_name = _create_org(apisession, org_name)
     else:
         org_id, org_name = _create_org(apisession)
-
-    _start_deploy_org(apisession, org_id, org_name,
-                      src_org_name, source_backup)
+    
+    if org_id:
+        _start_deploy_org(apisession, org_id, org_name, src_org_name, source_backup)
     os.chdir(current_folder)
 
 
@@ -757,7 +757,7 @@ Python script to deploy organization backup/template file.
 You can use the script "org_conf_backup.py" to generate the backup file from an
 existing organization.
 
-This script cannot restore the configuration to an existing organisation, and 
+This script cannot restore the configuration to an existing organization, and 
 will only allow to deploy the configuration to a new org.
 This script is trying to maintain objects integrity as much as possible. To do
 so, when an object is referencing another object by its ID, the script will 
@@ -774,7 +774,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 

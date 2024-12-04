@@ -21,7 +21,7 @@ be asked by the script or the default values will be used.
 
 The site(s) to update can selected during the script execution.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -50,7 +50,7 @@ Script Parameters:
                         are: "custom", "stable", "beta"
 --custom=               Used if `version`==`custom`
                         Set the custom version to deploy on each AP. Format 
-                        must a list of "MODEL:VERSION", commat separated 
+                        must a list of "MODEL:VERSION", comma separated 
                         (e.g., "AP34:0.14.28548,AP45:0.14.28548")
 
 -e, --env=              Optional, env file to use to access the src org (see
@@ -512,7 +512,7 @@ def _check_custom(custom:str):
         LOGGER.info(f"_check_custom: custom_versions: {custom_versions}")
         return custom_versions
 
-    console.critical("Inavlid Parameters: \"--custom\" must a list of \"MODEL:VERSION\", commat separated (e.g., \"AP34:0.14.28548,AP45:0.14.28548\")")
+    console.critical("Inavlid Parameters: \"--custom\" must a list of \"MODEL:VERSION\", comma separated (e.g., \"AP34:0.14.28548,AP45:0.14.28548\")")
     return None
 
 ###############################################################################
@@ -615,7 +615,7 @@ be asked by the script or the default values will be used.
 
 The site(s) to update will can selected during the script execution.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -643,7 +643,7 @@ Script Parameters:
                         are: "custom", "stable", "beta"
 --custom=               Used if `version`==`custom`
                         Set the custom version to deploy on each AP. Format 
-                        must a list of "MODEL:VERSION", commat separated 
+                        must a list of "MODEL:VERSION", comma separated 
                         (e.g., "AP34:0.14.28548,AP45:0.14.28548")
 
 -e, --env=              Optional, env file to use to access the src org (see

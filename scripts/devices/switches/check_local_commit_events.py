@@ -8,13 +8,13 @@
 
 -------------------------------------------------------------------------------
 This script can be used to retrieve and save into a file the CLI Commit events
-(commit done localy one the switches) for all the switches belonging to a Mist 
+(commit done locally one the switches) for all the switches belonging to a Mist 
 Organization.
 
 The script is automatically retrieving the list of sites with managed switches,
 then it is retrieving the commit events for each site, and saving the CLI 
 commit events into a file. 
-The script is createing a dedicated folder for each Mist Org (based on the 
+The script is creating a dedicated folder for each Mist Org (based on the 
 org_id), one sub folder for each site with managed switches withing the org
 (based on the site_id), and then one file for each switch with local commit
 events (based on the switch MAC address).
@@ -29,7 +29,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -398,13 +398,13 @@ def usage(error_message: str = None):
 
 -------------------------------------------------------------------------------
 This script can be used to retrieve and save into a file the CLI Commit events
-(commit done localy one the switches) for all the switches belonging to a Mist 
+(commit done locally one the switches) for all the switches belonging to a Mist 
 Organization.
 
 The script is automatically retrieving the list of sites with managed switches,
 then it is retrieving the commit events for each site, and saving the CLI 
 commit events into a file. 
-The script is createing a dedicated folder for each Mist Org (based on the 
+The script is creating a dedicated folder for each Mist Org (based on the 
 org_id), one sub folder for each site with managed switches withing the org
 (based on the site_id), and then one file for each switch with local commit
 events (based on the switch MAC address).
@@ -419,7 +419,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 

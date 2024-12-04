@@ -11,8 +11,8 @@ Python script to deploy organization backup/template file.
 You can use the script "org_conf_backup.py" to generate the backup file from an
 existing organization.
 
-This script will not overide existing objects. If you already configured objects in the
-destination organisation, new objects will be created. If you want to "reset" the
+This script will not override existing objects. If you already configured objects in the
+destination organization, new objects will be created. If you want to "reset" the
 destination organization, you can use the script "org_conf_zeroise.py".
 This script is trying to maintain objects integrity as much as possible. To do so, when
 an object is referencing another object by its ID, the script will replace be ID from
@@ -28,7 +28,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
 information about the available parameters).
 
@@ -1071,7 +1071,7 @@ def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None
             org = {"name": custom_dest_org_name}
             print("")
             print("")
-            message = f'Creating the organisation "{custom_dest_org_name}" on {apisession.get_cloud()} '
+            message = f'Creating the organization "{custom_dest_org_name}" on {apisession.get_cloud()} '
             PB.log_message(message, display_pbar=False)
             try:
                 PB.log_success(message, display_pbar=False)
@@ -1090,7 +1090,7 @@ def _select_dest_org(apisession: mistapi.APISession):
     print()
     while True:
         res = input(
-            "Do you want to create a (n)ew organisation or (r)estore to an existing one, (q)uit ? "
+            "Do you want to create a (n)ew organization or (r)estore to an existing one, (q)uit ? "
         )
         if res.lower() == "q":
             sys.exit(0)
@@ -1178,8 +1178,8 @@ Python script to deploy organization backup/template file.
 You can use the script "org_conf_backup.py" to generate the backup file from an
 existing organization.
 
-This script will not overide existing objects. If you already configured objects in the
-destination organisation, new objects will be created. If you want to "reset" the
+This script will not override existing objects. If you already configured objects in the
+destination organization, new objects will be created. If you want to "reset" the
 destination organization, you can use the script "org_conf_zeroise.py".
 This script is trying to maintain objects integrity as much as possible. To do so, when
 an object is referencing another object by its ID, the script will replace be ID from
@@ -1195,7 +1195,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
 information about the available parameters).
 

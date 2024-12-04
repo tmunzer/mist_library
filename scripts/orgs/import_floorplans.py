@@ -7,7 +7,7 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to import multiple Ekahau/iBwave project into Mist Organisation.
+Python script to import multiple Ekahau/iBwave project into Mist Organization.
 
 To automatically assign the APs to the floorplans:
     
@@ -33,12 +33,12 @@ mistapi: https://pypi.org/project/mistapi/
 
 -------
 Usage:
-This script requires a parameter to locate foldar where the Ekahau/iBwave 
+This script requires a parameter to locate folder where the Ekahau/iBwave 
 project files are located. Other parameters listed below
 are optional. If the optional parameters are not defined, the script will ask 
 for the additional required settings.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -450,7 +450,7 @@ def usage():
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to import multiple Ekahau/iBwave project into Mist Organisation.
+Python script to import multiple Ekahau/iBwave project into Mist Organization.
 
 To automatically assign the APs to the floorplans:
     
@@ -467,7 +467,7 @@ To automatically assign the APs to the floorplans:
     and name it with the name used in the project
 
 IMPORTANT: 
-Each proect files/CSV files must be named with the name of the site where 
+Each project files/CSV files must be named with the name of the site where 
 you want to deploy the floorplans.
 
 -------
@@ -476,12 +476,12 @@ mistapi: https://pypi.org/project/mistapi/
 
 -------
 Usage:
-This script requires a parameter to locate foldar where the Ekahau/iBwave 
+This script requires a parameter to locate folder where the Ekahau/iBwave 
 project files are located. Other parameters listed below
 are optional. If the optional parameters are not defined, the script will ask 
 for the additional required settings.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 

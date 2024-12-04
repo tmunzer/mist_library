@@ -7,7 +7,7 @@ You can use the script "org_site_backup.py" to generate the backup file from an
 existing organization.
 
 This script will not overide existing objects. If you already configured objects in the 
-destination organisation, new objects will be reused or created. If you want to "reset" the 
+destination organization, new objects will be reused or created. If you want to "reset" the 
 destination organization, you can use the script "org_conf_zeroise.py".
 This script is trying to maintain objects integrity as much as possible. To do so, when 
 an object is referencing another object by its ID, the script will replace be ID from 

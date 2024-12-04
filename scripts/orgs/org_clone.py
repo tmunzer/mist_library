@@ -31,7 +31,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -160,7 +160,7 @@ def _create_org(mist_session:mistapi.APISession):
                 "name": custom_dest_org_name
             }
             print()
-            print(f"Creating the organisation \"{custom_dest_org_name}\" in {mist_session.get_cloud()} ".ljust(79, "."), end="", flush=True)
+            print(f"Creating the organization \"{custom_dest_org_name}\" in {mist_session.get_cloud()} ".ljust(79, "."), end="", flush=True)
             try:
                 org_id = mistapi.api.v1.orgs.orgs.createOrg(mist_session, org).data["id"]
                 print("\033[92m\u2714\033[0m")
@@ -173,7 +173,7 @@ def _create_org(mist_session:mistapi.APISession):
 
 def select_or_create_org(mist_session:mistapi.APISession=None):
     while True:
-        res = input("Do you want to create a (n)ew organisation, (r)estore to an existing one, or (q)uit? ")
+        res = input("Do you want to create a (n)ew organization, (r)estore to an existing one, or (q)uit? ")
         if res.lower()=="r":
             return _select_org("destination", mist_session)
         elif res.lower()=="n":
@@ -317,7 +317,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 

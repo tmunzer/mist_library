@@ -25,7 +25,7 @@ This script requires a parameter to locate the csv file. Other parameters listed
 are optional. If the optional parameters are not defined, the script will ask for the 
 additional required settings.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -674,7 +674,7 @@ This script requires a parameter to locate the csv file. Other parameters listed
 are optional. If the optional parameters are not defined, the script will ask for the 
 additional required settings.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 

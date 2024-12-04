@@ -21,7 +21,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -33,9 +33,9 @@ Options:
                     in https://doc.mist-lab.fr
                     format: -q key1:value1 -q key2:value2 -q ...
 
--p, --prefix=       define the prefix of the output files. Two files will be genereated:
+-p, --prefix=       define the prefix of the output files. Two files will be generated:
                     <prefix>_report.csv: list all the events
-                    <prefix>_summary.csv: list all the sites (with the dashboad URL)
+                    <prefix>_summary.csv: list all the sites (with the dashboard URL)
                     default is "org_events"
 -d, --datetime      append the current date and time (ISO format) to the
                     backup name 
@@ -202,6 +202,7 @@ def _gen_summary(host: str, org_id: str, data: dict, sites: dict):
     for e in data:
         if e.get("site_id"):
             site_id = e["site_id"]
+            e_type = None
             if not output.get(e["site_id"]):
                 site_name = sites_map.get(site_id, "unknown")
                 e_type = e["type"]
@@ -209,7 +210,7 @@ def _gen_summary(host: str, org_id: str, data: dict, sites: dict):
                     "site": site_name,
                     "link": f"https://{host.replace('api', 'manage')}/admin/?org_id={org_id}#!dashboard/insights/{site_id}",
                 }
-            if not output[site_id].get(e_type):
+            if e_type and not output[site_id].get(e_type):
                 output[site_id][e_type] = 1
             else:
                 output[site_id][e_type] += 1
@@ -436,7 +437,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -448,9 +449,9 @@ Options:
                     in https://doc.mist-lab.fr
                     format: -q key1:value1 -q key2:value2 -q ...
 
--p, --prefix=       define the prefix of the output files. Two files will be genereated:
+-p, --prefix=       define the prefix of the output files. Two files will be generated:
                     <prefix>_report.csv: list all the events
-                    <prefix>_summary.csv: list all the sites (with the dashboad URL)
+                    <prefix>_summary.csv: list all the sites (with the dashboard URL)
                     default is "org_events"
 -d, --datetime      append the current date and time (ISO format) to the
                     backup name 

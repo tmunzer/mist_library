@@ -35,17 +35,17 @@ This package can use API Token authentication or Login/Password:
 
 - saved in a `.mist_env` file located in your home folder (see below for the env file description)
 - saved in a file and passed with the `-e` or `--env` parameter to the script (see below for the env file description)
-- if no env file is found, the script will ask for the Login/Passws
+- if no env file is found, the script will ask for the Login/Passwd
 
 ## Environment File
 
-The environment file can be used to store all the information requested by the scripts. It can be used to easily store and used different environments and automate the excecution of the scripts without having to save credential information in the script itself.
+The environment file can be used to store all the information requested by the scripts. It can be used to easily store and used different environments and automate the execution of the scripts without having to save credential information in the script itself.
 | Variable Name | Type | Default | Comment |
 | ------------- | ---- | ------ | ------- |
 MIST_HOST | string | None | The Mist Cloud to use. It must be the "api" one (e.g. `api.mist.com`, `api.eu.mist.com`, ...) |
 MIST_APITOKEN | string | None | The API Token to use. |
-MIST_USER | string | None | The login to use if no API Token is provided (apitoken use is prefered) |
-MIST_PASSWORD | string | None | The password to use if no API Token is provided (apitoken use is prefered) |
+MIST_USER | string | None | The login to use if no API Token is provided (apitoken use is preferred) |
+MIST_PASSWORD | string | None | The password to use if no API Token is provided (apitoken use is preferred) |
 CONSOLE_LOG_LEVEL | int | 20 | The minimum log level to display on the console, using `logging` schema (0 = Disabled, 10 = Debug, 20 = Info, 30 = Warning, 40 = Error, 50 = Critical) |
 LOGGING_LOG_LEVEL | int | 10 | The minimum log level to log on the file, using `logging` schema (0 = Disabled, 10 = Debug, 20 = Info, 30 = Warning, 40 = Error, 50 = Critical). This is only used when the script calling `mistapi` is using Python `logging` package and is configured to log to a file |
 
@@ -69,7 +69,7 @@ Each script has description and documentation at the beginning of the file. Plea
 - [import_guest.py](scripts/clients/import_guests.py): Python script import or update a list of Guests from a CSV file into a Mist Org or Mist Site
   ## Configuration
 - [config_ap_auto_upgrade.py](scripts/orgs/config_ap_auto_upgrade.py): Python script update the Mist AP Auto_upgrade parameters in the site settings
-- [config_auto_site_assignment.py](scripts/orgs/config_auto_site_assignment.py): Python script to update the org auto assignement rules
+- [config_auto_site_assignment.py](scripts/orgs/config_auto_site_assignment.py): Python script to update the org auto assignment rules
 - [config_webhook.py](scripts/sites/config_webhook.py): This script can be used to list/add/delete Webhooks from Org/Site
 
 ## Devices
@@ -79,7 +79,7 @@ Each script has description and documentation at the beginning of the file. Plea
 - APs
   - [configure_ap_mgmt_vlan.py](scripts/devices/aps/configure_ap_mgmt_vlan.py): Python script reconfigure Management VLAN on all the Mist APs from one or multiple sites.
 - Switches
-  - [check_local_commit_events.py](scripts/devices/switches/check_local_commit_events.py) This script can be used to retrieve and save into a file the CLI Commit events (commit done localy one the switches) for all the switches belonging to a Mist Organization.
+  - [check_local_commit_events.py](scripts/devices/switches/check_local_commit_events.py) This script can be used to retrieve and save into a file the CLI Commit events (commit done locally one the switches) for all the switches belonging to a Mist Organization.
   - [update_port_config.py](scripts/devices/switches/update_port_config.py)Python script to reconfigure switch interfaces based on a CSV file. The script will create or replace device override at the switch level to reconfigure the interfaces.
   - [toggle_poe.py](scripts/devices/switches/toggle_poe.py): Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template.
 
@@ -97,7 +97,7 @@ Each script has description and documentation at the beginning of the file. Plea
 
 - [clone_template.py](scripts/orgs/clone_template.py): Python script to clone a specific template from an organization to another (or the same) organization.
 - [fix_sites_geocoding.py](scripts/orgs/fix_sites_geocoding.py): Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing.
-- [import_floorplans.py](scripts/orgs/import_floorplans.py): Python script to import multiple Ekahau/iBwave project into Mist Organisation.
+- [import_floorplans.py](scripts/orgs/import_floorplans.py): Python script to import multiple Ekahau/iBwave project into Mist Organization.
 - [import_sites.py](scripts/orgs/import_sites.py): Python script automate the sites creation in a Mist Org from a CSV file.
 - [inventory_assign.py](scripts/orgs/inventory_assign.py): Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org.
 - [inventory_claim.py](scripts/orgs/inventory_claim.py): Python script to claim devices to an org from a CSV file.
@@ -117,7 +117,7 @@ Each script has description and documentation at the beginning of the file. Plea
 
 ### Org Admins
 
-- [import_admins.py](scripts/orgs/admins/import_admins.py): Python script to invite/add adminsitrators from a CSV file.
+- [import_admins.py](scripts/orgs/admins/import_admins.py): Python script to invite/add administrators from a CSV file.
 
 ## Sites
 
@@ -131,10 +131,10 @@ Each script has description and documentation at the beginning of the file. Plea
 
 - [report_app_usage.py](scripts/reports/report_app_usage.py): Python script to generate a report of the application usage on a specific site
 - [report_bssids.py](scripts/reports/report_bssids.py): Python script to list all Access Points from orgs/sites and their associated BSSIDs.
-- [report_rogues.py](scripts/reports/report_rogues.py): Python script to gerenate a Rogue AP report.
-- [report_switch_snapshot.py](scripts/reports/report_switch_snapshot.py): Python script to gerenates a list of all the switches for a specified org/site
+- [report_rogues.py](scripts/reports/report_rogues.py): Python script to generate a Rogue AP report.
+- [report_switch_snapshot.py](scripts/reports/report_switch_snapshot.py): Python script to generates a list of all the switches for a specified org/site
 - [report_wlans.py](scripts/reports/report_wlans.py): Python script to list all WLANs from orgs/sites and their parameters, and save it to a CSV file.
 
 ## Utils
 
-- [encryption.py](scripts/utils/encryption.py): Python script to manage backup encryption. This file can be used to generate RSA Private and Public keys for encryption, to encrypt file (AES encryption, AES key is RSA Protected) or to decrypt encryted files.
+- [encryption.py](scripts/utils/encryption.py): Python script to manage backup encryption. This file can be used to generate RSA Private and Public keys for encryption, to encrypt file (AES encryption, AES key is RSA Protected) or to decrypt encrypted files.

@@ -27,7 +27,7 @@ This script requires a parameter to locate the csv file. Other parameters listed
 are optional. If the optional parameters are not defined, the script will ask for the 
 additional required settings.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -946,7 +946,7 @@ def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None
             org = {
                 "name": custom_dest_org_name
             }
-            message = f"Creating the organisation \"{custom_dest_org_name}\" in {apisession.get_cloud()} "
+            message = f"Creating the organization \"{custom_dest_org_name}\" in {apisession.get_cloud()} "
             PB.log_message(message, display_pbar=False)
             try:
                 PB.log_success(message, display_pbar=False)
@@ -965,7 +965,7 @@ def _select_dest_org(apisession: mistapi.APISession):
     print()
     while True:
         res = input(
-            "Do you want to import into a (n)ew organisation or (e)xisting one, (q) to quit? ")
+            "Do you want to import into a (n)ew organization or (e)xisting one, (q) to quit? ")
         if res.lower() == "q":
             sys.exit(0)
         elif res.lower() == "e":
@@ -1081,7 +1081,7 @@ This script requires a parameter to locate the csv file. Other parameters listed
 are optional. If the optional parameters are not defined, the script will ask for the 
 additional required settings.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 

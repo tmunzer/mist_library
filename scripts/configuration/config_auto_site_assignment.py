@@ -7,9 +7,9 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to update the org auto assignement rules. The script is displaying 
-options enable/disable the auto assignement, and to build the rules before 
-udpating the org settings
+Python script to update the org auto assignment rules. The script is displaying 
+options enable/disable the auto assignment, and to build the rules before 
+updating the org settings
 
 -------
 Requirements:
@@ -21,7 +21,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -29,9 +29,9 @@ information about the available parameters).
 Options:
 -h, --help          display this help
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
---enable            Enable the auto assignement (addional configuration will be asked
+--enable            Enable the auto assignment (additional configuration will be asked
                     by the script). Only one action enable/disable is allowed
---disable           Disable the auto assignement Only one action enable/disable is 
+--disable           Disable the auto assignment Only one action enable/disable is 
                     allowed              
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
@@ -104,7 +104,7 @@ def create_rule(apisession, org_id):
 def select_rule_type(apisession, org_id):
     rule_conf = {}
     while True:
-        print("Type of auto assignement rule:")
+        print("Type of auto assignment rule:")
         i = -1
         for rule in AUTO_ASSIGNMENT_RULES:
             i+=1
@@ -195,9 +195,9 @@ def usage():
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to update the org auto assignement rules. The script is displaying 
-options enable/disable the auto assignement, and to build the rules before 
-udpating the org settings
+Python script to update the org auto assignment rules. The script is displaying 
+options enable/disable the auto assignment, and to build the rules before 
+updating the org settings
 
 -------
 Requirements:
@@ -209,7 +209,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -217,9 +217,9 @@ information about the available parameters).
 Options:
 -h, --help          display this help
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
---enable            Enable the auto assignement (addional configuration will be asked
+--enable            Enable the auto assignment (additional configuration will be asked
                     by the script). Only one action enable/disable is allowed
---disable           Disable the auto assignement Only one action enable/disable is 
+--disable           Disable the auto assignment Only one action enable/disable is 
                     allowed              
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
@@ -308,7 +308,7 @@ if __name__ == "__main__":
         ORG_ID = mistapi.cli.select_org(APISESSION)
 
     while not ACTION:
-        resp = input("Do you want to (E)nable of (D)isable auto site assignement (e/d)?")
+        resp = input("Do you want to (E)nable of (D)isable auto site assignment (e/d)?")
         if resp.lower() == 'e':
             auto_site_assignment["enable"] = True
             ACTION = "enable"
@@ -316,7 +316,7 @@ if __name__ == "__main__":
             auto_site_assignment["enable"] = False
             ACTION = "disable"
         else:
-            console.error("Only \"e\" and \"d\" are allowed, to Enable or Disable auto site assignement")
+            console.error("Only \"e\" and \"d\" are allowed, to Enable or Disable auto site assignment")
 
     if auto_site_assignment["enable"] == True:
         auto_site_assignment["rules"] = create_rule(APISESSION, ORG_ID)

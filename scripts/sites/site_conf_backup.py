@@ -24,7 +24,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -33,7 +33,7 @@ Script Parameters:
 -h, --help              display this help
 -o, --org_id=           Set the org_id (required to backup templates assigned to the site)
 -s, --site_ids          Set the list of site_ids to backup, comma separated 
-                        If the site_ids is not providced, the script will propose to
+                        If the site_ids is not provided, the script will propose to
                         select the site to backup
 -b, --backup_folder=    Path to the folder where to save the org backup (a subfolder
                         will be created with the org name)
@@ -413,7 +413,7 @@ This script can be run as is (without parameters), or with the options below.
 If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
-It is recomended to use an environment file to store the required information
+It is recommended to use an environment file to store the required information
 to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
 information about the available parameters).
 
@@ -422,7 +422,7 @@ Script Parameters:
 -h, --help              display this help
 -o, --org_id=           Set the org_id (required to backup templates assigned to the site)
 -s, --site_ids          Set the list of site_ids to backup, comma separated 
-                        If the site_ids is not providced, the script will propose to
+                        If the site_ids is not provided, the script will propose to
                         select the site to backup
 -b, --backup_folder=    Path to the folder where to save the org backup (a subfolder
                         will be created with the org name)
