@@ -15,16 +15,20 @@ more than the `trigger_timeout`.
 NOTE 1: 
 This script is working with the following event types (use the "Event Options" 
 with the "-t"/"--event_types=" CLI parameter to configure the script):
-| Event Options   | Mist Corresponding Events                       |
-|-----------------|-------------------------------------------------|
-| GW_ARP          | GW_ARP_RESOLVED,GW_ARP_UNRESOLVED               |
-| GW_BGP_NEIGHBOR | GW_BGP_NEIGHBOR_DOWN,GW_BGP_NEIGHBOR_UP         |
-| GW_CONFIG       | GW_CONFIGURED,GW_CONFIG_FAILED                  |
-| GW_TUNNEL       | GW_TUNNEL_DOWN,GW_TUNNEL_UP                     |
-| GW_VPN_PATH     | GW_VPN_PATH_DOWN,GW_VPN_PATH_UP                 |
-| GW_VPN_PEER     | GW_VPN_PEER_DOWN,GW_VPN_PEER_UP                 |
-| SW_CONFIG       | SW_CONFIGURED,SW_CONFIG_FAILED                  |
-| SW_PORT_BPDU    | SW_PORT_BPDU_ERROR_CLEARED,SW_PORT_BPDU_BLOCKED |
+
+| Event Options               | Mist Corresponding Events                                       |
+|-----------------------------|-----------------------------------------------------------------|
+| GW_ARP                      | GW_ARP_RESOLVED,GW_ARP_UNRESOLVED                               |
+| GW_BGP_NEIGHBOR             | GW_BGP_NEIGHBOR_DOWN,GW_BGP_NEIGHBOR_UP                         |
+| GW_CONFIG                   | GW_CONFIGURED,GW_CONFIG_FAILED                                  |
+| GW_TUNNEL                   | GW_TUNNEL_DOWN,GW_TUNNEL_UP                                     |
+| GW_VPN_PATH                 | GW_VPN_PATH_DOWN,GW_VPN_PATH_UP                                 |
+| GW_VPN_PEER                 | GW_VPN_PEER_DOWN,GW_VPN_PEER_UP                                 |
+| SW_CONFIG                   | SW_CONFIGURED,SW_CONFIG_FAILED                                  |
+| SW_DDOS_PROTOCOL_VIOLATION  | SW_DDOS_PROTOCOL_VIOLATION_CLEAR,SW_DDOS_PROTOCOL_VIOLATION_SET |
+| SW_MAC_LIMIT                | SW_MAC_LIMIT_EXCEEDED,SW_MAC_LIMIT_RESET                        |
+| SW_PORT_BPDU                | SW_PORT_BPDU_ERROR_CLEARED,SW_PORT_BPDU_BLOCKED                 |
+
 
 NOTE 2:
 It is possible to leverage the linux `watch` command to get the list refreshed
@@ -135,76 +139,11 @@ EVENT_TYPES_DEFINITIONS= {
 "GW_VPN_PATH": ["GW_VPN_PATH_DOWN", "GW_VPN_PATH_UP"],
 "GW_VPN_PEER": ["GW_VPN_PEER_DOWN", "GW_VPN_PEER_UP"],
 "SW_CONFIG": ["SW_CONFIGURED", "SW_CONFIG_FAILED"],
+"SW_DDOS_PROTOCOL_VIOLATION": ["SW_DDOS_PROTOCOL_VIOLATION_CLEAR", "SW_DDOS_PROTOCOL_VIOLATION_SET"],
+"SW_MAC_LIMIT": ["SW_MAC_LIMIT_EXCEEDED","SW_MAC_LIMIT_RESET"],
 "SW_PORT_BPDU": ["SW_PORT_BPDU_ERROR_CLEARED", "SW_PORT_BPDU_BLOCKED"],
 }
 
-
-#####################################################################
-# PROGRESS BAR AND DISPLAY
-class ProgressBar():
-    def __init__(self):
-        self.steps_total = 0
-        self.steps_count = 0
-
-    def _pb_update(self, size: int = 80):
-        if self.steps_count > self.steps_total:
-            self.steps_count = self.steps_total
-
-        percent = self.steps_count/self.steps_total
-        delta = 17
-        x = int((size-delta)*percent)
-        print("\033[A")
-        print(f"Progress: ", end="")
-        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
-        print(f"{int(percent*100)}%".rjust(5), end="")
-
-    def _pb_new_step(self, message: str, result: str, inc: bool = False, size: int = 80, display_pbar: bool = True):
-        if inc:
-            self.steps_count += 1
-        text = f"\033[A\033[F{message}"
-        print(f"{text} ".ljust(size + 4, "."), result)
-        print("".ljust(80))
-        if display_pbar:
-            self._pb_update(size)
-
-    def _pb_title(self, text: str, size: int = 80, end: bool = False, display_pbar: bool = True):
-        print()
-        print("\033[A")
-        print(f" {text} ".center(size, "-"), "\n")
-        if not end and display_pbar:
-            print("".ljust(80))
-            self._pb_update(size)
-
-    def inc(self, size: int = 80):
-        self.steps_count += 1
-        self._pb_update(size)
-
-    def set_steps_total(self, steps_total: int):
-        self.steps_total = steps_total
-
-    def log_message(self, message, display_pbar: bool = True):
-        self._pb_new_step(message, " ", display_pbar=display_pbar)
-
-    def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.info(f"{message}: Success")
-        self._pb_new_step(
-            message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
-
-    def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.warning(f"{message}: Warning")
-        self._pb_new_step(
-            message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
-
-    def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.error(f"{message}: Failure")
-        self._pb_new_step(
-            message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar)
-
-    def log_title(self, message, end: bool = False, display_pbar: bool = True):
-        LOGGER.info(message)
-        self._pb_title(message, end=end, display_pbar=display_pbar)
-
-PB = ProgressBar()
 
 #####################################################################
 #### FUNCTIONS ####
@@ -217,11 +156,11 @@ def _retrieve_events(
 ):
     try:
         resp = mistapi.api.v1.orgs.devices.searchOrgDeviceEvents(
-            mist_session, 
-            org_id, 
+            mist_session,
+            org_id,
             device_type="all",
-            type=event_types, 
-            duration=duration, 
+            type=event_types,
+            duration=duration,
             limit=1000
         )
         if resp.status_code == 200:
@@ -457,6 +396,40 @@ def _process_sw_config(devices: dict, event_type: str, event: dict):
         device_entry["status"] = "cleared"
         device_entry["cleared"] += 1
     device_entry["last_change"] = datetime.fromtimestamp(round(event_timestamp))
+
+###################################################################################################
+################################# SW_PORT_BPDU_BLOCKED
+def _process_sw_mac_limit(devices: dict, event_type: str, event: dict) -> None:
+    LOGGER.debug(f"_process_sw_mac_limit: {event}")
+    event_text = event.get("text")
+    event_timestamp = event.get("timestamp")
+    event_port_id = event.get("port_id")
+    if not event_port_id:
+        try:
+            event_port_id = event_text.split(";")[0].split(" ")[-1]
+        except:
+            LOGGER.error(
+                f"_process_sw_mac_limit: Unable to extract interface name from {event_text}"
+            )
+            return
+    _check_device(devices, event)
+    device_entry = _check_device_events(
+        devices,
+        event.get("device_type"),
+        event.get("mac"),
+        "SW_MAC_LIMIT_EXCEEDED",
+        "Port ID",
+        event_port_id,
+    )
+    
+    if event_type == "SW_MAC_LIMIT_EXCEEDED":
+        device_entry["status"] = "triggered"
+        device_entry["triggered"] += 1
+    if event_type == "SW_MAC_LIMIT_RESET":
+        device_entry["status"] = "cleared"
+        device_entry["cleared"] += 1
+    device_entry["last_change"] = datetime.fromtimestamp(round(event_timestamp))
+
 ###################################################################################################
 ################################# SW_PORT_BPDU_BLOCKED
 def _process_sw_port_bpdu(devices: dict, event_type: str, event: dict) -> None:
@@ -486,6 +459,39 @@ def _process_sw_port_bpdu(devices: dict, event_type: str, event: dict) -> None:
         device_entry["status"] = "triggered"
         device_entry["triggered"] += 1
     if event_type == "SW_PORT_BPDU_ERROR_CLEARED":
+        device_entry["status"] = "cleared"
+        device_entry["cleared"] += 1
+    device_entry["last_change"] = datetime.fromtimestamp(round(event_timestamp))
+
+###################################################################################################
+################################# SW_PORT_BPDU_BLOCKED
+def _process_sw_ddos_protocol_violation(devices: dict, event_type: str, event: dict) -> None:
+    LOGGER.debug(f"_process_sw_ddos_protocol_violation: {event}")
+    event_text = event.get("text")
+    event_timestamp = event.get("timestamp")
+    event_protocol_name = event.get("protocol_name")
+    if not event_protocol_name:
+        try:
+            event_protocol_name = event_text.split("protocol/exception")[1].strip().split(" ")[0]
+        except:
+            LOGGER.error(
+                f"_process_sw_ddos_protocol_violation: Unable to extract interface name from {event_text}"
+            )
+            return
+    _check_device(devices, event)
+    device_entry = _check_device_events(
+        devices,
+        event.get("device_type"),
+        event.get("mac"),
+        "SW_DDOS_PROTOCOL_VIOLATION_SET",
+        "Protocol Name",
+        event_protocol_name,
+    )
+    
+    if event_type == "SW_DDOS_PROTOCOL_VIOLATION_SET":
+        device_entry["status"] = "triggered"
+        device_entry["triggered"] += 1
+    if event_type == "SW_DDOS_PROTOCOL_VIOLATION_CLEAR":
         device_entry["status"] = "cleared"
         device_entry["cleared"] += 1
     device_entry["last_change"] = datetime.fromtimestamp(round(event_timestamp))
@@ -557,6 +563,10 @@ def _process_events(events: list) -> dict:
 
         elif event_type.startswith("SW_CONFIG"):
             _process_sw_config(device_events, event_type, event)
+        elif event_type.startswith("SW_DDOS_PROTOCOL_VIOLATION"):
+            _process_sw_ddos_protocol_violation(device_events, event_type, event)
+        elif event_type.startswith("SW_MAC_LIMIT"):
+            _process_sw_mac_limit(device_events, event_type, event)
         elif event_type.startswith("SW_PORT_BPDU"):
             _process_sw_port_bpdu(device_events, event_type, event)
     return device_events
@@ -690,7 +700,14 @@ def start(
         org_id = mistapi.cli.select_org(mist_session)[0]
 
     success, events = _retrieve_events(mist_session, org_id, event_types, duration)
-    events = sorted(events, key=lambda x: x["timestamp"])
+    try:
+        events = sorted(events, key=lambda x: x["timestamp"])
+    except:
+        CONSOLE.critical("Unable to process the Mist events")
+        LOGGER.debug(events)
+        LOGGER.error("Exception occurred", exc_info=True)
+        sys.exit(255)
+
     if not success:
         CONSOLE.error("Unable to retrieve device events")
         sys.exit(0)
@@ -724,16 +741,19 @@ more than the `trigger_timeout`.
 NOTE 1: 
 This script is working with the following event types (use the "Event Options" 
 with the "-t"/"--event_types=" CLI parameter to configure the script):
-| Event Options   | Mist Corresponding Events                       |
-|-----------------|-------------------------------------------------|
-| GW_ARP          | GW_ARP_RESOLVED,GW_ARP_UNRESOLVED               |
-| GW_BGP_NEIGHBOR | GW_BGP_NEIGHBOR_DOWN,GW_BGP_NEIGHBOR_UP         |
-| GW_CONFIG       | GW_CONFIGURED,GW_CONFIG_FAILED                  |
-| GW_TUNNEL       | GW_TUNNEL_DOWN,GW_TUNNEL_UP                     |
-| GW_VPN_PATH     | GW_VPN_PATH_DOWN,GW_VPN_PATH_UP                 |
-| GW_VPN_PEER     | GW_VPN_PEER_DOWN,GW_VPN_PEER_UP                 |
-| SW_CONFIG       | SW_CONFIGURED,SW_CONFIG_FAILED                  |
-| SW_PORT_BPDU    | SW_PORT_BPDU_ERROR_CLEARED,SW_PORT_BPDU_BLOCKED |
+
+| Event Options               | Mist Corresponding Events                                       |
+|-----------------------------|-----------------------------------------------------------------|
+| GW_ARP                      | GW_ARP_RESOLVED,GW_ARP_UNRESOLVED                               |
+| GW_BGP_NEIGHBOR             | GW_BGP_NEIGHBOR_DOWN,GW_BGP_NEIGHBOR_UP                         |
+| GW_CONFIG                   | GW_CONFIGURED,GW_CONFIG_FAILED                                  |
+| GW_TUNNEL                   | GW_TUNNEL_DOWN,GW_TUNNEL_UP                                     |
+| GW_VPN_PATH                 | GW_VPN_PATH_DOWN,GW_VPN_PATH_UP                                 |
+| GW_VPN_PEER                 | GW_VPN_PEER_DOWN,GW_VPN_PEER_UP                                 |
+| SW_CONFIG                   | SW_CONFIGURED,SW_CONFIG_FAILED                                  |
+| SW_DDOS_PROTOCOL_VIOLATION  | SW_DDOS_PROTOCOL_VIOLATION_CLEAR,SW_DDOS_PROTOCOL_VIOLATION_SET |
+| SW_MAC_LIMIT                | SW_MAC_LIMIT_EXCEEDED,SW_MAC_LIMIT_RESET                        |
+| SW_PORT_BPDU                | SW_PORT_BPDU_ERROR_CLEARED,SW_PORT_BPDU_BLOCKED                 |
 
 NOTE 2:
 It is possible to leverage the linux `watch` command to get the list refreshed
@@ -845,7 +865,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "he:o:a:d:t:l:v:",
+            "he:o:a:d:t:r:l:v:",
             [
                 "help",
                 "env_file=",
@@ -886,7 +906,10 @@ if __name__ == "__main__":
                     usage(f"Invalid -v / --view parameter value. View {a} is not supported")
             VIEW = a
         elif o in ["-r", "--trigger_timeout"]:
-            TIMEOUT = a
+            try:
+                TIMEOUT = int(a)
+            except:
+                usage(f"Invalid -r / --trigger_timeout parameter value. {a} is not supported")
         elif o in ["-l", "--log_file"]:
             LOG_FILE = a
         else:
