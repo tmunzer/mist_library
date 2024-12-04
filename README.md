@@ -129,6 +129,7 @@ Each script has description and documentation at the beginning of the file. Plea
 
 ## Reports
 
+- [list_open_events.py](https://github.com/tmunzer/mist_library/blob/master/scripts/reports/list_open_events.py): Python script to display the list of events/alarms that are not cleared. The script is trying to correlate the different events to identify the "opening" and the "closing" events, and only display the event if it is not "cleared" for more than the `trigger_timeout`.
 - [report_app_usage.py](scripts/reports/report_app_usage.py): Python script to generate a report of the application usage on a specific site
 - [report_bssids.py](scripts/reports/report_bssids.py): Python script to list all Access Points from orgs/sites and their associated BSSIDs.
 - [report_rogues.py](scripts/reports/report_rogues.py): Python script to generate a Rogue AP report.
