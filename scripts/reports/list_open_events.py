@@ -603,9 +603,9 @@ def _display_device_results(device_events:dict, raised_timeout:int):
                                         event_identifier_data.get("last_change"),
                                     ])
                     else:
-                        delta_time = (now - event_identifier_data.get("last_change")).total_seconds()
+                        delta_time = (now - event_data.get("last_change")).total_seconds()
                         if raised_timeout == 0 or (
-                            delta_time >= (raised_timeout * 60) and event_identifier_data.get("status")=="triggered" 
+                            delta_time >= (raised_timeout * 60) and event_data.get("status")=="triggered" 
                             ):
                             data.append([
                                 event_type,
@@ -661,9 +661,9 @@ def _display_event_results(device_events:dict, raised_timeout:int):
                                         event_identifier_data.get("last_change"),
                                     ])
                     else:
-                        delta_time = (now - event_identifier_data.get("last_change")).total_seconds()
+                        delta_time = (now - event_data.get("last_change")).total_seconds()
                         if raised_timeout == 0 or (
-                            delta_time >= (raised_timeout * 60) and event_identifier_data.get("status")=="triggered" 
+                            delta_time >= (raised_timeout * 60) and event_data.get("status")=="triggered" 
                             ):
                             event_reports[event_type].append([
                                     device_data.get('site_id'),
