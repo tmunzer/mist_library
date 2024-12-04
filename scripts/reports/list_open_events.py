@@ -16,7 +16,7 @@ NOTE 1:
 This script is working with the following event types (use the "Event Options" 
 with the "-t"/"--event_types=" CLI parameter to configure the script):
 
-| Event Options               | Mist Corresponding Events                                       |
+| Script Event Options        | Mist Corresponding Events                                       |
 |-----------------------------|-----------------------------------------------------------------|
 | GW_ARP                      | GW_ARP_RESOLVED,GW_ARP_UNRESOLVED                               |
 | GW_BGP_NEIGHBOR             | GW_BGP_NEIGHBOR_DOWN,GW_BGP_NEIGHBOR_UP                         |
@@ -742,7 +742,7 @@ NOTE 1:
 This script is working with the following event types (use the "Event Options" 
 with the "-t"/"--event_types=" CLI parameter to configure the script):
 
-| Event Options               | Mist Corresponding Events                                       |
+| Script Event Options        | Mist Corresponding Events                                       |
 |-----------------------------|-----------------------------------------------------------------|
 | GW_ARP                      | GW_ARP_RESOLVED,GW_ARP_UNRESOLVED                               |
 | GW_BGP_NEIGHBOR             | GW_BGP_NEIGHBOR_DOWN,GW_BGP_NEIGHBOR_UP                         |
