@@ -650,8 +650,7 @@ def _display_event_results(device_events:dict, raised_timeout:int):
         "Current Status",
         "Trigger Count",
         "Clear Count",
-        "Last Change",
-        "Timeout"
+        "Last Change"
     ]
     event_reports = {}
     for device_type, devices in device_events.items():
@@ -678,8 +677,7 @@ def _display_event_results(device_events:dict, raised_timeout:int):
                                         event_identifier_data.get("status"),
                                         event_identifier_data.get("triggered"),
                                         event_identifier_data.get("cleared"),
-                                        event_identifier_data.get("last_change"),
-                                        timeout,
+                                        event_identifier_data.get("last_change")
                                     ])
                     else:
                         timeout = _check_timeout(
@@ -695,8 +693,7 @@ def _display_event_results(device_events:dict, raised_timeout:int):
                                     event_data.get("status"),
                                     event_data.get("triggered"),
                                     event_data.get("cleared"),
-                                    event_data.get("last_change"),
-                                    timeout
+                                    event_data.get("last_change")
                                 ])
     for event_type, report in event_reports.items():
         if report:
@@ -718,8 +715,7 @@ def _export_to_csv(csv_file:str, device_events:dict, raised_timeout:int):
         "Current Status",
         "Trigger Count",
         "Clear Count",
-        "Last Change",
-        "Timeout"
+        "Last Change"
     ]
     data=[]
     for device_type, devices in device_events.items():
@@ -745,8 +741,7 @@ def _export_to_csv(csv_file:str, device_events:dict, raised_timeout:int):
                                         event_identifier_data.get("status"),
                                         event_identifier_data.get("triggered"),
                                         event_identifier_data.get("cleared"),
-                                        event_identifier_data.get("last_change"),
-                                        timeout
+                                        event_identifier_data.get("last_change")
                                     ])
                     else:
                         timeout = _check_timeout(
@@ -764,8 +759,7 @@ def _export_to_csv(csv_file:str, device_events:dict, raised_timeout:int):
                                 event_data.get("status"),
                                 event_data.get("triggered"),
                                 event_data.get("cleared"),
-                                event_data.get("last_change"),
-                                timeout
+                                event_data.get("last_change")
                             ])
     with open(csv_file, 'w', encoding='UTF8') as f:
         writer = csv.writer(f)
