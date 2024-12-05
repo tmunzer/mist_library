@@ -75,8 +75,13 @@ Script Parameters:
                             Set to 0 to list all the events (even the cleared ones)
                             default: 5
 -v, --view=                 Type of report to display. Options are:
-                                - event (default): show events per event type
+                                - event: show events per event type
                                 - device: show events per device
+                                - none: do not display the result (the result is only save in
+                                the CSV file)
+                            default: event
+-c, --csv_file=             Path to the CSV file where to save the result
+                            default: ./list_open_events.csv
 
 -l, --log_file=             define the filepath/filename where to write the logs
                             default is "./script.log"
@@ -98,6 +103,7 @@ python3 ./list_open_events.py \
 import sys
 import getopt
 import logging
+import csv
 from datetime import datetime
 
 MISTAPI_MIN_VERSION = "0.52.4"
@@ -122,7 +128,7 @@ except:
 
 #### PARAMETERS #####
 ENV_FILE = "~/.mist_env"
-CSV_FILE = "./import_user_macs.csv"
+CSV_FILE = "./list_open_events.csv"
 LOG_FILE = "./script.log"
 
 #####################################################################
@@ -571,6 +577,15 @@ def _process_events(events: list) -> dict:
             _process_sw_port_bpdu(device_events, event_type, event)
     return device_events
 
+def _check_timeout(raised_timeout:int, last_change:datetime, status:str) -> bool:
+    timeout = False
+    now = datetime.now()
+    delta_time = (now - last_change).total_seconds()                      
+    if delta_time >= (raised_timeout * 60) and status=="triggered":
+        timeout = True
+    return timeout
+
+
 def _display_device_results(device_events:dict, raised_timeout:int):
     headers = [
         "Event Type",
@@ -580,7 +595,6 @@ def _display_device_results(device_events:dict, raised_timeout:int):
         "Clear Count",
         "Last Change"
     ]
-    now = datetime.now()
     for device_type, devices in device_events.items():
         if devices:
             for device_mac, device_data in devices.items():
@@ -590,23 +604,26 @@ def _display_device_results(device_events:dict, raised_timeout:int):
                     if event_data.get("identifier_header"):
                         for event_identifier, event_identifier_data in event_data.items():
                             if event_identifier != "identifier_header":
-                                delta_time = (now - event_identifier_data.get("last_change")).total_seconds()
-                                if raised_timeout == 0 or (
-                                    delta_time >= (raised_timeout * 60) and event_identifier_data.get("status")=="triggered"
-                                    ):
-                                    data.append([
-                                        event_type,
-                                        f"{event_data['identifier_header']} {event_identifier}",
-                                        event_identifier_data.get("status"),
-                                        event_identifier_data.get("triggered"),
-                                        event_identifier_data.get("cleared"),
-                                        event_identifier_data.get("last_change"),
-                                    ])
+                                timeout = _check_timeout(
+                                    raised_timeout,
+                                    event_identifier_data.get("last_change"),
+                                    event_identifier_data.get("status")
+                                    )
+                                data.append([
+                                    event_type,
+                                    f"{event_data['identifier_header']} {event_identifier}",
+                                    event_identifier_data.get("status"),
+                                    event_identifier_data.get("triggered"),
+                                    event_identifier_data.get("cleared"),
+                                    event_identifier_data.get("last_change"),
+                                ])
                     else:
-                        delta_time = (now - event_data.get("last_change")).total_seconds()
-                        if raised_timeout == 0 or (
-                            delta_time >= (raised_timeout * 60) and event_data.get("status")=="triggered" 
-                            ):
+                        timeout = _check_timeout(
+                            raised_timeout,
+                            event_data.get("last_change"),
+                            event_data.get("status")
+                            )
+                        if raised_timeout == 0 or timeout:
                             data.append([
                                 event_type,
                                 "",
@@ -633,24 +650,27 @@ def _display_event_results(device_events:dict, raised_timeout:int):
         "Current Status",
         "Trigger Count",
         "Clear Count",
-        "Last Change"
+        "Last Change",
+        "Timeout"
     ]
     event_reports = {}
-    now = datetime.now()
     for device_type, devices in device_events.items():
         if devices:
             for device_mac, device_data in devices.items():
                 events = device_data.get("events", {})
                 for event_type, event_data in events.items():
+                    timeout = False
                     if event_type not in event_reports:
                         event_reports[event_type] = []
                     if event_data.get("identifier_header"):
                         for event_identifier, event_identifier_data in event_data.items():
                             if event_identifier != "identifier_header":
-                                delta_time = (now - event_identifier_data.get("last_change")).total_seconds()
-                                if raised_timeout == 0 or (
-                                    delta_time >= (raised_timeout * 60) and event_identifier_data.get("status")=="triggered" 
-                                    ):
+                                timeout = _check_timeout(
+                                    raised_timeout,
+                                    event_identifier_data.get("last_change"),
+                                    event_identifier_data.get("status")
+                                    )
+                                if raised_timeout == 0 or timeout:
                                     event_reports[event_type].append([
                                         device_data.get('site_id'),
                                         device_mac,
@@ -659,12 +679,15 @@ def _display_event_results(device_events:dict, raised_timeout:int):
                                         event_identifier_data.get("triggered"),
                                         event_identifier_data.get("cleared"),
                                         event_identifier_data.get("last_change"),
+                                        timeout,
                                     ])
                     else:
-                        delta_time = (now - event_data.get("last_change")).total_seconds()
-                        if raised_timeout == 0 or (
-                            delta_time >= (raised_timeout * 60) and event_data.get("status")=="triggered" 
-                            ):
+                        timeout = _check_timeout(
+                            raised_timeout,
+                            event_data.get("last_change"),
+                            event_data.get("status")
+                            )
+                        if raised_timeout == 0 or timeout:
                             event_reports[event_type].append([
                                     device_data.get('site_id'),
                                     device_mac,
@@ -673,6 +696,7 @@ def _display_event_results(device_events:dict, raised_timeout:int):
                                     event_data.get("triggered"),
                                     event_data.get("cleared"),
                                     event_data.get("last_change"),
+                                    timeout
                                 ])
     for event_type, report in event_reports.items():
         if report:
@@ -684,6 +708,69 @@ def _display_event_results(device_events:dict, raised_timeout:int):
             print()
             print(mistapi.cli.tabulate(report, headers=headers, tablefmt="rounded_grid"))
 
+def _export_to_csv(csv_file:str, device_events:dict, raised_timeout:int):
+    headers = [
+        "Site ID",
+        "Device Type",
+        "Device MAC",
+        "Event Type",
+        "Event Info",
+        "Current Status",
+        "Trigger Count",
+        "Clear Count",
+        "Last Change",
+        "Timeout"
+    ]
+    data=[]
+    for device_type, devices in device_events.items():
+        if devices:
+            for device_mac, device_data in devices.items():
+                events = device_data.get("events", {})
+                for event_type, event_data in events.items():
+                    if event_data.get("identifier_header"):
+                        for event_identifier, event_identifier_data in event_data.items():
+                            if event_identifier != "identifier_header":
+                                timeout = _check_timeout(
+                                    raised_timeout,
+                                    event_identifier_data.get("last_change"),
+                                    event_identifier_data.get("status")
+                                    )
+                                if raised_timeout == 0 or timeout:
+                                    data.append([
+                                        device_data.get('site_id'),
+                                        device_type,
+                                        device_mac,
+                                        event_type,
+                                        f"{event_data['identifier_header']} {event_identifier}",
+                                        event_identifier_data.get("status"),
+                                        event_identifier_data.get("triggered"),
+                                        event_identifier_data.get("cleared"),
+                                        event_identifier_data.get("last_change"),
+                                        timeout
+                                    ])
+                    else:
+                        timeout = _check_timeout(
+                            raised_timeout,
+                            event_data.get("last_change"),
+                            event_data.get("status")
+                            )
+                        if raised_timeout == 0 or timeout:
+                            data.append([
+                                device_data.get('site_id'),
+                                device_type,
+                                device_mac,
+                                event_type,
+                                "",
+                                event_data.get("status"),
+                                event_data.get("triggered"),
+                                event_data.get("cleared"),
+                                event_data.get("last_change"),
+                                timeout
+                            ])
+    with open(csv_file, 'w', encoding='UTF8') as f:
+        writer = csv.writer(f)
+        writer.writerow(headers)
+        writer.writerows(data)
 
 
 ###################################################################################################
@@ -694,8 +781,38 @@ def start(
     event_types: str = None,
     duration: str = "1d",
     raised_timeout: int = 5,
-    view: str = "event"
+    view: str = "event",
+    csv_file: str = "./list_open_events.csv"
 ):
+    """
+    Start the process
+
+    PARAMS
+    -------
+    apisession : mistapi.APISession
+        mistapi session with `Super User` access the Org, already logged in
+    org_id : str
+        org_id where the webhook guests be added. This parameter cannot be used if "site_id"
+        is used. If no org_id and not site_id are defined, the script will show a menu to
+        select the org/the site.
+    event_types : str
+        comma separated list of event types that should be retrieved from the Mist Org and
+        processed. See the list in "Note 1" above.
+        If not defined, all the supported Event Options will be retrieved and processed.
+    duration : str, default 1d
+        duration of the events to look at
+    raised_timeout : int, default 5
+        timeout (in minutes) before listing the event if it is not cleared. Set to 0 to list
+        all the events (even the cleared ones)
+    view : str, default event
+        Type of report to display. Options are:
+            - event: show events per event type
+            - device: show events per device
+            - none: do not display the result (the result is only save in the CSV file)
+    csv_file : str
+        Path to the CSV file where the guests information are stored. 
+        default is "./list_open_events.csv"
+    """
     if not org_id:
         org_id = mistapi.cli.select_org(mist_session)[0]
 
@@ -713,9 +830,10 @@ def start(
         sys.exit(0)
     else:
         device_events = _process_events(events)
-        if view == "device":
+        _export_to_csv(csv_file, device_events, raised_timeout)
+        if view.lower() == "device":
             _display_device_results(device_events, raised_timeout)
-        else:
+        elif view.lower() != "continue":
             _display_event_results(device_events, raised_timeout)
 
 
@@ -800,8 +918,13 @@ Script Parameters:
                             Set to 0 to list all the events (even the cleared ones)
                             default: 5
 -v, --view=                 Type of report to display. Options are:
-                                - event (default): show events per event type
+                                - event: show events per event type
                                 - device: show events per device
+                                - none: do not display the result (the result is only save in
+                                the CSV file)
+                            default: event
+-c, --csv_file=             Path to the CSV file where to save the result
+                            default: ./list_open_events.csv
 
 -l, --log_file=             define the filepath/filename where to write the logs
                             default is "./script.log"
@@ -865,7 +988,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "he:o:a:d:t:r:l:v:",
+            "he:o:a:d:t:r:l:v:c:",
             [
                 "help",
                 "env_file=",
@@ -874,7 +997,8 @@ if __name__ == "__main__":
                 "duration=",
                 "trigger_timeout=",
                 "log_file=",
-                "view="
+                "view=",
+                "csv_file="
             ],
         )
     except getopt.GetoptError as err:
@@ -893,6 +1017,8 @@ if __name__ == "__main__":
             ENV_FILE = a
         elif o in ["-o", "--org_id"]:
             ORG_ID = a
+        elif o in ["-c", "--csv_file"]:
+            CSV_FILE = a
         elif o in ["-t", "--event_types"]:
             for t in o.split(","):
                 if EVENT_TYPES_DEFINITIONS.get(t.strip().upper()):
@@ -926,4 +1052,4 @@ if __name__ == "__main__":
     ### START ###
     apisession = mistapi.APISession(env_file=ENV_FILE, show_cli_notif=False)
     apisession.login()
-    start(apisession, ORG_ID, EVENT_TYPES, DURATION, TIMEOUT, VIEW)
+    start(apisession, ORG_ID, EVENT_TYPES, DURATION, TIMEOUT, VIEW, CSV_FILE)
