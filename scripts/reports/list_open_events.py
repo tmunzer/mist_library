@@ -74,6 +74,9 @@ Script Parameters:
 -r, --trigger_timeout=      timeout (in minutes) before listing the event if it is not cleared.
                             Set to 0 to list all the events (even the cleared ones)
                             default: 5
+-n, --no-resolve            disable the device (device name) resolution. This option should be
+                            used for big Organizations where there resolution can generate too 
+                            many additional API calls
 -v, --view=                 Type of report to display. Options are:
                                 - event: show events per event type
                                 - device: show events per device
@@ -150,6 +153,80 @@ EVENT_TYPES_DEFINITIONS= {
 "SW_PORT_BPDU": ["SW_PORT_BPDU_ERROR_CLEARED", "SW_PORT_BPDU_BLOCKED"],
 }
 
+#####################################################################
+# PROGRESS BAR AND DISPLAY
+class ProgressBar:
+    """
+    PROGRESS BAR AND DISPLAY
+    """
+    def __init__(self):
+        self.steps_total = 0
+        self.steps_count = 0
+
+    def _pb_update(self, size: int = 80):
+        if self.steps_count > self.steps_total:
+            self.steps_count = self.steps_total
+
+        percent = self.steps_count / self.steps_total
+        delta = 17
+        x = int((size - delta) * percent)
+        print(f"Progress: ", end="")
+        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
+        print(f"{int(percent*100)}%".rjust(5), end="")
+
+    def _pb_new_step(
+        self,
+        message: str,
+        result: str,
+        inc: bool = False,
+        size: int = 80,
+        display_pbar: bool = True,
+    ):
+        if inc:
+            self.steps_count += 1
+        text = f"\033[A\033[F{message}"
+        print(f"{text} ".ljust(size + 4, "."), result)
+        print("".ljust(80))
+        if display_pbar:
+            self._pb_update(size)
+
+    def _pb_title(
+        self, text: str, size: int = 80, end: bool = False, display_pbar: bool = True
+    ):
+        print("\033[A")
+        print(f" {text} ".center(size, "-"), "\n")
+        if not end and display_pbar:
+            print("".ljust(80))
+            self._pb_update(size)
+
+    def set_steps_total(self, steps_total: int):
+        self.steps_total = steps_total
+
+    def log_message(self, message, display_pbar: bool = True):
+        self._pb_new_step(message, " ", display_pbar=display_pbar)
+
+    def log_success(self, message, inc: bool = False, display_pbar: bool = True):
+        LOGGER.info(f"{message}: Success")
+        self._pb_new_step(
+            message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
+
+    def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
+        LOGGER.warning(f"{message}: Warning")
+        self._pb_new_step(
+            message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
+        
+    def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
+        LOGGER.error(f"{message}: Failure")
+        self._pb_new_step(
+            message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
+
+    def log_title(self, message, end: bool = False, display_pbar: bool = True):
+        LOGGER.info(f"{message}")
+        self._pb_title(message, end=end, display_pbar=display_pbar)
+
+PB = ProgressBar()
 
 #####################################################################
 #### FUNCTIONS ####
@@ -160,6 +237,8 @@ def _retrieve_events(
     duration: str = "1d",
     retry=False,
 ):
+    message = "Retrieving list of Events"
+    PB.log_message(message, display_pbar=False)
     try:
         resp = mistapi.api.v1.orgs.devices.searchOrgDeviceEvents(
             mist_session,
@@ -171,12 +250,16 @@ def _retrieve_events(
         )
         if resp.status_code == 200:
             events = mistapi.get_all(mist_session, resp)
+            PB.log_success(message, inc=False, display_pbar=False)
             return True, events
         elif not retry:
+            PB.log_failure(message, inc=False, display_pbar=False)
             return _retrieve_events(mist_session, org_id, event_types, duration, True)
         else:
+            PB.log_failure(message, inc=False, display_pbar=False)
             return False, None
     except Exception as e:
+        PB.log_failure(message, inc=False, display_pbar=False)
         LOGGER.error("Exception occurred", exc_info=True)
         if not retry:
             return _retrieve_events(mist_session, org_id, event_types, duration, True)
@@ -505,6 +588,72 @@ def _process_sw_ddos_protocol_violation(devices: dict, event_type: str, event: d
 ###################################################################################################
 ###################################################################################################
 ##                                                                                               ##
+##                                       RESOLVE                                                  ##
+##                                                                                               ##
+###################################################################################################
+###################################################################################################
+def _get_sites(apisession:mistapi.APISession, org_id:str) -> dict:
+    message = "Retrieving list of Sites"
+    sites = []
+    PB.log_message(message, display_pbar=False)
+    try:
+        resp = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id, limit=1000)
+        if resp.status_code == 200:
+            sites = mistapi.get_all(apisession, resp)            
+            PB.log_success(message, inc=False, display_pbar=False)
+        else:
+            PB.log_failure(message, inc=False, display_pbar=False)
+            sys.exit(2)
+    except:
+        PB.log_failure(message, inc=False, display_pbar=False)
+        LOGGER.error("Exception occurred", exc_info=True)
+    
+    message = "Processing list of Sites"
+    data = {}
+    PB.log_message(message, display_pbar=False)
+    for site in sites:
+        site_id = site.get("id")
+        site_name = site.get("name")
+        if site_id and site_name:
+            data[site_id] = site_name
+        else:
+            LOGGER.error(f"_get_sites: missing site data for site {site}")
+    PB.log_success(message, inc=False, display_pbar=False)
+    return data
+
+
+def _get_devices(apisession:mistapi.APISession, org_id:str) -> dict:
+    message = "Retrieving list of Devices"
+    devices = []
+    PB.log_message(message, display_pbar=False)
+    try:
+        resp = mistapi.api.v1.orgs.devices.listOrgDevices(apisession, org_id)
+        if resp.status_code == 200:
+            devices = mistapi.get_all(apisession, resp)            
+            PB.log_success(message, inc=False, display_pbar=False)
+        else:
+            PB.log_failure(message, inc=False, display_pbar=False)
+            sys.exit(2)
+    except:
+        PB.log_failure(message, inc=False, display_pbar=False)
+        LOGGER.error("Exception occurred", exc_info=True)
+    
+    message = "Processing list of Devices"
+    data = {}
+    PB.log_message(message, display_pbar=False)
+    for device in devices:
+        device_mac = device.get("mac")
+        device_name = device.get("name")
+        if device_mac and device_name:
+            data[device_mac] = device_name
+        else:
+            LOGGER.error(f"_get_devices: missing device data for device {device}")
+    PB.log_success(message, inc=False, display_pbar=False)
+    return data
+
+###################################################################################################
+###################################################################################################
+##                                                                                               ##
 ##                                       COMMON                                                  ##
 ##                                                                                               ##
 ###################################################################################################
@@ -551,6 +700,8 @@ def _check_device(
 
 
 def _process_events(events: list) -> dict:
+    message = "Processing list of Events"
+    PB.log_message(message, display_pbar=False)
     device_events = {"gateway": {}, "switch": {}, "ap": {}}
     for event in events:
         event_type = event.get("type")
@@ -575,6 +726,7 @@ def _process_events(events: list) -> dict:
             _process_sw_mac_limit(device_events, event_type, event)
         elif event_type.startswith("SW_PORT_BPDU"):
             _process_sw_port_bpdu(device_events, event_type, event)
+    PB.log_success(message, inc=False, display_pbar=False)
     return device_events
 
 def _check_timeout(raised_timeout:int, last_change:datetime, status:str) -> bool:
@@ -586,7 +738,7 @@ def _check_timeout(raised_timeout:int, last_change:datetime, status:str) -> bool
     return timeout
 
 
-def _display_device_results(device_events:dict, raised_timeout:int):
+def _display_device_results(device_events:dict, raised_timeout:int, resolve_sites:dict, resolve_devices:dict):
     headers = [
         "Event Type",
         "Event Info",
@@ -633,19 +785,28 @@ def _display_device_results(device_events:dict, raised_timeout:int):
                                 event_data.get("last_change"),
                             ])
                 if data:
+                    site_id = device_data.get('site_id')
+                    site_name = resolve_sites.get(site_id)
+                    device_name = resolve_devices.get(device_mac)
                     print()
                     print()
                     print("".center(80, "─"))
                     print()
-                    print(f"site_id: {device_data.get('site_id')}")
-                    print(f"{device_type} {device_mac} (model : {device_data.get('model')}, version: {device_data.get('version')})")
+                    if site_name:
+                        print(f"site {site_name} (site_id: {site_id})")
+                    else:
+                        print(f"site_id: {site_id}")
+                    if device_name:
+                        print(f"{device_type} {device_name} (mac: {device_mac}, model: {device_data.get('model')}, version: {device_data.get('version')})")
+                    else:
+                        print(f"{device_type} {device_mac} (model : {device_data.get('model')}, version: {device_data.get('version')})")
                     print()
                     print(mistapi.cli.tabulate(data, headers=headers, tablefmt="rounded_grid"))
 
-def _display_event_results(device_events:dict, raised_timeout:int):    
+def _display_event_results(device_events:dict, raised_timeout:int, resolve_sites:dict, resolve_devices:dict):
     headers = [
-        "Site ID",
-        "Device MAC",
+        "Site",
+        "Device",
         "Event Info",
         "Current Status",
         "Trigger Count",
@@ -656,6 +817,16 @@ def _display_event_results(device_events:dict, raised_timeout:int):
     for device_type, devices in device_events.items():
         if devices:
             for device_mac, device_data in devices.items():
+                site_id = device_data.get('site_id')
+                if resolve_sites.get(site_id):
+                    site_entry = resolve_sites.get(site_id)
+                else:
+                    site_entry = site_id
+                if resolve_devices.get(device_mac):
+                    device_entry = f"{resolve_devices.get(device_mac)} ({device_mac})"
+                else:
+                    device_entry = device_mac
+
                 events = device_data.get("events", {})
                 for event_type, event_data in events.items():
                     timeout = False
@@ -671,8 +842,8 @@ def _display_event_results(device_events:dict, raised_timeout:int):
                                     )
                                 if raised_timeout == 0 or timeout:
                                     event_reports[event_type].append([
-                                        device_data.get('site_id'),
-                                        device_mac,
+                                        site_entry,
+                                        device_entry,
                                         f"{event_data['identifier_header']} {event_identifier}",
                                         event_identifier_data.get("status"),
                                         event_identifier_data.get("triggered"),
@@ -687,8 +858,8 @@ def _display_event_results(device_events:dict, raised_timeout:int):
                             )
                         if raised_timeout == 0 or timeout:
                             event_reports[event_type].append([
-                                    device_data.get('site_id'),
-                                    device_mac,
+                                    site_entry,
+                                    device_entry,
                                     "",
                                     event_data.get("status"),
                                     event_data.get("triggered"),
@@ -705,22 +876,35 @@ def _display_event_results(device_events:dict, raised_timeout:int):
             print()
             print(mistapi.cli.tabulate(report, headers=headers, tablefmt="rounded_grid"))
 
-def _export_to_csv(csv_file:str, device_events:dict, raised_timeout:int):
+def _gen_device_insight_url(apisession:mistapi.APISession, org_id:str, device_type:str, device_mac:str, site_id:str):
+    if device_type == "switch":
+        d_type = "juniperSwitch"
+    elif device_type == "gateway":
+        d_type = "juniperGateway"
+    else:
+        d_type = "device"
+    return f"https://{apisession.get_cloud().replace('api', 'manage')}/admin/?org_id={org_id}#!dashboard/insights/{d_type}/00000000-0000-0000-1000-{device_mac}/{site_id}"
+
+def _export_to_csv(apisession:mistapi.APISession, org_id:str, csv_file:str, device_events:dict, raised_timeout:int, resolve_sites:dict, resolve_devices:dict):
     headers = [
+        "Site Name",
         "Site ID",
         "Device Type",
-        "Device MAC",
+        "Device Name",
+        "Device Mac",
         "Event Type",
         "Event Info",
         "Current Status",
         "Trigger Count",
         "Clear Count",
-        "Last Change"
+        "Last Change",
+        "Device Insight URL"
     ]
     data=[]
     for device_type, devices in device_events.items():
         if devices:
             for device_mac, device_data in devices.items():
+                site_id = device_data.get('site_id')
                 events = device_data.get("events", {})
                 for event_type, event_data in events.items():
                     if event_data.get("identifier_header"):
@@ -733,15 +917,18 @@ def _export_to_csv(csv_file:str, device_events:dict, raised_timeout:int):
                                     )
                                 if raised_timeout == 0 or timeout:
                                     data.append([
-                                        device_data.get('site_id'),
+                                        resolve_sites.get(site_id),
+                                        site_id,
                                         device_type,
+                                        resolve_devices.get(device_mac),
                                         device_mac,
                                         event_type,
                                         f"{event_data['identifier_header']} {event_identifier}",
                                         event_identifier_data.get("status"),
                                         event_identifier_data.get("triggered"),
                                         event_identifier_data.get("cleared"),
-                                        event_identifier_data.get("last_change")
+                                        event_identifier_data.get("last_change"),
+                                        _gen_device_insight_url(apisession, org_id, device_type, device_mac, site_id)
                                     ])
                     else:
                         timeout = _check_timeout(
@@ -751,15 +938,18 @@ def _export_to_csv(csv_file:str, device_events:dict, raised_timeout:int):
                             )
                         if raised_timeout == 0 or timeout:
                             data.append([
-                                device_data.get('site_id'),
+                                        resolve_sites.get(site_id),
+                                        site_id,
                                 device_type,
+                                resolve_devices.get(device_mac),
                                 device_mac,
                                 event_type,
                                 "",
                                 event_data.get("status"),
                                 event_data.get("triggered"),
                                 event_data.get("cleared"),
-                                event_data.get("last_change")
+                                event_data.get("last_change"),
+                                _gen_device_insight_url(apisession, org_id, device_type, device_mac, site_id)
                             ])
     with open(csv_file, 'w', encoding='UTF8') as f:
         writer = csv.writer(f)
@@ -776,7 +966,8 @@ def start(
     duration: str = "1d",
     raised_timeout: int = 5,
     view: str = "event",
-    csv_file: str = "./list_open_events.csv"
+    csv_file: str = "./list_open_events.csv",
+    no_resolve:bool = False
 ):
     """
     Start the process
@@ -806,10 +997,15 @@ def start(
     csv_file : str
         Path to the CSV file where the guests information are stored. 
         default is "./list_open_events.csv"
+    no_resolve : bool, default False
+        disable the device (device name) resolution. This option should be used for big
+        Organizations where there resolution can generate too many additional API calls
     """
     if not org_id:
         org_id = mistapi.cli.select_org(mist_session)[0]
-
+    print()
+    print()
+    print()
     success, events = _retrieve_events(mist_session, org_id, event_types, duration)
     try:
         events = sorted(events, key=lambda x: x["timestamp"])
@@ -823,12 +1019,17 @@ def start(
         CONSOLE.error("Unable to retrieve device events")
         sys.exit(0)
     else:
+        sites = _get_sites(mist_session, org_id)
+        devices = {}
+        if not no_resolve:
+            devices = _get_devices(mist_session, org_id)
+
         device_events = _process_events(events)
-        _export_to_csv(csv_file, device_events, raised_timeout)
+        _export_to_csv(mist_session, org_id,csv_file, device_events, raised_timeout, sites, devices)
         if view.lower() == "device":
-            _display_device_results(device_events, raised_timeout)
+            _display_device_results(device_events, raised_timeout, sites, devices)
         elif view.lower() != "continue":
-            _display_event_results(device_events, raised_timeout)
+            _display_event_results(device_events, raised_timeout, sites, devices)
 
 
 def usage(error_message: str = None):
@@ -911,6 +1112,9 @@ Script Parameters:
 -r, --trigger_timeout=      timeout (in minutes) before listing the event if it is not cleared.
                             Set to 0 to list all the events (even the cleared ones)
                             default: 5
+-n, --no-resolve            disable the device (device name) resolution. This option should be
+                            used for big Organizations where there resolution can generate too 
+                            many additional API calls
 -v, --view=                 Type of report to display. Options are:
                                 - event: show events per event type
                                 - device: show events per device
@@ -982,7 +1186,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "he:o:a:d:t:r:l:v:c:",
+            "he:o:a:d:t:r:l:v:c:n",
             [
                 "help",
                 "env_file=",
@@ -992,7 +1196,8 @@ if __name__ == "__main__":
                 "trigger_timeout=",
                 "log_file=",
                 "view=",
-                "csv_file="
+                "csv_file=",
+                "no-resolve"
             ],
         )
     except getopt.GetoptError as err:
@@ -1004,6 +1209,7 @@ if __name__ == "__main__":
     DURATION = None
     TIMEOUT = 5
     VIEW = "event"
+    NO_RESOLVE=False
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -1013,6 +1219,8 @@ if __name__ == "__main__":
             ORG_ID = a
         elif o in ["-c", "--csv_file"]:
             CSV_FILE = a
+        elif o in ["-n", "--no-resolve"]:
+            NO_RESOLVE = True
         elif o in ["-t", "--event_types"]:
             for t in o.split(","):
                 if EVENT_TYPES_DEFINITIONS.get(t.strip().upper()):
@@ -1046,4 +1254,4 @@ if __name__ == "__main__":
     ### START ###
     apisession = mistapi.APISession(env_file=ENV_FILE, show_cli_notif=False)
     apisession.login()
-    start(apisession, ORG_ID, EVENT_TYPES, DURATION, TIMEOUT, VIEW, CSV_FILE)
+    start(apisession, ORG_ID, EVENT_TYPES, DURATION, TIMEOUT, VIEW, CSV_FILE, NO_RESOLVE)
