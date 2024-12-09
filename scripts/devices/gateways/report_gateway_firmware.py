@@ -36,10 +36,12 @@ information about the available parameters).
 -------
 Options:
 -h, --help          display this help
+
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
 -s, --site_id=      Set the site_id  (only one of the org_id or site_id can be defined)
 -f, --out_file=     define the filepath/filename where to save the data
                     default is "./report_gateway_firmware.csv"                
+
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
 -e, --env=          define the env file to use (see mistapi env file documentation 
@@ -296,10 +298,12 @@ information about the available parameters).
 -------
 Options:
 -h, --help          display this help
+
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
 -s, --site_id=      Set the site_id  (only one of the org_id or site_id can be defined)
 -f, --out_file=     define the filepath/filename where to save the data
-                    default is "./report_gateway_firmware.csv"                
+                    default is "./report_gateway_firmware.csv"     
+
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
 -e, --env=          define the env file to use (see mistapi env file documentation 
