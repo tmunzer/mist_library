@@ -68,9 +68,12 @@ Each script has description and documentation at the beginning of the file. Plea
 |  Configuration | [config_webhook.py](scripts/sites/config_webhook.py) | This script can be used to list/add/delete Webhooks from Org/Site |
 | Devices | [rename_devices.py](scripts/devices/rename_devices.py) | Python script to rename devices (AP, Switch, Router) from a CSV file. The script will automatically locate the site where the device is assigned, and update its name. |
 | Devices - AP | [configure_ap_mgmt_vlan.py](scripts/devices/aps/configure_ap_mgmt_vlan.py) | Python script reconfigure Management VLAN on all the Mist APs from one or multiple sites. |
+| Devices - AP | [report_power_constrained_aps.py](scripts/devices/aps/report_power_constrained_aps.py) | Python script to list APs with power constraints (with limited power supply). The result is displayed on the console and saved in a CSV file. |
+| Devices - AP | [report_bssids.py](scripts/devices/aps/report_bssids.py) | Python script to list all Access Points from orgs/sites and their associated BSSIDs. |
 | Devices - Switch | [check_local_commit_events.py](scripts/devices/switches/check_local_commit_events.py) | This script can be used to retrieve and save into a file the CLI Commit events (commit done locally one the switches) for all the switches belonging to a Mist Organization. |
 | Devices - Switch | [update_port_config.py](scripts/devices/switches/update_port_config.py) | Python script to reconfigure switch interfaces based on a CSV file. The script will create or replace device override at the switch level to reconfigure the interfaces. |
 | Devices - Switch | [toggle_poe.py](scripts/devices/switches/toggle_poe.py) | Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template. |
+| Devices - Switch | [report_switch_snapshot.py](scripts/devices/switches/report_switch_snapshot.py) | Python script to generates a list of all the switches for a specified org/site with the snapshot/backup status |
 | NAC | [import_client_macs.py](scripts/nac/import_client_macs.py) | Python script import import a list of MAC Address into "Client List" Mist NAC Labels from a CSV File. |
 | NAC | [import_user_macs.py](scripts/nac/import_user_macs.py) | Python script import import a list of MAC Address as "NAC Endpoints" from a CSV File. |
 | Orgs | [clone_template.py](scripts/orgs/clone_template.py) | Python script to clone a specific template from an organization to another (or the same) organization. |
@@ -102,8 +105,6 @@ Each script has description and documentation at the beginning of the file. Plea
 | Reports | [export_search.py](scripts/exports/export_search.py) | Python script to export historical data from Mist API and save the result in CSV of JSON format. |
 | Reports | [list_open_events.py](https://github.com/tmunzer/mist_library/blob/master/scripts/reports/list_open_events.py) | Python script to display the list of events/alarms that are not cleared. The script is trying to correlate the different events to identify the "opening" and the "closing" events, and only display the event if it is not "cleared" for more than the `trigger_timeout`. |
 | Reports | [report_app_usage.py](scripts/reports/report_app_usage.py) | Python script to generate a report of the application usage on a specific site |
-| Reports | [report_bssids.py](scripts/reports/report_bssids.py) | Python script to list all Access Points from orgs/sites and their associated BSSIDs. |
 | Reports | [report_rogues.py](scripts/reports/report_rogues.py) | Python script to generate a Rogue AP report. |
-| Reports | [report_switch_snapshot.py](scripts/reports/report_switch_snapshot.py) | Python script to generates a list of all the switches for a specified org/site |
 | Reports | [report_wlans.py](scripts/reports/report_wlans.py) | Python script to list all WLANs from orgs/sites and their parameters, and save it to a CSV file. |
 | Utils | [encryption.py](scripts/utils/encryption.py) | Python script to manage backup encryption. This file can be used to generate RSA Private and Public keys for encryption, to encrypt file (AES encryption, AES key is RSA Protected) or to decrypt encrypted files. |
