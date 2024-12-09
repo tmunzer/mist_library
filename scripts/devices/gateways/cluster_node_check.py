@@ -7,7 +7,7 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to retrieve the role of each Gateway Cluster nodes accross a 
+Python script to retrieve the role of each Gateway Cluster nodes across a 
 whole Organization.
 
 -------
@@ -183,7 +183,7 @@ def get_device_stats(
         PB.log_failure(message, inc=False, display_pbar=False)
         LOGGER.error("Exception occurred", exc_info=True)
         sys.exit(1)
-        
+
 
 def process_device_stats(data: list):
     message = f"processing {len(data)} gateways"
@@ -243,7 +243,12 @@ def save_result(clusters: list, csv_file: str, append_dt:bool, append_ts:bool):
 
 
 def start(
-    apisession: mistapi.APISession, org_id: str, csv_file: str="./cluster_node_check.csv", append_dt:bool=False, append_ts:bool=False):
+    apisession: mistapi.APISession,
+    org_id: str,
+    csv_file: str="./cluster_node_check.csv",
+    append_dt:bool=False,
+    append_ts:bool=False
+    ):
     """
     Start the process to rename the devices
 
@@ -252,7 +257,7 @@ def start(
     apisession : mistapi.APISession
         mistapi session, already logged in
     org_id : str
-    csv_file : str, defailt: ./cluster_node_check.csv
+    csv_file : str, default: ./cluster_node_check.csv
         output file (csv)
     append_dt : bool
         append the current date and time (ISO format) to the backup name 
@@ -283,7 +288,7 @@ def start(
         "node1_role":"node1_role"
         }))
     print()
-    print(f"{len(clusters)} clusters detected accrosse the whole organization ({len(data)} gateways)")
+    print(f"{len(clusters)} clusters detected across the whole organization ({len(data)} gateways)")
     print(f"results saved to {csv_file}")
 
 
@@ -308,7 +313,7 @@ def usage(error_message: str = None):
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to retrieve the role of each Gateway Cluster nodes accross a 
+Python script to retrieve the role of each Gateway Cluster nodes across a 
 whole Organization.
 
 -------
@@ -412,12 +417,12 @@ if __name__ == "__main__":
             CSV_FILE = a
         elif o in ["-d", "--datetime"]:
             if APPEND_TS:
-                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+                usage("Invalid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
             else:
                 APPEND_DT = True
         elif o in ["-t", "--timestamp"]:
             if APPEND_DT:
-                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+                usage("Invalid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
             else:
                 APPEND_TS = True
         elif o in ["-e", "--env"]:

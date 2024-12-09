@@ -39,8 +39,8 @@ Script Parameters:
 
 -------
 Examples:
-python3 ./rename_devices.py     
-python3 ./rename_devices.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -s 03d3d02-xxxx-xxxx-xxxx-76896a3330f4
+python3 ./bgp_peers_peak_values.py     
+python3 ./bgp_peers_peak_values.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -s 03d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
 """
 
@@ -445,8 +445,8 @@ Script Parameters:
 
 -------
 Examples:
-python3 ./rename_devices.py     
-python3 ./rename_devices.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -s 03d3d02-xxxx-xxxx-xxxx-76896a3330f4
+python3 ./bgp_peers_peak_values.py     
+python3 ./bgp_peers_peak_values.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -s 03d3d02-xxxx-xxxx-xxxx-76896a3330f4
 """
     )
     if error_message:
