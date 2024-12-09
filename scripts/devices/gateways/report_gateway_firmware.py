@@ -7,16 +7,17 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to generates a list of all the SRX for a specified org/site
-with, for each FPC:
+Python script to report the firmware deployed on all the SRX for a specified 
+org/site with, for each Module:
         - Cluster name
         - Cluster reported Version
         - Module Serial Number
         - Module MAC Address
         - Module Version
         - Module Backup version
+        - Module Need Backup (if the Backup Version must be updated)
         - Module Pending version
-        - Module Compliance (if the firmware backup is up to date)
+        - Module Need Reboot (if pending version is present)
 
 -------
 Requirements:
@@ -38,7 +39,7 @@ Options:
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
 -s, --site_id=      Set the site_id  (only one of the org_id or site_id can be defined)
 -f, --out_file=     define the filepath/filename where to save the data
-                    default is "./report_rogues.csv"                
+                    default is "./report_gateway_firmware.csv"                
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
 -e, --env=          define the env file to use (see mistapi env file documentation 
@@ -47,8 +48,8 @@ Options:
 
 -------
 Examples:
-python3 ./report_gateway_fw_backup.py                  
-python3 ./report_gateway_fw_backup.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
+python3 ./report_gateway_firmware.py                  
+python3 ./report_gateway_firmware.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
 '''
 
@@ -83,7 +84,7 @@ logger = logging.getLogger(__name__)
 out=sys.stdout
 
 #### PARAMETERS #####
-CSV_FILE = "./report_gateway_fw_backup.csv"
+CSV_FILE = "./report_gateway_firmware.csv"
 LOG_FILE = "./script.log"
 ENV_FILE = "~/.mist_env"
 
@@ -118,28 +119,18 @@ def _process_module(
         module:dict,
         data:dict
         ) -> None:
-    module_serial = module.get("serial")
-    module_mac = module.get("mac")
-    module_version = module.get("version")
-    module_snapshot = module.get("recovery_version")
-    module_backup = module.get("backup_version")
-    module_pending = module.get("pending_version")
-    if module_version == module_backup:
-        module_compliance = True
-    else:
-        module_compliance = False
     data.append({
         "cluster_name": cluster_name,
         "cluster_version": cluster_version,            
         "cluster_device_id": cluster_device_id,            
         "cluster_site_id": cluster_site_id,            
-        "module_serial": module_serial,
-        "module_mac": module_mac,
-        "module_version": module_version,
-        "module_snapshot": module_snapshot,
-        "module_backup": module_backup,
-        "module_pending": module_pending,
-        "module_compliance": module_compliance
+        "module_serial": module.get("serial"),
+        "module_mac": module.get("mac"),
+        "module_version": module.get("version"),
+        "module_backup_version": module.get("backup_version"),
+        "module_compliance": module.get("version") == module.get("backup_version"),
+        "module_pending_version": module.get("pending_version"),
+        "module_need_reboot": module.get("pending_version", "") != ""
     })
 
 def _process_gateways(gateways:list) -> list:
@@ -276,16 +267,17 @@ def usage():
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to generates a list of all the SRX for a specified org/site
-with, for each FPC:
+Python script to report the firmware deployed on all the SRX for a specified 
+org/site with, for each Module:
         - Cluster name
         - Cluster reported Version
         - Module Serial Number
         - Module MAC Address
         - Module Version
         - Module Backup version
+        - Module Need Backup (if the Backup Version must be updated)
         - Module Pending version
-        - Module Compliance (if the firmware backup is up to date)
+        - Module Need Reboot (if pending version is present)
 
 -------
 Requirements:
@@ -307,7 +299,7 @@ Options:
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
 -s, --site_id=      Set the site_id  (only one of the org_id or site_id can be defined)
 -f, --out_file=     define the filepath/filename where to save the data
-                    default is "./report_rogues.csv"                
+                    default is "./report_gateway_firmware.csv"                
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
 -e, --env=          define the env file to use (see mistapi env file documentation 
@@ -316,8 +308,8 @@ Options:
 
 -------
 Examples:
-python3 ./report_gateway_fw_backup.py                  
-python3 ./report_gateway_fw_backup.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
+python3 ./report_gateway_firmware.py                  
+python3 ./report_gateway_firmware.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
 ''')
     sys.exit(0)
