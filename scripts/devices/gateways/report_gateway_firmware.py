@@ -39,9 +39,9 @@ Options:
 
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
 -s, --site_id=      Set the site_id  (only one of the org_id or site_id can be defined)
+
 -f, --out_file=     define the filepath/filename where to save the data
                     default is "./report_gateway_firmware.csv"
-
 -d, --datetime      append the current date and time (ISO format) to the report name
 -t, --timestamp     append the current timestamp to the report name
 
@@ -353,9 +353,9 @@ Options:
 
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
 -s, --site_id=      Set the site_id  (only one of the org_id or site_id can be defined)
+
 -f, --out_file=     define the filepath/filename where to save the data
                     default is "./report_gateway_firmware.csv"
-
 -d, --datetime      append the current date and time (ISO format) to the report name
 -t, --timestamp     append the current timestamp to the report name
 
