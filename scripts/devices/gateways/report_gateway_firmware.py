@@ -408,13 +408,12 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(sys.argv[1:], "ho:s:f:e:l:td", ["help", "org_id=", "site_id", "out_file=", "env=", "log_file=", "datetime", "timestamp"])
     except getopt.GetoptError as err:
-        console.error(err)
-        usage()
+        usage(err)
 
     SCOPE=None
     SCOPE_ID=None
-    BACKUP_NAME_DATE = False
-    BACKUP_NAME_TS = False
+    APPEND_DT = False
+    APPEND_TS = False
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -429,15 +428,15 @@ if __name__ == "__main__":
             SCOPE = "site"
             SCOPE_ID = a
         elif o in ["-d", "--datetime"]:
-            if BACKUP_NAME_TS:
+            if APPEND_TS:
                 usage("Invalid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
             else:
-                BACKUP_NAME_DATE = True
+                APPEND_DT = True
         elif o in ["-t", "--timestamp"]:
-            if BACKUP_NAME_DATE:
+            if APPEND_DT:
                 usage("Invalid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
             else:
-                BACKUP_NAME_TS = True
+                APPEND_TS = True
         elif o in ["-f", "--out_file"]:
             CSV_FILE=a
         elif o in ["-e", "--env"]:
@@ -456,4 +455,4 @@ if __name__ == "__main__":
     APISESSION = mistapi.APISession(env_file=ENV_FILE)
     APISESSION.login()
     ### START ###
-    _start(APISESSION, SCOPE, SCOPE_ID, CSV_FILE, BACKUP_NAME_DATE, BACKUP_NAME_TS)
+    _start(APISESSION, SCOPE, SCOPE_ID, CSV_FILE, APPEND_DT, APPEND_TS)
