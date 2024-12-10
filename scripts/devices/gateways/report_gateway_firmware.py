@@ -135,7 +135,7 @@ def _process_module(
         "module_model": module.get("model"),
         "module_version": module.get("version"),
         "module_backup_version": module.get("backup_version"),
-        "module_compliance": module.get("version") == module.get("backup_version"),
+        "module_need_snapshot": module.get("version") != module.get("backup_version"),
         "module_pending_version": module.get("pending_version"),
         "module_need_reboot": module.get("pending_version", "") != ""
     })
