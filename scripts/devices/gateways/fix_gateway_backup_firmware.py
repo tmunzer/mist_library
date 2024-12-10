@@ -199,7 +199,7 @@ def _read_csv(csv_file:str, site_id:str) -> list:
             reader = csv.DictReader(filter(lambda row: row[0]!='#', f))
             for row in reader:
                 if not site_id or row.get("cluster_site_id") == site_id:
-                    if row.get("module_compliance", "True") == "False":
+                    if row.get("module_compliance") == "False" and "SRX" in row.get("module_model"):
                         data.append(row)
         PB.log_success(message, inc=False, display_pbar=False)
     except:
