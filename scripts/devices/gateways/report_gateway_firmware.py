@@ -128,6 +128,7 @@ def _process_module(
         "cluster_site_id": cluster_site_id,            
         "module_serial": module.get("serial"),
         "module_mac": module.get("mac"),
+        "module_model": module.get("model"),
         "module_version": module.get("version"),
         "module_backup_version": module.get("backup_version"),
         "module_compliance": module.get("version") == module.get("backup_version"),
