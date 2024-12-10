@@ -7,7 +7,7 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to report the firmware deployed on all the SRX for a specified 
+Python script to report the firmware deployed on all the SRX for a specified
 org/site with, for each Module:
         - Cluster name
         - Cluster reported Version
@@ -30,7 +30,7 @@ If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
 It is recommended to use an environment file to store the required information
-to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
 information about the available parameters).
 
 -------
@@ -40,24 +40,28 @@ Options:
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
 -s, --site_id=      Set the site_id  (only one of the org_id or site_id can be defined)
 -f, --out_file=     define the filepath/filename where to save the data
-                    default is "./report_gateway_firmware.csv"                
+                    default is "./report_gateway_firmware.csv"
+
+-d, --datetime      append the current date and time (ISO format) to the report name
+-t, --timestamp     append the current timestamp to the report name
 
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
--e, --env=          define the env file to use (see mistapi env file documentation 
+-e, --env=          define the env file to use (see mistapi env file documentation
                     here: https://pypi.org/project/mistapi/)
                     default is "~/.mist_env"
 
 -------
 Examples:
-python3 ./report_gateway_firmware.py                  
-python3 ./report_gateway_firmware.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
+python3 ./report_gateway_firmware.py
+python3 ./report_gateway_firmware.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
 '''
 
 #### IMPORTS #####
 import sys
 import csv
+import datetime
 import getopt
 import logging
 
@@ -68,7 +72,7 @@ try:
     from mistapi.__logger import console
 except:
         print("""
-        Critical: 
+        Critical:
         \"mistapi\" package is missing. Please use the pip command to install it.
 
         # Linux/macOS
@@ -93,7 +97,7 @@ ENV_FILE = "~/.mist_env"
 
 ###############################################################################
 ### PROGRESS BAR
-def _progress_bar_update(count:int, total:int, size:int):    
+def _progress_bar_update(count:int, total:int, size:int):
     if total == 0:
         return
     if count > total:
@@ -104,7 +108,7 @@ def _progress_bar_update(count:int, total:int, size:int):
     out.write(f"{count}/{total}\r".rjust(79 - size - 10))
     out.flush()
 
-def _progress_bar_end(total:int, size:int): 
+def _progress_bar_end(total:int, size:int):
     if total == 0:
         return
     _progress_bar_update(total, total, size)
@@ -123,9 +127,9 @@ def _process_module(
         ) -> None:
     data.append({
         "cluster_name": cluster_name,
-        "cluster_version": cluster_version,            
-        "cluster_device_id": cluster_device_id,            
-        "cluster_site_id": cluster_site_id,            
+        "cluster_version": cluster_version,
+        "cluster_device_id": cluster_device_id,
+        "cluster_site_id": cluster_site_id,
         "module_serial": module.get("serial"),
         "module_mac": module.get("mac"),
         "module_model": module.get("model"),
@@ -173,13 +177,30 @@ def _get_site_gateways(apisession, site_id:str) -> list:
     return gateways
 
 ### SAVE REPORT
-def _save_as_csv( data:list, scope:str, scope_id:str, csv_file:str):
-    headers=[]
-    size = 50
-    total = len(data)
+def _save_as_csv(
+        data:list,
+        scope:str,
+        scope_id:str,
+        csv_file:str,
+        append_dt:bool,
+        append_ts:bool
+    ):
+
     print(" Saving Data ".center(80, "-"))
     print()
     print("Generating CSV Headers ".ljust(80,"."))
+
+    headers=[]
+    size = 50
+    total = len(data)
+
+    if append_dt:
+        dt = datetime.datetime.isoformat(datetime.datetime.now()).split('.')[0].replace(':','.')
+        csv_file = f"{csv_file.replace('.csv', f'_{dt}')}.csv"
+    elif append_ts:
+        ts = round(datetime.datetime.timestamp(datetime.datetime.now()))
+        csv_file = f"{csv_file.replace('.csv', f'_{ts}')}.csv"
+
     i = 0
     for entry in data:
         for key in entry:
@@ -221,7 +242,7 @@ def _show_menu(header:str, menu:list) -> str:
         if resp.lower() == "q":
             sys.exit(0)
         else:
-            try: 
+            try:
                 resp=int(resp)
                 if resp < 0 or resp >= i:
                     console.error(f"Please enter a number between 0 and {i -1}.")
@@ -232,8 +253,35 @@ def _show_menu(header:str, menu:list) -> str:
 
 ###############################################################################
 ### START
-def _start(apisession: mistapi.APISession, scope:str, scope_id: str, csv_file:str) -> None:
+def _start(
+    apisession: mistapi.APISession,
+    scope:str,
+    scope_id: str,
+    csv_file:str,
+    append_dt:bool=False,
+    append_ts:bool=False,
+    ) -> None:
 
+    """
+    Start the backup process
+
+    PARAMS
+    -------
+    apisession : mistapi.APISession
+        mistapi session 
+    scope : str, enum: org, site
+        At which level the devices must be retrieved
+    scope_id : str
+        ID of the scope (org_id or site_id) where the devices must be retrieved
+    csv_file : str
+        define the filepath/filename where to save the data
+        default is "./report_gateway_firmware.csv"
+    append_dt : bool, default = False
+        append the current date and time (ISO format) to the backup name 
+    append_ts : bool, default = False
+        append the timestamp at the end of the report and summary files
+
+    """
     if not scope:
         menu = ["org", "site"]
         scope = _show_menu("", menu)
@@ -254,13 +302,16 @@ def _start(apisession: mistapi.APISession, scope:str, scope_id: str, csv_file:st
 
     if data:
         print(" Process Done ".center(80, '-'))
-        _save_as_csv(data, scope, scope_id, csv_file)
+        _save_as_csv(data, scope, scope_id, csv_file, append_dt, append_ts)
         mistapi.cli.pretty_print(data)
 
 
 ###############################################################################
 ### USAGE
-def usage():
+def usage(error_message:str=None):
+    """
+    display usage
+    """
     print('''
 -------------------------------------------------------------------------------
 
@@ -270,7 +321,7 @@ def usage():
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to report the firmware deployed on all the SRX for a specified 
+Python script to report the firmware deployed on all the SRX for a specified
 org/site with, for each Module:
         - Cluster name
         - Cluster reported Version
@@ -293,7 +344,7 @@ If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
 It is recommended to use an environment file to store the required information
-to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
 information about the available parameters).
 
 -------
@@ -303,20 +354,25 @@ Options:
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
 -s, --site_id=      Set the site_id  (only one of the org_id or site_id can be defined)
 -f, --out_file=     define the filepath/filename where to save the data
-                    default is "./report_gateway_firmware.csv"     
+                    default is "./report_gateway_firmware.csv"
+
+-d, --datetime      append the current date and time (ISO format) to the report name
+-t, --timestamp     append the current timestamp to the report name
 
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
--e, --env=          define the env file to use (see mistapi env file documentation 
+-e, --env=          define the env file to use (see mistapi env file documentation
                     here: https://pypi.org/project/mistapi/)
                     default is "~/.mist_env"
 
 -------
 Examples:
-python3 ./report_gateway_firmware.py                  
-python3 ./report_gateway_firmware.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
+python3 ./report_gateway_firmware.py
+python3 ./report_gateway_firmware.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
 ''')
+    if error_message:
+        console.critical(error_message)
     sys.exit(0)
 
 def check_mistapi_version():
@@ -330,8 +386,8 @@ def check_mistapi_version():
         logger.critical(f"    # Windows")
         logger.critical(f"    py -m pip install --upgrade mistapi")
         print(f"""
-    Critical: 
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    Critical:
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.
     Please use the pip command to updated it.
 
     # Linux/macOS
@@ -341,7 +397,7 @@ def check_mistapi_version():
     py -m pip install --upgrade mistapi
         """)
         sys.exit(2)
-    else: 
+    else:
         logger.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
 
 
@@ -350,28 +406,38 @@ def check_mistapi_version():
 ### ENTRY POINT
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:s:f:e:l:", ["help", "org_id=", "site_id", "out_file=", "env=", "log_file="])
+        opts, args = getopt.getopt(sys.argv[1:], "ho:s:f:e:l:td", ["help", "org_id=", "site_id", "out_file=", "env=", "log_file=", "datetime", "timestamp"])
     except getopt.GetoptError as err:
         console.error(err)
         usage()
 
     SCOPE=None
     SCOPE_ID=None
+    BACKUP_NAME_DATE = False
+    BACKUP_NAME_TS = False
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-o", "--org_id"]:
             if SCOPE:
-                console.error("Only one of org_id or site_id can be defined.")
-                usage()
+                usage("Invalid Parameters: \"-o\"/\"--org_id\" and \"-s\"/\"--site_id\" are exclusive")
             SCOPE = "org"
             SCOPE_ID = a
         elif o in ["-s", "--site_id"]:
             if SCOPE:
-                console.error("Only one of org_id or site_id can be defined.")
-                usage()
+                usage("Invalid Parameters: \"-o\"/\"--org_id\" and \"-s\"/\"--site_id\" are exclusive")
             SCOPE = "site"
             SCOPE_ID = a
+        elif o in ["-d", "--datetime"]:
+            if BACKUP_NAME_TS:
+                usage("Invalid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                BACKUP_NAME_DATE = True
+        elif o in ["-t", "--timestamp"]:
+            if BACKUP_NAME_DATE:
+                usage("Invalid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+            else:
+                BACKUP_NAME_TS = True
         elif o in ["-f", "--out_file"]:
             CSV_FILE=a
         elif o in ["-e", "--env"]:
@@ -390,4 +456,4 @@ if __name__ == "__main__":
     APISESSION = mistapi.APISession(env_file=ENV_FILE)
     APISESSION.login()
     ### START ###
-    _start(APISESSION, SCOPE, SCOPE_ID, CSV_FILE)
+    _start(APISESSION, SCOPE, SCOPE_ID, CSV_FILE, BACKUP_NAME_DATE, BACKUP_NAME_TS)
