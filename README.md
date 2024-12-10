@@ -77,7 +77,7 @@ Each script has description and documentation at the beginning of the file. Plea
 | Devices - Switch | [check_local_commit_events.py](scripts/devices/switches/check_local_commit_events.py) | This script can be used to retrieve and save into a file the CLI Commit events (commit done locally one the switches) for all the switches belonging to a Mist Organization. |
 | Devices - Switch | [update_port_config.py](scripts/devices/switches/update_port_config.py) | Python script to reconfigure switch interfaces based on a CSV file. The script will create or replace device override at the switch level to reconfigure the interfaces. |
 | Devices - Switch | [toggle_poe.py](scripts/devices/switches/toggle_poe.py) | Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template. |
-| Devices - Switch | [report_switch_snapshot.py](scripts/devices/switches/report_switch_snapshot.py) | Python script to generates a list of all the switches for a specified org/site with the snapshot/backup status |
+| Devices - Switch | [report_switch_firmware.py](scripts/devices/switches/report_switch_firmware.py) | Python script to generates a list of all the switches for a specified org/site with the snapshot/backup status |
 | NAC | [import_client_macs.py](scripts/nac/import_client_macs.py) | Python script import import a list of MAC Address into "Client List" Mist NAC Labels from a CSV File. |
 | NAC | [import_user_macs.py](scripts/nac/import_user_macs.py) | Python script import import a list of MAC Address as "NAC Endpoints" from a CSV File. |
 | Orgs | [clone_template.py](scripts/orgs/clone_template.py) | Python script to clone a specific template from an organization to another (or the same) organization. |

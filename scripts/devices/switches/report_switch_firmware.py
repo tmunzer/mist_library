@@ -48,8 +48,8 @@ Options:
 
 -------
 Examples:
-python3 ./report_switch_snapshot.py                  
-python3 ./report_switch_snapshot.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
+python3 ./report_switch_firmware.py                  
+python3 ./report_switch_firmware.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
 '''
 
@@ -84,7 +84,7 @@ logger = logging.getLogger(__name__)
 out=sys.stdout
 
 #### PARAMETERS #####
-csv_file = "./report_switch_snapshot.csv"
+csv_file = "./report_switch_firmware.csv"
 log_file = "./script.log"
 env_file = "~/.mist_env"
 
@@ -275,8 +275,8 @@ Options:
 
 -------
 Examples:
-python3 ./report_switch_snapshot.py                  
-python3 ./report_switch_snapshot.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
+python3 ./report_switch_firmware.py                  
+python3 ./report_switch_firmware.py --site_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
 ''')
     sys.exit(0)
