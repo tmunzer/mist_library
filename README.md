@@ -71,10 +71,10 @@ Each script has description and documentation at the beginning of the file. Plea
 | Configuration | [config_auto_site_assignment.py](scripts/orgs/config_auto_site_assignment.py) | Python script to update the org auto assignment rules |
 | Configuration | [config_webhook.py](scripts/sites/config_webhook.py) | This script can be used to list/add/delete Webhooks from Org/Site |
 | Orgs | [clone_template.py](scripts/orgs/clone_template.py) | Python script to clone a specific template from an organization to another (or the same) organization. |
-| Orgs  - Sites| [fix_sites_geocoding.py](scripts/orgs/fix_sites_geocoding.py) | Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing. |
 | Orgs - Inventory | [inventory_assign.py](scripts/orgs/inventory_assign.py) | Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org. |
 | Orgs - Inventory | [inventory_claim.py](scripts/orgs/inventory_claim.py) | Python script to claim devices to an org from a CSV file. |
 | Orgs | [validate_site_variables.py](scripts/orgs/validate_site_variables.py) | Python script to validate that all the variables used in the templates used by each site are configured at the site level. The result is displayed on the console and saved in a CSV file. |
+| Sites| [fix_sites_geocoding.py](scripts/orgs/fix_sites_geocoding.py) | Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing. |
 | Sites | [site_conf_psk.py](scripts/sites/site_conf_psk.py) |  |
 | Sites | [site_conf_wlan.py](scripts/sites/site_conf_wlan.py) | This script can be used to list/add/delete an SSID from Org/Site |
 | Sites | [update_sites_templates.py](scripts/sites/update_sites_templates.py) | Python script update the templates assigned to Mist Sites based on a CSV file, and/or update the auto assignment rules based on IP Subnet. |
@@ -120,9 +120,9 @@ Each script has description and documentation at the beginning of the file. Plea
 | NAC | [import_client_macs.py](scripts/nac/import_client_macs.py) | Python script import import a list of MAC Address into "Client List" Mist NAC Labels from a CSV File. |
 | NAC | [import_user_macs.py](scripts/nac/import_user_macs.py) | Python script import import a list of MAC Address as "NAC Endpoints" from a CSV File. |
 | Orgs - Admins | [import_admins.py](scripts/orgs/admins/import_admins.py) | Python script to invite/add administrators from a CSV file. |
-| Orgs - Sites | [import_floorplans.py](scripts/orgs/import_floorplans.py) | Python script to import multiple Ekahau/iBwave project into Mist Organization. |
-| Orgs - Sites | [import_sites.py](scripts/orgs/import_sites.py) | Python script automate the sites creation in a Mist Org from a CSV file. |
-| Sites | [site_conf_psk_import_csv.py](scripts/sites/site_conf_psk_import_csv.py) | This script will import PSKs from a CSV file to one or multiple sites. |
+| Sites | [import_floorplans.py](scripts/orgs/import_floorplans.py) | Python script to import multiple Ekahau/iBwave project into Mist Organization. |
+| Sites | [import_sites.py](scripts/orgs/import_sites.py) | Python script automate the sites creation in a Mist Org from a CSV file. |
+| Sites | [import_psk.py](scripts/sites/import_psk.py) | This script will import PSKs from a CSV file to one or multiple sites. |
 
 ## Reports
 | Category | Script | Description |

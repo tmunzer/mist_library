@@ -4,7 +4,7 @@ Github repository: https://github.com/tmunzer/Mist_library/
 
 This script will import PSKs from a CSV file to one or multiple sites.
 Usage:
-python3 site_conf_psk_import_csv.py path_to_the_csv_file.csv
+python3 import_psk.py path_to_the_csv_file.csv
 
 CSV file format:
 
@@ -37,7 +37,7 @@ except:
         sys.exit(2)
 
 #### PARAMETERS #####
-LOG_FILE = "./sites_scripts.log"
+LOG_FILE = "./scripts.log"
 ENV_FILE = "./.env"
 #### LOGS ####
 LOGGER = logging.getLogger(__name__)
