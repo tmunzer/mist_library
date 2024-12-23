@@ -5,16 +5,18 @@ These scripts are using the [mistapi Python package](https://pypi.org/project/mi
 
 # Menu
 
-- [MIT LICENSE](#mit-license)
-- 1 [Description](#description)
-  - 1.1 [Usage](#usage)
-  - 1.2 [Environment File](#environment-file)
-- 2 [Scripts](#scripts)
-  - 2.1 [Configuration](#configuration)
-  - 2.2 [Backup & Restore](#backup--restore)
-  - 2.3 [Devices](#devices)
-  - 2.4 [Imports](#imports)
-  - 2.5 [Reports](#reports)
+- [Mist\_library](#mist_library)
+- [Menu](#menu)
+  - [MIT LICENSE](#mit-license)
+- [Description](#description)
+  - [Usage](#usage)
+  - [Environment File](#environment-file)
+- [Scripts](#scripts)
+  - [Configuration](#configuration)
+  - [Backup \& Restore](#backup--restore)
+  - [Devices](#devices)
+  - [Imports](#imports)
+  - [Reports](#reports)
 
 ## MIT LICENSE
 
@@ -74,7 +76,7 @@ Each script has description and documentation at the beginning of the file. Plea
 | Orgs - Inventory | [inventory_assign.py](scripts/orgs/inventory_assign.py) | Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org. |
 | Orgs - Inventory | [inventory_claim.py](scripts/orgs/inventory_claim.py) | Python script to claim devices to an org from a CSV file. |
 | Orgs | [validate_site_variables.py](scripts/orgs/validate_site_variables.py) | Python script to validate that all the variables used in the templates used by each site are configured at the site level. The result is displayed on the console and saved in a CSV file. |
-| Sites| [fix_sites_geocoding.py](scripts/sites/fix_sites_geocoding.py) | Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing. |
+| Sites | [fix_sites_geocoding.py](scripts/sites/fix_sites_geocoding.py) | Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing. |
 | Sites | [site_conf_psk.py](scripts/sites/site_conf_psk.py) |  |
 | Sites | [site_conf_wlan.py](scripts/sites/site_conf_wlan.py) | This script can be used to list/add/delete an SSID from Org/Site |
 | Sites | [update_sitegroups.py](scripts/sites/update_sitegroups.py) | Python script update the sitegroups assigned to sites based on a CSV file. The script can append the new sitegroups (default) or replace the sitegroups currently assigned with the new list. |
