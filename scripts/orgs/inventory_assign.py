@@ -491,12 +491,8 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id: str):
 
                 if site_id and device_mac:
                     if not site_id in data:
-                        data[site_id] = [device_mac.replace(":", "").replace("-", "")]
-                    else:
                         data[site_id] = []
-                        data[site_id].append(
-                            device_mac.replace(":", "").replace("-", "")
-                        )
+                    data[site_id].append(device_mac.replace(":", "").replace("-", ""))
                 elif site_id and use_claimcode:
                     if not site_id in data_cc:
                         data_cc[site_id] = [line[row_device]]
