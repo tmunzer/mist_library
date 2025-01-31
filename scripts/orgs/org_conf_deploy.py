@@ -542,6 +542,9 @@ def _common_deploy(
     else:
         old_id = None
 
+    if object_type == "evpn_topologies":
+        data["overwrite"] = True
+
     message = f"Creating {object_type} {object_name}"
     PB.log_message(message)
     data, missing_uuids = UUID_MATCHING.find_and_replace(data, object_type)
