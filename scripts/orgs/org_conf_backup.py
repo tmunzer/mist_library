@@ -53,7 +53,6 @@ python3 ./org_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
 """
 
-
 #### IMPORTS ####
 import logging
 import json
@@ -464,8 +463,57 @@ def _backup_wlan_portal(org_id, site_id, wlans):
                 LOGGER.error("Exception occurred", exc_info=True)
 
 
+def _backup_evpn_topology(mist_session, evpn_topologies):
+    for evpn_topology in evpn_topologies:
+        evpn_topology_id = evpn_topology["id"]
+        org_id = evpn_topology.get("org_id")
+        site_id = evpn_topology.get("site_id", "00000000-0000-0000-0000-000000000000")
+        data = {}
+        if (
+            evpn_topology.get("for_site")
+            and site_id != "00000000-0000-0000-0000-000000000000"
+        ):
+            LOGGER.info(
+                f"_backup_evpn_topology: retrieving EVPN Data for Site EVPN Topology {evpn_topology_id}"
+            )
+            resp = mistapi.api.v1.sites.evpn_topologies.getSiteEvpnTopology(
+                mist_session, site_id, evpn_topology_id
+            )
+            if resp.status_code == 200 and resp.data:
+                data = resp.data
+            else:
+                LOGGER.error(
+                    f"_backup_evpn_topology: Unable to retrieve EVPN Topology data: {resp.status_code} / {resp.raw_data}"
+                )
+                continue
+        else:
+            LOGGER.info(
+                f"_backup_evpn_topology: retrieving EVPN Data for Org EVPN Topology {evpn_topology_id}"
+            )
+            resp = mistapi.api.v1.orgs.evpn_topologies.getOrgEvpnTopology(
+                mist_session, org_id, evpn_topology_id
+            )
+            if resp.status_code == 200 and resp.data:
+                data = resp.data
+            else:
+                LOGGER.error(
+                    f"_backup_evpn_topology: Unable to retrieve EVPN Topology data: {resp.status_code} / {resp.raw_data}"
+                )
+                continue
+        evpn_topology["switches"] = []
+        for switch in data.get("switches", []):
+            evpn_topology["switches"].append(
+                {
+                    "mac": switch.get("mac"),
+                    "role": switch.get("role"),
+                    "pod": switch.get("pod"),
+                }
+            )
+
+
 def _do_backup(
     mist_session,
+    step_name,
     backup_function,
     check_next,
     scope_id,
@@ -485,6 +533,10 @@ def _do_backup(
             data = mistapi.get_all(mist_session, response)
         else:
             data = response.data
+
+        if step_name == "evpn_topologies":
+           _backup_evpn_topology(mist_session, data)
+
         PB.log_success(message, True)
         return data
     except Exception as e:
@@ -504,6 +556,7 @@ def _backup_full_org(mist_session, org_id, org_name):
         request_type = step.get("request_type")
         backup["org"][step_name] = _do_backup(
             mist_session,
+            step_name,
             step["mistapi_function"],
             step["check_next"],
             org_id,
@@ -522,6 +575,7 @@ def _backup_full_org(mist_session, org_id, org_name):
         for step_name, step in SITE_STEPS.items():
             site_backup[step_name] = _do_backup(
                 mist_session,
+                step_name,
                 step["mistapi_function"],
                 step["check_next"],
                 site_id,
@@ -554,11 +608,7 @@ def _backup_full_org(mist_session, org_id, org_name):
     return backup
 
 
-def _save_to_file(
-        backup:dict,
-        backup_folder:str,
-        backup_name:str
-        ):
+def _save_to_file(backup: dict, backup_folder: str, backup_name: str):
     backup_path = os.path.join(backup_folder, backup_name, BACKUP_FILE)
     message = f"Saving to file {backup_path} "
     PB.log_title(message, end=True, display_pbar=False)
@@ -572,12 +622,12 @@ def _save_to_file(
 
 
 def _start_org_backup(
-        mist_session:mistapi.APISession,
-        org_id:str,
-        org_name:str,
-        backup_folder:str,
-        backup_name:str
-        ) -> bool:
+    mist_session: mistapi.APISession,
+    org_id: str,
+    org_name: str,
+    backup_folder: str,
+    backup_name: str,
+) -> bool:
     # FOLDER
     try:
         if not os.path.exists(backup_folder):
@@ -617,33 +667,33 @@ def start(
     mist_session: mistapi.APISession,
     org_id: str,
     backup_folder_param: str = None,
-    backup_name:str=None,
-    backup_name_date:bool=False,
-    backup_name_ts:bool=False,
+    backup_name: str = None,
+    backup_name_date: bool = False,
+    backup_name_ts: bool = False,
 ):
     """
     Start the process to deploy a backup/template
 
     PARAMS
     -------
-    apisession : mistapi.APISession 
+    apisession : mistapi.APISession
         mistapi session, already logged in
-    org_id : str 
+    org_id : str
         only if the destination org already exists. org_id where to deploy the
         configuration
-    backup_folder_param : str 
+    backup_folder_param : str
         Path to the folder where to save the org backup (a subfolder will be
-        created with the org name). 
+        created with the org name).
         default is "./org_backup"
     backup_name : str
         Name of the subfolder where the the backup files will be saved
         default is the org name
     backup_name_date : bool, default = False
-        if `backup_name_date`==`True`, append the current date and time (ISO 
-        format) to the backup name 
+        if `backup_name_date`==`True`, append the current date and time (ISO
+        format) to the backup name
     backup_name_ts : bool, default = False
-        if `backup_name_ts`==`True`, append the current timestamp to the backup 
-        name 
+        if `backup_name_ts`==`True`, append the current timestamp to the backup
+        name
 
     RETURNS
     -------
@@ -653,9 +703,13 @@ def start(
     """
     LOGGER.debug(f"org_conf_backup:start")
     LOGGER.debug(f"org_conf_backup:start:parameters:org_id:{org_id}")
-    LOGGER.debug(f"org_conf_backup:start:parameters:backup_folder_param:{backup_folder_param}")
+    LOGGER.debug(
+        f"org_conf_backup:start:parameters:backup_folder_param:{backup_folder_param}"
+    )
     LOGGER.debug(f"org_conf_backup:start:parameters:backup_name:{backup_name}")
-    LOGGER.debug(f"org_conf_backup:start:parameters:backup_name_date:{backup_name_date}")
+    LOGGER.debug(
+        f"org_conf_backup:start:parameters:backup_name_date:{backup_name_date}"
+    )
     LOGGER.debug(f"org_conf_backup:start:parameters:backup_name_ts:{backup_name_ts}")
     current_folder = os.getcwd()
     if not backup_folder_param:
@@ -671,14 +725,16 @@ def start(
     elif backup_name_ts:
         backup_name = f"{backup_name}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}"
 
-    success = _start_org_backup(mist_session, org_id, org_name, backup_folder_param, backup_name)
+    success = _start_org_backup(
+        mist_session, org_id, org_name, backup_folder_param, backup_name
+    )
     os.chdir(current_folder)
     return success
 
 
 #####################################################################
 # USAGE
-def usage(error_message:str=None):
+def usage(error_message: str = None):
     print(
         """
 -------------------------------------------------------------------------------
@@ -744,7 +800,7 @@ def check_mistapi_version():
     if mistapi.__version__ < MISTAPI_MIN_VERSION:
         LOGGER.critical(
             f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, '
-            f'you are currently using version {mistapi.__version__}.'
+            f"you are currently using version {mistapi.__version__}."
         )
         LOGGER.critical(f"Please use the pip command to updated it.")
         LOGGER.critical("")
@@ -770,7 +826,7 @@ def check_mistapi_version():
     else:
         LOGGER.info(
             f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, '
-            f'you are currently using version {mistapi.__version__}.'
+            f"you are currently using version {mistapi.__version__}."
         )
 
 
@@ -781,7 +837,15 @@ if __name__ == "__main__":
         opts, args = getopt.getopt(
             sys.argv[1:],
             "ho:e:l:b:dt",
-            ["help", "org_id=", "env=", "log_file=", "backup_folder=", "datetime", "timestamp"],
+            [
+                "help",
+                "org_id=",
+                "env=",
+                "log_file=",
+                "backup_folder=",
+                "datetime",
+                "timestamp",
+            ],
         )
     except getopt.GetoptError as err:
         console.error(err)
@@ -805,12 +869,16 @@ if __name__ == "__main__":
             BACKUP_FOLDER = a
         elif o in ["-d", "--datetime"]:
             if BACKUP_NAME_TS:
-                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+                usage(
+                    'Inavlid Parameters: "-d"/"--date" and "-t"/"--timestamp" are exclusive'
+                )
             else:
                 BACKUP_NAME_DATE = True
         elif o in ["-t", "--timestamp"]:
             if BACKUP_NAME_DATE:
-                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
+                usage(
+                    'Inavlid Parameters: "-d"/"--date" and "-t"/"--timestamp" are exclusive'
+                )
             else:
                 BACKUP_NAME_TS = True
         else:
@@ -825,4 +893,6 @@ if __name__ == "__main__":
     APISESSION.login()
 
     ### START ###
-    start(APISESSION, ORG_ID, BACKUP_FOLDER, BACKUP_NAME, BACKUP_NAME_DATE, BACKUP_NAME_TS)
+    start(
+        APISESSION, ORG_ID, BACKUP_FOLDER, BACKUP_NAME, BACKUP_NAME_DATE, BACKUP_NAME_TS
+    )
