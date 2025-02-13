@@ -722,7 +722,7 @@ def _deploy_site_maps(
         f"{FILE_PREFIX}_org_{old_org_id}_site_{old_site_id}_map_{old_map_id}.png"
     )
     if os.path.isfile(image_name):
-        message = f"Uploading image floorplan  \"{data['name']}\""
+        message = f"Uploading image floorplan  \"{data.get('name', 'map name unknown')}\""
         PB.log_message(message)
         try:
             mistapi.api.v1.sites.maps.addSiteMapImageFile(
@@ -732,7 +732,7 @@ def _deploy_site_maps(
         except:
             PB.log_failure(message)
     else:
-        PB.log_debug(f"No image found for \"{data['name']}\"")
+        PB.log_debug(f"No image found for \"{data.get('name', 'map name unknown')}\"")
 
 
 def _deploy_site(
