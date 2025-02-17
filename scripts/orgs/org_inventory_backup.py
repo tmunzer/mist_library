@@ -266,7 +266,7 @@ def _backup_inventory(
         PB.log_message(message)
         try:
             response = mistapi.api.v1.orgs.inventory.getOrgInventory(
-                mist_session, org_id, type=device_type, limit=1000
+                mist_session, org_id, type=device_type, limit=1000, vc=True
             )
             inventory = mistapi.get_all(mist_session, response)
             for data in inventory:
