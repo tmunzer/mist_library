@@ -86,7 +86,7 @@ import json
 import logging
 import getopt
 
-MISTAPI_MIN_VERSION = "0.44.1"
+MISTAPI_MIN_VERSION = "0.55.5"
 
 try:
     import mistapi
@@ -654,7 +654,7 @@ def _deploy_device_profile(
     try:
         message = f"Deploying gateway template {template.get('name')}"
         PB.log_message(message, display_pbar=False)
-        resp = mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfiles(
+        resp = mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfile(
             dst_session, dst_oid, template
         )
         if resp.status_code == 200:

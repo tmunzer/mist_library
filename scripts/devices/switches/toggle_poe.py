@@ -54,7 +54,7 @@ import logging
 import sys
 import getopt
 
-MISTAPI_MIN_VERSION = "0.44.1"
+MISTAPI_MIN_VERSION = "0.55.5"
 
 try:
     import mistapi
@@ -119,7 +119,7 @@ def _display_status(apisession:mistapi.APISession, org_id:str, tmpl_id:str, prof
 def _update(apisession:mistapi.APISession, org_id:str, tmpl_id:str, port_usages:dict):
     try:
         print("Updating PoE Status ".ljust(79, "."), end="", flush=True)
-        res = mistapi.api.v1.orgs.networktemplates.updateOrgNetworkTemplates(apisession, org_id, tmpl_id, {"port_usages": port_usages})
+        res = mistapi.api.v1.orgs.networktemplates.updateOrgNetworkTemplate(apisession, org_id, tmpl_id, {"port_usages": port_usages})
         if res.status_code == 200:
             print("\033[92m\u2714\033[0m")
         else:

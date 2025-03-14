@@ -100,7 +100,7 @@ import getopt
 import logging
 import ipaddress
 
-MISTAPI_MIN_VERSION = "0.48.0"
+MISTAPI_MIN_VERSION = "0.55.5"
 
 try:
     import mistapi
@@ -451,7 +451,7 @@ def _retrieve_evpn_topo(
         try:
             message = f"Retrieving Org EVPN Topology {evpn_topo_id}"
             PB.log_message(message, display_pbar=False)
-            resp = mistapi.api.v1.orgs.evpn_topologies.getOrgEvpnTolopogy(
+            resp = mistapi.api.v1.orgs.evpn_topologies.getOrgEvpnTopology(
                 apisession, org_id, evpn_topo_id
             )
             if resp.status_code == 200:

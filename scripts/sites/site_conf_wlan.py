@@ -10,7 +10,7 @@ import json
 import sys
 import logging
 
-MISTAPI_MIN_VERSION = "0.44.1"
+MISTAPI_MIN_VERSION = "0.55.5"
 
 try:
     import mistapi
@@ -85,7 +85,7 @@ def remove_wlan(apisession, site_id):
 
 def display_wlan(apisession, site_id):
     fields = ["id","ssid", "enabled", "auth", "auth_servers", "acct_servers", "band", "interface", "vlan_id", "dynamic_vlan", "hide_ssid"]
-    site_wlans = mistapi.api.v1.sites.wlans.getSiteWlanDerived(apisession, site_id).data
+    site_wlans = mistapi.api.v1.sites.wlans.listSiteWlanDerived(apisession, site_id).data
     mistapi.cli.display_list_of_json_as_table(site_wlans, fields)
 
 def start_site_conf_wlan(apisession, site_id):
