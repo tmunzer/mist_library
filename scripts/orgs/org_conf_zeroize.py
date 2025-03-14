@@ -94,279 +94,201 @@ logger = logging.getLogger(__name__)
 
 get_org_steps = {
     "sites": {
-        "mistapi_function": mistapi.api.v1.orgs.sites.listOrgSites,
+        "get_mistapi_function": mistapi.api.v1.orgs.sites.listOrgSites,
+        "delete_mistapi_function": mistapi.api.v1.sites.sites.deleteSite,
         "text": "Org Sites",
         "check_next": True,
     },
     "webhooks": {
-        "mistapi_function": mistapi.api.v1.orgs.webhooks.listOrgWebhooks,
+        "get_mistapi_function": mistapi.api.v1.orgs.webhooks.listOrgWebhooks,
+        "delete_mistapi_function": mistapi.api.v1.orgs.webhooks.deleteOrgWebhook,
         "text": "Org webhooks",
         "check_next": True,
     },
     "assetfilters": {
-        "mistapi_function": mistapi.api.v1.orgs.assetfilters.listOrgAssetFilters,
+        "get_mistapi_function": mistapi.api.v1.orgs.assetfilters.listOrgAssetFilters,
+        "delete_mistapi_function": mistapi.api.v1.orgs.assetfilters.deleteOrgAssetFilter,
         "text": "Org assetfilters",
         "check_next": True,
     },
     "alarmtemplates": {
-        "mistapi_function": mistapi.api.v1.orgs.alarmtemplates.listOrgAlarmTemplates,
+        "get_mistapi_function": mistapi.api.v1.orgs.alarmtemplates.listOrgAlarmTemplates,
+        "delete_mistapi_function": mistapi.api.v1.orgs.alarmtemplates.deleteOrgAlarmTemplate,
         "text": "Org alarmtemplates",
         "check_next": True,
     },
     "deviceprofiles": {
-        "mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles,
+        "get_mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles,
+        "delete_mistapi_function": mistapi.api.v1.orgs.deviceprofiles.deleteOrgDeviceProfile,
         "text": "Org deviceprofiles",
         "check_next": True,
     },
     "hubprofiles": {
-        "mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles,
+        "get_mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles,
+        "delete_mistapi_function": mistapi.api.v1.orgs.deviceprofiles.deleteOrgDeviceProfile,
         "text": "Org hubprofiles",
-        "request_type": "gateway",
+        "get_options": {"type":"gateway"},
+        "check_next": True,
+    },
+    "switchprofiles": {
+        "get_mistapi_function": mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles,
+        "delete_mistapi_function": mistapi.api.v1.orgs.deviceprofiles.deleteOrgDeviceProfile,
+        "text": "Org switchprofiles",
+        "get_options": {"type":"switch"},
         "check_next": True,
     },
     "mxclusters": {
-        "mistapi_function": mistapi.api.v1.orgs.mxclusters.listOrgMxEdgeClusters,
+        "get_mistapi_function": mistapi.api.v1.orgs.mxclusters.listOrgMxEdgeClusters,
+        "delete_mistapi_function": mistapi.api.v1.orgs.mxclusters.deleteOrgMxEdgeCluster,
         "text": "Org mxclusters",
         "check_next": True,
     },
     "mxtunnels": {
-        "mistapi_function": mistapi.api.v1.orgs.mxtunnels.listOrgMxTunnels,
+        "get_mistapi_function": mistapi.api.v1.orgs.mxtunnels.listOrgMxTunnels,
+        "delete_mistapi_function": mistapi.api.v1.orgs.mxtunnels.deleteOrgMxTunnel,
         "text": "Org mxtunnels",
         "check_next": True,
     },
     "psks": {
-        "mistapi_function": mistapi.api.v1.orgs.psks.listOrgPsks,
+        "get_mistapi_function": mistapi.api.v1.orgs.psks.listOrgPsks,
+        "delete_mistapi_function": mistapi.api.v1.orgs.psks.deleteOrgPsk,
         "text": "Org psks",
         "check_next": True,
     },
     "pskportals": {
-        "mistapi_function": mistapi.api.v1.orgs.pskportals.listOrgPskPortals,
+        "get_mistapi_function": mistapi.api.v1.orgs.pskportals.listOrgPskPortals,
+        "delete_mistapi_function": mistapi.api.v1.orgs.pskportals.deleteOrgPskPortal,
         "text": "Org pskportals",
         "check_next": True,
     },
     "rftemplates": {
-        "mistapi_function": mistapi.api.v1.orgs.rftemplates.listOrgRfTemplates,
+        "get_mistapi_function": mistapi.api.v1.orgs.rftemplates.listOrgRfTemplates,
+        "delete_mistapi_function": mistapi.api.v1.orgs.rftemplates.deleteOrgRfTemplate,
         "text": "Org rftemplates",
         "check_next": True,
     },
     "networktemplates": {
-        "mistapi_function": mistapi.api.v1.orgs.networktemplates.listOrgNetworkTemplates,
+        "get_mistapi_function": mistapi.api.v1.orgs.networktemplates.listOrgNetworkTemplates,
+        "delete_mistapi_function": mistapi.api.v1.orgs.networktemplates.deleteOrgNetworkTemplate,
         "text": "Org networktemplates",
         "check_next": True,
     },
     "evpn_topologies": {
-        "mistapi_function": mistapi.api.v1.orgs.evpn_topologies.listOrgEvpnTopologies,
+        "get_mistapi_function": mistapi.api.v1.orgs.evpn_topologies.listOrgEvpnTopologies,
+        "delete_mistapi_function": mistapi.api.v1.orgs.evpn_topologies.deleteOrgEvpnTopology,
         "text": "Org evpn_topologies",
         "check_next": True,
     },
     "services": {
-        "mistapi_function": mistapi.api.v1.orgs.services.listOrgServices,
+        "get_mistapi_function": mistapi.api.v1.orgs.services.listOrgServices,
+        "delete_mistapi_function": mistapi.api.v1.orgs.services.deleteOrgService,
         "text": "Org services",
         "check_next": True,
     },
     "servicepolicies": {
-        "mistapi_function": mistapi.api.v1.orgs.servicepolicies.listOrgServicePolicies,
+        "get_mistapi_function": mistapi.api.v1.orgs.servicepolicies.listOrgServicePolicies,
+        "delete_mistapi_function": mistapi.api.v1.orgs.servicepolicies.deleteOrgServicePolicy,
         "text": "Org servicepolicies",
         "check_next": True,
     },
     "networks": {
-        "mistapi_function": mistapi.api.v1.orgs.networks.listOrgNetworks,
+        "get_mistapi_function": mistapi.api.v1.orgs.networks.listOrgNetworks,
+        "delete_mistapi_function": mistapi.api.v1.orgs.networks.deleteOrgNetwork,
         "text": "Org networks",
         "check_next": True,
     },
     "gatewaytemplates": {
-        "mistapi_function": mistapi.api.v1.orgs.gatewaytemplates.listOrgGatewayTemplates,
+        "get_mistapi_function": mistapi.api.v1.orgs.gatewaytemplates.listOrgGatewayTemplates,
+        "delete_mistapi_function": mistapi.api.v1.orgs.gatewaytemplates.deleteOrgGatewayTemplate,
         "text": "Org gatewaytemplates",
         "check_next": True,
     },
     "vpns": {
-        "mistapi_function": mistapi.api.v1.orgs.vpns.listOrgsVpns,
+        "get_mistapi_function": mistapi.api.v1.orgs.vpns.listOrgsVpns,
+        "delete_mistapi_function": mistapi.api.v1.orgs.vpns.deleteOrgVpn,
         "text": "Org vpns",
         "check_next": True,
     },
     "secpolicies": {
-        "mistapi_function": mistapi.api.v1.orgs.secpolicies.listOrgSecPolicies,
+        "get_mistapi_function": mistapi.api.v1.orgs.secpolicies.listOrgSecPolicies,
+        "delete_mistapi_function": mistapi.api.v1.orgs.secpolicies.deleteOrgSecPolicy,
         "text": "Org secpolicies",
         "check_next": True,
     },
     "sitegroups": {
-        "mistapi_function": mistapi.api.v1.orgs.sitegroups.listOrgSiteGroups,
+        "get_mistapi_function": mistapi.api.v1.orgs.sitegroups.listOrgSiteGroups,
+        "delete_mistapi_function": mistapi.api.v1.orgs.sitegroups.deleteOrgSiteGroup,
         "text": "Org sitegroups",
         "check_next": True,
     },
     "sitetemplates": {
-        "mistapi_function": mistapi.api.v1.orgs.sitetemplates.listOrgSiteTemplates,
+        "get_mistapi_function": mistapi.api.v1.orgs.sitetemplates.listOrgSiteTemplates,
+        "delete_mistapi_function": mistapi.api.v1.orgs.sitetemplates.deleteOrgSiteTemplate,
         "text": "Org sitetemplates",
         "check_next": True,
     },
     "ssos": {
-        "mistapi_function": mistapi.api.v1.orgs.ssos.listOrgSsos,
+        "get_mistapi_function": mistapi.api.v1.orgs.ssos.listOrgSsos,
+        "delete_mistapi_function": mistapi.api.v1.orgs.ssos.deleteOrgSso,
         "text": "Org ssos",
         "check_next": True,
     },
     "ssoroles": {
-        "mistapi_function": mistapi.api.v1.orgs.ssoroles.listOrgSsoRoles,
+        "get_mistapi_function": mistapi.api.v1.orgs.ssoroles.listOrgSsoRoles,
+        "delete_mistapi_function": mistapi.api.v1.orgs.ssoroles.deleteOrgSsoRole,
         "text": "Org ssoroles",
         "check_next": True,
     },
     "templates": {
-        "mistapi_function": mistapi.api.v1.orgs.templates.listOrgTemplates,
+        "get_mistapi_function": mistapi.api.v1.orgs.templates.listOrgTemplates,
+        "delete_mistapi_function": mistapi.api.v1.orgs.templates.deleteOrgTemplate,
         "text": "Org templates",
         "check_next": True,
     },
     "wxrules": {
-        "mistapi_function": mistapi.api.v1.orgs.wxrules.listOrgWxRules,
+        "get_mistapi_function": mistapi.api.v1.orgs.wxrules.listOrgWxRules,
+        "delete_mistapi_function": mistapi.api.v1.orgs.wxrules.deleteOrgWxRule,
         "text": "Org wxrules",
         "check_next": True,
     },
     "wxtags": {
-        "mistapi_function": mistapi.api.v1.orgs.wxtags.listOrgWxTags,
+        "get_mistapi_function": mistapi.api.v1.orgs.wxtags.listOrgWxTags,
+        "delete_mistapi_function": mistapi.api.v1.orgs.wxtags.deleteOrgWxTag,
         "text": "Org wxtags",
         "check_next": True,
     },
     "wxtunnels": {
-        "mistapi_function": mistapi.api.v1.orgs.wxtunnels.listOrgWxTunnels,
+        "get_mistapi_function": mistapi.api.v1.orgs.wxtunnels.listOrgWxTunnels,
+        "delete_mistapi_function": mistapi.api.v1.orgs.wxtunnels.deleteOrgWxTunnel,
         "text": "Org wxtunnels",
         "check_next": True,
     },
     "nactags": {
-        "mistapi_function": mistapi.api.v1.orgs.nactags.listOrgNacTags,
+        "get_mistapi_function": mistapi.api.v1.orgs.nactags.listOrgNacTags,
+        "delete_mistapi_function": mistapi.api.v1.orgs.nactags.deleteOrgNacTag,
         "text": "Org nactags",
         "check_next": True,
     },
     "nacrules": {
-        "mistapi_function": mistapi.api.v1.orgs.nacrules.listOrgNacRules,
+        "get_mistapi_function": mistapi.api.v1.orgs.nacrules.listOrgNacRules,
+        "delete_mistapi_function": mistapi.api.v1.orgs.nacrules.deleteOrgNacRule,
         "text": "Org nacrules",
         "check_next": True,
     },
+    "usermacs": {
+        "get_mistapi_function": mistapi.api.v1.orgs.usermacs.searchOrgUserMacs,
+        "delete_mistapi_function": mistapi.api.v1.orgs.usermacs.deleteOrgUserMac,
+        "text": "Org usermacs",
+        "check_next": True,
+    },
     "wlans": {
-        "mistapi_function": mistapi.api.v1.orgs.wlans.listOrgWlans,
+        "get_mistapi_function": mistapi.api.v1.orgs.wlans.listOrgWlans,
+        "delete_mistapi_function": mistapi.api.v1.orgs.wlans.deleteOrgWlan,
         "text": "Org wlans",
         "check_next": True,
     },
 }
-delete_steps = {
-    "assetfilters": {
-        "mistapi_function": mistapi.api.v1.orgs.assetfilters.deleteOrgAssetFilter,
-        "text": "Org assetfilters",
-    },
-    "deviceprofiles": {
-        "mistapi_function": mistapi.api.v1.orgs.deviceprofiles.deleteOrgDeviceProfile,
-        "text": "Org deviceprofiles",
-    },
-    "hubprofiles": {
-        "mistapi_function": mistapi.api.v1.orgs.deviceprofiles.deleteOrgDeviceProfile,
-        "text": "Org hubprofiles",
-    },
-    "evpn_topologies": {
-        "mistapi_function": mistapi.api.v1.orgs.evpn_topologies.deleteOrgEvpnTopology,
-        "text": "Org evpn_topologies",
-    },
-    "secpolicies": {
-        "mistapi_function": mistapi.api.v1.orgs.secpolicies.deleteOrgSecPolicy,
-        "text": "Org secpolicies",
-    },
-    "aptempaltes": {
-        "mistapi_function": mistapi.api.v1.orgs.aptemplates.deleteOrgAptemplate,
-        "text": "Org aptemplates",
-    },
-    "networktemplates": {
-        "mistapi_function": mistapi.api.v1.orgs.networktemplates.deleteOrgNetworkTemplate,
-        "text": "Org networktemplates",
-    },
-    "gatewaytemplates": {
-        "mistapi_function": mistapi.api.v1.orgs.gatewaytemplates.deleteOrgGatewayTemplate,
-        "text": "Org gatewaytemplates",
-    },
-    "alarmtemplates": {
-        "mistapi_function": mistapi.api.v1.orgs.alarmtemplates.deleteOrgAlarmTemplate,
-        "text": "Org alarmtemplates",
-    },
-    "rftemplates": {
-        "mistapi_function": mistapi.api.v1.orgs.rftemplates.deleteOrgRfTemplate,
-        "text": "Org rftemplates",
-    },
-    "sitetemplates": {
-        "mistapi_function": mistapi.api.v1.orgs.sitetemplates.deleteOrgSiteTemplate,
-        "text": "Org sitetemplates",
-    },
-    "sitegroups": {
-        "mistapi_function": mistapi.api.v1.orgs.sitegroups.deleteOrgSiteGroup,
-        "text": "Org sitegroups",
-    },
-    "templates": {
-        "mistapi_function": mistapi.api.v1.orgs.templates.deleteOrgTemplate,
-        "text": "Org templates",
-    },
-    "webhooks": {
-        "mistapi_function": mistapi.api.v1.orgs.webhooks.deleteOrgWebhook,
-        "text": "Org webhooks",
-    },
-    "networks": {
-        "mistapi_function": mistapi.api.v1.orgs.networks.deleteOrgNetwork,
-        "text": "Org networks",
-    },
-    "services": {
-        "mistapi_function": mistapi.api.v1.orgs.services.deleteOrgService,
-        "text": "Org services",
-    },
-    "servicepolicies": {
-        "mistapi_function": mistapi.api.v1.orgs.servicepolicies.deleteOrgServicePolicy,
-        "text": "Org services",
-    },
-    "vpns": {
-        "mistapi_function": mistapi.api.v1.orgs.vpns.deleteOrgVpn,
-        "text": "Org vpns",
-    },
-    "wlans": {
-        "mistapi_function": mistapi.api.v1.orgs.wlans.deleteOrgWlan,
-        "text": "Org wlans",
-    },
-    "wxtags": {
-        "mistapi_function": mistapi.api.v1.orgs.wxtags.deleteOrgWxTag,
-        "text": "Org wxtags",
-    },
-    "wxrules": {
-        "mistapi_function": mistapi.api.v1.orgs.wxrules.deleteOrgWxRule,
-        "text": "Org wxrules",
-    },
-    "mxclusters": {
-        "mistapi_function": mistapi.api.v1.orgs.mxclusters.deleteOrgMxEdgeCluster,
-        "text": "Org mxclusters",
-    },
-    "mxtunnels": {
-        "mistapi_function": mistapi.api.v1.orgs.mxtunnels.deleteOrgMxTunnel,
-        "text": "Org mxtunnels",
-    },
-    "wxtunnels": {
-        "mistapi_function": mistapi.api.v1.orgs.wxtunnels.deleteOrgWxTunnel,
-        "text": "Org wxtunnels",
-    },
-    "psks": {
-        "mistapi_function": mistapi.api.v1.orgs.psks.deleteOrgPsk,
-        "text": "Org psks",
-    },
-    "pskportals": {
-        "mistapi_function": mistapi.api.v1.orgs.pskportals.deleteOrgPskPortal,
-        "text": "Org pskportals",
-    },
-    "nactags": {
-        "mistapi_function": mistapi.api.v1.orgs.nactags.deleteOrgNacTag,
-        "text": "Org nactags",
-    },
-    "nacrules": {
-        "mistapi_function": mistapi.api.v1.orgs.nacrules.deleteOrgNacRule,
-        "text": "Org nacrules",
-    },
-    "ssos": {
-        "mistapi_function": mistapi.api.v1.orgs.ssos.deleteOrgSso,
-        "text": "Org ssos",
-    },
-    "ssoroles": {
-        "mistapi_function": mistapi.api.v1.orgs.ssoroles.deleteOrgSsoRole,
-        "text": "Org ssoroles",
-    },
-}
+
 
 
 ##########################################################################################
@@ -405,9 +327,9 @@ def display_warning(message, expected_response: str = "y"):
 ##########################################################################################
 # COMMON FUNCTIONS
 def start_delete(apisession, org_id):
-    for step_name in get_org_steps:
-        step = get_org_steps[step_name]
-        response = step["mistapi_function"](apisession, org_id)
+    for step_name, step in get_org_steps.items():
+        options = step.get("get_options", {})
+        response = step["get_mistapi_function"](apisession, org_id, **options)
         if step["check_next"]:
             data = mistapi.get_all(apisession, response)
         else:
@@ -418,11 +340,9 @@ def start_delete(apisession, org_id):
                     message = f"Deleting {step_name} with ID {entry['id']} "
                     log_message(message)
                     if step_name == "sites":
-                        mistapi.api.v1.sites.sites.deleteSite(apisession, entry["id"])
+                        step["delete_mistapi_function"](apisession, entry["id"])
                     else:
-                        delete_steps[step_name]["mistapi_function"](
-                            apisession, org_id, entry["id"]
-                        )
+                        step["delete_mistapi_function"](apisession, org_id, entry["id"])
                     log_success(message)
                 except:
                     log_failure(message)
@@ -483,7 +403,7 @@ def start(apisession, org_id, org_name_from_user):
 
 def usage():
     print(
-        """
+        '''
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -539,14 +459,14 @@ Examples:
 python3 ./org_conf_zeroise.py     
 python3 ./org_conf_zeroise.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n my_test_org
 
-"""
+'''
     )
     sys.exit(0)
 
 
 def warning():
     print(
-        """ 
+        '''
 __          __     _____  _   _ _____ _   _  _____ 
 \ \        / /\   |  __ \| \ | |_   _| \ | |/ ____|
  \ \  /\  / /  \  | |__) |  \| | | | |  \| | |  __ 
@@ -558,7 +478,7 @@ __          __     _____  _   _ _____ _   _  _____
   A SPECIFIC ORGANIZATION! THESE CHANGES CAN'T BE 
    REVERT BACK. USE THIS SCRIPT AS YOUR OWN RISK
 
-"""
+'''
     )
 
 def check_mistapi_version():
