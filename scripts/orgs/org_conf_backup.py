@@ -272,6 +272,11 @@ ORG_STEPS = {
         "text": "Org nacrules",
         "check_next": True,
     },
+    "usermacs": {
+        "mistapi_function": mistapi.api.v1.orgs.usermacs.searchOrgUserMacs,
+        "text": "Org usermacs",
+        "check_next": True,
+    },
     "wlans": {
         "mistapi_function": mistapi.api.v1.orgs.wlans.listOrgWlans,
         "text": "Org wlans",
@@ -535,7 +540,7 @@ def _do_backup(
             data = response.data
 
         if step_name == "evpn_topologies":
-           _backup_evpn_topology(mist_session, data)
+            _backup_evpn_topology(mist_session, data)
 
         PB.log_success(message, True)
         return data
@@ -591,10 +596,11 @@ def _backup_full_org(mist_session, org_id, org_name):
         try:
             for xmap in site_backup["maps"]:
                 url = None
+                xmap_id = None
                 if "url" in xmap:
                     url = xmap["url"]
                     xmap_id = xmap["id"]
-                if url:
+                if url and xmap_id:
                     image_name = (
                         f"{FILE_PREFIX}_org_{org_id}_site_{site_id}_map_{xmap_id}.png"
                     )
