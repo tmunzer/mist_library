@@ -82,6 +82,12 @@ Each script has description and documentation at the beginning of the file. Plea
 | Sites | [update_sitegroups.py](scripts/sites/update_sitegroups.py) | Python script update the sitegroups assigned to sites based on a CSV file. The script can append the new sitegroups (default) or replace the sitegroups currently assigned with the new list. |
 | Sites | [update_sites_templates.py](scripts/sites/update_sites_templates.py) | Python script update the templates assigned to Mist Sites based on a CSV file, and/or update the auto assignment rules based on IP Subnet. |
 
+## Configuration - EVPN
+| Category | Script | Description |
+| ---- | ---- | ---- |
+| Configuration - EVPN | [provision_evpntoplogy_vlans.py](scripts/configuration/evpn_topology/provision_evpntoplogy_vlans.py) | Python script generate VLANs and VRFs for EVPN Topologies |
+| Configuration - EVPN | [update_evpn_switch_ip.py](scripts/configuration/evpn_topology/update_evpn_switch_ip.py) | Python script to update the IP addresses of the switches in an EVPN Topology. The script will generate the IP addresses based on the networks defined in the EVPN Topology and the number of switches to update, and only update the switches that are part of the Routing layer. |
+
 ## Backup & Restore
 | Category | Script | Description |
 | ---- | ---- | ---- |

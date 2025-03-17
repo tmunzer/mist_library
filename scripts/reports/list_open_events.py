@@ -38,7 +38,6 @@ with the "-t"/"--event_types=" CLI parameter to configure the script):
 | GW_VPN_PATH                | GW_VPN_PATH_DOWN                       | GW_VPN_PATH_UP                                                |
 | GW_VPN_PEER                | GW_VPN_PEER_DOWN                       | GW_VPN_PEER_UP                                                |
 | GW_ZTP                     | GW_ZTP_FAILED                          | GW_ZTP_FINISHED                                               |
-| SW_CONFIG                  | SW_CONFIG_FAILED                       | SW_CONFIGURED                                                 |
 | SW_BFD_SESSION             | SW_BFD_SESSION_DISCONNECTED            | SW_BFD_SESSION_ESTABLISHED                                    |
 | SW_BGP_NEIGHBOR            | SW_BGP_NEIGHBOR_DOWN                   | SW_BGP_NEIGHBOR_UP                                            |
 | SW_CONFIG                  | SW_CONFIG_FAILED,SW_CONFIG_LOCK_FAILED | SW_CONFIGURED,SW_RECONFIGURED                                 |
@@ -49,7 +48,7 @@ with the "-t"/"--event_types=" CLI parameter to configure the script):
 | SW_MAC_LEARNING            | SW_MAC_LEARNING_STOPPED                | SW_MAC_LEARNING_RESUMED                                       |
 | SW_MAC_LIMIT               | SW_MAC_LIMIT_EXCEEDED                  | SW_MAC_LIMIT_RESET                                            |
 | SW_OSPF_NEIGHBOR           | SW_OSPF_NEIGHBOR_DOWN                  | SW_OSPF_NEIGHBOR_UP                                           |
-| SW_PORT_BPDU               | SW_PORT_BPDU_ERROR_CLEARED             | SW_PORT_BPDU_BLOCKED                                          |
+| SW_PORT_BPDU               | SW_PORT_BPDU_BLOCKED                   | SW_PORT_BPDU_ERROR_CLEARED                                    |
 | SW_RECOVERY_SNAPSHOT       | SW_RECOVERY_SNAPSHOT_FAILED            | SW_RECOVERY_SNAPSHOT_SUCCEEDED,SW_RECOVERY_SNAPSHOT_NOTNEEDED |
 | SW_UPGRADE                 | SW_UPGRADE_FAILED                      | SW_UPGRADED                                                   |
 | SW_VC_PORT                 | SW_VC_PORT_DOWN                        | SW_VC_PORT_UP                                                 |
@@ -187,7 +186,6 @@ EVENT_TYPES_DEFINITIONS= {
 "GW_VPN_PATH": ["GW_VPN_PATH_DOWN","GW_VPN_PATH_UP"],
 "GW_VPN_PEER": ["GW_VPN_PEER_DOWN","GW_VPN_PEER_UP"],
 "GW_ZTP": ["GW_ZTP_FAILED","GW_ZTP_FINISHED"],
-"SW_CONFIG": ["SW_CONFIG_FAILED","SW_CONFIGURED"],
 "SW_BFD_SESSION": ["SW_BFD_SESSION_DISCONNECTED","SW_BFD_SESSION_ESTABLISHED"],
 "SW_BGP_NEIGHBOR": ["SW_BGP_NEIGHBOR_DOWN","SW_BGP_NEIGHBOR_UP"],
 "SW_CONFIG": ["SW_CONFIG_FAILED","SW_CONFIG_LOCK_FAILED","SW_CONFIGURED"],
@@ -369,7 +367,7 @@ def _process_gw_arp(devices: dict, event_type: str, event: dict):
     event_port_id = event.get("port_id")
     if not event_port_id:
         try:
-            event_port_id = event_text.replace("\"", "").split("network-interface:")[1].strip().split(" ")[0]
+            event_port_id = event_text.replace("\"", "").split("network-interface:")[1].strip().split(",")[0]
         except:
             LOGGER.error(
                 f"_process_gw_arp: Unable to extract peer from {event_text}"
@@ -1460,7 +1458,6 @@ with the "-t"/"--event_types=" CLI parameter to configure the script):
 | GW_VPN_PATH                | GW_VPN_PATH_DOWN                       | GW_VPN_PATH_UP                                                |
 | GW_VPN_PEER                | GW_VPN_PEER_DOWN                       | GW_VPN_PEER_UP                                                |
 | GW_ZTP                     | GW_ZTP_FAILED                          | GW_ZTP_FINISHED                                               |
-| SW_CONFIG                  | SW_CONFIG_FAILED                       | SW_CONFIGURED                                                 |
 | SW_BFD_SESSION             | SW_BFD_SESSION_DISCONNECTED            | SW_BFD_SESSION_ESTABLISHED                                    |
 | SW_BGP_NEIGHBOR            | SW_BGP_NEIGHBOR_DOWN                   | SW_BGP_NEIGHBOR_UP                                            |
 | SW_CONFIG                  | SW_CONFIG_FAILED,SW_CONFIG_LOCK_FAILED | SW_CONFIGURED,SW_RECONFIGURED                                 |
@@ -1471,7 +1468,7 @@ with the "-t"/"--event_types=" CLI parameter to configure the script):
 | SW_MAC_LEARNING            | SW_MAC_LEARNING_STOPPED                | SW_MAC_LEARNING_RESUMED                                       |
 | SW_MAC_LIMIT               | SW_MAC_LIMIT_EXCEEDED                  | SW_MAC_LIMIT_RESET                                            |
 | SW_OSPF_NEIGHBOR           | SW_OSPF_NEIGHBOR_DOWN                  | SW_OSPF_NEIGHBOR_UP                                           |
-| SW_PORT_BPDU               | SW_PORT_BPDU_ERROR_CLEARED             | SW_PORT_BPDU_BLOCKED                                          |
+| SW_PORT_BPDU               | SW_PORT_BPDU_BLOCKED                   | SW_PORT_BPDU_ERROR_CLEARED                                    |
 | SW_RECOVERY_SNAPSHOT       | SW_RECOVERY_SNAPSHOT_FAILED            | SW_RECOVERY_SNAPSHOT_SUCCEEDED,SW_RECOVERY_SNAPSHOT_NOTNEEDED |
 | SW_UPGRADE                 | SW_UPGRADE_FAILED                      | SW_UPGRADED                                                   |
 | SW_VC_PORT                 | SW_VC_PORT_DOWN                        | SW_VC_PORT_UP                                                 |
