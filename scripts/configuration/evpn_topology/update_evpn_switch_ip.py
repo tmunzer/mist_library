@@ -421,7 +421,7 @@ def _process_networks(
                     sys.exit(2)
     for network_name in network_ips:
         LOGGER.info(
-            f"_process_networks: IPs for network {network_name} ({networks[network_name]["subnet"]}): {network_ips[network_name]}"
+            f"_process_networks: IPs for network {network_name} ({networks[network_name]['subnet']}): {network_ips[network_name]}"
         )
     return network_ips
 
