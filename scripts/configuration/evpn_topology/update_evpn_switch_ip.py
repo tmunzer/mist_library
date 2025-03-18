@@ -42,16 +42,24 @@ Script Parameters:
 
 --ipv4_first        Use the first IP addresses of the networks to generate 
                     the IP addresses (EVPN Gateway excluded).
-                    Cannot be used with --ipv4_last or --ipv4_start.
+                    Cannot be used with --ipv4_last or --ipv4_from/--ipv4_to.
 --ipv4_last         Use the last IP addresses of the networks to generate 
                     the IP addresses
-                    Cannot be used with --ipv4_first or --ipv4_start.
---ipv4_start=       Define the starting IP address for each network. Format
-                    is "network_name:ip_address". Multiple networks can be
+                    Cannot be used with --ipv4_first or --ipv4_from/--ipv4_to.
+--ipv4_from=        Define the first IP address of the range of IP addresses for each
+                    network. Format is "network_name:ip_address". Multiple networks can be
                     defined separated by a comma.
-                    Cannot be used with --ipv4_first or --ipv4_last.
-                    e.g. --ipv4_start="corp:10.31.12.100,voice:10.31.23.0"
-                    e.g. --ipv4_start="corp:10.31.12.100"  --ipv4_start="voice:10.31.23.0"
+                    Cannot be used with --ipv4_first or --ipv4_last, but can be used
+                    (for different networks) with --ipv4_to
+                    e.g. --ipv4_from="corp:10.31.12.100,voice:10.31.23.0"
+                    e.g. --ipv4_from="corp:10.31.12.100"  --ipv4_from="voice:10.31.23.0"
+--ipv4_to=          Define the last IP address of the range of IP addresses for each
+                    network. Format is "network_name:ip_address". Multiple networks can be
+                    defined separated by a comma.
+                    Cannot be used with --ipv4_first or --ipv4_last, but can be used
+                    (for different networks) with --ipv4_from
+                    e.g. --ipv4_to="corp:10.31.12.100,voice:10.31.23.0"
+                    e.g. --ipv4_to="corp:10.31.12.100"  --ipv4_to="voice:10.31.23.0"
                 
 -l, --log_file=     define the filepath/filename where to write the logs
                     Default is "./script.log"
@@ -65,8 +73,8 @@ python3 ./update_evpn_switch_ip.py --ipv4_last
 python3 ./update_evpn_switch_ip.py \
     --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 \
     -t 95e1a820-xxxx-xxxx-xxxx-59fc972d0607 \
-    --ipv4_start="corp:10.11.12.100"
-    --ipv4_start="voice:10.12.12.150"
+    --ipv4_from="corp:10.11.12.100"
+    --ipv4_from="voice:10.12.12.150"
 
 """
 
@@ -371,7 +379,8 @@ def _process_networks(
     networks: dict,
     ipv4_first: bool,
     ipv4_last: bool,
-    ipv4_start: dict,
+    ipv4_from: dict,
+    ipv4_to: dict,
     switch_count: int,
 ):
     network_ips = {}
@@ -405,9 +414,9 @@ def _process_networks(
                         f"Not enough IP addresses available for the network {network_name}"
                     )
                     sys.exit(2)
-            elif network_name in ipv4_start:
-                LOGGER.debug(f"_process_networks: ipv4_start: {ipv4_start}")
-                start = ipv4_start.get(network_name)
+            elif network_name in ipv4_from:
+                LOGGER.debug(f"_process_networks: ipv4_from: {ipv4_from}")
+                start = ipv4_from.get(network_name)
                 index = addresses.index(ipaddress.IPv4Address(start))
                 try:
                     network_ips[network_name] = {
@@ -419,6 +428,22 @@ def _process_networks(
                         f"Not enough IP addresses available for the network {network_name}"
                     )
                     sys.exit(2)
+            elif network_name in ipv4_to:
+                LOGGER.debug(f"_process_networks: ipv4_from: {ipv4_to}")
+                start = ipv4_to.get(network_name)
+                index = addresses.index(ipaddress.IPv4Address(start))
+                try:
+                    network_ips[network_name] = {
+                        "ips": addresses[index - switch_count : index],
+                        "netmask": netmask,
+                    }
+                except:
+                    CONSOLE.error(
+                        f"Not enough IP addresses available for the network {network_name}"
+                    )
+                    sys.exit(2)
+            
+            
     for network_name in network_ips:
         LOGGER.info(
             f"_process_networks: IPs for network {network_name} ({networks[network_name]['subnet']}): {network_ips[network_name]}"
@@ -433,7 +458,8 @@ def _process_evpn_topo(
     evpn_topo_id: str,
     ipv4_first: bool,
     ipv4_last: bool,
-    ipv4_start: dict,
+    ipv4_from: dict,
+    ipv4_to: dict,
 ):
     evpn_topo = None
     networks = None
@@ -447,28 +473,47 @@ def _process_evpn_topo(
     LOGGER.debug(f"_process_evpn_topo: Networks: {networks}")
     routed_at = evpn_topo.get("evpn_options", {}).get("routed_at")
     switches = []
+    dedicated_ip = False
+    common_ip = False
     for switch in evpn_topo.get("switches"):
         switch_role = switch.get("role")
         switch_mac = switch.get("mac")
         if (
-            (switch_role == "collapsed-core")
+            (switch_role == "collapsed-core") 
             or (routed_at == "core" and switch_role == "core")
-            or (routed_at == "distribution" and switch_role == "distribution")
+        ):
+            LOGGER.debug(
+                f"_process_evpn_topo: switch {switch_mac} is {switch_role}. EVPN routed at {routed_at}. Will be updated with dedicated IP"
+            )
+            switches.append(switch)
+            dedicated_ip = True
+        elif (
+            (routed_at == "distribution" and switch_role == "distribution")
             or (routed_at == "edge" and switch_role == "access")
         ):
             LOGGER.debug(
-                f"_process_evpn_topo: switch {switch_mac} is {switch_role}. EVPN routed at {routed_at}. Will be updated"
+                f"_process_evpn_topo: switch {switch_mac} is {switch_role}. EVPN routed at {routed_at}. Will be updated with common IP"
             )
             switches.append(switch)
+            common_ip = True
         else:
             LOGGER.debug(
                 f"_process_evpn_topo: switch {switch_mac} is {switch_role}. EVPN routed at {routed_at}. Will NOT be updated"
             )
-    network_ips = _process_networks(
-        networks, ipv4_first, ipv4_last, ipv4_start, len(switches)
-    )
-    for index, switch in enumerate(switches):
-        _process_switch(apisession, switch, network_ips, index)
+    if dedicated_ip == common_ip:
+        CONSOLE.error("Unable to determine the type of EVPN Topology... Please report the issue and the script.log file...")
+    elif dedicated_ip:
+        network_ips = _process_networks(
+            networks, ipv4_first, ipv4_last, ipv4_from, ipv4_to, len(switches)
+        )
+        for index, switch in enumerate(switches):
+            _process_switch(apisession, switch, network_ips, index)
+    else:
+        network_ips = _process_networks(
+            networks, ipv4_first, ipv4_last, ipv4_from, ipv4_to,1
+        )
+        for index, switch in enumerate(switches):
+            _process_switch(apisession, switch, network_ips, 0)
 
 
 ###############################################################################
@@ -548,7 +593,8 @@ def start(
     evpn_topo_id: str = None,
     ipv4_first: bool = False,
     ipv4_last: bool = False,
-    ipv4_start: dict = {},
+    ipv4_from: dict = {},
+    ipv4_to: dict = {},
 ):
     """
     Start the process to create the EVPN VLANs and VRFs
@@ -581,9 +627,9 @@ def start(
                                                 Default is False
     """
 
-    if not ipv4_first and not ipv4_last and not ipv4_start:
+    if not ipv4_first and not ipv4_last and not ipv4_from:
         usage(
-            "At least one of the following parameters must be defined: --ipv4_first, --ipv4_last, --ipv4_start"
+            "At least one of the following parameters must be defined: --ipv4_first, --ipv4_last, --ipv4_from"
         )
         sys.exit(2)
 
@@ -599,7 +645,8 @@ def start(
         evpn_topo_id,
         ipv4_first,
         ipv4_last,
-        ipv4_start,
+        ipv4_from,
+        ipv4_to,
     )
 
 
@@ -654,16 +701,24 @@ Script Parameters:
 
 --ipv4_first        Use the first IP addresses of the networks to generate 
                     the IP addresses (EVPN Gateway excluded).
-                    Cannot be used with --ipv4_last or --ipv4_start.
+                    Cannot be used with --ipv4_last or --ipv4_from.
 --ipv4_last         Use the last IP addresses of the networks to generate 
                     the IP addresses
-                    Cannot be used with --ipv4_first or --ipv4_start.
---ipv4_start=       Define the starting IP address for each network. Format
-                    is "network_name:ip_address". Multiple networks can be
+                    Cannot be used with --ipv4_first or --ipv4_from.
+--ipv4_from=        Define the first IP address of the range of IP addresses for each
+                    network. Format is "network_name:ip_address". Multiple networks can be
                     defined separated by a comma.
-                    Cannot be used with --ipv4_first or --ipv4_last.
-                    e.g. --ipv4_start="corp:10.31.12.100,voice:10.31.23.0"
-                    e.g. --ipv4_start="corp:10.31.12.100"  --ipv4_start="voice:10.31.23.0"
+                    Cannot be used with --ipv4_first or --ipv4_last, but can be used
+                    (for different networks) with --ipv4_to
+                    e.g. --ipv4_from="corp:10.31.12.100,voice:10.31.23.0"
+                    e.g. --ipv4_from="corp:10.31.12.100"  --ipv4_from="voice:10.31.23.0"
+--ipv4_to=          Define the last IP address of the range of IP addresses for each
+                    network. Format is "network_name:ip_address". Multiple networks can be
+                    defined separated by a comma.
+                    Cannot be used with --ipv4_first or --ipv4_last, but can be used
+                    (for different networks) with --ipv4_from
+                    e.g. --ipv4_to="corp:10.31.12.100,voice:10.31.23.0"
+                    e.g. --ipv4_to="corp:10.31.12.100"  --ipv4_to="voice:10.31.23.0"
                 
 -l, --log_file=     define the filepath/filename where to write the logs
                     Default is "./script.log"
@@ -677,8 +732,8 @@ python3 ./update_evpn_switch_ip.py --ipv4_last
 python3 ./update_evpn_switch_ip.py \
     --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 \
     -t 95e1a820-xxxx-xxxx-xxxx-59fc972d0607 \
-    --ipv4_start="corp:10.11.12.100"
-    --ipv4_start="voice:10.12.12.150"
+    --ipv4_from="corp:10.11.12.100"
+    --ipv4_from="voice:10.12.12.150"
 
 """
     )
@@ -736,7 +791,8 @@ if __name__ == "__main__":
                 "evpn_id=",
                 "ipv4_first",
                 "ipv4_last",
-                "ipv4_start=",
+                "ipv4_from=",
+                "ipv4_to="
                 "env=",
                 "log_file=",
             ],
@@ -751,7 +807,8 @@ if __name__ == "__main__":
     EVPN_TOPO_ID = None
     IPV4_FIRST = False
     IPV4_LAST = False
-    IPV4_START = {}
+    IPV4_FROM = {}
+    IPV4_TO = {}
 
     for o, a in opts:
         if o in ["-h", "--help"]:
@@ -766,27 +823,35 @@ if __name__ == "__main__":
             PARAMS[o] = a
             EVPN_TOPO_ID = a
         elif o in ["--ipv4_first"]:
-            if IPV4_LAST or IPV4_START:
+            if IPV4_LAST or IPV4_FROM:
                 usage(
-                    "Invalid parameters: --ipv4_first cannot be used with --ipv4_last or --ipv4_start"
+                    "Invalid parameters: --ipv4_first cannot be used with --ipv4_last or --ipv4_from/--ipv4_to"
                 )
             PARAMS[o] = True
             IPV4_FIRST = True
         elif o in ["--ipv4_last"]:
-            if IPV4_FIRST or IPV4_START:
+            if IPV4_FIRST or IPV4_FROM:
                 usage(
-                    "Invalid parameters: --ipv4_last cannot be used with --ipv4_first or --ipv4_start"
+                    "Invalid parameters: --ipv4_last cannot be used with --ipv4_first or --ipv4_from/--ipv4_to"
                 )
             PARAMS[o] = True
             IPV4_LAST = True
-        elif o in ["--ipv4_start"]:
+        elif o in ["--ipv4_from"]:
             if IPV4_FIRST or IPV4_LAST:
                 usage(
-                    "Invalid parameters: --ipv4_start cannot be used with --ipv4_first or --ipv4_last"
+                    "Invalid parameters: --ipv4_from cannot be used with --ipv4_first or --ipv4_last"
                 )
             PARAMS[o] = a
             for b in a.split(","):
-                IPV4_START[b.split(":")[0]] = b.split(":")[1]
+                IPV4_FROM[b.split(":")[0]] = b.split(":")[1]
+        elif o in ["--ipv4_to"]:
+            if IPV4_FIRST or IPV4_LAST:
+                usage(
+                    "Invalid parameters: --ipv4_to cannot be used with --ipv4_first or --ipv4_last"
+                )
+            PARAMS[o] = a
+            for b in a.split(","):
+                IPV4_TO[b.split(":")[0]] = b.split(":")[1]
         elif o in ["-e", "--env"]:
             PARAMS[o] = a
             ENV_FILE = a
@@ -815,5 +880,6 @@ if __name__ == "__main__":
         EVPN_TOPO_ID,
         IPV4_FIRST,
         IPV4_LAST,
-        IPV4_START,
+        IPV4_FROM,
+        IPV4_TO,
     )
