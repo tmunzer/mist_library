@@ -387,11 +387,11 @@ def _process_networks(
     for network_name, networks_data in networks.items():
         subnet = networks_data.get("subnet")
         gateway = networks_data.get("gateway")
-        addresses = list(ipaddress.ip_network(subnet).hosts())
-        netmask = str(ipaddress.ip_network(subnet).netmask)
-        if gateway:
-            addresses.remove(ipaddress.IPv4Address(gateway))
         if subnet:
+            addresses = list(ipaddress.ip_network(subnet).hosts())
+            netmask = str(ipaddress.ip_network(subnet).netmask)
+            if gateway:
+                addresses.remove(ipaddress.IPv4Address(gateway))
             if ipv4_first:
                 try:
                     network_ips[network_name] = {
@@ -474,7 +474,7 @@ def _process_evpn_topo(
     routed_at = evpn_topo.get("evpn_options", {}).get("routed_at")
     switches = []
     dedicated_ip = False
-    common_ip = False
+    shared_ip = False
     for switch in evpn_topo.get("switches"):
         switch_role = switch.get("role")
         switch_mac = switch.get("mac")
@@ -492,15 +492,15 @@ def _process_evpn_topo(
             or (routed_at == "edge" and switch_role == "access")
         ):
             LOGGER.debug(
-                f"_process_evpn_topo: switch {switch_mac} is {switch_role}. EVPN routed at {routed_at}. Will be updated with common IP"
+                f"_process_evpn_topo: switch {switch_mac} is {switch_role}. EVPN routed at {routed_at}. Will be updated with shared IP"
             )
             switches.append(switch)
-            common_ip = True
+            shared_ip = True
         else:
             LOGGER.debug(
                 f"_process_evpn_topo: switch {switch_mac} is {switch_role}. EVPN routed at {routed_at}. Will NOT be updated"
             )
-    if dedicated_ip == common_ip:
+    if dedicated_ip == shared_ip:
         CONSOLE.error("Unable to determine the type of EVPN Topology... Please report the issue and the script.log file...")
     elif dedicated_ip:
         network_ips = _process_networks(
