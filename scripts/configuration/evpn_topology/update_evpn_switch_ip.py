@@ -33,9 +33,6 @@ information about the available parameters).
 Script Parameters:
 -h, --help          display this help
 
--f, --file=         path to the CSV file
-                    Default is ./provision_evpntoplogy_vlans.csv
-
 -o, --org_id=       ID of the Mist Org (only for Org EVPN Topology)
 -s, --site_id=      ID of the Mist Site (only for Site EVPN Topology)
 -t, --evpn_id=      ID of the EVPN Topology
@@ -80,7 +77,6 @@ python3 ./update_evpn_switch_ip.py \
 
 #### IMPORTS #####
 import sys
-import csv
 import getopt
 import logging
 import ipaddress
@@ -107,7 +103,6 @@ except:
 
 #####################################################################
 #### PARAMETERS #####
-VRF_FILE = "./provision_evpntoplogy_vlans.csv"
 LOG_FILE = "./script.log"
 ENV_FILE = "~/.mist_env"
 #####################################################################
@@ -691,9 +686,6 @@ information about the available parameters).
 -------
 Script Parameters:
 -h, --help          display this help
-
--f, --file=         path to the CSV file
-                    Default is ./provision_evpntoplogy_vlans.csv
 
 -o, --org_id=       ID of the Mist Org (only for Org EVPN Topology)
 -s, --site_id=      ID of the Mist Site (only for Site EVPN Topology)
