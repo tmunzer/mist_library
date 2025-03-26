@@ -21,9 +21,9 @@ The primary goal is to help network engineers and developers learn API methodolo
 
 [5. Overview of the V-Tool Code](#5-overview-of-the-v-tool-code)
 
-  [5.1 General Structure](#51-general-structure)
+[5.1 General Structure](#51-general-structure)
 
-  [5.2 Functions and Their Purposes](#52-functions-and-their-purposes)
+[5.2 Functions and Their Purposes](#52-functions-and-their-purposes)
 
 [6. Detailed Walkthrough of Menu Items](#6-detailed-walkthrough-of-menu-items)
 
@@ -126,16 +126,15 @@ Before setting up the V-Tool, ensure you have the following:
  - Install Python 3.x using your distribution’s package manager (e.g., sudo apt-get install python3 python3-pip).
 
 3.3 Required Python Packages:
- - Install necessary packages using pip:
- pip install requests pandas openpyxl
+ - Install necessary packages using pip:  `pip install requests pandas openpyxl` 
 
 ## 4. Environment Setup
 
 1. Download the V-Tool script and save it in a working directory.
-2. Create a file named Token-Org-URL.txt in the same directory with the following content:
- token=<your\_api\_token>
- org\_id=<your\_org\_id>
- base\_url=https://api.mist.com/api/v1
+2. Create a file named Token-Org-URL.txt in the same directory with the following content:  
+ token=<your\_api\_token>  
+ org\_id=<your\_org\_id>  
+ base\_url=https://api.mist.com/api/v1  
 3. Open a terminal, navigate to the directory, and run the script using: python3 v\_tool.py
 
 ## 5. Overview of the V-Tool Code
@@ -144,97 +143,97 @@ The V-Tool is organized into several sections: logging, menu display, API creden
 
 ### 5.1 General Structure
 
-• Logging functions to record errors and events in rotating Excel log files.
-• Functions to display the ASCII word art menu.
-• Functions to read API credentials from a file.
-• Report generation functions for various data points.
-• Functions to process inventory and upgrades.
-• Backup and restore functions for configurations.
-• Deletion functions (Remove Org Items) for resource management.
-• A main loop that displays the menu and routes user input accordingly.
+- Logging functions to record errors and events in rotating Excel log files.
+- Functions to display the ASCII word art menu.
+- Functions to read API credentials from a file.
+- Report generation functions for various data points.
+- Functions to process inventory and upgrades.
+- Backup and restore functions for configurations.
+- Deletion functions (Remove Org Items) for resource management.
+- A main loop that displays the menu and routes user input accordingly.
 
 ### 5.2 Functions and Their Purposes
 
-• log\_error(message): Logs errors and events with timestamps to a rotating Excel log file.
-• save\_to\_excel(data, filename): Saves data to Excel with a hunter green header and autosized columns.
-• read\_token\_org\_url(file\_path): Reads API credentials from Token-Org-URL.txt.
-• get\_latest\_inventory\_file(): Locates the most recent inventory file.
-• get\_gateway\_inventory(org\_id, token, base\_url): Retrieves gateway inventory from Mist API.
-• process\_inventory\_actions(filename, token, base\_url): Processes devices marked for upgrade.
-• check\_upgrade\_status(filename, token, base\_url): Monitors live upgrade status.
-• Various report functions to retrieve and save reports in Excel format.
-• backup\_org(token, org\_id, base\_url): Backs up configurations to JSON files.
-• full\_site\_restore(token, org\_id, base\_url): Restores configurations from backup.
-• Deletion functions (list\_items, delete\_item, remove\_org\_items) for managing resources.
-• post\_reports(token, org\_id, base\_url): Generates reports for devices marked for upgrade.
-• The main() function that ties everything together.
+- log\_error(message): Logs errors and events with timestamps to a rotating Excel log file.
+- save\_to\_excel(data, filename): Saves data to Excel with a hunter green header and autosized columns.
+- read\_token\_org\_url(file\_path): Reads API credentials from Token-Org-URL.txt.
+- get\_latest\_inventory\_file(): Locates the most recent inventory file.
+- get\_gateway\_inventory(org\_id, token, base\_url): Retrieves gateway inventory from Mist API.
+- process\_inventory\_actions(filename, token, base\_url): Processes devices marked for upgrade.
+- check\_upgrade\_status(filename, token, base\_url): Monitors live upgrade status.
+- Various report functions to retrieve and save reports in Excel format.
+- backup\_org(token, org\_id, base\_url): Backs up configurations to JSON files.
+- full\_site\_restore(token, org\_id, base\_url): Restores configurations from backup.
+- Deletion functions (list\_items, delete\_item, remove\_org\_items) for managing resources.
+- post\_reports(token, org\_id, base\_url): Generates reports for devices marked for upgrade.
+- The main() function that ties everything together.
 
 ## 6. Detailed Walkthrough of Menu Items
 
 #### 6.1 Menu Item 1: View Inventory
 
-Function: get\_gateway\_inventory(org\_id, token, base\_url)
-Purpose: Retrieves gateway inventory from the Mist API and saves it as 'inventoryStats.xlsx'.
+Function: get\_gateway\_inventory(org\_id, token, base\_url)  
+Purpose: Retrieves gateway inventory from the Mist API and saves it as 'inventoryStats.xlsx'.  
 Usage: Select option 1 from the main menu.
 
 #### 6.2 Menu Item 2: Run Upgrades
 
-Function: process\_inventory\_actions(filename, token, base\_url)
-Purpose: Reads the latest inventory file, identifies devices marked for upgrade ('U'), and sends upgrade requests.
+Function: process\_inventory\_actions(filename, token, base\_url)  
+Purpose: Reads the latest inventory file, identifies devices marked for upgrade ('U'), and sends upgrade requests.  
 Usage: Select option 2 from the main menu.
 
 #### 6.3 Menu Item 3: Check Upgrade Status
 
-Function: check\_upgrade\_status(filename, token, base\_url)
-Purpose: Monitors live upgrade status and displays progress with color-coded output.
+Function: check\_upgrade\_status(filename, token, base\_url)  
+Purpose: Monitors live upgrade status and displays progress with color-coded output.  
 Usage: Select option 3; press 'X' to exit back to the menu.
 
 #### 6.4 Menu Item 4: Physical Device Interface Report
 
-Function: retrieve\_physical\_device\_interface\_report(token, org\_id, base\_url)
-Purpose: Retrieves current status of physical interfaces and saves an Excel report.
+Function: retrieve\_physical\_device\_interface\_report(token, org\_id, base\_url)  
+Purpose: Retrieves current status of physical interfaces and saves an Excel report.  
 Usage: Select option 4.
 
 #### 6.5 Menu Item 5: Full Device Interface Stats Report
 
-Function: retrieve\_full\_device\_interface\_stats\_report(token, org\_id, base\_url)
-Purpose: Gathers detailed interface statistics and saves a report in Excel.
+Function: retrieve\_full\_device\_interface\_stats\_report(token, org\_id, base\_url)  
+Purpose: Gathers detailed interface statistics and saves a report in Excel.  
 Usage: Select option 5.
 
 #### 6.6 Menu Item 6: Device Peer Path Status Report
 
-Function: retrieve\_device\_peer\_path\_status\_report(token, org\_id, base\_url)
-Purpose: Retrieves VPN peer path statistics and saves a corresponding report.
+Function: retrieve\_device\_peer\_path\_status\_report(token, org\_id, base\_url)  
+Purpose: Retrieves VPN peer path statistics and saves a corresponding report.  
 Usage: Select option 6.
 
 #### 6.7 Menu Item 7: Access Point Status
 
-Function: access\_point\_status(token, org\_id, base\_url)
-Purpose: Retrieves access point statistics, merges router names, and outputs a formatted report.
+Function: access\_point\_status(token, org\_id, base\_url)  
+Purpose: Retrieves access point statistics, merges router names, and outputs a formatted report.  
 Usage: Select option 7.
 
 #### 6.8 Menu Item 8: Post Reports
 
-Function: post\_reports(token, org\_id, base\_url)
-Purpose: Filters the inventory for devices marked 'U' and generates all reports with 'Post-' prefixes.
+Function: post\_reports(token, org\_id, base\_url)  
+Purpose: Filters the inventory for devices marked 'U' and generates all reports with 'Post-' prefixes.  
 Usage: Select option 8.
 
 #### 6.9 Menu Item 9: Backup Org
 
-Function: backup\_org(token, org\_id, base\_url)
-Purpose: Retrieves configuration data from the Mist API and saves each item as a JSON file in a timestamped folder.
+Function: backup\_org(token, org\_id, base\_url)  
+Purpose: Retrieves configuration data from the Mist API and saves each item as a JSON file in a timestamped folder.  
 Usage: Select option 9.
 
 #### 6.10 Menu Item 10: Full Site Restore
 
-Function: full\_site\_restore(token, org\_id, base\_url)
-Purpose: Prompts the user to select a backup folder and posts JSON configuration files back to the Mist API.
+Function: full\_site\_restore(token, org\_id, base\_url)  
+Purpose: Prompts the user to select a backup folder and posts JSON configuration files back to the Mist API.  
 Usage: Select option 10.
 
 #### 6.11 Menu Item 11: Remove Org Items
 
-Function: remove\_org\_items(token, org\_id, base\_url)
-Purpose: Provides an interactive menu to list and delete Mist API resources (Sites, Applications, Networks, Hub Profiles, WAN Edges, and Switches).
+Function: remove\_org\_items(token, org\_id, base\_url)  
+Purpose: Provides an interactive menu to list and delete Mist API resources (Sites, Applications, Networks, Hub Profiles, WAN Edges, and Switches).  
 Usage: Select option 11. All deletion operations are logged with successes and failures.
 
 ## 7. How to Run the Code
@@ -247,15 +246,15 @@ Usage: Select option 11. All deletion operations are logged with successes and f
 
 ## 8. Flow Diagrams
 
-• Figure 1: V-Tool Main Menu Screenshot –
+- Figure 1: V-Tool Main Menu Screenshot
 
 ![A diagram of a software system](figures/figure_1.jpg)
 
-• Figure 2: Deletion Menu Interface –
+- Figure 2: Deletion Menu Interface
 
 ![A diagram of a program](figures/figure_2.jpg)
 
-• Figure 3: Environment Setup Flowchart –
+- Figure 3: Environment Setup Flowchart
 
 ![A diagram of a software development process](figures/figure_3.jpg)
 
@@ -267,14 +266,14 @@ This guide has provided a detailed walkthrough of the V-Tool, including environm
 
 This advanced script is designed to manage gateway upgrades and execute various network operations via the Mist API. It offers a **menu-driven interface** that guides the user through several critical tasks:
 
-* **Retrieve Inventory:**
+* **Retrieve Inventory:**  
   Fetch the current gateway inventory and save it to an Excel file (prefixed with inventoryStats.xlsx).
   ***Note:*** This file must include two key columns:
   + **Action Column:** Devices marked with **“U”** indicate they are scheduled for upgrade.
   + **Upgrade Version Column:** Specifies the target version for migration.
-* **Process Upgrades:**
+* **Process Upgrades:**  
   Initiate upgrade requests for devices based on the inventory data. Only devices with an action marked **“U”** and a specified upgrade version are processed. Devices marked for upgrade without an upgrade version will be highlighted in the **Post‑Reports** for further review and monitoring.
-* **Generate Reports:**
+* **Generate Reports:**  
   Produce several detailed Excel reports, including:
   + **Physical Device Interface Report**
   + **Full Device Interface Statistics Report**
@@ -282,10 +281,10 @@ This advanced script is designed to manage gateway upgrades and execute various 
   + **Access Point Status Report**
   + **Plan Valid Report**
     The **Post‑Reports** variant outputs only data for devices marked for upgrade, allowing focused monitoring.
-* **Backup and Restore Configurations:**
-  **Backup:**
-  Selectively backs up configuration components by saving each as a JSON file in a timestamped folder.
-  **Backed-up Components Include:**
+* **Backup and Restore Configurations:**  
+  **Backup:**  
+  Selectively backs up configuration components by saving each as a JSON file in a timestamped folder.  
+  **Backed-up Components Include:**  
   + Application Configurations (services)
   + Network Configurations (networks)
   + Site Configurations (sites)
@@ -300,9 +299,9 @@ Site‑Setting data, third‑party keys, and licensing information are not backe
 **Restore:**
 Enables you to select a backup folder and reapply the backed‑up configurations to the Mist API, updating organization IDs and site mappings as needed.
 
-* **Clean Up Organizational Items:**
+* **Clean Up Organizational Items:**  
   Provides an interactive tool to list and delete various organizational resources (Sites, Applications, Networks, Hub Profiles, WAN Edges, and Switches).
-* **Exit:**
+* **Exit:**  
   Gracefully terminates the program.
 
 **Figure 1: Overall Flow Diagram**
@@ -315,17 +314,16 @@ High‑level diagram of the script’s workflow:
 
 #### 11.1. Inventory Retrieval
 
-**Purpose:**
+**Purpose:**  
 Fetch current gateway inventory data from the Mist API and save it as inventoryStats.xlsx.
 
-**Key Requirement:**
+**Key Requirement:**  
 The inventory file must include two essential columns:
 
 * **Action:** Devices marked with **“U”** are selected for upgrade.
 * **Upgrade Version:** Specifies the target version for migration.
 
-**Usage:**
-
+**Usage:**  
 * **Option 1 ("View Inventory")** must be run first. This file is critical as all subsequent operations depend on its data.
 
 **Figure 2: Inventory Retrieval Flow**
@@ -334,17 +332,15 @@ The inventory file must include two essential columns:
 
 #### 11.2. Upgrade Operations
 
-**Purpose:**
+**Purpose:**  
 Trigger upgrade requests for devices based on the inventory data.
 
-**Important Note:**
-
+**Important Note:**  
 * **Action Column:** Must be set to **“U”** for devices to be upgraded.
 * **Upgrade Version Column:** Must contain the target version.
   Devices with “U” but lacking a defined upgrade version will be highlighted in the **Post‑Reports** (Option 8) and monitored in **Option 3 (Check Upgrade Status)**.
 
-**Usage:**
-
+**Usage:**  
 * **Option 2 ("Run Upgrades")** processes upgrade requests for devices with complete data.
 * **Option 3 ("Check Upgrade Status")** monitors the upgrade progress for these devices.
 
@@ -354,19 +350,17 @@ Trigger upgrade requests for devices based on the inventory data.
 
 #### 11.3. Reporting Functions
 
-**Purpose:**
+**Purpose:**  
 Generate several detailed Excel reports to analyze device interfaces, statistics, and status.
 
-**Reports Include:**
-
+**Reports Include:**  
 * **Physical Device Interface Report**
 * **Full Device Interface Statistics Report**
 * **Device Peer Path Status Report**
 * **Access Point Status Report**
 * **Plan Valid Report**
 
-**Usage:**
-
+**Usage:**  
 * All reports use data from inventoryStats.xlsx.
 * The **Post‑Reports** variant outputs only devices marked for upgrade (with the "U" action), allowing you to concentrate on upgrade candidates.
 
@@ -376,10 +370,10 @@ Generate several detailed Excel reports to analyze device interfaces, statistics
 
 #### 11.4. Backup and Restore Configurations
 
-**Purpose:**
+**Purpose:**  
 Enable rapid deployment of similar SSR configurations by backing up and restoring key configuration components.
 
-**Backup:**
+**Backup:**  
 Only the following components are backed up:
 
 * **Application Configurations** (services)
@@ -390,13 +384,11 @@ Only the following components are backed up:
 * **Network Templates** (switch configurations)
 * **Service Policies** (servicepolicies)
 
-**Exclusions:**
-
+**Exclusions:**  
 * **Site‑Setting data is not backed up**
 * **Third‑party keys/licensing information are excluded**
 
-**Usage:**
-
+**Usage:**  
 * **Option 9 ("Backup Org")** retrieves and stores the configuration data as JSON files in a timestamped backup folder.
 * **Option 10 ("Full Site Restore")** allows you to select a backup folder and reapply these configurations to the Mist API, updating organization IDs and site mappings as needed.
 
@@ -406,7 +398,7 @@ Only the following components are backed up:
 
 #### 11.5. Clean Up Organizational Items
 
-**Purpose:**
+**Purpose:**  
 Provide an interactive tool for listing and deleting various organizational items from the Mist API, such as:
 
 * Sites
@@ -416,8 +408,7 @@ Provide an interactive tool for listing and deleting various organizational item
 * WAN Edges
 * Switches
 
-**Usage:**
-
+**Usage:**  
 * **Option 11 ("Remove Org Items")** displays a menu for selecting specific sections to delete or for removing all items across sections.
 
 **Figure 6: Organizational Cleanup Flow**
@@ -426,11 +417,10 @@ Provide an interactive tool for listing and deleting various organizational item
 
 #### 11.6. Exit
 
-**Purpose:**
+**Purpose:**  
 Gracefully terminate the program.
 
-**Usage:**
-
+**Usage:**  
 * **Option 0 ("Exit")** ends the script’s execution.
 
 **Figure 7: Exit Flow**
@@ -439,20 +429,20 @@ Gracefully terminate the program.
 
 ## 12. Important Operational Notes
 
-* **Inventory File Requirement:**
+* **Inventory File Requirement:**  
   Always run **Option 1 ("View Inventory")** first to create the inventoryStats.xlsx file. This file is the cornerstone for all subsequent operations (upgrades, reports, backup/restore).
-* **Upgrade-Specific Columns:**
+* **Upgrade-Specific Columns:**  
   When running **Option 2 ("Run Upgrades")**:
   + The **Action Column** must be set to **“U”** to designate devices for upgrade.
   + The **Upgrade Version Column** must contain the new target version.
     If a device is marked with “U” but lacks an upgrade version, it will be included in the **Post‑Reports (Option 8)**, enabling you to review which devices require additional attention, and its status will be monitored via **Option 3 ("Check Upgrade Status")**.
-* **Backup and Restore Limitations:**
+* **Backup and Restore Limitations:**  
   Only the specified components (services, networks, sites, deviceprofiles, gatewaytemplates, networktemplates, servicepolicies) are backed up.
   **Note:**
   + **Site‑Setting data is not backed up**.
-  + **Third‑party keys and licensing information are not included.**
+  + **Third‑party keys and licensing information are not included.**  
     This selective backup is designed to handle the heavy lifting of SSR configurations and enable rapid redeployment of similar setups across organizations.
-* **Disclaimer:**
+* **Disclaimer:**  
   This tool is intended for experimental and testing purposes only and is **not** recommended for use in production environments. Ensure that you have the proper authorizations and prerequisites before executing any operations.
 
 ## 13. Summary and Disclaimer
@@ -466,7 +456,7 @@ This script offers a comprehensive suite of network management tools—from inve
 5. **Organizational Cleanup (Option 11):** Interactively manage and delete organization items.
 6. **Exit (Option 0):** Safely terminate the program.
 
-**Disclaimer:**
+**Disclaimer:**  
 This tool is intended solely for experimental and testing purposes. It is not recommended for deployment in production environments. Use with caution and only with proper authorizations.
 
 ![A diagram of a diagram](figures/figure_11.jpg)
@@ -529,15 +519,11 @@ This report contains detailed information about network devices retrieved from t
 
 \*\*Key Fields:\*\*
 
-• Device Name
-
-• MAC Address
-
-• Site ID
-
-• Firmware Version
-
-• Upgrade Status
+- Device Name
+- MAC Address
+- Site ID
+- Firmware Version
+- Upgrade Status
 
 #### Post-Upgrade Report (Post-InventoryStats.xlsx)
 
@@ -549,13 +535,10 @@ This report provides real-time access point status for different sites. It merge
 
 \*\*Key Fields:\*\*
 
-• Router Name
-
-• Device ID
-
-• Site ID
-
-• AP Status
+- Router Name
+- Device ID
+- Site ID
+- AP Status
 
 #### Physical Device Interface Report (PhysicalDeviceInterfaceReport.xlsx)
 
@@ -563,13 +546,10 @@ This report captures device interface details, including network interfaces, con
 
 \*\*Key Fields:\*\*
 
-• Device Name
-
-• Interface Name
-
-• VLAN ID
-
-• Status (Up/Down)
+- Device Name
+- Interface Name
+- VLAN ID
+- Status (Up/Down)
 
 #### VPN Peers Report (DevicePeerPathReport.xlsx)
 
@@ -577,13 +557,10 @@ This report lists VPN peer connections, including peer router names, latency, an
 
 \*\*Key Fields:\*\*
 
-• Router Name
-
-• Peer Router Name
-
-• Latency
-
-• Connection Status
+- Router Name
+- Peer Router Name
+- Latency
+- Connection Status
 
 ## 15. POST- Reports Documentation
 
