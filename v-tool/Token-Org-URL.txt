@@ -9,5 +9,5 @@ base_url=https://api.mist.com/api/v1 #Global01
 #base_url=https://api.gc3.mist.com/api/v1 #EMEA02
 #base_url=https://api.ac6.mist.com/api/v1 #EMEA03
 #base_url=https://api.ac5.mist.com/api/v1 #APAC5
-#get token for integration =https://api.mistsys.com/api/v1/self/apitokens
+#get token for integration =https://api.mist.com/api/v1/self/apitokens
 
