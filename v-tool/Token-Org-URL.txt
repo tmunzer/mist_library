@@ -1,0 +1,13 @@
+token=
+org_id=
+base_url=https://api.mist.com/api/v1 #Global01
+#base_url=https://api.gc1.mist.com/api/v1 #Global02
+#base_url=https://api.ac2.mist.com/api/v1 #Global03
+#base_url=https://api.gc2.mist.com/api/v1 #Global04
+#base_url=https://api.gc4.mist.com/api/v1 #Global05
+#base_url=https://api.eu.mist.com/api/v1 #EMEA01
+#base_url=https://api.gc3.mist.com/api/v1 #EMEA02
+#base_url=https://api.ac6.mist.com/api/v1 #EMEA03
+#base_url=https://api.ac5.mist.com/api/v1 #APAC5
+#get token for integration =https://api.mistsys.com/api/v1/self/apitokens
+
