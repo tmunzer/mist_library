@@ -34,8 +34,8 @@ Example 1:
 
 Example 2:
 #mac,authorized,email,minutes
-2E39D54797D9,true,user1@test.com,20
-636ddded62af,False,user2@test.com,60
+2E39D54797D9,true, user1@test.com,20
+636ddded62af,False, user2@test.com,60
 ------
 CSV Parameters
 Required:
