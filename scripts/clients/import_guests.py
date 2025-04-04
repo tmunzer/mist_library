@@ -34,8 +34,8 @@ Example 1:
 
 Example 2:
 #mac,authorized,email,minutes
-2E39D54797D9,true, user1@test.com,20
-636ddded62af,False, user2@test.com,60
+2E39D54797D9,true,user1@test.com,20
+636ddded62af,False,user2@test.com,60
 ------
 CSV Parameters
 Required:
@@ -43,6 +43,7 @@ Required:
 
 Optional:
 - authorized	            boolean (default True), whether the guest is current authorized
+- authorized_expiring_time	integer, when the authorization would expire
 - name	                    string, optional, the info provided by user
 - email	                    string <email>, optional, the info provided by user
 - company	                string, optional, the info provided by user
@@ -51,12 +52,13 @@ Optional:
 - field3	                string, optional, the info provided by user
 - field4	                string, optional, the info provided by user
 - minutes	                integer, minutes, the maximum is 259200 (180 days)
+- ssid                      string, optional,Name of the Guest SSID 
 - wlan_id                   string, optional, the id of the WLAN where the guest is authorized
 
 -------
 Script Parameters:
 -h, --help          display this help
--f, --file=         OPTIONAL: path to the CSV file
+-f, --file=         OPTIONAL: path to the CSV file, default is ./import_guests.csv
 
 -o, --org_id=       Set the org_id where the webhook must be create/delete/retrieved
                     This parameter cannot be used if -s/--site_id is used.
@@ -185,32 +187,7 @@ PB = ProgressBar()
 #####################################################################
 # FUNCTIONS
 
-def _create_site_guest(apisession:mistapi.APISession, site_id:str, guests:list):
-    PB.log_title("Create Site Guests")
-    for guest in guests:
-        message = f"create guest {guest['mac']}"
-        try:
-            PB.log_message(message)
-            mac = guest["mac"]
-            del guest["mac"]
-
-            # Tmp fix. seems that "authorized_expiring_time" is not usable anymore at the site level. Use the "minutes" field instead
-            expire_time = guest.get("authorized_expiring_time")
-            if expire_time and not guest.get("minutes"):
-                now = datetime.datetime.now().timestamp()
-                minutes = (expire_time - now)/60
-                guest["minutes"] = minutes
-
-            resp = mistapi.api.v1.sites.guests.updateSiteGuestAuthorization(apisession, site_id, mac, guest)
-            if resp.status_code == 200:
-                PB.log_success(message, inc=True)
-            else:
-                PB.log_failure(message, inc=True)
-        except Exception as e:
-            PB.log_failure(message, inc=True)
-            LOGGER.error("Exception occurred", exc_info=True)
-
-def _process_org_wlans(wlans:list):
+def _process_wlans(wlans:list):
     data = {}
     for wlan in wlans:
         ssid = wlan["ssid"]
@@ -221,6 +198,74 @@ def _process_org_wlans(wlans:list):
             data[ssid].append(id)
     return data
 
+def _update_guest_payload(message:str, guest: dict, wlans:dict):
+
+    # Tmp fix. seems that "authorized_expiring_time" is not usable anymore at the site level. Use the "minutes" field instead
+    expire_time = guest.get("authorized_expiring_time")
+    if expire_time and not guest.get("minutes"):
+        now = datetime.datetime.now().timestamp()
+        minutes = (expire_time - now)/60
+        guest["minutes"] = minutes
+        
+    if "ssid" in guest:
+        ssid = guest["ssid"]
+        del guest["ssid"]
+        LOGGER.debug(f"_replace_guest_wlan:looking for the id for WLAN {ssid}")
+        wlan_ids = wlans.get(ssid, [])
+        if len(wlan_ids)==0:
+            LOGGER.error(f"_replace_guest_wlan:unable to find WLAN {ssid} in the org")
+            PB.log_failure(message, inc=True)
+            return None
+        elif len(wlan_ids) > 1:
+            LOGGER.error(
+                f"_replace_guest_wlan:too many WLANs with the name {ssid} in the org"
+                )
+            PB.log_failure(message, inc=True)
+            return None
+        else:
+            LOGGER.debug(f"_replace_guest_wlan:found the id for WLAN {ssid}: {wlan_ids[0]}")
+            guest["wlan_id"] = wlan_ids[0]   
+    return guest
+
+def _retrieve_site_wlans(apisession:mistapi.APISession, site_id:str):
+    message = f"retrieving Site WLANs"
+    try:
+        PB.log_message(message)
+        resp = mistapi.api.v1.sites.wlans.listSiteWlanDerived(apisession, site_id)
+        wlans = mistapi.get_all(apisession, resp)
+        if len(wlans) > 0:
+            PB.log_success(message, inc=True)
+            return _process_wlans(wlans)
+        else:
+            PB.log_failure(message, inc=True)
+            CONSOLE.critical(f"No Site WLANs found... Exiting...")
+    except Exception as e:
+        PB.log_failure(message, inc=True)
+        LOGGER.error("Exception occurred", exc_info=True)
+
+
+def _create_site_guest(apisession:mistapi.APISession, site_id:str, guests:list,wlans:dict):
+    PB.log_title("Create Site Guests")
+    for guest in guests:
+        message = f"create guest {guest['mac']}"
+        try:
+            PB.log_message(message)
+            mac = guest["mac"]
+            del guest["mac"]
+
+            guest_payload = _update_guest_payload(message, guest, wlans)
+
+            if guest_payload:
+                resp = mistapi.api.v1.sites.guests.updateSiteGuestAuthorization(apisession, site_id, mac, guest_payload)
+                if resp.status_code == 200:
+                    PB.log_success(message, inc=True)
+                else:
+                    PB.log_failure(message, inc=True)
+        except Exception as e:
+            PB.log_failure(message, inc=True)
+            LOGGER.error("Exception occurred", exc_info=True)
+
+
 def _retrieve_org_wlans(apisession:mistapi.APISession, org_id:str):
     message = f"retrieving Org WLANs"
     try:
@@ -229,14 +274,13 @@ def _retrieve_org_wlans(apisession:mistapi.APISession, org_id:str):
         wlans = mistapi.get_all(apisession, resp)
         if len(wlans) > 0:
             PB.log_success(message, inc=True)
-            return _process_org_wlans(wlans)
+            return _process_wlans(wlans)
         else:
             PB.log_failure(message, inc=True)
             CONSOLE.critical(f"No Org WLANs found... Exiting...")
     except Exception as e:
         PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
-
 
 def _create_org_guest(apisession:mistapi.APISession, org_id:str, guests:list, wlans:dict):
     PB.log_title("Create Org Guests")
@@ -248,37 +292,15 @@ def _create_org_guest(apisession:mistapi.APISession, org_id:str, guests:list, wl
 
             mac = guest["mac"].replace(":", "")
             del guest["mac"]
+                        
+            guest_payload = _update_guest_payload(message, guest, wlans)
             
-            # Tmp fix. seems that "authorized_expiring_time" is not usable anymore at the site level. Use the "minutes" field instead
-            expire_time = guest.get("authorized_expiring_time")
-            if expire_time and not guest.get("minutes"):
-                now = datetime.datetime.now().timestamp()
-                minutes = (expire_time - now)/60
-                guest["minutes"] = minutes
-
-            if "ssid" in guest:
-                ssid = guest["ssid"]
-                del guest["ssid"]
-                LOGGER.debug(f"_create_org_guest:looking for the id for WLAN {ssid}")
-                wlan_ids = wlans.get(ssid, [])
-                if len(wlan_ids)==0:
-                    LOGGER.error(f"_create_org_guest:unable to find WLAN {ssid} in the org")
-                    PB.log_failure(message, inc=True)
-                    break
-                elif len(wlan_ids) > 1:
-                    LOGGER.error(
-                        f"_create_org_guest:too many WLANs with the name {ssid} in the org"
-                        )
-                    PB.log_failure(message, inc=True)
-                    break
+            if guest_payload:
+                resp = mistapi.api.v1.orgs.guests.updateOrgGuestAuthorization(apisession, org_id, mac, guest_payload)
+                if resp.status_code == 200:
+                    PB.log_success(message, inc=True)
                 else:
-                    LOGGER.debug(f"_create_org_guest:found the id for WLAN {ssid}: {wlan_ids[0]}")
-                    guest["wlan_id"] = wlan_ids[0]            
-            resp = mistapi.api.v1.orgs.guests.updateOrgGuestAuthorization(apisession, org_id, mac, guest)
-            if resp.status_code == 200:
-                PB.log_success(message, inc=True)
-            else:
-                PB.log_failure(message, inc=True)
+                    PB.log_failure(message, inc=True)
         except Exception as e:
             PB.log_failure(message, inc=True)
             LOGGER.error("Exception occurred", exc_info=True)
@@ -419,7 +441,8 @@ def start(apisession:mistapi.APISession, org_id:str=None, site_id:str=None, csv_
         wlans = _retrieve_org_wlans(apisession, org_id)
         _create_org_guest(apisession, org_id, guests, wlans)
     elif site_id:
-        _create_site_guest(apisession, site_id, guests)
+        wlans = _retrieve_site_wlans(apisession, site_id)
+        _create_site_guest(apisession, site_id, guests, wlans)
 
 
 
@@ -474,6 +497,7 @@ Required:
 
 Optional:
 - authorized	            boolean (default True), whether the guest is current authorized
+- authorized_expiring_time	integer, when the authorization would expire
 - name	                    string, optional, the info provided by user
 - email	                    string <email>, optional, the info provided by user
 - company	                string, optional, the info provided by user
@@ -482,12 +506,13 @@ Optional:
 - field3	                string, optional, the info provided by user
 - field4	                string, optional, the info provided by user
 - minutes	                integer, minutes, the maximum is 259200 (180 days)
+- ssid                      string, optional,Name of the Guest SSID 
 - wlan_id                   string, optional, the id of the WLAN where the guest is authorized
 
 -------
 Script Parameters:
 -h, --help          display this help
--f, --file=         OPTIONAL: path to the CSV file
+-f, --file=         OPTIONAL: path to the CSV file, default is ./import_guests.csv
 
 -o, --org_id=       Set the org_id where the webhook must be create/delete/retrieved
                     This parameter cannot be used if -s/--site_id is used.
