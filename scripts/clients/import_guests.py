@@ -34,8 +34,8 @@ Example 1:
 
 Example 2:
 #mac,authorized,email,minutes
-2E39D54797D9,true, user1@test.com,20
-636ddded62af,False, user2@test.com,60
+2E39D54797D9,true,user1@test.com,20
+636ddded62af,False,user2@test.com,60
 ------
 CSV Parameters
 Required:
@@ -307,14 +307,6 @@ def _read_csv(csv_file:str):
                             "Please double check it... Exiting..."
                             )
                         sys.exit(255)
-                    if "ssid" not in fields:
-                        LOGGER.critical(f"_read_csv:ssid not in CSV file... Exiting...")
-                        PB.log_failure(message, display_pbar=False)
-                        CONSOLE.critical(
-                            "CSV format invalid (SSID not found). "
-                            "Please double check it... Exiting..."
-                            )
-                        sys.exit(255)
                 else:
                     guest = {}
                     i = 0
@@ -467,31 +459,30 @@ information about the available parameters).
 -------
 CSV Example:
 Example 1:
-#mac,ssid
-2E39D54797D9,GuestWLAN
-636ddded62af,GuestWLAN
+#mac,wlan_id
+2E39D54797D9,46b52093-17fe-408a-98df-51af64f1ce97
+636ddded62af,46b52093-17fe-408a-98df-51af64f1ce97
 
 Example 2:
-#mac,ssid,authorized,email
-2E39D54797D9,GuestWLAN,true, user1@test.com,20
-636ddded62af,GuestWLAN,False, user2@test.com,60
+#mac,authorized,email,minutes
+2E39D54797D9,true,user1@test.com,20
+636ddded62af,False,user2@test.com,60
 ------
 CSV Parameters
 Required:
 - mac                       MAC Address of the Wi-Fi client
-- ssid                      Name of the Guest SSID 
 
 Optional:
 - authorized	            boolean (default True), whether the guest is current authorized
-- authorized_expiring_time	integer, when the authorization would expire
-- company	                string, optional, the info provided by user
+- name	                    string, optional, the info provided by user
 - email	                    string <email>, optional, the info provided by user
+- company	                string, optional, the info provided by user
 - field1	                string, optional, the info provided by user
 - field2	                string, optional, the info provided by user
 - field3	                string, optional, the info provided by user
 - field4	                string, optional, the info provided by user
 - minutes	                integer, minutes, the maximum is 259200 (180 days)
-- name	                    string, optional, the info provided by user
+- wlan_id                   string, optional, the id of the WLAN where the guest is authorized
 
 -------
 Script Parameters:
