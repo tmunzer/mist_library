@@ -30,7 +30,10 @@ information about the available parameters).
 -------
 Options:
 -h, --help          display this help
--o, --org_id=       required for Org reports. Set the org_id    
+-o, --org_id=       required for Org reports. Set the org_id   
+-a, --all           add the "virtual" devices to the export (e.g. add the
+                    virtual device used by Mist to identify a virtual chassis)
+
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
 -f, --out_file=     define the filepath/filename where to save the data
@@ -151,7 +154,20 @@ pb = ProgressBar()
 
 ####################
 ## REQUEST
-def _process_export(apisession:mistapi.APISession, org_id:str):
+def _resolve_vcmembers_site_id(switches:list, all:bool) -> list:
+    mac_to_site_id = {}
+    data = []
+    for switch in switches:
+        if switch.get("vc_mac") == switch.get("mac"):
+            mac_to_site_id[switch["mac"]] = switch["site_id"]
+    for switch in switches:
+        if switch.get("vc_mac") and switch.get("vc_mac") != switch.get("mac"):
+            switch["site_id"] = mac_to_site_id.get(switch["vc_mac"])
+        if all or not switch.get("mac").startswith("020003"):
+            data.append(switch)
+    return data
+
+def _process_export(apisession:mistapi.APISession, org_id:str, all:bool):
     data = []
     
     print()
@@ -162,7 +178,10 @@ def _process_export(apisession:mistapi.APISession, org_id:str):
             message = f"Retrieving {device_type.title()} Inventory"
             pb.log_message(message, display_pbar=False)
             response = mistapi.api.v1.orgs.inventory.getOrgInventory(apisession, org_id, type=device_type, vc=True)
-            data += mistapi.get_all(apisession, response)
+            devices = mistapi.get_all(apisession, response)
+            if device_type == "switch":
+                devices = _resolve_vcmembers_site_id(devices, all)
+            data+=devices
             pb.log_success(message, display_pbar=False)
         except:
             pb.log_failure(message, display_pbar=False)
@@ -223,11 +242,11 @@ def _save_as_json(data:list, org_name:str, org_id:str):
 ####################
 ## MENU
 
-def start(apisession, org_id:str=None):
+def start(apisession, org_id:str=None, all:bool=False):
     if not org_id:
         org_id = mistapi.cli.select_org(apisession)[0]
     org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
-    data=_process_export(apisession, org_id)
+    data=_process_export(apisession, org_id, all)
     if out_file_format == "csv":
         _save_as_csv(data, org_name, org_id)
     elif out_file_format == "json":
@@ -269,6 +288,9 @@ information about the available parameters).
 Options:
 -h, --help          display this help
 -o, --org_id=       required for Org reports. Set the org_id    
+-a, --all           add the "virtual" devices to the export (e.g. add the
+                    virtual device used by Mist to identify a virtual chassis)
+          
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is {log_file}
 -f, --out_file=     define the filepath/filename where to save the data
@@ -315,17 +337,31 @@ def check_mistapi_version():
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:f:e:l:", ["help", "org_id=", "out_format=", "out_file=", "env=", "log_file="])
+        opts, args = getopt.getopt(
+            sys.argv[1:], "ho:f:e:l:a", 
+            [
+                "help",
+                "org_id=",
+                "out_format=",
+                "out_file=",
+                "env=",
+                "log_file=",
+                "all"
+            ]
+)
     except getopt.GetoptError as err:
         console.error(err)
         usage()
 
     org_id=None
+    all=False
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()        
         elif o in ["-o", "--org_id"]:
             org_id = a
+        elif o in ["-a", "--all"]:
+            all=True
         elif o in ["--out_format"]:
             if a in ["csv", "json"]:
                 out_file_format=a
@@ -348,4 +384,4 @@ if __name__ == "__main__":
     ### START ###
     apisession = mistapi.APISession(env_file=env_file)
     apisession.login()
-    start(apisession, org_id)
+    start(apisession, org_id, all)
