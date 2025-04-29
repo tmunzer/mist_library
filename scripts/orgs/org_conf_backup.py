@@ -63,7 +63,7 @@ import signal
 import sys
 import getopt
 
-MISTAPI_MIN_VERSION = "0.52.0"
+MISTAPI_MIN_VERSION = "0.55.6"
 
 try:
     import mistapi

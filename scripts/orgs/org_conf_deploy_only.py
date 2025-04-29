@@ -65,7 +65,7 @@ import getopt
 import signal
 from typing import Callable
 
-MISTAPI_MIN_VERSION = "0.52.0"
+MISTAPI_MIN_VERSION = "0.55.6"
 
 try:
     import mistapi
@@ -111,18 +111,18 @@ signal.signal(signal.SIGINT, sigint_handler)
 #####################################################################
 # DEPLOY OBJECTS REFS
 org_steps = {
-    "assetfilters": {"mistapi_function": mistapi.api.v1.orgs.assetfilters.createOrgAssetFilters, "text": "Org assetfilters"},
-    "deviceprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfiles, "text": "Org deviceprofiles"},
-    "switchprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfiles, "text": "Org switchprofiles"},
-    "hubprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfiles, "text": "Org hubprofiles"},
+    "assetfilters": {"mistapi_function": mistapi.api.v1.orgs.assetfilters.createOrgAssetFilter, "text": "Org assetfilters"},
+    "deviceprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfile, "text": "Org deviceprofiles"},
+    "switchprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfile, "text": "Org switchprofiles"},
+    "hubprofiles": {"mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfile, "text": "Org hubprofiles"},
     "evpn_topologies": {"mistapi_function": mistapi.api.v1.orgs.evpn_topologies.createOrgEvpnTopology, "text": "Org evpn_topologies"},
-    "secpolicies": {"mistapi_function": mistapi.api.v1.orgs.secpolicies.createOrgSecPolicies, "text": "Org secpolicies"},
+    "secpolicies": {"mistapi_function": mistapi.api.v1.orgs.secpolicies.createOrgSecPolicy, "text": "Org secpolicies"},
     "aptempaltes": {"mistapi_function": mistapi.api.v1.orgs.aptemplates.createOrgAptemplate, "text": "Org aptemplates"},
     "networktemplates": {"mistapi_function": mistapi.api.v1.orgs.networktemplates.createOrgNetworkTemplate, "text": "Org networktemplates"},
     "networks": {"mistapi_function": mistapi.api.v1.orgs.networks.createOrgNetwork, "text": "Org networks"},
     "services": {"mistapi_function": mistapi.api.v1.orgs.services.createOrgService, "text": "Org services"},
     "servicepolicies": {"mistapi_function": mistapi.api.v1.orgs.servicepolicies.createOrgServicePolicy, "text": "Org servicepolicies"},
-    "vpns": {"mistapi_function": mistapi.api.v1.orgs.vpns.createOrgVpns, "text": "Org vpns"},
+    "vpns": {"mistapi_function": mistapi.api.v1.orgs.vpns.createOrgVpn, "text": "Org vpns"},
     "gatewaytemplates": {"mistapi_function": mistapi.api.v1.orgs.gatewaytemplates.createOrgGatewayTemplate, "text": "Org gatewaytemplates"},
     "alarmtemplates": {"mistapi_function": mistapi.api.v1.orgs.alarmtemplates.createOrgAlarmTemplate, "text": "Org alarmtemplates"},
     "rftemplates": {"mistapi_function": mistapi.api.v1.orgs.rftemplates.createOrgRfTemplate, "text": "Org rftemplates"},
@@ -130,7 +130,7 @@ org_steps = {
     "mxclusters": {"mistapi_function": mistapi.api.v1.orgs.mxclusters.createOrgMxEdgeCluster, "text": "Org mxclusters"},
     "mxtunnels": {"mistapi_function": mistapi.api.v1.orgs.mxtunnels.createOrgMxTunnel, "text": "Org mxtunnels"},
     "wxtunnels": {"mistapi_function": mistapi.api.v1.orgs.wxtunnels.createOrgWxTunnel, "text": "Org wxtunnels"},
-    "sitetemplates": {"mistapi_function": mistapi.api.v1.orgs.sitetemplates.createOrgSiteTemplates, "text": "Org sitetemplates"},
+    "sitetemplates": {"mistapi_function": mistapi.api.v1.orgs.sitetemplates.createOrgSiteTemplate, "text": "Org sitetemplates"},
     "sitegroups": {"mistapi_function": mistapi.api.v1.orgs.sitegroups.createOrgSiteGroup, "text": "Org sitegroups"},
     "sites": {"mistapi_function": mistapi.api.v1.orgs.sites.createOrgSite, "text": "Org Sites"},
     "templates": {"mistapi_function": mistapi.api.v1.orgs.templates.createOrgTemplate, "text": "Org templates"},
@@ -150,7 +150,7 @@ site_steps = {
     "zones": {"mistapi_function": mistapi.api.v1.sites.zones.createSiteZone, "text": "Site zones"},
     "rssizones": {"mistapi_function": mistapi.api.v1.sites.rssizones.createSiteRssiZone, "text": "Site rssizones"},
     "assets": {"mistapi_function": mistapi.api.v1.sites.assets.createSiteAsset, "text": "Site assets"},
-    "assetfilters": {"mistapi_function": mistapi.api.v1.sites.assetfilters.createSiteAssetFilters, "text": "Site assetfilters"},
+    "assetfilters": {"mistapi_function": mistapi.api.v1.sites.assetfilters.createSiteAssetFilter, "text": "Site assetfilters"},
     "beacons": {"mistapi_function": mistapi.api.v1.sites.beacons.createSiteBeacon, "text": "Site beacons"},
     "psks": {"mistapi_function": mistapi.api.v1.sites.psks.importSitePsks, "text": "Site psks"},
     "vbeacons": {"mistapi_function": mistapi.api.v1.sites.vbeacons.createSiteVBeacon, "text": "Site vbeacons"},
