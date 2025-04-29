@@ -208,7 +208,7 @@ ORG_STEPS = {
         "check_next": True,
     },
     "vpns": {
-        "mistapi_function": mistapi.api.v1.orgs.vpns.listOrgsVpns,
+        "mistapi_function": mistapi.api.v1.orgs.vpns.listOrgVpns,
         "text": "Org vpns",
         "check_next": True,
     },
