@@ -746,7 +746,13 @@ def check_mistapi_version():
     """
     Function to check the mistapi package version
     """
-    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+    mistapi_version = mistapi.__version__.split(".")
+    min_version = MISTAPI_MIN_VERSION.split(".")
+    if (
+        int(mistapi_version[0]) < int(min_version[0])
+        or int(mistapi_version[1]) < int(min_version[1])
+        or int(mistapi_version[2]) < int(min_version[2])
+        ):
         LOGGER.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
         LOGGER.critical(f"Please use the pip command to updated it.")
         LOGGER.critical("")
