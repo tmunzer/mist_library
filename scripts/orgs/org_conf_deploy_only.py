@@ -65,6 +65,8 @@ import getopt
 import signal
 from typing import Callable
 
+import mistapi.__version
+
 MISTAPI_MIN_VERSION = "0.55.6"
 
 try:
@@ -200,7 +202,7 @@ class UUIDM():
         return obj_str, missing_uuids
 
     def _uuid_list(self, obj_str: str, missing_uuids: list):
-        uuid_list_re = "(\"[a-zA_Z_-]*\": \[\"[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}\"[^\]]*)]"
+        uuid_list_re = r"(\"[a-zA_Z_-]*\": \[\"[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}\"[^\]]*)]"
         uuid_lists_to_replace = re.findall(uuid_list_re, obj_str)
         if uuid_lists_to_replace:
             for uuid_list in uuid_lists_to_replace:
@@ -692,8 +694,10 @@ def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str =
 def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None):
     while True:
         if not custom_dest_org_name:
-            custom_dest_org_name = input("New Organization name? ")
-        if custom_dest_org_name:
+            custom_dest_org_name = input("New Organization name (q to quit)? ")
+        if custom_dest_org_name == "q":
+            sys.exit(0)
+        elif custom_dest_org_name:
             org = {
                 "name": custom_dest_org_name
             }
@@ -803,7 +807,13 @@ python3 ./org_conf_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "m
     sys.exit(0)
 
 def check_mistapi_version():
-    if mistapi.__version__ < MISTAPI_MIN_VERSION:
+    mistapi_version = mistapi.__version__.split(".")
+    min_version = MISTAPI_MIN_VERSION.split(".")
+    if (
+        int(mistapi_version[0]) < int(min_version[0])
+        or int(mistapi_version[1]) < int(min_version[1])
+        or int(mistapi_version[2]) < int(min_version[2])
+        ):
         logger.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
         logger.critical(f"Please use the pip command to updated it.")
         logger.critical("")
@@ -814,7 +824,7 @@ def check_mistapi_version():
         logger.critical(f"    py -m pip install --upgrade mistapi")
         print(f"""
     Critical: 
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
+    \"mistapi\" package version {MISTAPI_MIN_VERSION} or higher is required, you are currently using version {mistapi.__version__}.
     Please use the pip command to updated it.
 
     # Linux/macOS
