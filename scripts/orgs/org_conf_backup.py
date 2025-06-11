@@ -8,10 +8,10 @@
 
 -------------------------------------------------------------------------------
 Python script to backup a whole organization.
-You can use the script "org_conf_deploy.py" to restore the generated backup 
+You can use the script "org_conf_deploy.py" to restore the generated backup
 files to an existing organization (empty or not) or to a new one.
 
-This script will not change/create/delete/touch any existing objects. It will 
+This script will not change/create/delete/touch any existing objects. It will
 just retrieve every single object from the organization.
 
 -------
@@ -25,31 +25,31 @@ If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
 It is recommended to use an environment file to store the required information
-to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
 information about the available parameters).
 
 -------
 Script Parameters:
 -h, --help              display this help
 -o, --org_id=           Set the org_id
--b, --backup_folder=    Path to the folder where to save the org backup (a 
+-b, --backup_folder=    Path to the folder where to save the org backup (a
                         subfolder will be created with the org name)
                         default is "./org_backup"
 
 -d, --datetime          append the current date and time (ISO format) to the
-                        backup name 
--t, --timestamp         append the current timestamp to the backup 
+                        backup name
+-t, --timestamp         append the current timestamp to the backup
 
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
--e, --env=              define the env file to use (see mistapi env file 
+-e, --env=              define the env file to use (see mistapi env file
                         documentation here: https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
 
 -------
 Examples:
-python3 ./org_conf_backup.py     
-python3 ./org_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
+python3 ./org_conf_backup.py
+python3 ./org_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
 """
 
@@ -377,8 +377,8 @@ class ProgressBar:
         delta = 17
         x = int((size - delta) * percent)
         print(f"Progress: ", end="")
-        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
-        print(f"{int(percent*100)}%".rjust(5), end="")
+        print(f"[{'█' * x}{'.' * (size - delta - x)}]", end="")
+        print(f"{int(percent * 100)}%".rjust(5), end="")
 
     def _pb_new_step(
         self,
@@ -727,7 +727,7 @@ def start(
     if not backup_name:
         backup_name = org_name
     if backup_name_date:
-        backup_name = f"{backup_name}_{datetime.datetime.isoformat(datetime.datetime.now()).split('.')[0].replace(':','.')}"
+        backup_name = f"{backup_name}_{datetime.datetime.isoformat(datetime.datetime.now()).split('.')[0].replace(':', '.')}"
     elif backup_name_ts:
         backup_name = f"{backup_name}_{round(datetime.datetime.timestamp(datetime.datetime.now()))}"
 
@@ -803,42 +803,47 @@ python3 ./org_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
 
 def check_mistapi_version():
-    mistapi_version = mistapi.__version__.split(".")
-    min_version = MISTAPI_MIN_VERSION.split(".")
-    if (
-        int(mistapi_version[0]) < int(min_version[0])
-        or int(mistapi_version[1]) < int(min_version[1])
-        or int(mistapi_version[2]) < int(min_version[2])
-        ):
-        LOGGER.critical(
-            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, '
-            f"you are currently using version {mistapi.__version__}."
-        )
-        LOGGER.critical(f"Please use the pip command to updated it.")
+    """Check if the installed mistapi version meets the minimum requirement."""
+
+    current_version = mistapi.__version__.split(".")
+    required_version = MISTAPI_MIN_VERSION.split(".")
+
+    try:
+        for i, req in enumerate(required_version):
+            if current_version[int(i)] > req:
+                break
+            if current_version[int(i)] < req:
+                raise ImportError(
+                    f'"mistapi" package version {MISTAPI_MIN_VERSION} is required '
+                    f"but version {mistapi.__version__} is installed."
+                )
+    except ImportError as e:
+        LOGGER.critical(str(e))
+        LOGGER.critical("Please use the pip command to update it.")
         LOGGER.critical("")
-        LOGGER.critical(f"    # Linux/macOS")
-        LOGGER.critical(f"    python3 -m pip install --upgrade mistapi")
+        LOGGER.critical("    # Linux/macOS")
+        LOGGER.critical("    python3 -m pip install --upgrade mistapi")
         LOGGER.critical("")
-        LOGGER.critical(f"    # Windows")
-        LOGGER.critical(f"    py -m pip install --upgrade mistapi")
+        LOGGER.critical("    # Windows")
+        LOGGER.critical("    py -m pip install --upgrade mistapi")
         print(
             f"""
-    Critical: 
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.
-    Please use the pip command to updated it.
-
-    # Linux/macOS
-    python3 -m pip install --upgrade mistapi
-
-    # Windows
-    py -m pip install --upgrade mistapi
-        """
+Critical:\r\n
+{e}\r\n
+Please use the pip command to update it.
+# Linux/macOS
+python3 -m pip install --upgrade mistapi
+# Windows
+py -m pip install --upgrade mistapi
+            """
         )
         sys.exit(2)
-    else:
+    finally:
         LOGGER.info(
-            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, '
-            f"you are currently using version {mistapi.__version__}."
+            '"mistapi" package version %s is required, '
+            "you are currently using version %s.",
+            MISTAPI_MIN_VERSION,
+            mistapi.__version__
         )
 
 

@@ -1552,43 +1552,47 @@ python3 ./list_open_events.py \
 
 
 def check_mistapi_version():
-    """
-    check the current version of the mistapi package
-    """
-    mistapi_version = mistapi.__version__.split(".")
-    min_version = MISTAPI_MIN_VERSION.split(".")
-    if (
-        int(mistapi_version[0]) < int(min_version[0])
-        or int(mistapi_version[1]) < int(min_version[1])
-        or int(mistapi_version[2]) < int(min_version[2])
-        ):
-        LOGGER.critical(
-            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
-        )
-        LOGGER.critical(f"Please use the pip command to updated it.")
+    """Check if the installed mistapi version meets the minimum requirement."""
+
+    current_version = mistapi.__version__.split(".")
+    required_version = MISTAPI_MIN_VERSION.split(".")
+
+    try:
+        for i, req in enumerate(required_version):
+            if current_version[int(i)] > req:
+                break
+            if current_version[int(i)] < req:
+                raise ImportError(
+                    f'"mistapi" package version {MISTAPI_MIN_VERSION} is required '
+                    f"but version {mistapi.__version__} is installed."
+                )
+    except ImportError as e:
+        LOGGER.critical(str(e))
+        LOGGER.critical("Please use the pip command to update it.")
         LOGGER.critical("")
-        LOGGER.critical(f"    # Linux/macOS")
-        LOGGER.critical(f"    python3 -m pip install --upgrade mistapi")
+        LOGGER.critical("    # Linux/macOS")
+        LOGGER.critical("    python3 -m pip install --upgrade mistapi")
         LOGGER.critical("")
-        LOGGER.critical(f"    # Windows")
-        LOGGER.critical(f"    py -m pip install --upgrade mistapi")
+        LOGGER.critical("    # Windows")
+        LOGGER.critical("    py -m pip install --upgrade mistapi")
         print(
             f"""
-    Critical:
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.
-    Please use the pip command to updated it.
-
-    # Linux/macOS
-    python3 -m pip install --upgrade mistapi
-
-    # Windows
-    py -m pip install --upgrade mistapi
-        """
+Critical:\r\n
+{e}\r\n
+Please use the pip command to update it.
+# Linux/macOS
+python3 -m pip install --upgrade mistapi
+# Windows
+py -m pip install --upgrade mistapi
+            """
         )
         sys.exit(2)
-    else:
+    finally:
         LOGGER.info(
-            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
+            '"mistapi" package version %s is required, '
+            "you are currently using version %s.",
+            MISTAPI_MIN_VERSION,
+            mistapi.__version__
         )
 
 

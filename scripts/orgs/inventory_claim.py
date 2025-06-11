@@ -92,7 +92,7 @@ log_file = "./script.log"
 
 #####################################################################
 #### LOGS ####
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 #####################################################################
 # BACKUP OBJECTS REFS
@@ -142,20 +142,20 @@ class ProgressBar():
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
     def log_success(self, message, inc:bool=False, display_pbar:bool=True):
-        logger.info(f"{message}: Success")
+        LOGGER.info(f"{message}: Success")
         self._pb_new_step(message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
 
     def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
-        logger.warning(f"{message}")
+        LOGGER.warning(f"{message}")
         self._pb_new_step(
             message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
 
     def log_failure(self, message, inc:bool=False, display_pbar:bool=True):
-        logger.error(f"{message}: Failure")
+        LOGGER.error(f"{message}: Failure")
         self._pb_new_step(message, '\033[31m\u2716\033[0m\n', inc=inc, display_pbar=display_pbar)
 
     def log_title(self, message, end:bool=False, display_pbar:bool=True):
-        logger.info(message)
+        LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
 pb = ProgressBar()
@@ -344,35 +344,48 @@ python3 ./inventory_claim.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -f my
     sys.exit(0)
 
 def check_mistapi_version():
-    mistapi_version = mistapi.__version__.split(".")
-    min_version = MISTAPI_MIN_VERSION.split(".")
-    if (
-        int(mistapi_version[0]) < int(min_version[0])
-        or int(mistapi_version[1]) < int(min_version[1])
-        or int(mistapi_version[2]) < int(min_version[2])
-        ):
-        logger.critical(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
-        logger.critical(f"Please use the pip command to updated it.")
-        logger.critical("")
-        logger.critical(f"    # Linux/macOS")
-        logger.critical(f"    python3 -m pip install --upgrade mistapi")
-        logger.critical("")
-        logger.critical(f"    # Windows")
-        logger.critical(f"    py -m pip install --upgrade mistapi")
-        print(f"""
-    Critical: 
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
-    Please use the pip command to updated it.
+    """Check if the installed mistapi version meets the minimum requirement."""
 
-    # Linux/macOS
-    python3 -m pip install --upgrade mistapi
+    current_version = mistapi.__version__.split(".")
+    required_version = MISTAPI_MIN_VERSION.split(".")
 
-    # Windows
-    py -m pip install --upgrade mistapi
-        """)
+    try:
+        for i, req in enumerate(required_version):
+            if current_version[int(i)] > req:
+                break
+            if current_version[int(i)] < req:
+                raise ImportError(
+                    f'"mistapi" package version {MISTAPI_MIN_VERSION} is required '
+                    f"but version {mistapi.__version__} is installed."
+                )
+    except ImportError as e:
+        LOGGER.critical(str(e))
+        LOGGER.critical("Please use the pip command to update it.")
+        LOGGER.critical("")
+        LOGGER.critical("    # Linux/macOS")
+        LOGGER.critical("    python3 -m pip install --upgrade mistapi")
+        LOGGER.critical("")
+        LOGGER.critical("    # Windows")
+        LOGGER.critical("    py -m pip install --upgrade mistapi")
+        print(
+            f"""
+Critical:\r\n
+{e}\r\n
+Please use the pip command to update it.
+# Linux/macOS
+python3 -m pip install --upgrade mistapi
+# Windows
+py -m pip install --upgrade mistapi
+            """
+        )
         sys.exit(2)
-    else: 
-        logger.info(f"\"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.")
+    finally:
+        LOGGER.info(
+            '"mistapi" package version %s is required, '
+            "you are currently using version %s.",
+            MISTAPI_MIN_VERSION,
+            mistapi.__version__
+        )
 
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
@@ -404,7 +417,7 @@ if __name__ == "__main__":
     
     #### LOGS ####
     logging.basicConfig(filename=log_file, filemode='w')
-    logger.setLevel(logging.DEBUG)
+    LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### START ###
     apisession = mistapi.APISession(env_file=env_file)

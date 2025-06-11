@@ -218,13 +218,10 @@ def _retrieve_sites(apisession: mistapi.APISession, org_id: str):
         if sites:
             PB.log_success(message, inc=True)
             return sites
-        else:
-            PB.log_failure(message, inc=True)
-            sys.exit(0)
     except:
-        PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
-        sys.exit(0)
+    PB.log_failure(message, inc=True)
+    sys.exit(0)
 
 def _retrieve_switch_templates(apisession: mistapi.APISession, org_id: str):
     message = "Retrieving Org Switch Templates from Mist"
@@ -237,13 +234,10 @@ def _retrieve_switch_templates(apisession: mistapi.APISession, org_id: str):
         if templates:
             PB.log_success(message, inc=True)
             return templates
-        else:
-            PB.log_failure(message, inc=True)
-            sys.exit(0)
     except:
-        PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
-        sys.exit(0)
+    PB.log_failure(message, inc=True)
+    sys.exit(0)
 
 
 def _retrieve_site_setting(apisession: mistapi.APISession, site_id: str):
@@ -254,12 +248,10 @@ def _retrieve_site_setting(apisession: mistapi.APISession, site_id: str):
         if response.status_code == 200:
             PB.log_success(message, inc=True)
             return response.data
-        else:
-            PB.log_failure(message, inc=True)
-            return None
     except:
-        PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
+    PB.log_failure(message, inc=True)
+    return None
 
 def _extract_from_template(templates: list, template_id: str, site_id: str):
     port_usages = []
@@ -496,7 +488,7 @@ def _process_port_range(mist_port_config_dict:dict, csv_port:str, csv_port_confi
                             mist_fpc,
                             mist_pic,
                             int(mist_num_min)+1,
-                            mist_num_max
+                            int(mist_num_max)
                         )
                     ]
                 # CASE 3
@@ -508,7 +500,7 @@ def _process_port_range(mist_port_config_dict:dict, csv_port:str, csv_port_confi
                             mist_phy,
                             mist_fpc,
                             mist_pic,
-                            mist_num_min,
+                            int(mist_num_min),
                             int(mist_num_max)-1
                         )
                     ]
@@ -521,7 +513,7 @@ def _process_port_range(mist_port_config_dict:dict, csv_port:str, csv_port_confi
                             mist_phy,
                             mist_fpc,
                             mist_pic,
-                            mist_num_min,
+                            int(mist_num_min),
                             int(csv_num)-1
                         ),
                         _define_new_port_range(
@@ -529,7 +521,7 @@ def _process_port_range(mist_port_config_dict:dict, csv_port:str, csv_port_confi
                             mist_fpc,
                             mist_pic,
                             int(csv_num)+1,
-                            mist_num_max
+                            int(mist_num_max)
                         )
                     ]
 
@@ -565,32 +557,31 @@ def _process_port_range(mist_port_config_dict:dict, csv_port:str, csv_port_confi
     return copy_port_config_dict, config_updated
 
 def _update_port_config(mist_port_config_dict: dict, csv_port_config_dict: dict):
-    if mist_port_config_dict:
-        for csv_port in csv_port_config_dict:
-            config_updated = False
-            copy_port_config_dict = mist_port_config_dict.copy()
-            csv_port_config = csv_port_config_dict[csv_port]
+    for csv_port in csv_port_config_dict:
+        config_updated = False
+        copy_port_config_dict = mist_port_config_dict.copy()
+        csv_port_config = csv_port_config_dict[csv_port]
+        LOGGER.info(
+            f"_update_port_config:------------"
+            f"processing port '{csv_port}' with config {csv_port_config}"
+            )
+
+        # if interface_name is alone in the mist_port_config, just replace it
+        if mist_port_config_dict.get(csv_port):
             LOGGER.info(
-                f"_update_port_config:------------"
-                f"processing port '{csv_port}' with config {csv_port_config}"
-                )
+                f"_update_port_config:'{csv_port}' is alone at the device level. "
+                f"Replacing its configuration"
+            )
+            copy_port_config_dict[csv_port] = csv_port_config
+            config_updated = True
+        else:
+            # if interface name is in a list of interface (ge-0/0/0,ge-0/0/1) or a range
+            # of interfaces (ge-0/0/0-1) we need to loop over each current port_config
+            copy_port_config_dict, config_updated = _process_port_range(mist_port_config_dict, csv_port, csv_port_config)
+        if not config_updated:
+            copy_port_config_dict[csv_port] = csv_port_config
 
-            # if interface_name is alone in the mist_port_config, just replace it
-            if mist_port_config_dict.get(csv_port):
-                LOGGER.info(
-                    f"_update_port_config:'{csv_port}' is alone at the device level. "
-                    f"Replacing its configuration"
-                )
-                copy_port_config_dict[csv_port] = csv_port_config
-                config_updated = True
-            else:
-                # if interface name is in a list of interface (ge-0/0/0,ge-0/0/1) or a range
-                # of interfaces (ge-0/0/0-1) we need to loop over each current port_config
-                copy_port_config_dict, config_updated = _process_port_range(mist_port_config_dict, csv_port, csv_port_config)
-            if not config_updated:
-                copy_port_config_dict[csv_port] = csv_port_config
-
-            mist_port_config_dict = copy_port_config_dict.copy()
+        mist_port_config_dict = copy_port_config_dict.copy()
 
     return mist_port_config_dict
 
@@ -621,31 +612,32 @@ def _process_switch_config(apisession: mistapi.APISession, switches_to_process: 
             LOGGER.debug(switch_config_before)
             message = f"Preparing new configuration for switch {switch_mac}"
             PB.log_message(message)
-            mist_port_config_dict = switch_config_before.get("port_config")
-            _save_config(config_before, site_id, switch_mac, mist_port_config_dict)
-            LOGGER.debug(
-                f"_update_switch_config:current port_config is {mist_port_config_dict}"
-            )
-            mist_port_config_dict = _update_port_config(
-                mist_port_config_dict, csv_port_config_dict
-            )
-            LOGGER.debug(
-                f"_update_switch_config:new port_config is {mist_port_config_dict}"
-            )
-            PB.log_success(message, inc=True)
-            if dry_run:
-                LOGGER.info("_update_switch_config:dry run mode. Not changes applied to the switch")
-                switch_config_after = {"port_config": mist_port_config_dict}
-            else:
-                switch_config_after = _update_switch_config(
-                    apisession,
-                    site_id,
-                    switch_mac,
-                    switch_id,
-                    {"port_config": mist_port_config_dict},
+            if isinstance(switch_config_before, dict):
+                mist_port_config_dict = switch_config_before.get("port_config", {})
+                _save_config(config_before, site_id, switch_mac, mist_port_config_dict)
+                LOGGER.debug(
+                    f"_update_switch_config:current port_config is {mist_port_config_dict}"
                 )
-                
-            _save_config(config_after, site_id, switch_mac, switch_config_after.get("port_config"))
+                mist_port_config_dict = _update_port_config(
+                    mist_port_config_dict, csv_port_config_dict
+                )
+                LOGGER.debug(
+                    f"_update_switch_config:new port_config is {mist_port_config_dict}"
+                )
+                PB.log_success(message, inc=True)
+                if dry_run:
+                    LOGGER.info("_update_switch_config:dry run mode. Not changes applied to the switch")
+                    switch_config_after = {"port_config": mist_port_config_dict}
+                else:
+                    switch_config_after = _update_switch_config(
+                        apisession,
+                        site_id,
+                        switch_mac,
+                        switch_id,
+                        {"port_config": mist_port_config_dict},
+                    )
+                    
+                _save_config(config_after, site_id, switch_mac, switch_config_after.get("port_config"))
         else:
             LOGGER.error(
                 f"_update_switch_config:unable to process device {switch_id} on site {site_id}"
@@ -710,42 +702,46 @@ def _locate_switches(
     apisession: mistapi.APISession, org_id: str, switches_to_process: dict
 ):
     site_ids = []
+    switches = {}
     inventory = _retrieve_switch_inventory(apisession, org_id)
     for switch_mac in switches_to_process:
-        message = f"Locating switch {switch_mac}"
-        PB.log_message(message, display_pbar=False)
-        try:
-            switch_data = next(
-                item for item in inventory if item.get("mac") == switch_mac
-            )
+        if switches.get(switch_mac):
+            site_ids.append(switches[switch_mac])
+        else:
+            message = f"Locating switch {switch_mac}"
+            PB.log_message(message, display_pbar=False)
+            try:
+                switch_data = next(
+                    item for item in inventory if item.get("mac") == switch_mac
+                )
 
-            if switch_data.get("vc_mac"):
-                switch_data = _locate_vc_master(inventory, switch_data["vc_mac"])
-            
-            id = switch_data.get("id")
-            site_id = switch_data.get("site_id")
-            LOGGER.debug(
-                f"_locate_switches:switch {switch_mac} has the id {id} and is assigned to {site_id}"
-            )
-            if not site_id:
+                if switch_data.get("vc_mac"):
+                    switch_data = _locate_vc_master(inventory, switch_data["vc_mac"])
+                
+                switch_id = switch_data.get("id")
+                site_id = switch_data.get("site_id")
+                LOGGER.debug(
+                    f"_locate_switches:switch {switch_mac} has the id {switch_id} and is assigned to {site_id}"
+                )
+                if not site_id:
+                    PB.log_failure(message, display_pbar=False)
+                    LOGGER.error(
+                        f"_locate_switches:switch {switch_mac} is not assigned to any site"
+                    )
+                else:
+                    switches_to_process[switch_mac]["id"] = switch_id
+                    switches_to_process[switch_mac]["site_id"] = site_id
+                    if not site_id in site_ids:
+                        LOGGER.debug(
+                            f"_locate_switches:site_id {site_id} not seen yet. Will add it to the list"
+                        )
+                        site_ids.append(site_id)
+                    PB.log_success(message, display_pbar=False)
+            except:
                 PB.log_failure(message, display_pbar=False)
                 LOGGER.error(
-                    f"_locate_switches:switch {switch_mac} is not assigned to any site"
+                    f"_locate_switches:unable to find switch {switch_mac} in the org inventory"
                 )
-            else:
-                switches_to_process[switch_mac]["id"] = id
-                switches_to_process[switch_mac]["site_id"] = site_id
-                if not site_id in site_ids:
-                    LOGGER.debug(
-                        f"_locate_switches:site_id {site_id} not seen yet. Will add it to the list"
-                    )
-                    site_ids.append(site_id)
-                PB.log_success(message, display_pbar=False)
-        except:
-            PB.log_failure(message, display_pbar=False)
-            LOGGER.error(
-                f"_locate_switches:unable to find switch {switch_mac} in the org inventory"
-            )
 
     return site_ids
 
@@ -877,7 +873,11 @@ def _read_csv(csv_file: str):
 
 ###############################################################################
 # START
-def start(apisession: mistapi.APISession, org_id: str = None, csv_file: str = None, dry_run:bool=False):
+def start(
+    apisession: mistapi.APISession, 
+    org_id: str|None = None, 
+    csv_file: str|None = None, 
+    dry_run:bool=False):
     """
     Start the process
 
@@ -906,26 +906,27 @@ def start(apisession: mistapi.APISession, org_id: str = None, csv_file: str = No
     PB.log_title("Preparing data", display_pbar=False)
     print()
     entries = _read_csv(csv_file)
-    switches = _processing_switch_data(entries)
-    site_ids = _locate_switches(apisession, org_id, switches)
+    if org_id and csv_file and entries:
+        switches = _processing_switch_data(entries)
+        site_ids = _locate_switches(apisession, org_id, switches)
 
-    PB.set_steps_total(len(site_ids) * 3 + len(switches) + 2)
-    PB.log_title("Validating switches configuration")
-    switches_to_process = _checking_port_profiles(
-        apisession, org_id, site_ids, switches
-    )
+        PB.set_steps_total(len(site_ids) * 3 + len(switches) + 2)
+        PB.log_title("Validating switches configuration")
+        switches_to_process = _checking_port_profiles(
+            apisession, org_id, site_ids, switches
+        )
 
-    PB.log_title("Updating switches configuration")
-    if len(switches_to_process) > 0:
-        PB.set_steps_total(len(switches_to_process) * 3)
-        _process_switch_config(apisession, switches_to_process, dry_run)
-    else:
-        PB.log_message("No switch to process")
+        PB.log_title("Updating switches configuration")
+        if len(switches_to_process) > 0:
+            PB.set_steps_total(len(switches_to_process) * 3)
+            _process_switch_config(apisession, switches_to_process, dry_run)
+        else:
+            PB.log_message("No switch to process")
 
 
 ###############################################################################
 # USAGE
-def usage(error_message: str = None):
+def usage(error_message: str|None = None):
     """
     show script usage
     """
@@ -1024,44 +1025,47 @@ python3 ./update_port_config.py \
 
 
 def check_mistapi_version():
-    """
-    check the current version of the mistapi package
-    """
-    mistapi_version = mistapi.__version__.split(".")
-    min_version = MISTAPI_MIN_VERSION.split(".")
-    if (
-        int(mistapi_version[0]) < int(min_version[0])
-        or int(mistapi_version[1]) < int(min_version[1])
-        or int(mistapi_version[2]) < int(min_version[2])
-        ):
-        LOGGER.critical(
-            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}.'
-        )
-        LOGGER.critical(f"Please use the pip command to updated it.")
+    """Check if the installed mistapi version meets the minimum requirement."""
+
+    current_version = mistapi.__version__.split(".")
+    required_version = MISTAPI_MIN_VERSION.split(".")
+
+    try:
+        for i, req in enumerate(required_version):
+            if current_version[int(i)] > req:
+                break
+            if current_version[int(i)] < req:
+                raise ImportError(
+                    f'"mistapi" package version {MISTAPI_MIN_VERSION} is required '
+                    f"but version {mistapi.__version__} is installed."
+                )
+    except ImportError as e:
+        LOGGER.critical(str(e))
+        LOGGER.critical("Please use the pip command to update it.")
         LOGGER.critical("")
-        LOGGER.critical(f"    # Linux/macOS")
-        LOGGER.critical(f"    python3 -m pip install --upgrade mistapi")
+        LOGGER.critical("    # Linux/macOS")
+        LOGGER.critical("    python3 -m pip install --upgrade mistapi")
         LOGGER.critical("")
-        LOGGER.critical(f"    # Windows")
-        LOGGER.critical(f"    py -m pip install --upgrade mistapi")
+        LOGGER.critical("    # Windows")
+        LOGGER.critical("    py -m pip install --upgrade mistapi")
         print(
             f"""
-    Critical: 
-    \"mistapi\" package version {MISTAPI_MIN_VERSION} is required, you are currently using version {mistapi.__version__}. 
-    Please use the pip command to updated it.
-
-    # Linux/macOS
-    python3 -m pip install --upgrade mistapi
-
-    # Windows
-    py -m pip install --upgrade mistapi
-        """
+Critical:\r\n
+{e}\r\n
+Please use the pip command to update it.
+# Linux/macOS
+python3 -m pip install --upgrade mistapi
+# Windows
+py -m pip install --upgrade mistapi
+            """
         )
         sys.exit(2)
-    else:
+    finally:
         LOGGER.info(
-            f'"mistapi" package version {MISTAPI_MIN_VERSION} is required, '
-            f"you are currently using version {mistapi.__version__}."
+            '"mistapi" package version %s is required, '
+            "you are currently using version %s.",
+            MISTAPI_MIN_VERSION,
+            mistapi.__version__
         )
 
 
@@ -1074,8 +1078,7 @@ if __name__ == "__main__":
             sys.argv[1:], "ho:f:e:ld", ["help", "org_id=", "file=", "env=", "log_file=", "dry_run"]
         )
     except getopt.GetoptError as err:
-        CONSOLE.error(err)
-        usage()
+        usage(err.msg)
 
     ORG_ID = None
     DRY_RUN = False
@@ -1099,6 +1102,6 @@ if __name__ == "__main__":
     LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### START ###
-    apisession = mistapi.APISession(env_file=ENV_FILE)
-    apisession.login()
-    start(apisession, ORG_ID, CSV_FILE, DRY_RUN)
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
+    start(APISESSION, ORG_ID, CSV_FILE, DRY_RUN)
