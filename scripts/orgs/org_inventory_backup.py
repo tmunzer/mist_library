@@ -61,7 +61,7 @@ import sys
 import os
 import datetime
 import json
-import getopt
+import argparse
 import urllib.request
 
 
@@ -70,7 +70,7 @@ MISTAPI_MIN_VERSION = "0.44.1"
 try:
     import mistapi
     from mistapi.__logger import console
-except:
+except ImportError:
     print(
         """
         Critical: 
@@ -120,9 +120,9 @@ class ProgressBar:
         percent = self.steps_count / self.steps_total
         delta = 17
         x = int((size - delta) * percent)
-        print(f"Progress: ", end="")
-        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
-        print(f"{int(percent*100)}%".rjust(5), end="")
+        print("Progress: ", end="")
+        print(f"[{'█' * x}{'.' * (size - delta - x)}]", end="")
+        print(f"{int(percent * 100)}%".rjust(5), end="")
 
     def _pb_new_step(
         self,
@@ -149,25 +149,77 @@ class ProgressBar:
             print("".ljust(80))
             self._pb_update(size)
 
-    def set_steps_total(self, steps_total: int):
+    def set_steps_total(self, steps_total: int) -> None:
+        """
+        Set the total number of steps for the progress bar.
+        :param steps_total: The total number of steps
+        """
         self.steps_total = steps_total
 
-    def log_message(self, message, display_pbar: bool = True):
+    def log_message(self, message, display_pbar: bool = True) -> None:
+        """
+        Log a message in the progress bar.
+        :param message: The message to log
+        :param display_pbar: If True, the progress bar will be displayed after the message
+        """
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
-    def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.info(f"{message}: Success")
+    def log_debug(self, message) -> None:
+        """
+        Log a debug message.
+        :param message: The debug message to log
+        """
+        LOGGER.debug(message)
+
+    def log_success(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a success message in the progress bar.
+        :param message: The success message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the success
+        """
+        LOGGER.info("%s: Success", message)
         self._pb_new_step(
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
-    def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.error(f"{message}: Failure")
+    def log_warning(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a warning message in the progress bar.
+        :param message: The warning message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the warning
+        """
+        LOGGER.warning(message)
+        self._pb_new_step(
+            message, "\033[93m\u2b58\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
+
+    def log_failure(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a failure message in the progress bar.
+        :param message: The failure message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the failure
+        """
+        LOGGER.error("%s: Failure", message)
         self._pb_new_step(
             message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
-    def log_title(self, message, end: bool = False, display_pbar: bool = True):
+    def log_title(self, message, end: bool = False, display_pbar: bool = True) -> None:
+        """
+        Log a title message in the progress bar.
+        :param message: The title message to log
+        :param end: If True, the progress bar will not be displayed after the title
+        :param display_pbar: If True, the progress bar will be displayed after the title
+        """
         LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
@@ -186,13 +238,13 @@ def _save_site_info(site: dict, backup: dict):
     backup["org"]["old_sites_id"][site["name"]] = site["id"]
 
 
-def _backup_site_id_dict(site: dict, backup: dict):
+def _backup_site_id_dict(site: dict, backup: dict) -> None:
     if site["name"] in backup["org"]["sites"]:
         console.warning(f"Two sites are using the same name {site['name']}!")
         console.warning(
             "This will cause issue during the backup and the restore process."
         )
-        console.warning("I recommand you to rename one of the two sites.")
+        console.warning("I recommend you to rename one of the two sites.")
         loop = True
         while loop:
             resp = input("Do you want to continue anyway (y/N)? ")
@@ -206,7 +258,7 @@ def _backup_site_id_dict(site: dict, backup: dict):
         _save_site_info(site, backup)
 
 
-def _backup_site_maps(mist_session: mistapi.APISession, site):
+def _backup_site_maps(mist_session: mistapi.APISession, site) -> dict:
     response = mistapi.api.v1.sites.maps.listSiteMaps(mist_session, site["id"])
     backup_maps = mistapi.get_all(mist_session, response)
     maps_ids = {}
@@ -218,14 +270,13 @@ def _backup_site_maps(mist_session: mistapi.APISession, site):
             console.warning(
                 "This will cause issue during the backup and the restore process."
             )
-            console.warning("It is recommanded you to rename one of the two maps.")
+            console.warning("It is recommended you to rename one of the two maps.")
             loop = True
             while loop:
                 resp = input("Do you want to continue anyway (y/N)? ")
                 if resp.lower() == "y":
                     loop = False
-                    ["maps"].append({xmap["name"]: xmap["id"]})
-                    ["maps_ids"][xmap["name"]] = xmap["id"]
+                    maps_ids[xmap["name"]] = xmap["id"]
                 elif resp.lower() == "n" or resp == "":
                     loop = False
                     sys.exit(200)
@@ -234,8 +285,8 @@ def _backup_site_maps(mist_session: mistapi.APISession, site):
     return maps_ids
 
 
-def _no_magic(backup: dict, site_name: str, device: dict, device_type: str = None):
-    if not device["mac"] in backup["org"]["magics"]:
+def _no_magic(backup: dict, site_name: str, device: dict, device_type: str = ""):
+    if  device["mac"] not in backup["org"]["magics"]:
         backup["org"]["devices_without_magic"].append(
             {
                 "site": site_name,
@@ -253,16 +304,17 @@ def _no_magic(backup: dict, site_name: str, device: dict, device_type: str = Non
 def _backup_inventory(
     mist_session: mistapi.APISession,
     org_id: str,
-    org_name: str = None,
-    backup: dict = {},
-):
-    PB.log_title(f"Backuping Org {org_name} Elements ")
-
+    org_name: str = "",
+    backup: dict|None = None,
+) -> None:
+    PB.log_title(f"Backing up Org {org_name} Elements ")
+    if backup is None:
+        backup = {}
     backup["org"]["id"] = org_id
     ################################################
-    ##  Backuping inventory
+    ##  Backing up inventory
     for device_type in DEVICE_TYPES:
-        message = f"Backuping {device_type} magics"
+        message = f"Backing up {device_type} magics"
         PB.log_message(message)
         try:
             response = mistapi.api.v1.orgs.inventory.getOrgInventory(
@@ -278,14 +330,14 @@ def _backup_inventory(
                         "type": data["type"],
                     })
             PB.log_success(message, True)
-        except Exception as e:
+        except Exception:
             PB.log_failure(message, True)
             LOGGER.error("Exception occurred", exc_info=True)
 
     ################################################
     ##  Retrieving org MxEdges
 
-    message = f"Backuping Org MxEdges"
+    message = "Backing up Org MxEdges"
     PB.log_message(message)
     try:
         response = mistapi.api.v1.orgs.mxedges.listOrgMxEdges(
@@ -294,7 +346,7 @@ def _backup_inventory(
         mxedges = mistapi.get_all(mist_session, response)
         backup["org"]["mxedges"] = mxedges
         PB.log_success(message, True)
-    except Exception as e:
+    except Exception :
         PB.log_failure(message, True)
         LOGGER.error("Exception occurred", exc_info=True)
     for mxedge in mxedges:
@@ -302,8 +354,9 @@ def _backup_inventory(
 
     ################################################
     ##  Retrieving device profiles
-    message = f"Backuping Device Profiles"
+    message = "Backing up Device Profiles"
     PB.log_message(message)
+    deviceprofile:dict
     try:
         response = mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles(
             mist_session, org_id, limit=1000
@@ -314,12 +367,12 @@ def _backup_inventory(
                 deviceprofile["name"]
             ] = deviceprofile["id"]
         PB.log_success(message, True)
-    except Exception as e:
+    except Exception:
         PB.log_failure(message, True)
         LOGGER.error("Exception occurred", exc_info=True)
     ################################################
-    ##  Retrieving evpntopologies
-    message = f"Backuping EVPN Topologies"
+    ##  Retrieving evpn topologies
+    message = "Backing up EVPN Topologies"
     PB.log_message(message)
     try:
         response = mistapi.api.v1.orgs.evpn_topologies.listOrgEvpnTopologies(
@@ -331,13 +384,13 @@ def _backup_inventory(
                 "id"
             ]
         PB.log_success(message, True)
-    except Exception as e:
+    except Exception:
         PB.log_failure(message, True)
         LOGGER.error("Exception occurred", exc_info=True)
 
     ################################################
     ##  Retrieving Sites list
-    message = f"Retrieving Sites list"
+    message = "Retrieving Sites list"
     PB.log_message(message)
     try:
         response = mistapi.api.v1.orgs.sites.listOrgSites(
@@ -345,15 +398,15 @@ def _backup_inventory(
         )
         sites = mistapi.get_all(mist_session, response)
         PB.log_success(message, True)
-    except Exception as e:
+    except Exception:
         PB.log_failure(message, True)
         LOGGER.error("Exception occurred", exc_info=True)
 
     ################################################
-    ## Backuping Sites Devices
+    ## Backing up Sites Devices
     for site in sites:
-        PB.log_title(f"Backuping Site {site['name']}")
-        message = f"Devices List"
+        PB.log_title(f"Backing up Site {site['name']}")
+        message = "Devices List"
         PB.log_message(message)
         try:
             _backup_site_id_dict(site, backup)
@@ -366,14 +419,14 @@ def _backup_inventory(
             devices = mistapi.get_all(mist_session, response)
             backup["org"]["sites"][site["name"]]["devices"] = devices
             PB.log_success(message, True)
-        except Exception as e:
+        except Exception:
             PB.log_failure(message, True)
             LOGGER.error("Exception occurred", exc_info=True)
         ################################################
-        ## Backuping Site Devices Images
+        ## Backing up Site Devices Images
         for device in devices:
             _no_magic(backup, site["name"], device)
-            message = f"Backuping {device['type'].upper()} {device['serial']} images"
+            message = f"Backing up {device['type'].upper()} {device['serial']} images"
             PB.log_message(message)
             try:
                 i = 1
@@ -383,13 +436,13 @@ def _backup_inventory(
                     urllib.request.urlretrieve(url, image_name)
                     i += 1
                 PB.log_success(message, True)
-            except Exception as e:
+            except Exception:
                 PB.log_failure(message, True)
                 LOGGER.error("Exception occurred", exc_info=True)
 
     ################################################
     ## End
-    PB.log_title(f"Backup Done", end=True)
+    PB.log_title("Backup Done", end=True)
     print()
 
 
@@ -401,7 +454,7 @@ def _save_to_file(backup_data:dict,backup_file:str,  backup_name:str):
         with open(backup_file, "w") as f:
             json.dump(backup_data, f)
         PB.log_success(message, display_pbar=False)
-    except Exception as e:
+    except Exception:
         PB.log_failure(message, display_pbar=False)
         LOGGER.error("Exception occurred", exc_info=True)
 
@@ -431,19 +484,19 @@ def _start_inventory_backup(
             response = mistapi.api.v1.orgs.inventory.getOrgInventory(
                 mist_session, org_id, type=device_type, limit=1
             )
-            if response.headers.get("X-Page-Total"):
-                device_count += int(response.headers.get("X-Page-Total"))
+            if response.headers and response.headers.get("X-Page-Total"):
+                device_count += int(response.headers.get("X-Page-Total", 0))
             else:
                 device_count += len(response.data)
         response = mistapi.api.v1.orgs.sites.countOrgSites(
             mist_session, org_id, limit=1
         )
-        if response.headers.get("X-Page-Total"):
-            site_count = int(response.headers.get("X-Page-Total"))
+        if response.headers and response.headers.get("X-Page-Total"):
+            site_count = int(response.headers.get("X-Page-Total", 0))
         else:
             site_count = len(response.data)
         PB.set_steps_total(2 + len(DEVICE_TYPES) + site_count + device_count)
-    except Exception as e:
+    except Exception:
         LOGGER.error("Exception occurred", exc_info=True)
         sys.exit(0)
 
@@ -475,8 +528,8 @@ def _start_inventory_backup(
 def start(
     mist_session: mistapi.APISession,
     org_id: str,
-    backup_folder: str = None,
-    backup_name:str=None,
+    backup_folder: str = "",
+    backup_name:str="",
     backup_name_date:bool=False,
     backup_name_ts:bool=False,
 ):
@@ -525,7 +578,7 @@ def start(
 
 #####################################################################
 #### USAGE ####
-def usage(error_message:str=None):
+def usage(error_message:str="") -> None:
     """
     display usage
     """
@@ -640,44 +693,28 @@ py -m pip install --upgrade mistapi
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
-    try:
-        opts, args = getopt.getopt(
-            sys.argv[1:],
-            "ho:e:l:b:dt",
-            ["help", "org_id=", "env=", "log_file=", "backup_folder=", "datetime", "timestamp"],
-        )
-    except getopt.GetoptError as err:
-        console.error(err)
-        usage()
+    parser = argparse.ArgumentParser(description="Backup all devices from an organization")
+    parser.add_argument("-o", "--org_id", help="Set the org_id")
+    parser.add_argument("-e", "--env", default=ENV_FILE, help="define the env file to use")
+    parser.add_argument("-l", "--log_file", default=LOG_FILE, help="define the filepath/filename where to write the logs")
+    parser.add_argument("-b", "--backup_folder", default=DEFAULT_BACKUP_FOLDER, 
+                       help="Path to the folder where to save the org backup")
+    
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-d", "--datetime", action="store_true", 
+                      help="append the current date and time (ISO format) to the backup name")
+    group.add_argument("-t", "--timestamp", action="store_true",
+                      help="append the current timestamp to the backup name")
+    
+    args = parser.parse_args()
 
-    ORG_ID = None
-    BACKUP_FOLDER = DEFAULT_BACKUP_FOLDER
-    BACKUP_NAME = False
-    BACKUP_NAME_DATE = False
-    BACKUP_NAME_TS = False
-    for o, a in opts:
-        if o in ["-h", "--help"]:
-            usage()
-        elif o in ["-o", "--org_id"]:
-            ORG_ID = a
-        elif o in ["-e", "--env"]:
-            ENV_FILE = a
-        elif o in ["-l", "--log_file"]:
-            LOG_FILE = a
-        elif o in ["-b", "--backup_folder"]:
-            BACKUP_FOLDER = a
-        elif o in ["-d", "--datetime"]:
-            if BACKUP_NAME_TS:
-                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
-            else:
-                BACKUP_NAME_DATE = True
-        elif o in ["-t", "--timestamp"]:
-            if BACKUP_NAME_DATE:
-                usage("Inavlid Parameters: \"-d\"/\"--date\" and \"-t\"/\"--timestamp\" are exclusive")
-            else:
-                BACKUP_NAME_TS = True
-        else:
-            assert False, "unhandled option"
+    ORG_ID = args.org_id
+    BACKUP_FOLDER = args.backup_folder
+    BACKUP_NAME = ""
+    BACKUP_NAME_DATE = args.datetime
+    BACKUP_NAME_TS = args.timestamp
+    ENV_FILE = args.env
+    LOG_FILE = args.log_file
 
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")

@@ -66,7 +66,7 @@ import json
 import os
 import sys
 import re
-import getopt
+import argparse
 import signal
 from typing import Callable
 
@@ -75,7 +75,7 @@ MISTAPI_MIN_VERSION = "0.55.5"
 try:
     import mistapi
     from mistapi.__logger import console
-except:
+except ImportError:
     print(
         """
         Critical:
@@ -110,254 +110,266 @@ SYS_EXIT = False
 def sigint_handler(signal, frame):
     global SYS_EXIT
     SYS_EXIT = True
-    ("[Ctrl C],KeyboardInterrupt exception occured.")
+    print("[Ctrl C],KeyboardInterrupt exception occurred.")
 
 
 signal.signal(signal.SIGINT, sigint_handler)
 
+
 #####################################################################
 # DEPLOY OBJECTS REFS
+class Step:
+    """
+    Class to define a step in the backup process.
+    """
+
+    def __init__(self, create_mistapi_function, update_mistapi_function=None, text=""):
+        self.create_mistapi_function = create_mistapi_function
+        self.update_mistapi_function = update_mistapi_function
+        self.text = text
+
+
 ORG_STEPS = {
-    "assetfilters": {
-        "create_mistapi_function": mistapi.api.v1.orgs.assetfilters.createOrgAssetFilter,
-        "update_mistapi_function": mistapi.api.v1.orgs.assetfilters.updateOrgAssetFilter,
-        "text": "Org assetfilters",
-    },
-    "deviceprofiles": {
-        "create_mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfile,
-        "update_mistapi_function": mistapi.api.v1.orgs.deviceprofiles.updateOrgDeviceProfile,
-        "text": "Org deviceprofiles",
-    },
-    "switchprofiles": {
-        "create_mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfile,
-        "update_mistapi_function": mistapi.api.v1.orgs.deviceprofiles.updateOrgDeviceProfile,
-        "text": "Org switchprofiles",
-    },
-    "hubprofiles": {
-        "create_mistapi_function": mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfile,
-        "update_mistapi_function": mistapi.api.v1.orgs.deviceprofiles.updateOrgDeviceProfile,
-        "text": "Org hubprofiles",
-    },
-    "evpn_topologies": {
-        "create_mistapi_function": mistapi.api.v1.orgs.evpn_topologies.createOrgEvpnTopology,
-        "update_mistapi_function": mistapi.api.v1.orgs.evpn_topologies.updateOrgEvpnTopology,
-        "text": "Org evpn_topologies",
-    },
-    "secpolicies": {
-        "create_mistapi_function": mistapi.api.v1.orgs.secpolicies.createOrgSecPolicy,
-        "update_mistapi_function": mistapi.api.v1.orgs.secpolicies.updateOrgSecPolicy,
-        "text": "Org secpolicies",
-    },
-    "aptempaltes": {
-        "create_mistapi_function": mistapi.api.v1.orgs.aptemplates.createOrgAptemplate,
-        "update_mistapi_function": mistapi.api.v1.orgs.aptemplates.updateOrgAptemplate,
-        "text": "Org aptemplates",
-    },
-    "networktemplates": {
-        "create_mistapi_function": mistapi.api.v1.orgs.networktemplates.createOrgNetworkTemplate,
-        "update_mistapi_function": mistapi.api.v1.orgs.networktemplates.updateOrgNetworkTemplate,
-        "text": "Org networktemplates",
-    },
-    "networks": {
-        "create_mistapi_function": mistapi.api.v1.orgs.networks.createOrgNetwork,
-        "update_mistapi_function": mistapi.api.v1.orgs.networks.updateOrgNetwork,
-        "text": "Org networks",
-    },
-    "services": {
-        "create_mistapi_function": mistapi.api.v1.orgs.services.createOrgService,
-        "update_mistapi_function": mistapi.api.v1.orgs.services.updateOrgService,
-        "text": "Org services",
-    },
-    "servicepolicies": {
-        "create_mistapi_function": mistapi.api.v1.orgs.servicepolicies.createOrgServicePolicy,
-        "update_mistapi_function": mistapi.api.v1.orgs.servicepolicies.updateOrgServicePolicy,
-        "text": "Org servicepolicies",
-    },
-    "vpns": {
-        "create_mistapi_function": mistapi.api.v1.orgs.vpns.createOrgVpn,
-        "update_mistapi_function": mistapi.api.v1.orgs.vpns.updateOrgVpn,
-        "text": "Org vpns",
-    },
-    "gatewaytemplates": {
-        "create_mistapi_function": mistapi.api.v1.orgs.gatewaytemplates.createOrgGatewayTemplate,
-        "update_mistapi_function": mistapi.api.v1.orgs.gatewaytemplates.updateOrgGatewayTemplate,
-        "text": "Org gatewaytemplates",
-    },
-    "alarmtemplates": {
-        "create_mistapi_function": mistapi.api.v1.orgs.alarmtemplates.createOrgAlarmTemplate,
-        "update_mistapi_function": mistapi.api.v1.orgs.alarmtemplates.updateOrgAlarmTemplate,
-        "text": "Org alarmtemplates",
-    },
-    "rftemplates": {
-        "create_mistapi_function": mistapi.api.v1.orgs.rftemplates.createOrgRfTemplate,
-        "update_mistapi_function": mistapi.api.v1.orgs.rftemplates.updateOrgRfTemplate,
-        "text": "Org rftemplates",
-    },
-    "webhooks": {
-        "create_mistapi_function": mistapi.api.v1.orgs.webhooks.createOrgWebhook,
-        "update_mistapi_function": mistapi.api.v1.orgs.webhooks.updateOrgWebhook,
-        "text": "Org webhooks",
-    },
-    "mxclusters": {
-        "create_mistapi_function": mistapi.api.v1.orgs.mxclusters.createOrgMxEdgeCluster,
-        "update_mistapi_function": mistapi.api.v1.orgs.mxclusters.updateOrgMxEdgeCluster,
-        "text": "Org mxclusters",
-    },
-    "mxtunnels": {
-        "create_mistapi_function": mistapi.api.v1.orgs.mxtunnels.createOrgMxTunnel,
-        "update_mistapi_function": mistapi.api.v1.orgs.mxtunnels.updateOrgMxTunnel,
-        "text": "Org mxtunnels",
-    },
-    "wxtunnels": {
-        "create_mistapi_function": mistapi.api.v1.orgs.wxtunnels.createOrgWxTunnel,
-        "update_mistapi_function": mistapi.api.v1.orgs.wxtunnels.updateOrgWxTunnel,
-        "text": "Org wxtunnels",
-    },
-    "sitetemplates": {
-        "create_mistapi_function": mistapi.api.v1.orgs.sitetemplates.createOrgSiteTemplate,
-        "update_mistapi_function": mistapi.api.v1.orgs.sitetemplates.updateOrgSiteTemplate,
-        "text": "Org sitetemplates",
-    },
-    "sitegroups": {
-        "create_mistapi_function": mistapi.api.v1.orgs.sitegroups.createOrgSiteGroup,
-        "update_mistapi_function": mistapi.api.v1.orgs.sitegroups.updateOrgSiteGroup,
-        "text": "Org sitegroups",
-    },
-    "sites": {
-        "create_mistapi_function": mistapi.api.v1.orgs.sites.createOrgSite,
-        "update_mistapi_function": mistapi.api.v1.sites.sites.updateSiteInfo,
-        "text": "Org Sites",
-    },
-    "templates": {
-        "create_mistapi_function": mistapi.api.v1.orgs.templates.createOrgTemplate,
-        "update_mistapi_function": mistapi.api.v1.orgs.templates.updateOrgTemplate,
-        "text": "Org templates",
-    },
-    "wlans": {
-        "create_mistapi_function": mistapi.api.v1.orgs.wlans.createOrgWlan,
-        "update_mistapi_function": mistapi.api.v1.orgs.wlans.updateOrgWlan,
-        "text": "Org wlans",
-    },
-    "wxtags": {
-        "create_mistapi_function": mistapi.api.v1.orgs.wxtags.createOrgWxTag,
-        "update_mistapi_function": mistapi.api.v1.orgs.wxtags.updateOrgWxTag,
-        "text": "Org wxtags",
-    },
-    "wxrules": {
-        "create_mistapi_function": mistapi.api.v1.orgs.wxrules.createOrgWxRule,
-        "update_mistapi_function": mistapi.api.v1.orgs.wxrules.updateOrgWxRule,
-        "text": "Org wxrules",
-    },
-    "pskportals": {
-        "create_mistapi_function": mistapi.api.v1.orgs.pskportals.createOrgPskPortal,
-        "update_mistapi_function": mistapi.api.v1.orgs.pskportals.updateOrgPskPortal,
-        "text": "Org pskportals",
-    },
-    "psks": {
-        "create_mistapi_function": mistapi.api.v1.orgs.psks.importOrgPsks,
-        "text": "Org psks",
-    },
-    "nactags": {
-        "create_mistapi_function": mistapi.api.v1.orgs.nactags.createOrgNacTag,
-        "update_mistapi_function": mistapi.api.v1.orgs.nactags.updateOrgNacTag,
-        "text": "Org nactags",
-    },
-    "nacrules": {
-        "create_mistapi_function": mistapi.api.v1.orgs.nacrules.createOrgNacRule,
-        "update_mistapi_function": mistapi.api.v1.orgs.nacrules.updateOrgNacRule,
-        "text": "Org nacrules",
-    },
-    "usermacs": {
-        "create_mistapi_function": mistapi.api.v1.orgs.usermacs.importOrgUserMacs,
-        "text": "Org nacendpoints",
-    },
-    "ssos": {
-        "create_mistapi_function": mistapi.api.v1.orgs.ssos.createOrgSso,
-        "update_mistapi_function": mistapi.api.v1.orgs.ssos.updateOrgSso,
-        "text": "Org ssos",
-    },
-    "ssoroles": {
-        "create_mistapi_function": mistapi.api.v1.orgs.ssoroles.createOrgSsoRole,
-        "update_mistapi_function": mistapi.api.v1.orgs.ssoroles.updateOrgSsoRole,
-        "text": "Org ssoroles",
-    },
+    "assetfilters": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.assetfilters.createOrgAssetFilter,
+        update_mistapi_function=mistapi.api.v1.orgs.assetfilters.updateOrgAssetFilter,
+        text="Org assetfilters",
+    ),
+    "deviceprofiles": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfile,
+        update_mistapi_function=mistapi.api.v1.orgs.deviceprofiles.updateOrgDeviceProfile,
+        text="Org deviceprofiles",
+    ),
+    "switchprofiles": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfile,
+        update_mistapi_function=mistapi.api.v1.orgs.deviceprofiles.updateOrgDeviceProfile,
+        text="Org switchprofiles",
+    ),
+    "hubprofiles": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.deviceprofiles.createOrgDeviceProfile,
+        update_mistapi_function=mistapi.api.v1.orgs.deviceprofiles.updateOrgDeviceProfile,
+        text="Org hubprofiles",
+    ),
+    "evpn_topologies": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.evpn_topologies.createOrgEvpnTopology,
+        update_mistapi_function=mistapi.api.v1.orgs.evpn_topologies.updateOrgEvpnTopology,
+        text="Org evpn_topologies",
+    ),
+    "secpolicies": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.secpolicies.createOrgSecPolicy,
+        update_mistapi_function=mistapi.api.v1.orgs.secpolicies.updateOrgSecPolicy,
+        text="Org secpolicies",
+    ),
+    "aptemplates": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.aptemplates.createOrgAptemplate,
+        update_mistapi_function=mistapi.api.v1.orgs.aptemplates.updateOrgAptemplate,
+        text="Org aptemplates",
+    ),
+    "networktemplates": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.networktemplates.createOrgNetworkTemplate,
+        update_mistapi_function=mistapi.api.v1.orgs.networktemplates.updateOrgNetworkTemplate,
+        text="Org networktemplates",
+    ),
+    "networks": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.networks.createOrgNetwork,
+        update_mistapi_function=mistapi.api.v1.orgs.networks.updateOrgNetwork,
+        text="Org networks",
+    ),
+    "services": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.services.createOrgService,
+        update_mistapi_function=mistapi.api.v1.orgs.services.updateOrgService,
+        text="Org services",
+    ),
+    "servicepolicies": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.servicepolicies.createOrgServicePolicy,
+        update_mistapi_function=mistapi.api.v1.orgs.servicepolicies.updateOrgServicePolicy,
+        text="Org servicepolicies",
+    ),
+    "vpns": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.vpns.createOrgVpn,
+        update_mistapi_function=mistapi.api.v1.orgs.vpns.updateOrgVpn,
+        text="Org vpns",
+    ),
+    "gatewaytemplates": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.gatewaytemplates.createOrgGatewayTemplate,
+        update_mistapi_function=mistapi.api.v1.orgs.gatewaytemplates.updateOrgGatewayTemplate,
+        text="Org gatewaytemplates",
+    ),
+    "alarmtemplates": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.alarmtemplates.createOrgAlarmTemplate,
+        update_mistapi_function=mistapi.api.v1.orgs.alarmtemplates.updateOrgAlarmTemplate,
+        text="Org alarmtemplates",
+    ),
+    "rftemplates": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.rftemplates.createOrgRfTemplate,
+        update_mistapi_function=mistapi.api.v1.orgs.rftemplates.updateOrgRfTemplate,
+        text="Org rftemplates",
+    ),
+    "webhooks": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.webhooks.createOrgWebhook,
+        update_mistapi_function=mistapi.api.v1.orgs.webhooks.updateOrgWebhook,
+        text="Org webhooks",
+    ),
+    "mxclusters": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.mxclusters.createOrgMxEdgeCluster,
+        update_mistapi_function=mistapi.api.v1.orgs.mxclusters.updateOrgMxEdgeCluster,
+        text="Org mxclusters",
+    ),
+    "mxtunnels": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.mxtunnels.createOrgMxTunnel,
+        update_mistapi_function=mistapi.api.v1.orgs.mxtunnels.updateOrgMxTunnel,
+        text="Org mxtunnels",
+    ),
+    "wxtunnels": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.wxtunnels.createOrgWxTunnel,
+        update_mistapi_function=mistapi.api.v1.orgs.wxtunnels.updateOrgWxTunnel,
+        text="Org wxtunnels",
+    ),
+    "sitetemplates": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.sitetemplates.createOrgSiteTemplate,
+        update_mistapi_function=mistapi.api.v1.orgs.sitetemplates.updateOrgSiteTemplate,
+        text="Org sitetemplates",
+    ),
+    "sitegroups": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.sitegroups.createOrgSiteGroup,
+        update_mistapi_function=mistapi.api.v1.orgs.sitegroups.updateOrgSiteGroup,
+        text="Org sitegroups",
+    ),
+    "sites": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.sites.createOrgSite,
+        update_mistapi_function=mistapi.api.v1.sites.sites.updateSiteInfo,
+        text="Org Sites",
+    ),
+    "templates": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.templates.createOrgTemplate,
+        update_mistapi_function=mistapi.api.v1.orgs.templates.updateOrgTemplate,
+        text="Org templates",
+    ),
+    "wlans": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.wlans.createOrgWlan,
+        update_mistapi_function=mistapi.api.v1.orgs.wlans.updateOrgWlan,
+        text="Org wlans",
+    ),
+    "wxtags": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.wxtags.createOrgWxTag,
+        update_mistapi_function=mistapi.api.v1.orgs.wxtags.updateOrgWxTag,
+        text="Org wxtags",
+    ),
+    "wxrules": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.wxrules.createOrgWxRule,
+        update_mistapi_function=mistapi.api.v1.orgs.wxrules.updateOrgWxRule,
+        text="Org wxrules",
+    ),
+    "pskportals": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.pskportals.createOrgPskPortal,
+        update_mistapi_function=mistapi.api.v1.orgs.pskportals.updateOrgPskPortal,
+        text="Org pskportals",
+    ),
+    "psks": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.psks.importOrgPsks,
+        text="Org psks",
+    ),
+    "nactags": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.nactags.createOrgNacTag,
+        update_mistapi_function=mistapi.api.v1.orgs.nactags.updateOrgNacTag,
+        text="Org nactags",
+    ),
+    "nacrules": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.nacrules.createOrgNacRule,
+        update_mistapi_function=mistapi.api.v1.orgs.nacrules.updateOrgNacRule,
+        text="Org nacrules",
+    ),
+    "usermacs": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.usermacs.importOrgUserMacs,
+        text="Org nacendpoints",
+    ),
+    "ssos": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.ssos.createOrgSso,
+        update_mistapi_function=mistapi.api.v1.orgs.ssos.updateOrgSso,
+        text="Org ssos",
+    ),
+    "ssoroles": Step(
+        create_mistapi_function=mistapi.api.v1.orgs.ssoroles.createOrgSsoRole,
+        update_mistapi_function=mistapi.api.v1.orgs.ssoroles.updateOrgSsoRole,
+        text="Org ssoroles",
+    ),
 }
 SITE_STEPS = {
-    "settings": {
-        "create_mistapi_function": mistapi.api.v1.sites.setting.updateSiteSettings,
-        "update_mistapi_function": mistapi.api.v1.sites.setting.updateSiteSettings,
-        "text": "Site settings",
-    },
-    "maps": {
-        "create_mistapi_function": mistapi.api.v1.sites.maps.createSiteMap,
-        "update_mistapi_function": mistapi.api.v1.sites.maps.updateSiteMap,
-        "text": "Site maps",
-    },
-    "zones": {
-        "create_mistapi_function": mistapi.api.v1.sites.zones.createSiteZone,
-        "update_mistapi_function": mistapi.api.v1.sites.zones.updateSiteZone,
-        "text": "Site zones",
-    },
-    "rssizones": {
-        "create_mistapi_function": mistapi.api.v1.sites.rssizones.createSiteRssiZone,
-        "update_mistapi_function": mistapi.api.v1.sites.rssizones.updateSiteRssiZone,
-        "text": "Site rssizones",
-    },
-    "assets": {
-        "create_mistapi_function": mistapi.api.v1.sites.assets.createSiteAsset,
-        "update_mistapi_function": mistapi.api.v1.sites.assets.updateSiteAsset,
-        "text": "Site assets",
-    },
-    "assetfilters": {
-        "create_mistapi_function": mistapi.api.v1.sites.assetfilters.createSiteAssetFilter,
-        "update_mistapi_function": mistapi.api.v1.sites.assetfilters.updateSiteAssetFilter,
-        "text": "Site assetfilters",
-    },
-    "beacons": {
-        "create_mistapi_function": mistapi.api.v1.sites.beacons.createSiteBeacon,
-        "update_mistapi_function": mistapi.api.v1.sites.beacons.updateSiteBeacon,
-        "text": "Site beacons",
-    },
-    "psks": {
-        "create_mistapi_function": mistapi.api.v1.sites.psks.importSitePsks,
-        "update_mistapi_function": mistapi.api.v1.sites.psks.updateSitePsk,
-        "text": "Site psks",
-    },
-    "vbeacons": {
-        "create_mistapi_function": mistapi.api.v1.sites.vbeacons.createSiteVBeacon,
-        "update_mistapi_function": mistapi.api.v1.sites.vbeacons.updateSiteVBeacon,
-        "text": "Site vbeacons",
-    },
-    "evpn_topologies": {
-        "create_mistapi_function": mistapi.api.v1.sites.evpn_topologies.createSiteEvpnTopology,
-        "update_mistapi_function": mistapi.api.v1.sites.evpn_topologies.updateSiteEvpnTopology,
-        "text": "Site EVPN Topologies",
-    },
-    "webhooks": {
-        "create_mistapi_function": mistapi.api.v1.sites.webhooks.createSiteWebhook,
-        "update_mistapi_function": mistapi.api.v1.sites.webhooks.updateSiteWebhook,
-        "text": "Site webhooks",
-    },
-    "wxtunnels": {
-        "create_mistapi_function": mistapi.api.v1.sites.wxtunnels.createSiteWxTunnel,
-        "update_mistapi_function": mistapi.api.v1.sites.wxtunnels.updateSiteWxTunnel,
-        "text": "Site wxtunnels",
-    },
-    "wlans": {
-        "create_mistapi_function": mistapi.api.v1.sites.wlans.createSiteWlan,
-        "update_mistapi_function": mistapi.api.v1.sites.wlans.updateSiteWlan,
-        "text": "Site wlans",
-    },
-    "wxtags": {
-        "create_mistapi_function": mistapi.api.v1.sites.wxtags.createSiteWxTag,
-        "update_mistapi_function": mistapi.api.v1.sites.wxtags.updateSiteWxTag,
-        "text": "Site wxtags",
-    },
-    "wxrules": {
-        "create_mistapi_function": mistapi.api.v1.sites.wxrules.createSiteWxRule,
-        "update_mistapi_function": mistapi.api.v1.sites.wxrules.updateSiteWxRule,
-        "text": "Site wxrules",
-    },
+    "settings": Step(
+        create_mistapi_function=mistapi.api.v1.sites.setting.updateSiteSettings,
+        update_mistapi_function=mistapi.api.v1.sites.setting.updateSiteSettings,
+        text="Site settings",
+    ),
+    "maps": Step(
+        create_mistapi_function=mistapi.api.v1.sites.maps.createSiteMap,
+        update_mistapi_function=mistapi.api.v1.sites.maps.updateSiteMap,
+        text="Site maps",
+    ),
+    "zones": Step(
+        create_mistapi_function=mistapi.api.v1.sites.zones.createSiteZone,
+        update_mistapi_function=mistapi.api.v1.sites.zones.updateSiteZone,
+        text="Site zones",
+    ),
+    "rssizones": Step(
+        create_mistapi_function=mistapi.api.v1.sites.rssizones.createSiteRssiZone,
+        update_mistapi_function=mistapi.api.v1.sites.rssizones.updateSiteRssiZone,
+        text="Site rssizones",
+    ),
+    "assets": Step(
+        create_mistapi_function=mistapi.api.v1.sites.assets.createSiteAsset,
+        update_mistapi_function=mistapi.api.v1.sites.assets.updateSiteAsset,
+        text="Site assets",
+    ),
+    "assetfilters": Step(
+        create_mistapi_function=mistapi.api.v1.sites.assetfilters.createSiteAssetFilter,
+        update_mistapi_function=mistapi.api.v1.sites.assetfilters.updateSiteAssetFilter,
+        text="Site assetfilters",
+    ),
+    "beacons": Step(
+        create_mistapi_function=mistapi.api.v1.sites.beacons.createSiteBeacon,
+        update_mistapi_function=mistapi.api.v1.sites.beacons.updateSiteBeacon,
+        text="Site beacons",
+    ),
+    "psks": Step(
+        create_mistapi_function=mistapi.api.v1.sites.psks.importSitePsks,
+        update_mistapi_function=mistapi.api.v1.sites.psks.updateSitePsk,
+        text="Site psks",
+    ),
+    "vbeacons": Step(
+        create_mistapi_function=mistapi.api.v1.sites.vbeacons.createSiteVBeacon,
+        update_mistapi_function=mistapi.api.v1.sites.vbeacons.updateSiteVBeacon,
+        text="Site vbeacons",
+    ),
+    "evpn_topologies": Step(
+        create_mistapi_function=mistapi.api.v1.sites.evpn_topologies.createSiteEvpnTopology,
+        update_mistapi_function=mistapi.api.v1.sites.evpn_topologies.updateSiteEvpnTopology,
+        text="Site EVPN Topologies",
+    ),
+    "webhooks": Step(
+        create_mistapi_function=mistapi.api.v1.sites.webhooks.createSiteWebhook,
+        update_mistapi_function=mistapi.api.v1.sites.webhooks.updateSiteWebhook,
+        text="Site webhooks",
+    ),
+    "wxtunnels": Step(
+        create_mistapi_function=mistapi.api.v1.sites.wxtunnels.createSiteWxTunnel,
+        update_mistapi_function=mistapi.api.v1.sites.wxtunnels.updateSiteWxTunnel,
+        text="Site wxtunnels",
+    ),
+    "wlans": Step(
+        create_mistapi_function=mistapi.api.v1.sites.wlans.createSiteWlan,
+        update_mistapi_function=mistapi.api.v1.sites.wlans.updateSiteWlan,
+        text="Site wlans",
+    ),
+    "wxtags": Step(
+        create_mistapi_function=mistapi.api.v1.sites.wxtags.createSiteWxTag,
+        update_mistapi_function=mistapi.api.v1.sites.wxtags.updateSiteWxTag,
+        text="Site wxtags",
+    ),
+    "wxrules": Step(
+        create_mistapi_function=mistapi.api.v1.sites.wxrules.createSiteWxRule,
+        update_mistapi_function=mistapi.api.v1.sites.wxrules.updateSiteWxRule,
+        text="Site wxrules",
+    ),
 }
 
 
@@ -372,25 +384,44 @@ class UUIDM:
         self.uuids = {}
         self.requests_to_replay = []
 
-    def add_uuid(self, new: str, old: str):
+    def add_uuid(self, new: str | None, old: str | None) -> None:
+        """
+        Add a new UUID mapping to the dictionary.
+        :param new: The new UUID to be added.
+        :param old: The old UUID that the new UUID replaces.
+        """
         if new and old:
-            LOGGER.debug(f"add_uuid: old_id {old} matching new_id {new}")
+            LOGGER.debug("add_uuid: old_id %s matching new_id %s", old, new)
             self.uuids[old] = new
         else:
-            LOGGER.warning(f"add_uuid: old_id {old} matching new_id {new}")
+            LOGGER.warning("add_uuid: old_id %s matching new_id %s", old, new)
 
-    def get_new_uuid(self, old: str):
-        return self.uuids.get(old)
+    def get_new_uuid(self, old: str) -> str:
+        """
+        Get the new UUID that replaces the old UUID.
+        :param old: The old UUID to be replaced.
+        :return: The new UUID if it exists, otherwise None.
+        """
+        return self.uuids.get(old, "")
 
     def add_replay(
         self,
         create_mistapi_function: Callable,
-        update_mistapi_function: Callable,
+        update_mistapi_function: Callable | None,
         scope_id: str,
         object_id: str,
         object_type: str,
         data: dict,
-    ):
+    ) -> None:
+        """
+        Add a request to the replay list.
+        :param create_mistapi_function: The function to create the object.
+        :param update_mistapi_function: The function to update the object.
+        :param scope_id: The scope ID where the object is located.
+        :param object_id: The ID of the object to be created or updated.
+        :param object_type: The type of the object (e.g., "wlans", "sites").
+        :param data: The data to be used for creating or updating the object.
+        """
         self.requests_to_replay.append(
             {
                 "create_mistapi_function": create_mistapi_function,
@@ -403,7 +434,11 @@ class UUIDM:
             }
         )
 
-    def get_replay(self):
+    def get_replay(self) -> list:
+        """
+        Get the list of requests to replay.
+        :return: A list of requests to replay.
+        """
         return self.requests_to_replay
 
     def _uuid_string(self, obj_str: str, missing_uuids: list):
@@ -450,7 +485,13 @@ class UUIDM:
                         missing_uuids.append({uuid_key: uuid_val})
         return obj_str, missing_uuids
 
-    def find_and_replace(self, obj: dict, object_type: str):
+    def find_and_replace(self, obj: dict, object_type: str) -> tuple:
+        """
+        Find and replace UUIDs in the given object.
+        :param obj: The object to process.
+        :param object_type: The type of the object (e.g., "wlans", "sites").
+        :return: A tuple containing the processed object and a list of missing UUIDs.
+        """
         # REMOVE READONLY FIELDS
         ids_to_remove = [
             "id",
@@ -506,9 +547,9 @@ class ProgressBar:
         percent = self.steps_count / self.steps_total
         delta = 17
         x = int((size - delta) * percent)
-        print(f"Progress: ", end="")
-        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
-        print(f"{int(percent*100)}%".rjust(5), end="")
+        print("Progress: ", end="")
+        print(f"[{'█' * x}{'.' * (size - delta - x)}]", end="")
+        print(f"{int(percent * 100)}%".rjust(5), end="")
 
     def _pb_new_step(
         self,
@@ -535,34 +576,77 @@ class ProgressBar:
             print("".ljust(80))
             self._pb_update(size)
 
-    def set_steps_total(self, steps_total: int):
+    def set_steps_total(self, steps_total: int) -> None:
+        """
+        Set the total number of steps for the progress bar.
+        :param steps_total: The total number of steps
+        """
         self.steps_total = steps_total
 
-    def log_message(self, message, display_pbar: bool = True):
+    def log_message(self, message, display_pbar: bool = True) -> None:
+        """
+        Log a message in the progress bar.
+        :param message: The message to log
+        :param display_pbar: If True, the progress bar will be displayed after the message
+        """
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
-    def log_debug(self, message):
-        LOGGER.debug(f"{message}")
+    def log_debug(self, message) -> None:
+        """
+        Log a debug message.
+        :param message: The debug message to log
+        """
+        LOGGER.debug(message)
 
-    def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.info(f"{message}: Success")
+    def log_success(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a success message in the progress bar.
+        :param message: The success message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the success
+        """
+        LOGGER.info("%s: Success", message)
         self._pb_new_step(
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
-    def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.warning(f"{message}")
+    def log_warning(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a warning message in the progress bar.
+        :param message: The warning message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the warning
+        """
+        LOGGER.warning(message)
         self._pb_new_step(
             message, "\033[93m\u2b58\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
-    def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.error(f"{message}: Failure")
+    def log_failure(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a failure message in the progress bar.
+        :param message: The failure message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the failure
+        """
+        LOGGER.error("%s: Failure", message)
         self._pb_new_step(
             message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
-    def log_title(self, message, end: bool = False, display_pbar: bool = True):
+    def log_title(self, message, end: bool = False, display_pbar: bool = True) -> None:
+        """
+        Log a title message in the progress bar.
+        :param message: The title message to log
+        :param end: If True, the progress bar will not be displayed after the title
+        :param display_pbar: If True, the progress bar will be displayed after the title
+        """
         LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
@@ -578,22 +662,22 @@ PB = ProgressBar()
 def _common_deploy(
     apisession: mistapi.APISession,
     create_mistapi_function: Callable,
-    update_mistapi_function: Callable,
+    update_mistapi_function: Callable | None,
     scope_id: str,
     object_type: str,
     data: dict,
     retry: bool = False,
-):
+) -> str:
     LOGGER.debug("conf_deploy:_common_deploy")
     if SYS_EXIT:
         sys.exit(0)
     old_id = None
-    new_id = None
+    new_id = ""
     object_name = ""
     if "name" in data:
-        object_name = f"\"{data.get('name', '<unknown>')}\""
+        object_name = f'"{data.get("name", "<unknown>")}"'
     elif "ssid" in data:
-        object_name = f"\"{data.get('ssid', '<unknown>')}\""
+        object_name = f'"{data.get("ssid", "<unknown>")}"'
     if "id" in data:
         old_id = data["id"]
     else:
@@ -624,11 +708,12 @@ def _common_deploy(
                 PB.log_warning(message, inc=True)
         else:
             PB.log_failure(message, inc=True)
-    except:
+    except Exception:
         PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
     UUID_MATCHING.add_uuid(new_id, old_id)
     return new_id
+
 
 def _common_update(
     apisession: mistapi.APISession,
@@ -637,7 +722,7 @@ def _common_update(
     object_id: str,
     object_type: str,
     data: dict,
-):
+) -> str | None:
     LOGGER.debug("conf_deploy:_common_update")
     if SYS_EXIT:
         sys.exit(0)
@@ -645,9 +730,9 @@ def _common_update(
     new_id = None
     object_name = ""
     if "name" in data:
-        object_name = f"\"{data.get('name', '<unknown>')}\""
+        object_name = f'"{data.get("name", "<unknown>")}"'
     elif "ssid" in data:
-        object_name = f"\"{data.get('ssid', '<unknown>')}\""
+        object_name = f'"{data.get("ssid", "<unknown>")}"'
     if "id" in data:
         old_id = data["id"]
     else:
@@ -658,7 +743,7 @@ def _common_update(
 
     message = f"Updating {object_type} {object_name} (id: {object_id})"
     PB.log_message(message)
-    data, missing_uuids = UUID_MATCHING.find_and_replace(data, object_type)
+    data, _ = UUID_MATCHING.find_and_replace(data, object_type)
 
     try:
         response = update_mistapi_function(apisession, scope_id, object_id, data)
@@ -667,7 +752,7 @@ def _common_update(
             PB.log_success(message, inc=True)
         else:
             PB.log_failure(message, inc=True)
-    except:
+    except Exception:
         PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
     UUID_MATCHING.add_uuid(new_id, old_id)
@@ -681,12 +766,12 @@ def _import_psks(
     mistapi_function: Callable,
     scope_id: str,
     data: dict,
-):
+) -> None:
     LOGGER.debug("conf_deploy:_import_psks")
     if SYS_EXIT:
         sys.exit(0)
 
-    message = f"Importing PSKs"
+    message = "Importing PSKs"
     PB.log_message(message)
 
     try:
@@ -695,7 +780,7 @@ def _import_psks(
             PB.log_success(message, inc=True)
         else:
             PB.log_failure(message, inc=True)
-    except:
+    except Exception:
         PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
     return None
@@ -706,7 +791,7 @@ def _import_usermacs(
     mistapi_function: Callable,
     scope_id: str,
     data: dict,
-):
+) -> None:
     LOGGER.debug("conf_deploy:_deploy_wlan")
     message = "Importing Usermacs "
     PB.log_message(message)
@@ -716,7 +801,7 @@ def _import_usermacs(
             PB.log_success(message, inc=True)
         else:
             PB.log_failure(message, inc=True)
-    except Exception as e:
+    except Exception:
         PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
 
@@ -726,12 +811,12 @@ def _import_usermacs(
 def _deploy_wlan(
     apisession: mistapi.APISession,
     create_mistapi_function: Callable,
-    update_mistapi_function: Callable,
+    update_mistapi_function: Callable | None,
     scope_id: str,
     data: dict,
     old_org_id: str,
-    old_site_id: str = None,
-):
+    old_site_id: str = "",
+) -> None:
     LOGGER.debug("conf_deploy:_deploy_wlan")
     if SYS_EXIT:
         sys.exit(0)
@@ -752,7 +837,7 @@ def _deploy_wlan(
         old_wlan_id,
         scope_id,
         new_wlan_id,
-        data.get("ssid"),
+        data.get("ssid", "<unknown>"),
     )
 
 
@@ -762,9 +847,9 @@ def _deploy_wlan_portal(
     old_site_id: str,
     old_wlan_id: str,
     scope_id: str,
-    new_wlan_id: str,
+    new_wlan_id: str | None,
     wlan_name: str,
-):
+) -> None:
     LOGGER.debug("conf_deploy:_deploy_wlan_portal")
     portal_file_name = ""
     if SYS_EXIT:
@@ -786,37 +871,37 @@ def _deploy_wlan_portal(
             mistapi.api.v1.sites.wlans.updateSiteWlanPortalTemplate
         )
 
-    if os.path.isfile(portal_file_name):
+    if os.path.isfile(portal_file_name) and new_wlan_id:
         message = f'Creating Portal Template for WLAN "{wlan_name}" '
         PB.log_message(message)
         try:
             template = open(portal_file_name, "r")
-        except Exception as e:
+        except Exception:
             PB.log_failure(f'Unable to open the template file "{portal_file_name}" ')
             LOGGER.error("Exception occurred", exc_info=True)
             return
         try:
             template = json.load(template)
-        except Exception as e:
+        except Exception:
             PB.log_failure(f'Unable to read the template file "{portal_file_name}" ')
             LOGGER.error("Exception occurred", exc_info=True)
             return
         try:
             update_template_function(apisession, scope_id, new_wlan_id, template)
             PB.log_success(message)
-        except Exception as e:
+        except Exception:
             PB.log_failure(f'Unable to upload the template "{portal_file_name}" ')
             LOGGER.error("Exception occurred", exc_info=True)
 
     else:
         PB.log_debug(f'No Portal template found for WLAN "{wlan_name}"')
 
-    if os.path.isfile(portal_image):
+    if os.path.isfile(portal_image) and new_wlan_id:
         message = f'Uploading Portal image for WLAN "{wlan_name}" '
         try:
             upload_image_function(apisession, scope_id, new_wlan_id, portal_image)
             PB.log_success(message)
-        except Exception as e:
+        except Exception:
             PB.log_failure(message)
             LOGGER.error("Exception occurred", exc_info=True)
     else:
@@ -831,24 +916,24 @@ def _deploy_site_maps(
     old_site_id: str,
     new_site_id: str,
     data: dict,
-):
+) -> None:
     LOGGER.debug("conf_deploy:_deploy_site_maps")
     if SYS_EXIT:
         sys.exit(0)
     old_map_id = data["id"]
 
     for area in data.get("intended_coverage_areas", []):
-        LOGGER.info(f"_deploy_site_maps:removing ids from intended_coverage_areas")
+        LOGGER.info("_deploy_site_maps:removing ids from intended_coverage_areas")
         del area["id"]
         del area["map_id"]
     if data.get("sitesurvey_path"):
-        LOGGER.info(f"_deploy_site_maps:removing sitesurvey_path")
+        LOGGER.info("_deploy_site_maps:removing sitesurvey_path")
         del data["sitesurvey_path"]
 
     new_map_id = _common_deploy(
         apisession,
-        SITE_STEPS["maps"]["create_mistapi_function"],
-        SITE_STEPS["maps"]["update_mistapi_function"],
+        SITE_STEPS["maps"].create_mistapi_function,
+        SITE_STEPS["maps"].update_mistapi_function,
         new_site_id,
         "maps",
         data,
@@ -856,29 +941,27 @@ def _deploy_site_maps(
 
     if not new_map_id:
         LOGGER.warning(
-            f"new id not returned for old_id {old_map_id}, trying to find a match"
+            "new id not returned for old_id %s, trying to find a match", old_map_id
         )
         new_map_id = UUID_MATCHING.get_new_uuid(old_map_id)
     if not new_map_id:
-        LOGGER.error(f"no match for old_id {old_map_id}")
+        LOGGER.error("no match for old_id %s", old_map_id)
     image_name = (
         f"{FILE_PREFIX}_org_{old_org_id}_site_{old_site_id}_map_{old_map_id}.png"
     )
     if os.path.isfile(image_name):
-        message = (
-            f"Uploading image floorplan  \"{data.get('name', 'map name unknown')}\""
-        )
+        message = f'Uploading image floorplan  "{data.get("name", "map name unknown")}"'
         PB.log_message(message)
         try:
             mistapi.api.v1.sites.maps.addSiteMapImageFile(
                 apisession, new_site_id, new_map_id, image_name
             )
             PB.log_success(message)
-        except:
+        except Exception:
             PB.log_failure(message)
             LOGGER.error("Exception occurred", exc_info=True)
     else:
-        PB.log_debug(f"No image found for \"{data.get('name', 'map name unknown')}\"")
+        PB.log_debug(f'No image found for "{data.get("name", "map name unknown")}"')
 
 
 def _deploy_site(
@@ -887,7 +970,7 @@ def _deploy_site(
     old_org_id: str,
     site_info: dict,
     sites_backup: dict,
-):
+) -> None:
     LOGGER.debug("conf_deploy:_deploy_site")
     if SYS_EXIT:
         sys.exit(0)
@@ -897,26 +980,29 @@ def _deploy_site(
     PB.log_title(f" Deploying Site {site_info['name']} ".center(80, "_"))
     new_site_id = _common_deploy(
         apisession,
-        ORG_STEPS["sites"]["create_mistapi_function"],
-        ORG_STEPS["sites"]["update_mistapi_function"],
+        ORG_STEPS["sites"].create_mistapi_function,
+        ORG_STEPS["sites"].update_mistapi_function,
         org_id,
         "sites",
         site_info,
     )
     LOGGER.debug(
-        f"conf_deploy:_deploy_site:site {site_info['name']}, old id={old_site_id}, new id={new_site_id}"
+        "conf_deploy:_deploy_site:site %s, old id=%s, new id=%s",
+        site_info["name"],
+        old_site_id,
+        new_site_id,
     )
     for step_name, step in SITE_STEPS.items():
         if not site_data.get(step_name):
-            LOGGER.debug(f"{site_info['name']} > {step_name}: nothing to process")
+            LOGGER.debug("%s > %s: nothing to process", site_info["name"], step_name)
         else:
-            LOGGER.debug(f"{site_info['name']} > {step_name}: processing")
+            LOGGER.debug("%s > %s: processing", site_info["name"], step_name)
             if step_name == "settings":
                 step_data = site_data.get(step_name, {})
                 _common_deploy(
                     apisession,
-                    step["create_mistapi_function"],
-                    step["update_mistapi_function"],
+                    step.create_mistapi_function,
+                    step.update_mistapi_function,
                     new_site_id,
                     step_name,
                     step_data,
@@ -926,7 +1012,7 @@ def _deploy_site(
                 if step_data:
                     _import_psks(
                         apisession,
-                        step["create_mistapi_function"],
+                        step.create_mistapi_function,
                         new_site_id,
                         step_data,
                     )
@@ -939,8 +1025,8 @@ def _deploy_site(
                 for step_data in site_data.get(step_name, []):
                     _deploy_wlan(
                         apisession,
-                        step["create_mistapi_function"],
-                        step["update_mistapi_function"],
+                        step.create_mistapi_function,
+                        step.update_mistapi_function,
                         new_site_id,
                         step_data,
                         old_org_id,
@@ -950,8 +1036,8 @@ def _deploy_site(
                 for step_data in site_data.get(step_name, []):
                     _common_deploy(
                         apisession,
-                        step["create_mistapi_function"],
-                        step["update_mistapi_function"],
+                        step.create_mistapi_function,
+                        step.update_mistapi_function,
                         new_site_id,
                         step_name,
                         step_data,
@@ -962,7 +1048,7 @@ def _deploy_site(
 #  ORG FUNCTIONS
 def _deploy_org(
     apisession: mistapi.APISession, org_id: str, org_name: str, backup: dict
-):
+) -> None:
     LOGGER.debug("conf_deploy:_deploy_org")
     PB.log_title(f"Deploying Org {org_name}")
 
@@ -981,7 +1067,7 @@ def _deploy_org(
         org_data["name"] = org_name
         mistapi.api.v1.orgs.orgs.updateOrg(apisession, org_id, org_data)
         PB.log_success(message, inc=True)
-    except Exception as e:
+    except Exception:
         PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
 
@@ -993,7 +1079,7 @@ def _deploy_org(
     try:
         mistapi.api.v1.orgs.setting.updateOrgSettings(apisession, org_id, org_settings)
         PB.log_success(message, inc=True)
-    except Exception as e:
+    except Exception:
         PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
 
@@ -1006,13 +1092,13 @@ def _deploy_org(
                 step_data = org_backup.get("psks")
                 if step_data:
                     _import_psks(
-                        apisession, step["create_mistapi_function"], org_id, step_data
+                        apisession, step.create_mistapi_function, org_id, step_data
                     )
             elif step_name == "usermacs":
                 step_data = org_backup.get("usermacs")
                 if step_data:
                     _import_usermacs(
-                        apisession, step["create_mistapi_function"], org_id, step_data
+                        apisession, step.create_mistapi_function, org_id, step_data
                     )
             else:
                 for step_data in org_backup[step_name]:
@@ -1024,8 +1110,8 @@ def _deploy_org(
                     elif step_name == "wlans":
                         _deploy_wlan(
                             apisession,
-                            step["create_mistapi_function"],
-                            step["update_mistapi_function"],
+                            step.create_mistapi_function,
+                            step.update_mistapi_function,
                             org_id,
                             step_data,
                             old_org_id,
@@ -1033,14 +1119,14 @@ def _deploy_org(
                     else:
                         _common_deploy(
                             apisession,
-                            step["create_mistapi_function"],
-                            step["update_mistapi_function"],
+                            step.create_mistapi_function,
+                            step.update_mistapi_function,
                             org_id,
                             step_name,
                             step_data,
                         )
 
-    PB.log_title(f"Retrying missing objects")
+    PB.log_title("Retrying missing objects")
     for replay in UUID_MATCHING.get_replay():
         if replay.get("object_id"):
             _common_update(
@@ -1050,7 +1136,7 @@ def _deploy_org(
                 replay["object_id"],
                 replay["object_type"],
                 replay["data"],
-                )
+            )
         else:
             _common_deploy(
                 apisession,
@@ -1070,9 +1156,9 @@ def _start_deploy_org(
     org_id: str,
     org_name: str,
     backup_folder: str,
-    src_org_name: str = None,
-    source_backup: str = None,
-):
+    src_org_name: str = "",
+    source_backup: str = "",
+) -> None:
     LOGGER.debug("conf_deploy:_start_deploy_org")
     _go_to_backup_folder(backup_folder, src_org_name, source_backup)
     print()
@@ -1082,7 +1168,7 @@ def _start_deploy_org(
         with open(BACKUP_FILE) as f:
             backup = json.load(f)
         PB.log_success(message, display_pbar=False)
-    except:
+    except Exception:
         PB.log_failure(message, display_pbar=False)
         console.critical("Unable to load the template/bakup")
         LOGGER.error("Exception occurred", exc_info=True)
@@ -1104,7 +1190,7 @@ def _start_deploy_org(
         PB.set_steps_total(steps_total)
         PB.log_success(message, display_pbar=False)
         console.info(f"The process will deploy {steps_total} new objects")
-    except:
+    except Exception:
         PB.log_failure(message, display_pbar=False)
         console.critical("Unable to parse the template/backup file")
         LOGGER.error("Exception occurred", exc_info=True)
@@ -1119,28 +1205,28 @@ def _start_deploy_org(
 
 #####################################################################
 #### MENUS ####
-def _chdir(path: str):
+def _chdir(path: str) -> bool:
     try:
         os.chdir(path)
         return True
     except FileNotFoundError:
-        console.error("Le chemin spécifié n'existe pas.")
+        console.error("The specified path does not exist.")
         return False
     except NotADirectoryError:
-        console.error("Le chemin spécifié n'est pas un répertoire.")
+        console.error("The specified path is not a directory.")
         return False
     except PermissionError:
         console.error(
-            "Vous n'avez pas les autorisations nécessaires "
-            "pour accéder au répertoire spécifié."
+            "You do not have the necessary permissions "
+            "to access the specified directory."
         )
         return False
     except Exception as e:
-        console.error(f"Une erreur s'est produite : {e}")
+        console.error(f"An error occurred: {e}")
         return False
 
 
-def _display_warning(message):
+def _display_warning(message) -> None:
     resp = "x"
     while resp.lower() not in ["y", "n", ""]:
         print()
@@ -1151,7 +1237,7 @@ def _display_warning(message):
         sys.exit(0)
 
 
-def _select_backup_folder(folders):
+def _select_backup_folder(folders) -> None:
     i = 0
     print("Available Templates/Backups:")
     while i < len(folders):
@@ -1172,14 +1258,14 @@ def _select_backup_folder(folders):
                 folder = folders[respi]
             else:
                 print(f'The entry value "{respi}" is not valid. Please try again...')
-        except:
+        except Exception:
             print("Only numbers are allowed. Please try again...")
     _chdir(folder)
 
 
 def _go_to_backup_folder(
-    backup_folder: str, src_org_name: str = None, source_backup: str = None
-):
+    backup_folder: str, src_org_name: str = "", source_backup: str = ""
+) -> None:
     print()
     print(" Source Backup/Template ".center(80, "-"))
     print()
@@ -1211,7 +1297,7 @@ def _go_to_backup_folder(
 
 
 def _check_org_name_in_script_param(
-    apisession: mistapi.APISession, org_id: str, org_name: str = None
+    apisession: mistapi.APISession, org_id: str, org_name: str = ""
 ):
     response = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id)
     if response.status_code != 200:
@@ -1221,7 +1307,7 @@ def _check_org_name_in_script_param(
     return org_name == org_name_from_mist
 
 
-def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str = None):
+def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str = ""):
     if not org_name:
         org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
     while True:
@@ -1236,7 +1322,7 @@ def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str =
             print("The orgnization names do not match... Please try again...")
 
 
-def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None):
+def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = ""):
     while True:
         if not custom_dest_org_name:
             custom_dest_org_name = input("Organization name? ")
@@ -1248,7 +1334,7 @@ def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None
             PB.log_message(message, display_pbar=False)
             try:
                 PB.log_success(message, display_pbar=False)
-            except Exception as e:
+            except Exception:
                 PB.log_failure(message, display_pbar=False)
                 LOGGER.error("Exception occurred", exc_info=True)
                 sys.exit(10)
@@ -1280,11 +1366,11 @@ def _select_dest_org(apisession: mistapi.APISession):
 #### START ####
 def start(
     apisession: mistapi.APISession,
-    org_id: str = None,
-    org_name: str = None,
-    backup_folder_param: str = None,
-    src_org_name: str = None,
-    source_backup: str = None,
+    org_id: str = "",
+    org_name: str = "",
+    backup_folder_param: str = "",
+    src_org_name: str = "",
+    source_backup: str = "",
 ):
     """
     Start the process to deploy a backup/template
@@ -1322,7 +1408,7 @@ def start(
     elif org_id and not org_name:
         org_id, org_name = _check_org_name(apisession, org_id)
     elif not org_id and org_name:
-        org_id, name = _create_org(apisession, org_name)
+        org_id, _ = _create_org(apisession, org_name)
     elif not org_id and not org_name:
         org_id, org_name = _select_dest_org(apisession)
     else:  # should not since we covered all the possibilities...
@@ -1444,52 +1530,60 @@ py -m pip install --upgrade mistapi
             '"mistapi" package version %s is required, '
             "you are currently using version %s.",
             MISTAPI_MIN_VERSION,
-            mistapi.__version__
+            mistapi.__version__,
         )
 
 
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
-    try:
-        opts, args = getopt.getopt(
-            sys.argv[1:],
-            "ho:n:e:l:f:b:",
-            [
-                "help",
-                "org_id=",
-                "org_name=",
-                "env=",
-                "log_file=",
-                "backup_folder=",
-                "source_backup=",
-            ],
-        )
-    except getopt.GetoptError as err:
-        console.error(err)
-        usage()
+    parser = argparse.ArgumentParser(
+        description="Deploy organization backup/template file.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+python3 ./org_conf_deploy.py
+python3 ./org_conf_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "my test org"
+        """,
+    )
 
-    ORG_ID = None
-    ORG_NAME = None
-    BACKUP_FOLDER_PARAM = None
-    SOURCE_BACKUP = None
-    for o, a in opts:
-        if o in ["-h", "--help"]:
-            usage()
-        elif o in ["-o", "--org_id"]:
-            ORG_ID = a
-        elif o in ["-n", "--org_name"]:
-            ORG_NAME = a
-        elif o in ["-e", "--env"]:
-            ENV_FILE = a
-        elif o in ["-l", "--log_file"]:
-            LOG_FILE = a
-        elif o in ["-f", "--backup_folder"]:
-            BACKUP_FOLDER_PARAM = a
-        elif o in ["-b", "--source_backup"]:
-            SOURCE_BACKUP = a
-        else:
-            assert False, "unhandled option"
+    parser.add_argument(
+        "-o",
+        "--org_id",
+        help="Only if the destination org already exists. org_id where to deploy the configuration",
+    )
+    parser.add_argument(
+        "-n", "--org_name", help="Org name where to deploy the configuration"
+    )
+    parser.add_argument(
+        "-e",
+        "--env",
+        default=ENV_FILE,
+        help="define the env file to use (default: ~/.mist_env)",
+    )
+    parser.add_argument(
+        "-l",
+        "--log_file",
+        default=LOG_FILE,
+        help="define the filepath/filename where to write the logs (default: ./script.log)",
+    )
+    parser.add_argument(
+        "-f",
+        "--backup_folder",
+        help="Path to the folder where to save the org backup (default: ./org_backup)",
+    )
+    parser.add_argument(
+        "-b", "--source_backup", help="Name of the backup/template to deploy"
+    )
+
+    args = parser.parse_args()
+
+    ORG_ID = args.org_id
+    ORG_NAME = args.org_name
+    BACKUP_FOLDER_PARAM = args.backup_folder
+    SOURCE_BACKUP = args.source_backup
+    ENV_FILE = args.env
+    LOG_FILE = args.log_file
 
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")

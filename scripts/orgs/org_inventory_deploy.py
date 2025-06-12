@@ -92,6 +92,7 @@ python3 ./org_inventory_deploy.py \
     
 
 """
+
 #####################################################################
 #### IMPORTS ####
 import json
@@ -99,7 +100,7 @@ import os
 import sys
 import re
 import logging
-import getopt
+import argparse
 from typing import Callable
 
 MISTAPI_MIN_VERSION = "0.44.1"
@@ -107,7 +108,7 @@ MISTAPI_MIN_VERSION = "0.44.1"
 try:
     import mistapi
     from mistapi.__logger import console
-except:
+except ImportError:
     print(
         """
         Critical: 
@@ -179,21 +180,42 @@ class UUIDM:
         self.missing_ids = {}
         self.requests_to_replay = []
 
-    def add_uuid(self, new: str, old: str, name: str):
+    def add_uuid(self, new: str, old: str, name: str) -> None:
+        """
+        Add a new UUID mapping from old to new.
+        :param new: The new UUID
+        :param old: The old UUID
+        :param name: The name of the object associated with the UUID
+        """
         if new and old:
             self.uuids[old] = new
             self.old_uuid_names[old] = name
 
-    def get_new_uuid(self, old: str):
-        return self.uuids.get(old)
+    def get_new_uuid(self, old: str) -> str:
+        """
+        Get the new UUID associated with the old UUID.
+        :param old: The old UUID
+        :return: The new UUID if it exists, otherwise None
+        """
+        return self.uuids.get(old, "")
 
-    def add_missing_uuid(self, object_type: str, old_uuid: str, name: str):
-        if not object_type in self.missing_ids:
+    def add_missing_uuid(self, object_type: str, old_uuid: str, name: str) -> None:
+        """
+        Add a missing UUID to the list of missing IDs.
+        :param object_type: The type of the object (e.g., "site", "device")
+        :param old_uuid: The old UUID that is missing
+        :param name: The name of the object associated with the old UUID
+        """
+        if object_type not in self.missing_ids:
             self.missing_ids[object_type] = {}
-        if not old_uuid in self.missing_ids[object_type]:
+        if old_uuid not in self.missing_ids[object_type]:
             self.missing_ids[object_type][old_uuid] = name
 
-    def get_missing_uuids(self):
+    def get_missing_uuids(self) -> dict:
+        """
+        Get the list of missing UUIDs.
+        :return: A dictionary containing the missing UUIDs categorized by object type
+        """
         data = {}
         for object_type, old_uuids in self.missing_ids.items():
             data[object_type] = []
@@ -219,10 +241,20 @@ class UUIDM:
             }
         )
 
-    def get_replay(self):
+    def get_replay(self) -> list:
+        """
+        Get the list of requests to replay.
+        :return: A list of requests that need to be replayed
+        """
         return self.requests_to_replay
 
-    def _uuid_string(self, obj_str: str, missing_uuids: list):
+    def _uuid_string(self, obj_str: str, missing_uuids: list) -> tuple:
+        """
+        Find and replace UUIDs in a string representation of an object.
+        :param obj_str: The string representation of the object
+        :param missing_uuids: A list to store missing UUIDs
+        :return: A tuple containing the updated string and the list of missing UUIDs
+        """
         uuid_re = '"[a-zA_Z_-]*": "[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}"'
         uuids_to_replace = re.findall(uuid_re, obj_str)
         if uuids_to_replace:
@@ -242,7 +274,13 @@ class UUIDM:
                     missing_uuids.append({uuid_key: uuid_val})
         return obj_str, missing_uuids
 
-    def _uuid_list(self, obj_str: str, missing_uuids: list):
+    def _uuid_list(self, obj_str: str, missing_uuids: list) -> tuple:
+        """
+        Find and replace UUIDs in a list representation of an object.
+        :param obj_str: The string representation of the object
+        :param missing_uuids: A list to store missing UUIDs
+        :return: A tuple containing the updated string and the list of missing UUIDs
+        """
         uuid_list_re = r"(\"[a-zA_Z_-]*\": \[\"[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}\"[^\]]*)]"
         uuid_lists_to_replace = re.findall(uuid_list_re, obj_str)
         if uuid_lists_to_replace:
@@ -263,7 +301,13 @@ class UUIDM:
                         missing_uuids.append({uuid_key: uuid_val})
         return obj_str, missing_uuids
 
-    def find_and_replace(self, obj: dict, object_type: str):
+    def find_and_replace(self, obj: dict, object_type: str) -> tuple:
+        """
+        Find and replace UUIDs in a dictionary object.
+        :param obj: The dictionary object to process
+        :param object_type: The type of the object (e.g., "device", "site")
+        :return: A tuple containing the updated object and a list of missing UUIDs
+        """
         # REMOVE READONLY FIELDS
         ids_to_remove = []
 
@@ -301,9 +345,9 @@ class ProgressBar:
         percent = self.steps_count / self.steps_total
         delta = 17
         x = int((size - delta) * percent)
-        print(f"Progress: ", end="")
-        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
-        print(f"{int(percent*100)}%".rjust(5), end="")
+        print("Progress: ", end="")
+        print(f"[{'█' * x}{'.' * (size - delta - x)}]", end="")
+        print(f"{int(percent * 100)}%".rjust(5), end="")
 
     def _pb_new_step(
         self,
@@ -330,31 +374,77 @@ class ProgressBar:
             print("".ljust(80))
             self._pb_update(size)
 
-    def set_steps_total(self, steps_total: int):
+    def set_steps_total(self, steps_total: int) -> None:
+        """
+        Set the total number of steps for the progress bar.
+        :param steps_total: The total number of steps
+        """
         self.steps_total = steps_total
 
-    def log_message(self, message, display_pbar: bool = True):
+    def log_message(self, message, display_pbar: bool = True) -> None:
+        """
+        Log a message in the progress bar.
+        :param message: The message to log
+        :param display_pbar: If True, the progress bar will be displayed after the message
+        """
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
-    def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.info(f"{message}: Success")
+    def log_debug(self, message) -> None:
+        """
+        Log a debug message.
+        :param message: The debug message to log
+        """
+        LOGGER.debug(message)
+
+    def log_success(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a success message in the progress bar.
+        :param message: The success message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the success
+        """
+        LOGGER.info("%s: Success", message)
         self._pb_new_step(
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
-    def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.warning(f"{message}")
+    def log_warning(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a warning message in the progress bar.
+        :param message: The warning message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the warning
+        """
+        LOGGER.warning(message)
         self._pb_new_step(
-            message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar
+            message, "\033[93m\u2b58\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
-    def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.error(f"{message}: Failure")
+    def log_failure(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a failure message in the progress bar.
+        :param message: The failure message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the failure
+        """
+        LOGGER.error("%s: Failure", message)
         self._pb_new_step(
             message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
-    def log_title(self, message, end: bool = False, display_pbar: bool = True):
+    def log_title(self, message, end: bool = False, display_pbar: bool = True) -> None:
+        """
+        Log a title message in the progress bar.
+        :param message: The title message to log
+        :param end: If True, the progress bar will not be displayed after the title
+        :param display_pbar: If True, the progress bar will be displayed after the title
+        """
         LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
@@ -375,7 +465,7 @@ def _unclaim_devices(
     failed_devices: dict,
     proceed: bool = False,
     unclaim_all: bool = False,
-):
+) -> None:
     LOGGER.debug("inventory_deploy:_unclaim_devices")
     serials = []
     macs = []
@@ -402,9 +492,9 @@ def _unclaim_devices(
                     for failed_serial in response.data["error"]:
                         mac = serial_to_mac[failed_serial]
                         message = f"Unable to claim device {mac}: {response.data['reason'][i]}"
-                        failed_devices[
-                            mac
-                        ] = f"Unable to unclaim device {mac}: {response.data['reason'][i]}"
+                        failed_devices[mac] = (
+                            f"Unable to unclaim device {mac}: {response.data['reason'][i]}"
+                        )
                         i += 1
                 elif response.status_code == 200:
                     PB.log_success(message, inc=True)
@@ -416,7 +506,7 @@ def _unclaim_devices(
                             and device.get("serial") not in failed_devices
                         ):
                             failed_devices[device["mac"]] = "Unable to claim the device"
-        except:
+        except Exception:
             PB.log_failure(message, inc=True)
             LOGGER.error("Exception occurred", exc_info=True)
 
@@ -429,7 +519,7 @@ def _claim_devices(
     failed_devices: dict,
     proceed: bool = False,
     unclaim_all: bool = False,
-):
+) -> None:
     LOGGER.debug("inventory_deploy:_claim_devices")
     magics_to_claim = []
     magic_to_mac = {}
@@ -458,7 +548,9 @@ def _claim_devices(
                     for failed_magic in response.data["error"]:
                         mac = magic_to_mac[failed_magic]
                         message = f"Unable to claim device {mac}: {response.data['reason'][i]}"
-                        failed_devices[mac] = f"Unable to claim device {mac}: {response.data['reason'][i]}"
+                        failed_devices[mac] = (
+                            f"Unable to claim device {mac}: {response.data['reason'][i]}"
+                        )
                         i += 1
                 elif response.status_code == 200:
                     PB.log_success(message, inc=True)
@@ -470,7 +562,7 @@ def _claim_devices(
                             and device.get("serial") not in failed_devices
                         ):
                             failed_devices[device["mac"]] = "Unable to claim the device"
-        except:
+        except Exception:
             PB.log_failure(message, inc=True)
             LOGGER.error("Exception occurred", exc_info=True)
 
@@ -484,7 +576,7 @@ def _assign_device_to_site(
     failed_devices: dict,
     proceed: bool = False,
     unclaim_all: bool = False,
-):
+) -> None:
     LOGGER.debug("inventory_deploy:_assign_device_to_site")
     macs_to_assign = []
     for device in devices:
@@ -516,7 +608,9 @@ def _assign_device_to_site(
                     i = 0
                     for failed_mac in response.data["error"]:
                         message = f"Unable to assign device {failed_mac} to site {site_name}: {response.data['reason'][i]}"
-                        failed_devices[failed_mac] = f"Unable to assign device {failed_mac} to site {site_name}: {response.data['reason'][i]}"
+                        failed_devices[failed_mac] = (
+                            f"Unable to assign device {failed_mac} to site {site_name}: {response.data['reason'][i]}"
+                        )
                         i += 1
                 elif response.status_code == 200:
                     PB.log_success(message, inc=True)
@@ -524,8 +618,10 @@ def _assign_device_to_site(
                     PB.log_failure(message, inc=True)
                     for mac in macs_to_assign:
                         if mac and mac not in failed_devices:
-                            failed_devices[mac] = f"Unable to assign the device to site {site_name}"
-        except:
+                            failed_devices[mac] = (
+                                f"Unable to assign the device to site {site_name}"
+                            )
+        except Exception:
             PB.log_failure(message, inc=True)
             LOGGER.error("Exception occurred", exc_info=True)
 
@@ -538,13 +634,13 @@ def _update_device_configuration(
     device: dict,
     devices_type: str = "device",
     proceed: bool = False,
-):
+) -> bool:
     LOGGER.debug("inventory_deploy:_update_device_configuration")
     issue_config = False
     try:
         message = f"{device.get('type', devices_type).title()} {device.get('mac')} (S/N: {device.get('serial')}): Restoring Configuration"
         PB.log_message(message)
-        data, missing_uuids = uuid_matching.find_and_replace(device, "device")
+        data, _ = uuid_matching.find_and_replace(device, "device")
         if proceed:
             response = mistapi.api.v1.sites.devices.updateSiteDevice(
                 dst_apisession, dst_site_id, device["id"], data
@@ -552,7 +648,7 @@ def _update_device_configuration(
             if response.status_code != 200:
                 raise Exception
         PB.log_success(message, inc=True)
-    except Exception as e:
+    except Exception:
         PB.log_failure(message, True)
         LOGGER.error("Exception occurred", exc_info=True)
         issue_config = True
@@ -566,7 +662,7 @@ def _restore_device_images(
     device: dict,
     devices_type: str = "device",
     proceed: bool = False,
-):
+) -> bool:
     LOGGER.debug("inventory_deploy:_restore_device_images")
     i = 1
     image_exists = True
@@ -586,7 +682,7 @@ def _restore_device_images(
                     if response.status_code != 200:
                         raise Exception
                 PB.log_success(message, inc=False)
-            except:
+            except Exception:
                 issue_image = True
                 PB.log_failure(message, inc=False)
                 LOGGER.error("Exception occurred", exc_info=True)
@@ -597,61 +693,122 @@ def _restore_device_images(
 
 
 def _restore_devices(
-    src_apisession: mistapi.APISession,
+    src_apisession: mistapi.APISession | None,
     dst_apisession: mistapi.APISession,
     src_org_id: str,
     dst_org_id: str,
     dst_site_id: str,
     site_name: str,
-    devices: dict,
-    magics: list,
+    devices: list,
+    magics: dict,
     processed_macs: list,
     failed_devices: dict,
     proceed: bool = False,
     unclaim: bool = False,
     unclaim_all: bool = False,
-):
+) -> None:
     LOGGER.debug("inventory_deploy:_restore_devices")
-    if unclaim:
-        _unclaim_devices(src_apisession, src_org_id, devices, magics, failed_devices, proceed, unclaim_all)
-    _claim_devices(dst_apisession, dst_org_id, devices, magics, failed_devices, proceed, unclaim_all)
-    _assign_device_to_site(dst_apisession, dst_org_id, dst_site_id, site_name, devices, failed_devices, proceed, unclaim_all)
+    if unclaim and src_apisession:
+        _unclaim_devices(
+            src_apisession,
+            src_org_id,
+            devices,
+            magics,
+            failed_devices,
+            proceed,
+            unclaim_all,
+        )
+    _claim_devices(
+        dst_apisession,
+        dst_org_id,
+        devices,
+        magics,
+        failed_devices,
+        proceed,
+        unclaim_all,
+    )
+    _assign_device_to_site(
+        dst_apisession,
+        dst_org_id,
+        dst_site_id,
+        site_name,
+        devices,
+        failed_devices,
+        proceed,
+        unclaim_all,
+    )
     for device in devices:
         processed_macs.append(device["mac"])
         if device["mac"] not in failed_devices:
             if device.get("type") == "ap" or unclaim_all:
-                issue_config = _update_device_configuration(dst_apisession, dst_site_id, device, device.get("type"), proceed)
-                issue_image = _restore_device_images(dst_apisession, src_org_id, dst_site_id, device, device.get("type"), proceed)
+                issue_config = _update_device_configuration(
+                    dst_apisession, dst_site_id, device, device.get("type"), proceed
+                )
+                issue_image = _restore_device_images(
+                    dst_apisession,
+                    src_org_id,
+                    dst_site_id,
+                    device,
+                    device.get("type"),
+                    proceed,
+                )
 
                 if issue_config:
-                    failed_devices[device["mac"]] = f"Error when uploading device configuration (site {site_name})"
+                    failed_devices[device["mac"]] = (
+                        f"Error when uploading device configuration (site {site_name})"
+                    )
                 if issue_image:
-                    failed_devices[device["mac"]] = f"Error when uploading device image (site {site_name})"
+                    failed_devices[device["mac"]] = (
+                        f"Error when uploading device image (site {site_name})"
+                    )
+
 
 def _restore_unassigned_devices(
-    src_apisession: mistapi.APISession,
+    src_apisession: mistapi.APISession | None,
     dst_apisession: mistapi.APISession,
     src_org_id: str,
     dst_org_id: str,
-    processed_macs: dict,
-    magics: list,
+    processed_macs: list,
+    magics: dict,
     devices: dict,
     failed_devices: dict,
     proceed: bool = False,
     unclaim: bool = False,
     unclaim_all: bool = False,
-):
+) -> None:
     LOGGER.debug("inventory_deploy:_restore_unassigned_devices")
     devices_not_assigned = []
 
     for device in devices:
-        if not device["mac"] in processed_macs:
-            LOGGER.debug(f"inventory_deploy:_restore_unassigned_devices:new unassigned device found {device['mac']}")
+        if device["mac"] not in processed_macs:
+            LOGGER.debug(
+                "inventory_deploy:_restore_unassigned_devices:new unassigned device found %s",
+                device["mac"],
+            )
             devices_not_assigned.append(device)
-    LOGGER.debug(f"inventory_deploy:_restore_unassigned_devices:list of unassigned device found {devices_not_assigned}")
-    if unclaim:
-        _unclaim_devices(src_apisession, src_org_id, devices_not_assigned, magics, failed_devices, proceed, unclaim_all)
-    _claim_devices(dst_apisession, dst_org_id, devices_not_assigned, magics, failed_devices, proceed, unclaim_all)
+    LOGGER.debug(
+        "inventory_deploy:_restore_unassigned_devices:list of unassigned device found %s",
+        devices_not_assigned,
+    )
+    if unclaim and src_apisession:
+        _unclaim_devices(
+            src_apisession,
+            src_org_id,
+            devices_not_assigned,
+            magics,
+            failed_devices,
+            proceed,
+            unclaim_all,
+        )
+    _claim_devices(
+        dst_apisession,
+        dst_org_id,
+        devices_not_assigned,
+        magics,
+        failed_devices,
+        proceed,
+        unclaim_all,
+    )
 
 
 ##########################################################################################
@@ -662,7 +819,7 @@ def _process_ids(
     scope_id: str,
     old_ids: dict,
     message: str,
-):
+) -> None:
     LOGGER.debug("inventory_deploy:_process_ids")
     message = f"Loading {step['text']}"
     try:
@@ -685,16 +842,16 @@ def _process_ids(
             PB.log_success(message, True)
         else:
             PB.log_warning(message, True)
-    except:
+    except Exception:
         PB.log_failure(message, True)
         LOGGER.error("Exception occurred", exc_info=True)
 
 
 def _process_org_ids(
     dst_apisession: mistapi.APISession, dst_org_id: str, org_backup: dict
-):
+) -> None:
     LOGGER.debug("inventory_deploy:_process_org_ids")
-    for org_step_name, org_step_data in ORG_OBJECT_TO_MATCH.items():
+    for _, org_step_data in ORG_OBJECT_TO_MATCH.items():
         old_ids_dict = org_backup[org_step_data["old_ids_dict"]]
         _process_ids(
             dst_apisession,
@@ -710,9 +867,9 @@ def _process_site_ids(
     new_site_id: str,
     site_name: str,
     site_data: dict,
-):
+) -> None:
     LOGGER.debug("inventory_deploy:_process_site_ids")
-    for site_step_name, site_step_data in SITE_OBJECT_TO_MATCH.items():
+    for _, site_step_data in SITE_OBJECT_TO_MATCH.items():
         old_ids_dict = site_data[site_step_data["old_ids_dict"]]
         _process_ids(
             dst_apisession,
@@ -742,9 +899,7 @@ def _result(failed_devices: dict, proceed: bool) -> bool:
                 f"Unable to find the following {object_type} in the Destination Org:"
             )
             print()
-            mistapi.cli.display_list_of_json_as_table(
-                ids, ["name", "old_uuid"]
-            )
+            mistapi.cli.display_list_of_json_as_table(ids, ["name", "old_uuid"])
             print("")
     if failed_devices:
         console.warning(
@@ -753,7 +908,7 @@ def _result(failed_devices: dict, proceed: bool) -> bool:
         for serial in failed_devices:
             print(f"{serial}: {failed_devices[serial]}")
     if not missing_ids and not failed_devices:
-        console.info("Pre check validation succed!")
+        console.info("Pre check validation succeed!")
         console.info("No object missing, you can restore the devices")
         print("")
         return True
@@ -761,7 +916,7 @@ def _result(failed_devices: dict, proceed: bool) -> bool:
 
 
 def _deploy(
-    src_apisession: mistapi.APISession,
+    src_apisession: mistapi.APISession | None,
     dst_apisession: mistapi.APISession,
     src_org_id: str,
     dst_org_id: str,
@@ -778,7 +933,7 @@ def _deploy(
     _process_org_ids(dst_apisession, dst_org_id, org_backup)
 
     failed_devices = {}
-    processed_macs = []
+    processed_macs: list[str] = []
 
     for restore_site_name in org_backup["sites"]:
         if not filter_site_names or restore_site_name in filter_site_names:
@@ -840,7 +995,7 @@ def _check_access(apisession: mistapi.APISession, org_id: str, message: str) -> 
                             "You don't have full access to this org. Please use another account"
                         )
                         return False
-    except:
+    except Exception:
         PB.log_failure(message, display_pbar=False)
         console.critical("Unable to retrieve privileges from Mist Cloud")
         LOGGER.error("Exception occurred", exc_info=True)
@@ -851,12 +1006,12 @@ def _check_access(apisession: mistapi.APISession, org_id: str, message: str) -> 
 
 
 def _start_deploy(
-    src_apisession: mistapi.APISession,
+    src_apisession: mistapi.APISession | None,
     dst_apisession: mistapi.APISession,
     dst_org_id: str,
     backup_folder_param: str,
-    source_backup: str = None,
-    src_org_name: str = None,
+    source_backup: str = "",
+    src_org_name: str = "",
     filter_site_names: list = [],
     proceed: bool = False,
     unclaim: bool = False,
@@ -871,7 +1026,7 @@ def _start_deploy(
         with open(BACKUP_FILE) as f:
             backup = json.load(f)
         PB.log_success(message, display_pbar=False)
-    except:
+    except Exception:
         PB.log_failure(message, display_pbar=False)
         console.critical("Unable to load the inventory file")
         LOGGER.error("Exception occurred", exc_info=True)
@@ -890,7 +1045,7 @@ def _start_deploy(
         PB.set_steps_total(steps_total)
         PB.log_success(message, display_pbar=False)
         console.info(f"The process will test the deployment of {steps_total} devices")
-    except:
+    except Exception:
         PB.log_failure(message, display_pbar=False)
         console.critical("Unable to parse the template/backup file")
         LOGGER.error("Exception occurred", exc_info=True)
@@ -902,6 +1057,7 @@ def _start_deploy(
         ):
             if (
                 unclaim
+                and src_apisession
                 and _check_access(
                     src_apisession, src_org_id, "Validating access to the Source Org"
                 )
@@ -917,11 +1073,12 @@ def _start_deploy(
                     unclaim,
                     unclaim_all,
                 )
+    return False
 
 
 #####################################################################
 #### FOLDER MGMT ####
-def _chdir(path: str):
+def _chdir(path: str) -> bool:
     try:
         os.chdir(path)
         return True
@@ -935,12 +1092,12 @@ def _chdir(path: str):
         console.error(f"You don't have the rights to access the directory {path}")
         return False
     except Exception as e:
-        console.error(f"An error occured : {e}")
+        console.error(f"An error occurred : {e}")
         LOGGER.error("Exception occurred", exc_info=True)
         return False
 
 
-def _select_backup_folder(folders):
+def _select_backup_folder(folders) -> None:
     i = 0
     print("Available Templates/Backups:")
     while i < len(folders):
@@ -961,14 +1118,14 @@ def _select_backup_folder(folders):
                 folder = folders[respi]
             else:
                 print(f'The entry value "{respi}" is not valid. Please try again...')
-        except:
+        except Exception:
             print("Only numbers are allowed. Please try again...")
     _chdir(folder)
 
 
 def _go_to_backup_folder(
-    backup_folder_param: str, src_org_name: str = None, source_backup: str = None
-):
+    backup_folder_param: str, src_org_name: str = "", source_backup: str = ""
+) -> None:
     print()
     print(" Source Backup/Template ".center(80, "-"))
     print()
@@ -1001,7 +1158,7 @@ def _go_to_backup_folder(
 #####################################################################
 #### DEST ORG SELECTION ####
 def _check_org_name_in_script_param(
-    apisession: mistapi.APISession, dst_org_id: str, org_name: str = None
+    apisession: mistapi.APISession, dst_org_id: str, org_name: str = ""
 ):
     response = mistapi.api.v1.orgs.orgs.getOrg(apisession, dst_org_id)
     if response.status_code != 200:
@@ -1012,20 +1169,20 @@ def _check_org_name_in_script_param(
 
 
 def _check_org_name(
-    apisession: mistapi.APISession, dst_org_id: str, org_name: str = None
+    apisession: mistapi.APISession, dst_org_id: str, org_name: str = ""
 ):
     if not org_name:
         org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, dst_org_id).data["name"]
     while True:
         print()
         resp = input(
-            "To avoid any error, please confirm the current destination orgnization name: "
+            "To avoid any error, please confirm the current destination organization name: "
         )
         if resp == org_name:
             return dst_org_id, org_name
         else:
             print()
-            print("The orgnization names do not match... Please try again...")
+            print("The organization names do not match... Please try again...")
 
 
 def _select_dest_org(apisession: mistapi.APISession):
@@ -1043,13 +1200,13 @@ def _select_dest_org(apisession: mistapi.APISession):
 #### START ####
 def start(
     dst_apisession: mistapi.APISession,
-    src_apisession: mistapi.APISession = None,
-    dst_org_id: str = None,
-    dst_org_name: str = None,
-    backup_folder_param: str = None,
-    src_org_name: str = None,
-    source_backup: str = None,
-    filter_site_names: list = [],
+    src_apisession: mistapi.APISession | None = None,
+    dst_org_id: str = "",
+    dst_org_name: str = "",
+    backup_folder_param: str = "",
+    src_org_name: str = "",
+    source_backup: str = "",
+    filter_site_names: list | None = None,
     proceed: bool = False,
     unclaim: bool = False,
     unclaim_all: bool = False,
@@ -1100,6 +1257,8 @@ def start(
         Process success or not. If the process raised any warning/error (e.g. missing objects in the
         dest org), it will return False.
     """
+    if not filter_site_names:
+        filter_site_names = []
     if not backup_folder_param:
         backup_folder_param = BACKUP_FOLDER
 
@@ -1286,82 +1445,93 @@ py -m pip install --upgrade mistapi
             '"mistapi" package version %s is required, '
             "you are currently using version %s.",
             MISTAPI_MIN_VERSION,
-            mistapi.__version__
+            mistapi.__version__,
         )
 
 
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
-    try:
-        opts, args = getopt.getopt(
-            sys.argv[1:],
-            "ho:n:e:s:l:f:b:pua",
-            [
-                "help",
-                "org_id=",
-                "org_name=",
-                "env=",
-                "source_env=",
-                "log_file=",
-                "backup_folder=",
-                "source_backup=",
-                "sites=",
-                "proceed",
-                "unclaim",
-                "unclaim_all",
-            ],
-        )
-    except getopt.GetoptError as err:
-        console.error(err)
-        usage()
+    parser = argparse.ArgumentParser(
+        description="Deploy organization inventory backup file"
+    )
+    parser.add_argument("-o", "--org_id", help="org_id where to deploy the inventory")
+    parser.add_argument(
+        "-n", "--org_name", help="org name where to deploy the inventory"
+    )
+    parser.add_argument(
+        "-e", "--env", help="define the env file to use", default="~/.mist_env"
+    )
+    parser.add_argument(
+        "--source_env", help="env file to access the Source Organization"
+    )
+    parser.add_argument(
+        "-l",
+        "--log_file",
+        help="define the filepath/filename where to write the logs",
+        default="./script.log",
+    )
+    parser.add_argument(
+        "-f",
+        "--backup_folder",
+        help="Path to the folder where to save the org backup",
+        default="./org_backup/",
+    )
+    parser.add_argument(
+        "-b", "--source_backup", help="Name of the backup/template to deploy"
+    )
+    parser.add_argument(
+        "-s",
+        "--sites",
+        help="If only selected must be process, list a site names to process, comma separated",
+    )
+    parser.add_argument(
+        "-p",
+        "--proceed",
+        action="store_true",
+        help="Proceed to the deployment (disable Dry Run mode)",
+    )
+    parser.add_argument(
+        "-u",
+        "--unclaim",
+        action="store_true",
+        help="unclaim the devices from the source org",
+    )
+    parser.add_argument(
+        "-a",
+        "--unclaim_all",
+        action="store_true",
+        help="also migrate switches and gateways from the source org",
+    )
 
-    DST_ORG_ID = None
-    ORG_NAME = None
-    BACKUP_FOLDER_PARAM = None
+    args = parser.parse_args()
+
+    DST_ORG_ID = args.org_id
+    ORG_NAME = args.org_name
+    BACKUP_FOLDER_PARAM = args.backup_folder
     FILTER_SITE_NAMES = []
-    SOURCE_BACKUP = None
-    PROCEED = False
-    UNCLAIM = False
-    UNCLAIM_ALL = False
-    for o, a in opts:
-        if o in ["-a", "--unclaim_all"]:
-            UNCLAIM_ALL = True
-        elif o in ["-b", "--source_backup"]:
-            SOURCE_BACKUP = a
-        elif o in ["-e", "--env"]:
-            DEST_ENV_FILE = a
-        elif o in ["-f", "--backup_folder"]:
-            BACKUP_FOLDER_PARAM = a
-        elif o in ["-h", "--help"]:
-            usage()
-            sys.exit(0)
-        elif o in ["-l", "--log_file"]:
-            LOG_FILE = a
-        elif o in ["-n", "--org_name"]:
-            ORG_NAME = a
-        elif o in ["-o", "--org_id"]:
-            DST_ORG_ID = a
-        elif o in ["-p", "--proceed"]:
-            PROCEED = True
-        elif o in ["-u", "--unclaim"]:
-            UNCLAIM = True
-        elif o in ["--source_env"]:
-            SOURCE_ENV_FILE = a
-        elif o in ["-s", "--sites"]:
-            try:
-                tmp = a.split(",")
-                for site_name in tmp:
-                    FILTER_SITE_NAMES.append(site_name.strip())
-            except:
-                console.error(
-                    'Unable to process the "sites" parameter. Please check it\'s value.'
-                )
-                sys.exit(3)
-        elif o in ["-u", "--unclaim"]:
-            UNCLAIM = True
-        else:
-            assert False, "unhandled option"
+    SOURCE_BACKUP = args.source_backup
+    PROCEED = args.proceed
+    UNCLAIM = args.unclaim
+    UNCLAIM_ALL = args.unclaim_all
+
+    if args.env:
+        DEST_ENV_FILE = args.env
+    if args.source_env:
+        SOURCE_ENV_FILE = args.source_env
+    if args.log_file:
+        LOG_FILE = args.log_file
+
+    if args.sites:
+        try:
+            tmp = args.sites.split(",")
+            for name in tmp:
+                FILTER_SITE_NAMES.append(name.strip())
+        except Exception:
+            console.error(
+                'Unable to process the "sites" parameter. Please check it\'s value.'
+            )
+            sys.exit(3)
 
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")

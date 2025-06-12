@@ -7,15 +7,15 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to assign devices to sites from a CSV file. 
+Python script to assign devices to sites from a CSV file.
 If the devices are already in the Org Inventory, the device MAC Address, Serial
 Number or Claim Code can be provided.
 If devices are not yet in the Org Inventory, only Claim Codes can be used. The
 script will first claim the devices and then assign them to the sites.
 
-To allow the script to reassign a device from a previous site, please use the 
+To allow the script to reassign a device from a previous site, please use the
 `-r` flag.
-To set the switches/gateways as managed (not read only mode), please use the 
+To set the switches/gateways as managed (not read only mode), please use the
 `-m` flag.
 
 -------
@@ -29,7 +29,7 @@ If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
 It is recommended to use an environment file to store the required information
-to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
 information about the available parameters).
 
 -------
@@ -69,7 +69,7 @@ Required:
 Script Parameters:
 -h, --help              display this help
 -o, --org_id=           Set the org_id
--f, --file=             Path to the csv file 
+-f, --file=             Path to the csv file
 
 -m, --managed           Enable the "managed" mode for the switches/gateways.
                         By default the assigned switches/gateways will be in
@@ -81,7 +81,7 @@ Script Parameters:
 
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
--e, --env=              define the env file to use (see mistapi env file 
+-e, --env=              define the env file to use (see mistapi env file
                         documentation here: https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
 
@@ -95,9 +95,8 @@ python3 ./inventory_assign.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -f m
 #### IMPORTS ####
 import logging
 import sys
-import os
 import csv
-import getopt
+import argparse
 import re
 
 MISTAPI_MIN_VERSION = "0.44.1"
@@ -105,7 +104,7 @@ MISTAPI_MIN_VERSION = "0.44.1"
 try:
     import mistapi
     from mistapi.__logger import console as CONSOLE
-except:
+except ImportError:
     print(
         """
         Critical: 
@@ -141,6 +140,7 @@ class ProgressBar:
     """
     PROGRESS BAR AND DISPLAY
     """
+
     def __init__(self):
         self.steps_total = 0
         self.steps_count = 0
@@ -153,8 +153,8 @@ class ProgressBar:
         delta = 17
         x = int((size - delta) * percent)
         print(f"Progress: ", end="")
-        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
-        print(f"{int(percent*100)}%".rjust(5), end="")
+        print(f"[{'█' * x}{'.' * (size - delta - x)}]", end="")
+        print(f"{int(percent * 100)}%".rjust(5), end="")
 
     def _pb_new_step(
         self,
@@ -201,7 +201,7 @@ class ProgressBar:
     def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
         LOGGER.warning(f"{message}")
         self._pb_new_step(
-            message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar
+            message, "\033[93m\u2b58\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
@@ -245,11 +245,10 @@ def _generate_failed_claim_messages(claim_codes: list, reasons: list):
     return failed_messages
 
 
-def _claim_devices(apisession: mistapi.APISession, org_id: str, claim_codes: list):
+def _claim_devices(apisession: mistapi.APISession, org_id: str, claim_codes: list[str]):
     message = f"Claiming {len(claim_codes)} device(s)"
     PB.log_message(message, display_pbar=False)
     try:
-
         resp = mistapi.api.v1.orgs.inventory.addOrgInventory(
             apisession, org_id, claim_codes
         )
@@ -280,7 +279,7 @@ def _claim_devices(apisession: mistapi.APISession, org_id: str, claim_codes: lis
                 ),
                 "duplicated": resp.data.get("duplicated", []),
             }
-    except:
+    except Exception:
         PB.log_failure(message, display_pbar=False)
         return {
             "error": resp.data.get(
@@ -345,7 +344,7 @@ def _assign_devices(
             return _generate_failed_assign_messages(
                 resp.data.get("error", []), resp.data.get("reason", [])
             )
-    except:
+    except Exception:
         PB.log_failure(message, inc=False)
         return resp.data.get("reason", [f"Unknown error for devices {macs}"])
 
@@ -353,7 +352,7 @@ def _assign_devices(
 def _process_devices(
     apisession: mistapi.APISession,
     org_id: str,
-    data: object,
+    data: dict,
     managed: bool = False,
     no_reassign: bool = True,
 ):
@@ -398,9 +397,11 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id: str):
     PB.log_message("Processing CSV file", display_pbar=False)
     with open(file_path, "r") as f:
         data_from_csv = csv.reader(f, skipinitialspace=True, quotechar='"')
-        data_from_csv = [[c.replace("\ufeff", "") for c in row] for row in data_from_csv]
+        data_from_csv = [
+            [c.replace("\ufeff", "") for c in row] for row in data_from_csv
+        ]
         for line in data_from_csv:
-            LOGGER.debug(f"_read_csv_file:new line {line}")
+            LOGGER.debug("_read_csv_file:new line %s", line)
             if not fields:
                 i = 0
                 for column in line:
@@ -435,7 +436,7 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id: str):
                             sites[site["name"]] = site["id"]
                         PB.log_success(message, inc=False, display_pbar=False)
                         PB.log_message("Processing CSV file", display_pbar=False)
-                    except:
+                    except Exception:
                         PB.log_failure(message, inc=False, display_pbar=False)
                         sys.exit(0)
 
@@ -461,7 +462,7 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id: str):
                                 inventory[device["name"]] = device["mac"]
                         PB.log_success(message, inc=False, display_pbar=False)
                         PB.log_message("Processing CSV file", display_pbar=False)
-                    except:
+                    except Exception:
                         PB.log_failure(message, inc=False, display_pbar=False)
                         sys.exit(0)
 
@@ -490,11 +491,11 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id: str):
                     device_mac = line[row_device]
 
                 if site_id and device_mac:
-                    if not site_id in data:
+                    if site_id not in data:
                         data[site_id] = []
                     data[site_id].append(device_mac.replace(":", "").replace("-", ""))
                 elif site_id and use_claimcode:
-                    if not site_id in data_cc:
+                    if site_id not in data_cc:
                         data_cc[site_id] = [line[row_device]]
                     else:
                         data_cc[site_id].append(line[row_device])
@@ -530,7 +531,7 @@ def start(
     org_id: str,
     managed: bool = False,
     no_reassign: bool = True,
-):
+) -> None:
     """
     Start the backup process
 
@@ -553,7 +554,7 @@ def start(
 
 #####################################################################
 #### USAGE ####
-def usage(error_message:str=None):
+def usage(error_message: str | None = None):
     """
     show script usage
     """
@@ -709,44 +710,48 @@ py -m pip install --upgrade mistapi
             '"mistapi" package version %s is required, '
             "you are currently using version %s.",
             MISTAPI_MIN_VERSION,
-            mistapi.__version__
+            mistapi.__version__,
         )
-
 
 
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
-    try:
-        opts, args = getopt.getopt(
-            sys.argv[1:],
-            "ho:f:mre:l:",
-            ["help", "org_id=", "file=", "managed", "reassign", "env=", "log_file="],
-        )
-    except getopt.GetoptError as err:
-        usage(err)
+    parser = argparse.ArgumentParser(
+        description="Assign devices to sites from a CSV file"
+    )
+    parser.add_argument("-o", "--org_id", help="Set the org_id")
+    parser.add_argument("-f", "--file", help="Path to the csv file")
+    parser.add_argument(
+        "-m",
+        "--managed",
+        action="store_true",
+        help="Enable the 'managed' mode for the switches/gateways",
+    )
+    parser.add_argument(
+        "-r",
+        "--reassign",
+        action="store_true",
+        help="Allow the script to reassign devices from a previous site",
+    )
+    parser.add_argument(
+        "-l",
+        "--log_file",
+        default="./script.log",
+        help="define the filepath/filename where to write the logs",
+    )
+    parser.add_argument(
+        "-e", "--env", default="~/.mist_env", help="define the env file to use"
+    )
 
-    ORG_ID = None
-    CSV_FILE = None
-    MANAGED = False
-    NO_REASSIGN = True
-    for o, a in opts:
-        if o in ["-h", "--help"]:
-            usage()
-        elif o in ["-o", "--org_id"]:
-            ORG_ID = a
-        elif o in ["-f", "--file"]:
-            CSV_FILE = a
-        elif o in ["-m", "--managed"]:
-            MANAGED = True
-        elif o in ["-r", "--reassign"]:
-            NO_REASSIGN = False
-        elif o in ["-l", "--log_file"]:
-            LOG_FILE = a
-        elif o in ["-e", "--env"]:
-            ENV_FILE = a
-        else:
-            assert False, "unhandled option"
+    args = parser.parse_args()
+
+    ORG_ID = args.org_id
+    CSV_FILE = args.file
+    MANAGED = args.managed
+    NO_REASSIGN = not args.reassign
+    LOG_FILE = args.log_file
+    ENV_FILE = args.env
 
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")
