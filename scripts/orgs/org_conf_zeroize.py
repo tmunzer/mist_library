@@ -62,7 +62,7 @@ import sys
 import getopt
 import logging
 
-MISTAPI_MIN_VERSION = "0.44.1"
+MISTAPI_MIN_VERSION = "0.56.1"
 
 try:
     import mistapi
@@ -82,8 +82,8 @@ except:
 #####################################################################
 #### PARAMETERS #####
 ids_to_not_delete = []
-log_file = "./script.log"
-env_file = "~/.mist_env"
+LOG_FILE = "./script.log"
+ENV_FILE = "~/.mist_env"
 
 #####################################################################
 #### LOGS ####
@@ -204,7 +204,7 @@ get_org_steps = {
         "check_next": True,
     },
     "vpns": {
-        "get_mistapi_function": mistapi.api.v1.orgs.vpns.listOrgsVpns,
+        "get_mistapi_function": mistapi.api.v1.orgs.vpns.listOrgVpns,
         "delete_mistapi_function": mistapi.api.v1.orgs.vpns.deleteOrgVpn,
         "text": "Org vpns",
         "check_next": True,
@@ -287,6 +287,16 @@ get_org_steps = {
         "text": "Org wlans",
         "check_next": True,
     },
+    "aamwprofiles": {
+        "get_mistapi_function": mistapi.api.v1.orgs.aamwprofiles.listOrgAAMWProfiles,
+        "delete_mistapi_function": mistapi.api.v1.orgs.aamwprofiles.deleteOrgAAMWProfile,
+        "text": "Org Advanced Anti-Malware Profiles",
+        "check_next": True,
+    },
+    "antivirus": {
+        "get_mistapi_function": mistapi.api.v1.orgs.avprofiles.listOrgAntivirusProfiles,
+        "delete_mistapi_function": mistapi.api.v1.orgs.avprofiles.deleteOrgAntivirusProfile,
+    }
 }
 
 
@@ -364,12 +374,12 @@ def check_org_name(org_name):
     while True:
         print()
         resp = input(
-            "To avoid any error, please confirm the orgnization name you want to reset: "
+            "To avoid any error, please confirm the organization name you want to reset: "
         )
         if resp == org_name:
             return True
         else:
-            console.warning("The orgnization names do not match... Please try again...")
+            console.warning("The organization names do not match... Please try again...")
 
 
 def start(apisession, org_id, org_name_from_user):
@@ -387,7 +397,7 @@ def start(apisession, org_id, org_name_from_user):
         f"Are you sure about this? Do you want to remove all the objects from the org {org_name_from_mist} with the id {org_id} (y/N)? "
     )
     display_warning(
-        f'Do you understant you won\'t be able to revert changes done on the org {org_name_from_mist} with id {org_id} (Please type "I understand")? ',
+        f'Do you understand you won\'t be able to revert changes done on the org {org_name_from_mist} with id {org_id} (Please type "I understand")? ',
         "I understand",
     )
 
@@ -401,7 +411,11 @@ def start(apisession, org_id, org_name_from_user):
     )
 
 
-def usage():
+def usage(error_message: str = "") -> None:
+    """
+    Print the usage information and exit the script.
+    :param error_message: Optional error message to display
+    """
     print(
         '''
 -------------------------------------------------------------------------------
@@ -461,6 +475,8 @@ python3 ./org_conf_zeroise.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n m
 
 '''
     )
+    if error_message:
+        console.critical(error_message)
     sys.exit(0)
 
 
@@ -536,33 +552,31 @@ if __name__ == "__main__":
             ["help", "org_id=", "org_name=", "env=", "log_file="],
         )
     except getopt.GetoptError as err:
-        console.error(err)
+        console.error(err.msg)
         usage()
 
-    org_id = None
-    org_name = None
-    backup_folder_param = None
-    source_backup_org_name = None
+    ORG_ID = None
+    ORG_NAME = None
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
         elif o in ["-o", "--org_id"]:
-            org_id = a
+            ORG_ID = a
         elif o in ["-n", "--org_name"]:
-            org_name = a
+            ORG_NAME = a
         elif o in ["-e", "--env"]:
-            env_file = a
+            ENV_FILE = a
         elif o in ["-l", "--log_file"]:
-            log_file = a
+            LOG_FILE = a
         else:
             assert False, "unhandled option"
 
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode="w")
+    logging.basicConfig(filename=LOG_FILE, filemode="w")
     LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### START ###
     warning()
-    apisession = mistapi.APISession(env_file=env_file)
-    apisession.login()
-    start(apisession, org_id, org_name)
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
+    start(APISESSION, ORG_ID, ORG_NAME)
