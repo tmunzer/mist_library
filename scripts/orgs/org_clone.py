@@ -123,7 +123,7 @@ def _backup_org(
     source_mist_session: mistapi.APISession, src_org_id: str, backup_folder_param:str
 ):
     try:
-        _print_new_step("Backuping SOURCE Org Configuration")
+        _print_new_step("Backing up SOURCE Org Configuration")
         org_conf_backup.start(source_mist_session, src_org_id, backup_folder_param)
     except Exception:
         sys.exit(255)

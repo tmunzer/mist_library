@@ -628,7 +628,7 @@ def _do_backup(
 
 #### BACKUP ####
 def _backup_full_org(mist_session, org_id, org_name) -> dict:
-    PB.log_title(f"Backuping Org {org_name}")
+    PB.log_title(f"Backing up Org {org_name}")
     backup = {}
     backup["org"] = {"id": org_id}
 
@@ -652,7 +652,7 @@ def _backup_full_org(mist_session, org_id, org_name) -> dict:
         site_id = site["id"]
         site_name = site["name"]
         site_backup = {}
-        PB.log_title(f"Backuping Site {site_name}")
+        PB.log_title(f"Backing up Site {site_name}")
         for step_name, step in SITE_STEPS.items():
             site_backup[step_name] = _do_backup(
                 mist_session,

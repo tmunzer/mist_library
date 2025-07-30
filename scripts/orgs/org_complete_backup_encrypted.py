@@ -137,7 +137,7 @@ def _backup_org(
     LOGGER.debug(f"org_complete_backup:_backup_org:parameter:backup_name:{backup_name}")
 
     try:
-        _print_new_step("Backuping SOURCE Org Configuration")
+        _print_new_step("Backing up SOURCE Org Configuration")
         org_conf_backup_encrypted.start(
             mist_session=source_mist_session,
             org_id=org_id,
@@ -165,7 +165,7 @@ def _backup_inventory(
     LOGGER.debug(f"org_complete_backup:_backup_inventory:parameter:backup_folder_param:{backup_folder_param}")
     LOGGER.debug(f"org_complete_backup:_backup_inventory:parameter:backup_name:{backup_name}")
 
-    _print_new_step("Backuping SOURCE Org Inventory")
+    _print_new_step("Backing up SOURCE Org Inventory")
     org_inventory_backup_encrypted.start(
             mist_session=source_mist_session,
             org_id=org_id,

@@ -532,13 +532,13 @@ def _backup_inventory(
     org_name: str = None,
     backup: dict = {},
 ):
-    PB.log_title(f"Backuping Org {org_name} Elements ")
+    PB.log_title(f"Backing up Org {org_name} Elements ")
 
     backup["org"]["id"] = org_id
     ################################################
-    ##  Backuping inventory
+    ##  Backing up inventory
     for device_type in DEVICE_TYPES:
-        message = f"Backuping {device_type} magics"
+        message = f"Backing up {device_type} magics"
         PB.log_message(message)
         try:
             response = mistapi.api.v1.orgs.inventory.getOrgInventory(
@@ -561,7 +561,7 @@ def _backup_inventory(
     ################################################
     ##  Retrieving org MxEdges
 
-    message = f"Backuping Org MxEdges"
+    message = f"Backing up Org MxEdges"
     PB.log_message(message)
     try:
         response = mistapi.api.v1.orgs.mxedges.listOrgMxEdges(
@@ -578,7 +578,7 @@ def _backup_inventory(
 
     ################################################
     ##  Retrieving device profiles
-    message = f"Backuping Device Profiles"
+    message = f"Backing up Device Profiles"
     PB.log_message(message)
     try:
         response = mistapi.api.v1.orgs.deviceprofiles.listOrgDeviceProfiles(
@@ -595,7 +595,7 @@ def _backup_inventory(
         LOGGER.error("Exception occurred", exc_info=True)
     ################################################
     ##  Retrieving evpntopologies
-    message = f"Backuping EVPN Topologies"
+    message = f"Backing up EVPN Topologies"
     PB.log_message(message)
     try:
         response = mistapi.api.v1.orgs.evpn_topologies.listOrgEvpnTopologies(
@@ -626,9 +626,9 @@ def _backup_inventory(
         LOGGER.error("Exception occurred", exc_info=True)
 
     ################################################
-    ## Backuping Sites Devices
+    ## Backing up Sites Devices
     for site in sites:
-        PB.log_title(f"Backuping Site {site['name']}")
+        PB.log_title(f"Backing up Site {site['name']}")
         message = f"Devices List"
         PB.log_message(message)
         try:
@@ -646,10 +646,10 @@ def _backup_inventory(
             PB.log_failure(message, True)
             LOGGER.error("Exception occurred", exc_info=True)
         ################################################
-        ## Backuping Site Devices Images
+        ## Backing up Site Devices Images
         for device in devices:
             _no_magic(backup, site["name"], device)
-            message = f"Backuping {device['type'].upper()} {device['serial']} images"
+            message = f"Backing up {device['type'].upper()} {device['serial']} images"
             PB.log_message(message)
             try:
                 i = 1

@@ -222,7 +222,7 @@ def _backup_wlan_portal(org_id, site_id, wlans):
 
         if "portal_template_url" in wlan:
             print(
-                f"Backuping portal template for WLAN {wlan['ssid']} ".ljust(79, "."),
+                f"Backing up portal template for WLAN {wlan['ssid']} ".ljust(79, "."),
                 end="",
                 flush=True,
             )
@@ -235,7 +235,7 @@ def _backup_wlan_portal(org_id, site_id, wlans):
                 print("\033[31m\u2716\033[0m")
         if "portal_image" in wlan:
             print(
-                f"Backuping portal image for WLAN {wlan['ssid']} ".ljust(79, "."),
+                f"Backing up portal image for WLAN {wlan['ssid']} ".ljust(79, "."),
                 end="",
                 flush=True,
             )
@@ -302,7 +302,7 @@ def _backup_site(apisession, site_id, site_name, org_id):
     for xmap in site_backup["site"]["maps"]:
         if "url" in xmap:
             print(
-                f"Backuping image for map {xmap['name']} ".ljust(79, "."),
+                f"Backing up image for map {xmap['name']} ".ljust(79, "."),
                 end="",
                 flush=True,
             )
