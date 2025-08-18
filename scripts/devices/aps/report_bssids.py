@@ -39,9 +39,32 @@ Available fields:
 - device_notes
 - device_ipv4
 - device_ipv6
-- device_bssid_mask     (note: if used, the script will create one entry for each radio)
-- device_bssid_start    (note: if used, the script will create one entry for each radio)
-- device_bssid_end      (note: if used, the script will create one entry for each radio)
+- device_bssid_mask         (note: if used, the script will create one entry for each radio)
+- device_bssid_start        (note: if used, the script will create one entry for each radio)
+- device_bssid_end          (note: if used, the script will create one entry for each radio)
+- device_radio_band         (note: if used, the script will create one entry for each radio)
+- device_radio_channel      (note: if used, the script will create one entry for each radio)
+- device_radio_disabled     (note: if used, the script will create one entry for each radio)
+- device_radio0_bssid_mask  (note: requires at least one enabled SSID on the radio_0)
+- device_radio0_bssid_start (note: requires at least one enabled SSID on the radio_0)
+- device_radio0_bssid_end   (note: requires at least one enabled SSID on the radio_0)
+- device_radio0_band        (note: requires at least one enabled SSID on the radio_0)
+- device_radio0_channel     (note: requires at least one enabled SSID on the radio_0)
+- device_radio0_disabled
+- device_radio1_bssid_mask  (note: requires at least one enabled SSID on the radio_1)
+- device_radio1_bssid_start (note: requires at least one enabled SSID on the radio_1)
+- device_radio1_bssid_end   (note: requires at least one enabled SSID on the radio_1)
+- device_radio1_band        (note: requires at least one enabled SSID on the radio_1)
+- device_radio1_channel     (note: requires at least one enabled SSID on the radio_1)
+- device_radio1_disabled
+- device_radio2_bssid_mask  (note: requires at least one enabled SSID on the radio_2)
+- device_radio2_bssid_start (note: requires at least one enabled SSID on the radio_2)
+- device_radio2_bssid_end   (note: requires at least one enabled SSID on the radio_2)
+- device_radio2_band        (note: requires at least one enabled SSID on the radio_2)
+- device_radio2_channel     (note: requires at least one enabled SSID on the radio_2)
+- device_radio2_disabled
+
+Deprecated fields:
 - device_24_bssid_mask  (note: requires at least one enabled SSID on the 2.4GHz radio)
 - device_24_bssid_start (note: requires at least one enabled SSID on the 2.4GHz radio)
 - device_24_bssid_end   (note: requires at least one enabled SSID on the 2.4GHz radio)
@@ -63,16 +86,18 @@ Options:
 
 -c, --csv_file=     Path to the CSV file where to save the output
                     default is "./validate_site_variables.csv"
-                        
+
 -f, --fields=       list of fields to save in the CSV file
                     default fields:
-                    device_name, device_mac, device_ipv4, device_ipv6, device_24_bssid_start,
-                    device_24_bssid_end, device_5_bssid_start, device_5_bssid_end,
-                    device_6_bssid_start, device_6_bssid_end, site_name, map_name
+                    device_name, device_mac, device_ipv4, device_ipv6,
+                    device_radio0_band, device_radio0_bssid_start, device_radio0_bssid_end,
+                    device_radio1_band, device_radio1_bssid_start, device_radio1_bssid_end,
+                    device_radio2_band, device_radio2_bssid_start, device_radio2_bssid_end,
+                    site_name, map_name
 
 --e911              set the fields to E911 data fields (overrides -f/--fields):
-                    device_name, device_ipv4, device_ipv6, device_bssid_mask, site_name,
-                    map_name
+                    device_name, device_ipv4, device_ipv6, device_radio_disabled,
+                    device_radio_band, device_bssid_mask, site_name, map_name
 
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
@@ -125,12 +150,18 @@ DEFAULT_FIELDS = [
     "device_name",
     "device_ipv4",
     "device_ipv6",
-    "device_24_bssid_start",
-    "device_24_bssid_end",
-    "device_5_bssid_start",
-    "device_5_bssid_end",
-    "device_6_bssid_start",
-    "device_6_bssid_end",
+    "device_radio0_disabled",
+    "device_radio0_band",
+    "device_radio0_bssid_start",
+    "device_radio0_bssid_end",
+    "device_radio1_disabled",
+    "device_radio1_band",
+    "device_radio1_bssid_start",
+    "device_radio1_bssid_end",
+    "device_radio2_disabled",
+    "device_radio2_band",
+    "device_radio2_bssid_start",
+    "device_radio2_bssid_end",
     "site_name",
     "map_name",
 ]
@@ -138,6 +169,8 @@ E911_FIELDS = [
     "device_name",
     "device_ipv4",
     "device_ipv6",
+    "device_radio_disabled",
+    "device_radio_band",
     "device_bssid_mask",
     "site_name",
     "map_name",
@@ -318,7 +351,7 @@ def _retrieve_site_maps(apisession: mistapi.APISession, site_id: str):
 ###############################################################################
 #### FUNCTIONS ####
 def _gen_entry(
-    device: dict, site_data: dict, map_data: dict, radio_mac: str, fields: list
+    device: dict, site_data: dict, map_data: dict, radio_mac: str|None, fields: list
 ):
     data = []
     for field in fields:
@@ -367,19 +400,59 @@ def _gen_entry(
                 data.append(hex(int(radio_mac, 16) + 15).replace("0x", ""))
             else:
                 data.append(None)
-        ### DEVICE MAC 2.4GHZ
-        elif field == "device_24_bssid_mask":
-            if not device.get("radio_stat"):
+        elif field == "device_radio_band":
+            radio = next(
+                (
+                    x
+                    for x in device.get("radio_stat", {}).values()
+                    if x.get("mac") == radio_mac
+                ),
+                None,
+            )
+            if radio and radio.get("usage"):
+                data.append(radio.get("usage") + "GHz")
+            else:
+                data.append(None)
+        elif field == "device_radio_channel":
+            try:
+                radio = next(
+                    (
+                        x
+                        for x in device.get("radio_stat", {}).values()
+                        if x.get("mac") == radio_mac
+                    ),
+                    None,
+                )
+                if radio:
+                    data.append(radio.get("channel", None))
+            except StopIteration:
+                data.append(None)
+        elif field == "device_radio_disabled":
+            radio = next(
+                (
+                    x
+                    for x in device.get("radio_stat", {}).values()
+                    if x.get("mac") == radio_mac
+                ),
+                None,
+            )
+            if radio:
+                data.append(radio.get("disabled", False))
+            else:
+                data.append(True)
+        ### DEVICE MAC RADIO0
+        elif field == "device_radio0_bssid_mask":
+            if not device.get("radio_stat", {}).get("band_24", {}).get("mac"):
                 data.append(None)
             else:
                 data.append(device.get("radio_stat", {}).get("band_24", {}).get("mac"))
-        elif field == "device_24_bssid_start":
-            if not device.get("radio_stat"):
+        elif field == "device_radio0_bssid_start":
+            if not device.get("radio_stat", {}).get("band_24", {}).get("mac"):
                 data.append(None)
             else:
                 data.append(device.get("radio_stat", {}).get("band_24", {}).get("mac"))
-        elif field == "device_24_bssid_end":
-            if not device.get("radio_stat"):
+        elif field == "device_radio0_bssid_end":
+            if not device.get("radio_stat", {}).get("band_24", {}).get("mac"):
                 data.append(None)
             else:
                 tmp = device.get("radio_stat", {}).get("band_24", {}).get("mac")
@@ -387,19 +460,39 @@ def _gen_entry(
                     data.append(hex(int(tmp, 16) + 15).replace("0x", ""))
                 else:
                     data.append(None)
-        ### DEVICE MAC 5GHZ
-        elif field == "device_5_bssid_mask":
-            if not device.get("radio_stat"):
+        elif field == "device_radio0_channel":
+            data.append(
+                device.get("radio_stat", {}).get("band_24", {}).get("channel", None)
+            )
+        elif field == "device_radio0_band":
+            if not device.get("radio_stat", {}).get("band_24", {}).get("usage"):
+                data.append(None)
+            else:
+                data.append(
+                    device.get("radio_stat", {}).get("band_24", {}).get("usage") + "GHz"
+                )
+        elif field == "device_radio0_disabled":
+            if not device.get("radio_stat", {}).get("band_24"):
+                data.append(None)
+            elif not device.get("radio_stat", {}).get("band_24", {}).get("disabled"):
+                data.append(False)
+            else:
+                data.append(
+                    device.get("radio_stat", {}).get("band_24", {}).get("disabled")
+                )
+        ### DEVICE MAC RADIO1
+        elif field == "device_radio1_bssid_mask":
+            if not device.get("radio_stat", {}).get("band_5", {}).get("mac"):
                 data.append(None)
             else:
                 data.append(device.get("radio_stat", {}).get("band_5", {}).get("mac"))
-        elif field == "device_5_bssid_start":
-            if not device.get("radio_stat"):
+        elif field == "device_radio1_bssid_start":
+            if not device.get("radio_stat", {}).get("band_5", {}).get("mac"):
                 data.append(None)
             else:
                 data.append(device.get("radio_stat", {}).get("band_5", {}).get("mac"))
-        elif field == "device_5_bssid_end":
-            if not device.get("radio_stat"):
+        elif field == "device_radio1_bssid_end":
+            if not device.get("radio_stat", {}).get("band_5", {}).get("mac"):
                 data.append(None)
             else:
                 tmp = device.get("radio_stat", {}).get("band_5", {}).get("mac")
@@ -407,19 +500,39 @@ def _gen_entry(
                     data.append(hex(int(tmp, 16) + 15).replace("0x", ""))
                 else:
                     data.append(None)
-        ### DEVICE MAC 6GHZ
-        elif field == "device_6_bssid_mask":
-            if not device.get("radio_stat"):
+        elif field == "device_radio1_channel":
+            data.append(
+                device.get("radio_stat", {}).get("band_5", {}).get("channel", None)
+            )
+        elif field == "device_radio1_band":
+            if not device.get("radio_stat", {}).get("band_5", {}).get("usage"):
+                data.append(None)
+            else:
+                data.append(
+                    device.get("radio_stat", {}).get("band_5", {}).get("usage") + "GHz"
+                )
+        elif field == "device_radio1_disabled":
+            if not device.get("radio_stat", {}).get("band_5"):
+                data.append(None)
+            elif not device.get("radio_stat", {}).get("band_5", {}).get("disabled"):
+                data.append(False)
+            else:
+                data.append(
+                    device.get("radio_stat", {}).get("band_5", {}).get("disabled")
+                )
+        ### DEVICE MAC RADIO2
+        elif field == "device_radio2_bssid_mask":
+            if not device.get("radio_stat", {}).get("band_6", {}).get("mac"):
                 data.append(None)
             else:
                 data.append(device.get("radio_stat", {}).get("band_6", {}).get("mac"))
-        elif field == "device_6_bssid_start":
-            if not device.get("radio_stat"):
+        elif field == "device_radio2_bssid_start":
+            if not device.get("radio_stat", {}).get("band_6", {}).get("mac"):
                 data.append(None)
             else:
                 data.append(device.get("radio_stat", {}).get("band_6", {}).get("mac"))
-        elif field == "device_6_bssid_end":
-            if not device.get("radio_stat"):
+        elif field == "device_radio2_bssid_end":
+            if not device.get("radio_stat", {}).get("band_6", {}).get("mac"):
                 data.append(None)
             else:
                 tmp = device.get("radio_stat", {}).get("band_6", {}).get("mac")
@@ -427,6 +540,26 @@ def _gen_entry(
                     data.append(hex(int(tmp, 16) + 15).replace("0x", ""))
                 else:
                     data.append(None)
+        elif field == "device_radio2_channel":
+            data.append(
+                device.get("radio_stat", {}).get("band_6", {}).get("channel", None)
+            )
+        elif field == "device_radio2_band":
+            if not device.get("radio_stat", {}).get("band_6", {}).get("usage"):
+                data.append(None)
+            else:
+                data.append(
+                    device.get("radio_stat", {}).get("band_6", {}).get("usage") + "GHz"
+                )
+        elif field == "device_radio2_disabled":
+            if not device.get("radio_stat", {}).get("band_6"):
+                data.append(None)
+            elif not device.get("radio_stat", {}).get("band_6", {}).get("disabled"):
+                data.append(False)
+            else:
+                data.append(
+                    device.get("radio_stat", {}).get("band_6", {}).get("disabled")
+                )
     return data
 
 
@@ -474,6 +607,9 @@ def _gen_report(
                     "device_bssid_mask" in fields
                     or "device_bssid_start" in fields
                     or "device_bssid_end" in fields
+                    or "device_radio_band" in fields
+                    or "device_radio_channel" in fields
+                    or "device_radio_disabled" in fields
                 ):
                     for radio_mac in radio_mac_list:
                         new_entry = _gen_entry(
@@ -500,6 +636,15 @@ def start(
     e911: bool = False,
     csv_file: str = CSV_FILE,
 ):
+    """
+    Main function to start the script and generate the report.
+    :param apisession: mistapi.APISession object
+    :param org_id: Organization ID to use (optional, will prompt if not provided)
+    :param site_ids: List of Site IDs to use (optional, will prompt if not provided)
+    :param fields: List of fields to include in the report (optional, defaults to DEFAULT_FIELDS)
+    :param e911: Boolean to indicate if E911 fields should be used (optional, defaults to False)
+    :param csv_file: Path to the CSV file where the report will be saved (optional, defaults to CSV_FILE)
+    """
     LOGGER.debug("start: init script param org_id: %s", org_id)
     LOGGER.debug("start: init script param site_ids: %s", site_ids)
     LOGGER.debug("start: init script param fields: %s", fields)
@@ -551,7 +696,7 @@ def usage(error_message: str | None = None):
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to list all Access Points from orgs/sites and their associated BSSIDs, 
+Python script to list all Access Points from orgs/sites and their associated BSSIDs,
 and save it to a CSV file. You can configure which fields you want to retrieve/save,
 and where the script will save the CSV file.
 
@@ -566,12 +711,12 @@ If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
 It is recommended to use an environment file to store the required information
-to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
 information about the available parameters).
 
 
 -------
-Available fields: 
+Available fields:
 - site_id
 - site_name
 - map_id
@@ -582,10 +727,33 @@ Available fields:
 - device_model
 - device_notes
 - device_ipv4
-- device_ipv6    
-- device_bssid_mask     (note: if used, the script will create one entry for each radio)
-- device_bssid_start    (note: if used, the script will create one entry for each radio)
-- device_bssid_end      (note: if used, the script will create one entry for each radio)
+- device_ipv6
+- device_bssid_mask         (note: if used, the script will create one entry for each radio)
+- device_bssid_start        (note: if used, the script will create one entry for each radio)
+- device_bssid_end          (note: if used, the script will create one entry for each radio)
+- device_radio_band         (note: if used, the script will create one entry for each radio)
+- device_radio_channel      (note: if used, the script will create one entry for each radio)
+- device_radio_disabled     (note: if used, the script will create one entry for each radio)
+- device_radio0_bssid_mask  (note: requires at least one enabled SSID on the radio_0)
+- device_radio0_bssid_start (note: requires at least one enabled SSID on the radio_0)
+- device_radio0_bssid_end   (note: requires at least one enabled SSID on the radio_0)
+- device_radio0_band        (note: requires at least one enabled SSID on the radio_0)
+- device_radio0_channel     (note: requires at least one enabled SSID on the radio_0)
+- device_radio0_disabled
+- device_radio1_bssid_mask  (note: requires at least one enabled SSID on the radio_1)
+- device_radio1_bssid_start (note: requires at least one enabled SSID on the radio_1)
+- device_radio1_bssid_end   (note: requires at least one enabled SSID on the radio_1)
+- device_radio1_band        (note: requires at least one enabled SSID on the radio_1)
+- device_radio1_channel     (note: requires at least one enabled SSID on the radio_1)
+- device_radio1_disabled
+- device_radio2_bssid_mask  (note: requires at least one enabled SSID on the radio_2)
+- device_radio2_bssid_start (note: requires at least one enabled SSID on the radio_2)
+- device_radio2_bssid_end   (note: requires at least one enabled SSID on the radio_2)
+- device_radio2_band        (note: requires at least one enabled SSID on the radio_2)
+- device_radio2_channel     (note: requires at least one enabled SSID on the radio_2)
+- device_radio2_disabled
+
+Deprecated fields:
 - device_24_bssid_mask  (note: requires at least one enabled SSID on the 2.4GHz radio)
 - device_24_bssid_start (note: requires at least one enabled SSID on the 2.4GHz radio)
 - device_24_bssid_end   (note: requires at least one enabled SSID on the 2.4GHz radio)
@@ -602,29 +770,34 @@ Options:
 -h, --help          display this help
 
 -o, --org_id=       Set the org_id
--s, --site_ids=     list of sites to use, comma separated. If not site defined, the 
+-s, --site_ids=     list of sites to use, comma separated. If not site defined, the
                     script will process all the sites from the Org.
+
+-c, --csv_file=     Path to the CSV file where to save the output
+                    default is "./validate_site_variables.csv"
 
 -f, --fields=       list of fields to save in the CSV file
                     default fields:
-                    device_name, device_mac, device_ipv4, device_ipv6, device_24_bssid_start, 
-                    device_24_bssid_end, device_5_bssid_start, device_5_bssid_end, 
-                    device_6_bssid_start, device_6_bssid_end, site_name, map_name
+                    device_name, device_mac, device_ipv4, device_ipv6,
+                    device_radio0_band, device_radio0_bssid_start, device_radio0_bssid_end,
+                    device_radio1_band, device_radio1_bssid_start, device_radio1_bssid_end,
+                    device_radio2_band, device_radio2_bssid_start, device_radio2_bssid_end,
+                    site_name, map_name
 
 --e911              set the fields to E911 data fields (overrides -f/--fields):
-                    device_name, device_ipv4, device_ipv6, device_bssid_mask, site_name,
-                    map_name
-                    
+                    device_name, device_ipv4, device_ipv6, device_radio_disabled,
+                    device_radio_band, device_bssid_mask, site_name, map_name
+
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
--e, --env=          define the env file to use (see mistapi env file documentation 
+-e, --env=          define the env file to use (see mistapi env file documentation
                     here: https://pypi.org/project/mistapi/)
                     default is "~/.mist_env"
 
 -------
 Examples:
-python3 ./report_bssids.py                  
-python3 ./report_bssids.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
+python3 ./report_bssids.py
+python3 ./report_bssids.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
 """)
     if error_message:
@@ -704,6 +877,16 @@ if __name__ == "__main__":
         elif o in ["-f", "--fields"]:
             for f in a.split(","):
                 FIELDS.append(f.strip())
+                if (
+                    "device_24_" in f
+                    or "device_5_" in f
+                    or "device_6_" in f
+                ):
+                    console.warning(
+                        f"The field {f} is deprecated and will be removed in a future version. "
+                        "Please use the new device_radio0, device_radio1, and device_radio2 fields.",
+                        
+                    )
         elif o == "--e911":
             E911 = True
         elif o in ["-e", "--env"]:
