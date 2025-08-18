@@ -29,7 +29,7 @@ Script Parameters:
 -h, --help              display this help
 -o, --org_id=           Set the org_id
 -c, --csv_file=         Path to the CSV file where to save the output
-                        default is "./validate_site_variables.csv"
+                        default is "./report_power_constrained_aps.csv"
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
 -e, --env=              define the env file to use (see mistapi env file 
@@ -243,14 +243,14 @@ def _get_org_devices(apisession: mistapi.APISession, org_id: str) -> list:
     list
         list of devices stats from the site
     '''
-    message = f"Retrieving devices stats"
+    message = "Retrieving devices stats"
     try:
         PB.log_message(message, display_pbar=False)
         response = mistapi.api.v1.orgs.stats.listOrgDevicesStats(apisession, org_id, limit=1000, type="ap", fields="power_constrained,power_budget,power_src,lldp_stat")
         devices = mistapi.get_all(apisession, response)
         PB.log_success(message, display_pbar=False)
         return devices
-    except Exception as error:
+    except Exception:
         PB.log_failure(message, display_pbar=False)
         LOGGER.error("Unable to retrieve the list of devices stats from the Org")
         LOGGER.error("Exception occurred", exc_info=True)
@@ -272,21 +272,21 @@ def _get_sites(apisession: mistapi.APISession, org_id:str) -> list:
     list
         list sites
     '''
-    message = f"Retrieving list of sites"
+    message = "Retrieving list of sites"
     try:
         PB.log_message(message, display_pbar=False)
         response = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id, limit=1000)
         sites = mistapi.get_all(apisession, response)
         PB.log_success(message, display_pbar=False)
         return sites
-    except Exception as error:
+    except Exception:
         PB.log_failure(message, display_pbar=False)
         LOGGER.error("Unable to retrieve the list of sites")
         LOGGER.error("Exception occurred", exc_info=True)
         return []
 
 
-def start(apisession: mistapi.APISession,  org_id:str, csv_file:str=None) -> list:
+def start(apisession: mistapi.APISession,  org_id:str, csv_file:str="") -> list:
     '''
     Start the process to clone the src org to the dst org
 
@@ -322,7 +322,7 @@ def start(apisession: mistapi.APISession,  org_id:str, csv_file:str=None) -> lis
 ###############################################################################
 #### USAGE ####
 
-def usage():
+def usage(error_message: str | None = None):
     """
     print script usage and exit
     """
@@ -357,7 +357,7 @@ Script Parameters:
 -h, --help              display this help
 -o, --org_id=           Set the org_id
 -c, --csv_file=         Path to the CSV file where to save the output
-                        default is "./validate_site_variables.csv"
+                        default is "./report_power_constrained_aps.csv"
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
 -e, --env=              define the env file to use (see mistapi env file 
@@ -370,6 +370,8 @@ python3 ./report_power_constrained_aps.py
 python3 ./report_power_constrained_aps.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
 """)
+    if error_message:
+        console.critical(error_message)
     sys.exit(0)
 
 def check_mistapi_version():
@@ -428,8 +430,7 @@ if __name__ == "__main__":
             "log_file="
             ])
     except getopt.GetoptError as err:
-        console.error(err)
-        usage()
+        usage(err.msg)
 
     ORG_ID=None
     CSF_FILE=OUT_FILE_PATH
