@@ -34,6 +34,7 @@ Available fields:
 - map_name
 - device_id
 - device_mac
+- device_serial
 - device_name
 - device_model
 - device_notes
@@ -289,7 +290,7 @@ def _retrieve_org_device_stats(apisession: mistapi.APISession, org_id: str):
             apisession,
             org_id,
             type="ap",
-            fields="radio_stat,ip_stat,mac,id,name,site_id,map_id,model",
+            fields="radio_stat,ip_stat,mac,id,name,site_id,map_id,model,serial",
         )
         if resp.status_code == 200:
             PB.log_success(message, display_pbar=False)
@@ -370,6 +371,8 @@ def _gen_entry(
             data.append(device.get("id"))
         elif field == "device_mac":
             data.append(device.get("mac"))
+        elif field == "device_serial":
+            data.append(device.get("serial"))
         elif field == "device_name":
             if device.get("name"):
                 data.append(device.get("name"))
@@ -723,6 +726,7 @@ Available fields:
 - map_name
 - device_id
 - device_mac
+- device_serial
 - device_name
 - device_model
 - device_notes
