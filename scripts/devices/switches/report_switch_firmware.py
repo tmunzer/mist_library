@@ -136,7 +136,7 @@ def _process_fpc(
         "fpc_version": fpc.get("version"),
         "fpc_snapshot": fpc.get("recovery_version"),
         "fpc_backup": fpc.get("backup_version"),
-        "fpc_need_snapshot": fpc.get("version") != fpc.get("backup_version") or fpc.get("version") != fpc.get("recovery_version"),
+        "fpc_need_snapshot": (fpc.get("backup_version") and fpc.get("version") != fpc.get("backup_version")) or (fpc.get("recovery_version") and fpc.get("version") != fpc.get("recovery_version")),
         "fpc_pending": fpc.get("pending_version"),
         "fpc_need_reboot": fpc.get("pending_version", "") != ""
     })
