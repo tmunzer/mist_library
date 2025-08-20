@@ -122,7 +122,7 @@ def _process_fpc(
         vc_device_id:str,
         vc_site_id:str,
         fpc:dict,
-        data:dict
+        data:list
         ) -> None:
     
     data.append({
@@ -160,19 +160,19 @@ def _process_switches(switches:list) -> list:
 def _get_org_switches(apisession, org_id:str) -> list:
     print(" Retrieving Switches ".center(80, '-'))
     response = mistapi.api.v1.orgs.stats.listOrgDevicesStats(apisession, org_id, type="switch", limit=1000)
-    switches = response.data
-    while response.next:
+    switches:list = response.data
+    while response and response.next:
         response = mistapi.get_next(apisession, response)
-        switches = switches + response.data
+        switches.extend(response.data)
     return switches
 
 def _get_site_switches(apisession, site_id:str) -> list:
     print(" Retrieving Switches ".center(80, '-'))
     response = mistapi.api.v1.sites.stats.listSiteDevicesStats(apisession, site_id, type="switch", limit=1000)
-    switches = response.data
-    while response.next:
+    switches:list = response.data
+    while response and response.next:
         response = mistapi.get_next(apisession, response)
-        switches = switches + response.data
+        switches.extend(response.data)
     return switches
 
 ### SAVE REPORT
@@ -202,7 +202,7 @@ def _save_as_csv(
     i = 0
     for entry in data:
         for key in entry:
-            if not key in headers:
+            if key not in headers:
                 headers.append(key)
         i += 1
         _progress_bar_update(i, total, size)
@@ -223,6 +223,7 @@ def _save_as_csv(
             _progress_bar_update(i, total, size)
         _progress_bar_end(total, size)
         print()
+    return headers
 ####################
 ## MENU
 
@@ -246,7 +247,7 @@ def _show_menu(header:str, menu:list) -> str:
                     console.error(f"Please enter a number between 0 and {i -1}.")
                 else:
                     return menu[resp]
-            except:
+            except Exception:
                 console.error("Please enter a number\r\n ")
 
 ###############################################################################
@@ -300,13 +301,13 @@ def _start(
 
     if data:
         print(" Process Done ".center(80, '-'))
-        _save_as_csv(data, scope, scope_id, csv_file, append_dt, append_ts)
-        mistapi.cli.pretty_print(data)
+        headers = _save_as_csv(data, scope, scope_id, csv_file, append_dt, append_ts)
+        mistapi.cli.display_list_of_json_as_table(data, headers)
 
 
 ###############################################################################
 ### USAGE
-def usage(error_message:str=None):
+def usage(error_message:str=""):
     """
     display usage
     """
@@ -424,10 +425,10 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(sys.argv[1:], "ho:s:f:e:l:td", ["help", "org_id=", "site_id", "out_file=", "env=", "log_file=", "datetime", "timestamp"])
     except getopt.GetoptError as err:
-        usage(err)
+        usage(err.msg)
 
-    SCOPE=None
-    SCOPE_ID=None
+    SCOPE=""
+    SCOPE_ID=""
     APPEND_DT = False
     APPEND_TS = False
     for o, a in opts:
