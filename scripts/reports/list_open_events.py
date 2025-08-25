@@ -129,7 +129,7 @@ python3 ./list_open_events.py \
 
 #### IMPORTS ####
 import sys
-import getopt
+import argparse
 import logging
 import csv
 from datetime import datetime
@@ -1772,74 +1772,43 @@ py -m pip install --upgrade mistapi
 ###############################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
-    try:
-        opts, args = getopt.getopt(
-            sys.argv[1:],
-            "he:o:a:d:t:r:l:v:c:n",
-            [
-                "help",
-                "env_file=",
-                "org_id=",
-                "event_types=",
-                "duration=",
-                "trigger_timeout=",
-                "log_file=",
-                "view=",
-                "csv_file=",
-                "no-resolve",
-            ],
-        )
-    except getopt.GetoptError as err:
-        usage(err.msg)
+    parser = argparse.ArgumentParser(description="Display list of open events/alarms that are not cleared")
+    parser.add_argument("-e", "--env_file", help="define the env file to use", default=None)
+    parser.add_argument("-o", "--org_id", help="Set the org_id where the webhook must be create/delete/retrieved", default="")
+    parser.add_argument("-t", "--event_types", help="comma separated list of event types")
+    parser.add_argument("-d", "--duration", help="duration of the events to look at", default="1d")
+    parser.add_argument("-r", "--trigger_timeout", help="timeout (in minutes) before listing the event if it is not cleared", type=int, default=5)
+    parser.add_argument("-l", "--log_file", help="define the filepath/filename where to write the logs", default=LOG_FILE)
+    parser.add_argument("-v", "--view", help="Type of report to display", choices=["event", "device"], default="event")
+    parser.add_argument("-c", "--csv_file", help="Path to the CSV file where to save the result", default=CSV_FILE)
+    parser.add_argument("-n", "--no-resolve", help="disable the device (device name) resolution", action="store_true", default=False)
 
-    ENV_FILE = None
-    ORG_ID = ""
+    args = parser.parse_args()
+
+    ENV_FILE = args.env_file
+    ORG_ID = args.org_id
     EVENT_TYPES = []
-    DURATION = "1d"
-    TIMEOUT = 5
-    VIEW = "event"
-    NO_RESOLVE = False
-    for o, a in opts:
-        if o in ["-h", "--help"]:
-            usage()
-        elif o in ["-e", "--env_file"]:
-            ENV_FILE = a
-        elif o in ["-o", "--org_id"]:
-            ORG_ID = a
-        elif o in ["-c", "--csv_file"]:
-            CSV_FILE = a
-        elif o in ["-n", "--no-resolve"]:
-            NO_RESOLVE = True
-        elif o in ["-t", "--event_types"]:
-            for t in a.split(","):
-                event_def = EVENT_TYPES_DEFINITIONS.get(t.strip().upper())
-                if event_def and event_def in EVENT_TYPES_DEFINITIONS.values():
-                    EVENT_TYPES += event_def
-                else:
-                    usage(f'Invalid -t / --event_type parameter value. Got "{t}".')
-        elif o in ["-d", "--duration"]:
-            if not a.endswith(("m", "h", "d", "w")):
-                usage(
-                    f'Invalid -d / --duration parameter value, should be something like "10m", "2h", "7d", "1w". Got "{a}".'
-                )
-            DURATION = a
-        elif o in ["-v", "--view"]:
-            if a.lower() not in ["event", "device"]:
-                usage(
-                    f'Invalid -v / --view parameter value, must be "event" or "device". Got "{a}".'
-                )
-            VIEW = a
-        elif o in ["-r", "--trigger_timeout"]:
-            try:
-                TIMEOUT = int(a)
-            except Exception:
-                usage(
-                    f'Invalid -r / --trigger_timeout parameter value, must be an integer. Got "{a}".'
-                )
-        elif o in ["-l", "--log_file"]:
-            LOG_FILE = a
-        else:
-            assert False, "unhandled option"
+    DURATION = args.duration
+    TIMEOUT = args.trigger_timeout
+    VIEW = args.view
+    CSV_FILE = args.csv_file
+    LOG_FILE = args.log_file
+    NO_RESOLVE = args.no_resolve
+
+    # Validate duration format
+    if not DURATION.endswith(("m", "h", "d", "w")):
+        usage(
+            f'Invalid -d / --duration parameter value, should be something like "10m", "2h", "7d", "1w"... Got "{DURATION}".'
+        )
+
+    # Process event types
+    if args.event_types:
+        for t in args.event_types.split(","):
+            event_def = EVENT_TYPES_DEFINITIONS.get(t.strip().upper())
+            if event_def and event_def in EVENT_TYPES_DEFINITIONS.values():
+                EVENT_TYPES += event_def
+            else:
+                usage(f'Invalid -t / --event_type parameter value. Got "{t}".')
 
     if not EVENT_TYPES:
         for k, v in EVENT_TYPES_DEFINITIONS.items():
@@ -1853,5 +1822,12 @@ if __name__ == "__main__":
     APISESSION = mistapi.APISession(env_file=ENV_FILE, show_cli_notif=False)
     APISESSION.login()
     start(
-        APISESSION, ORG_ID, EVENT_TYPES, DURATION, TIMEOUT, VIEW, CSV_FILE, NO_RESOLVE
+        APISESSION,
+        ORG_ID,
+        EVENT_TYPES,
+        DURATION,
+        TIMEOUT,
+        VIEW,
+        CSV_FILE,
+        NO_RESOLVE
     )
