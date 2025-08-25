@@ -1639,9 +1639,10 @@ if __name__ == "__main__":
         elif o in ["-n", "--no-resolve"]:
             NO_RESOLVE = True
         elif o in ["-t", "--event_types"]:
-            for t in o.split(","):
-                if EVENT_TYPES_DEFINITIONS.get(t.strip().upper()):
-                    EVENT_TYPES += EVENT_TYPES_DEFINITIONS.get(t.strip().upper())
+            for t in a.split(","):
+                event_def = EVENT_TYPES_DEFINITIONS.get(t.strip().upper())
+                if event_def:
+                    EVENT_TYPES += event_def
                 else:
                     usage(f"Invalid -t / --event_type parameter value. Got \"{t}\".")
         elif o in ["-d", "--duration"]:
@@ -1649,13 +1650,13 @@ if __name__ == "__main__":
                 usage(f"Invalid -d / --duration parameter value, should be something like \"10m\", \"2h\", \"7d\", \"1w\". Got \"{a}\".")
             DURATION = a
         elif o in ["-v", "--view"]:
-            if not a.lower() in ["event", "device"]:
+            if a.lower() not in ["event", "device"]:
                 usage(f"Invalid -v / --view parameter value, must be \"event\" or \"device\". Got \"{a}\".")
             VIEW = a
         elif o in ["-r", "--trigger_timeout"]:
             try:
                 TIMEOUT = int(a)
-            except:
+            except Exception:
                 usage(f"Invalid -r / --trigger_timeout parameter value, must be an integer. Got \"{a}\".")
         elif o in ["-l", "--log_file"]:
             LOG_FILE = a
