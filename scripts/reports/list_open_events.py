@@ -16,43 +16,43 @@ NOTE 1:
 This script is working with the following event types (use the "Event Options"
 with the "-t"/"--event_types=" CLI parameter to configure the script):
 
-| Script Event Options       | Mist Triggering Events                 | Mist Clearing Events                                          |
-|----------------------------|----------------------------------------|---------------------------------------------------------------|
-| AP_CONFIG                  | AP_CONFIG_FAILED                       | AP_CONFIGURED,AP_RECONFIGURED                                 |
-| AP_DISCONNECTED            | AP_DISCONNECTED                        | AP_CONNECTED                                                  |
-| AP_RADSEC                  | AP_RADSEC_FAILURE                      | AP_RADSEC_RECOVERY                                            |
-| AP_UPGRADE                 | AP_UPGRADE_FAILED                      | AP_UPGRADED                                                   |
-| GW_APPID_INSTALL           | GW_APPID_INSTALL_FAILED                | GW_APPID_INSTALLED                                            |
-| GW_ARP                     | GW_ARP_UNRESOLVED                      | GW_ARP_RESOLVED                                               |
-| GW_BGP_NEIGHBOR            | GW_BGP_NEIGHBOR_DOWN                   | GW_BGP_NEIGHBOR_UP                                            |
-| GW_CONFIG                  | GW_CONFIG_FAILED,GW_CONFIG_LOCK_FAILED | GW_CONFIGURED,GW_RECONFIGURED                                 |
-| GW_DISCONNECTED            | GW_DISCONNECTED                        | GW_CONNECTED                                                  |
-| GW_FIB_COUNT               | GW_FIB_COUNT_THRESHOLD_EXCEEDED        | GW_FIB_COUNT_RETURNED_TO_NORMAL                               |
-| GW_FLOW_COUNT              | GW_FLOW_COUNT_THRESHOLD_EXCEEDED       | GW_FLOW_COUNT_RETURNED_TO_NORMAL                              |
-| GW_HA_CONTROL_LINK         | GW_HA_CONTROL_LINK_DOWN                | GW_HA_CONTROL_LINK_UP                                         |
-| GW_HA_HEALTH_WEIGHT        | GW_HA_HEALTH_WEIGHT_LOW                | GW_HA_HEALTH_WEIGHT_RECOVERY                                  |
-| GW_IDP_INSTALL             | GW_IDP_INSTALL_FAILED                  | GW_IDP_INSTALL                                                |
-| GW_RECOVERY_SNAPSHOT       | GW_RECOVERY_SNAPSHOT_FAILED            | GW_RECOVERY_SNAPSHOT_SUCCEEDED,GW_RECOVERY_SNAPSHOT_NOTNEEDED |
-| GW_TUNNEL                  | GW_TUNNEL_DOWN                         | GW_TUNNEL_UP                                                  |
-| GW_UPGRADE                 | GW_UPGRADE_FAILED                      | GW_UPGRADED                                                   |
-| GW_VPN_PATH                | GW_VPN_PATH_DOWN                       | GW_VPN_PATH_UP                                                |
-| GW_VPN_PEER                | GW_VPN_PEER_DOWN                       | GW_VPN_PEER_UP                                                |
-| GW_ZTP                     | GW_ZTP_FAILED                          | GW_ZTP_FINISHED                                               |
-| SW_BFD_SESSION             | SW_BFD_SESSION_DISCONNECTED            | SW_BFD_SESSION_ESTABLISHED                                    |
-| SW_BGP_NEIGHBOR            | SW_BGP_NEIGHBOR_DOWN                   | SW_BGP_NEIGHBOR_UP                                            |
-| SW_CONFIG                  | SW_CONFIG_FAILED,SW_CONFIG_LOCK_FAILED | SW_CONFIGURED,SW_RECONFIGURED                                 |
-| SW_DDOS_PROTOCOL_VIOLATION | SW_DDOS_PROTOCOL_VIOLATION_SET         | SW_DDOS_PROTOCOL_VIOLATION_CLEAR                              |
-| SW_DISCONNECTED            | SW_DISCONNECTED                        | SW_CONNECTED                                                  |
-| SW_EVPN_CORE_ISOLATION     | SW_EVPN_CORE_ISOLATED                  | SW_EVPN_CORE_ISOLATION_CLEARED                                |
-| SW_FPC_POWER               | SW_FPC_POWER_OFF                       | SW_FPC_POWER_ON                                               |
-| SW_MAC_LEARNING            | SW_MAC_LEARNING_STOPPED                | SW_MAC_LEARNING_RESUMED                                       |
-| SW_MAC_LIMIT               | SW_MAC_LIMIT_EXCEEDED                  | SW_MAC_LIMIT_RESET                                            |
-| SW_OSPF_NEIGHBOR           | SW_OSPF_NEIGHBOR_DOWN                  | SW_OSPF_NEIGHBOR_UP                                           |
-| SW_PORT_BPDU               | SW_PORT_BPDU_BLOCKED                   | SW_PORT_BPDU_ERROR_CLEARED                                    |
-| SW_RECOVERY_SNAPSHOT       | SW_RECOVERY_SNAPSHOT_FAILED            | SW_RECOVERY_SNAPSHOT_SUCCEEDED,SW_RECOVERY_SNAPSHOT_NOTNEEDED |
-| SW_UPGRADE                 | SW_UPGRADE_FAILED                      | SW_UPGRADED                                                   |
-| SW_VC_PORT                 | SW_VC_PORT_DOWN                        | SW_VC_PORT_UP                                                 |
-| SW_ZTP                     | SW_ZTP_FAILED                          | SW_ZTP_FINISHED                                               |
+| Script Event Options       | Mist Triggering Events                                               | Mist Clearing Events                                          |
+|----------------------------|----------------------------------------------------------------------|---------------------------------------------------------------|
+| AP_CONFIG                  | AP_CONFIG_FAILED                                                     | AP_CONFIGURED,AP_RECONFIGURED                                 |
+| AP_DISCONNECTED            | AP_DISCONNECTED                                                      | AP_CONNECTED                                                  |
+| AP_RADSEC                  | AP_RADSEC_FAILURE                                                    | AP_RADSEC_RECOVERY                                            |
+| AP_UPGRADE                 | AP_UPGRADE_FAILED                                                    | AP_UPGRADED                                                   |
+| GW_APPID_INSTALL           | GW_APPID_INSTALL_FAILED                                              | GW_APPID_INSTALLED                                            |
+| GW_ARP                     | GW_ARP_UNRESOLVED                                                    | GW_ARP_RESOLVED                                               |
+| GW_BGP_NEIGHBOR            | GW_BGP_NEIGHBOR_DOWN                                                 | GW_BGP_NEIGHBOR_UP                                            |
+| GW_CONFIG                  | GW_CONFIG_FAILED,GW_CONFIG_LOCK_FAILED                               | GW_CONFIGURED,GW_RECONFIGURED                                 |
+| GW_DISCONNECTED            | GW_DISCONNECTED                                                      | GW_CONNECTED                                                  |
+| GW_FIB_COUNT               | GW_FIB_COUNT_THRESHOLD_EXCEEDED                                      | GW_FIB_COUNT_RETURNED_TO_NORMAL                               |
+| GW_FLOW_COUNT              | GW_FLOW_COUNT_THRESHOLD_EXCEEDED                                     | GW_FLOW_COUNT_RETURNED_TO_NORMAL                              |
+| GW_HA_CONTROL_LINK         | GW_HA_CONTROL_LINK_DOWN                                              | GW_HA_CONTROL_LINK_UP                                         |
+| GW_HA_HEALTH_WEIGHT        | GW_HA_HEALTH_WEIGHT_LOW                                              | GW_HA_HEALTH_WEIGHT_RECOVERY                                  |
+| GW_IDP_INSTALL             | GW_IDP_INSTALL_FAILED                                                | GW_IDP_INSTALL                                                |
+| GW_RECOVERY_SNAPSHOT       | GW_RECOVERY_SNAPSHOT_FAILED                                          | GW_RECOVERY_SNAPSHOT_SUCCEEDED,GW_RECOVERY_SNAPSHOT_NOTNEEDED |
+| GW_TUNNEL                  | GW_TUNNEL_DOWN                                                       | GW_TUNNEL_UP                                                  |
+| GW_UPGRADE                 | GW_UPGRADE_FAILED                                                    | GW_UPGRADED                                                   |
+| GW_VPN_PATH                | GW_VPN_PATH_DOWN                                                     | GW_VPN_PATH_UP                                                |
+| GW_VPN_PEER                | GW_VPN_PEER_DOWN                                                     | GW_VPN_PEER_UP                                                |
+| GW_ZTP                     | GW_ZTP_FAILED                                                        | GW_ZTP_FINISHED                                               |
+| SW_BFD_SESSION             | SW_BFD_SESSION_DISCONNECTED                                          | SW_BFD_SESSION_ESTABLISHED                                    |
+| SW_BGP_NEIGHBOR            | SW_BGP_NEIGHBOR_DOWN                                                 | SW_BGP_NEIGHBOR_UP                                            |
+| SW_CONFIG                  | SW_CONFIG_FAILED,SW_CONFIG_LOCK_FAILED,SW_CONFIG_ERROR_ADDTL_COMMAND | SW_CONFIGURED,SW_RECONFIGURED                                 |
+| SW_DDOS_PROTOCOL_VIOLATION | SW_DDOS_PROTOCOL_VIOLATION_SET                                       | SW_DDOS_PROTOCOL_VIOLATION_CLEAR                              |
+| SW_DISCONNECTED            | SW_DISCONNECTED                                                      | SW_CONNECTED                                                  |
+| SW_EVPN_CORE_ISOLATION     | SW_EVPN_CORE_ISOLATED                                                | SW_EVPN_CORE_ISOLATION_CLEARED                                |
+| SW_FPC_POWER               | SW_FPC_POWER_OFF                                                     | SW_FPC_POWER_ON                                               |
+| SW_MAC_LEARNING            | SW_MAC_LEARNING_STOPPED                                              | SW_MAC_LEARNING_RESUMED                                       |
+| SW_MAC_LIMIT               | SW_MAC_LIMIT_EXCEEDED                                                | SW_MAC_LIMIT_RESET                                            |
+| SW_OSPF_NEIGHBOR           | SW_OSPF_NEIGHBOR_DOWN                                                | SW_OSPF_NEIGHBOR_UP                                           |
+| SW_PORT_BPDU               | SW_PORT_BPDU_BLOCKED                                                 | SW_PORT_BPDU_ERROR_CLEARED                                    |
+| SW_RECOVERY_SNAPSHOT       | SW_RECOVERY_SNAPSHOT_FAILED                                          | SW_RECOVERY_SNAPSHOT_SUCCEEDED,SW_RECOVERY_SNAPSHOT_NOTNEEDED |
+| SW_UPGRADE                 | SW_UPGRADE_FAILED                                                    | SW_UPGRADED                                                   |
+| SW_VC_PORT                 | SW_VC_PORT_DOWN                                                      | SW_VC_PORT_UP                                                 |
+| SW_ZTP                     | SW_ZTP_FAILED                                                        | SW_ZTP_FINISHED                                               |
 
 
 NOTE 2:
@@ -188,7 +188,7 @@ EVENT_TYPES_DEFINITIONS= {
 "GW_ZTP": ["GW_ZTP_FAILED","GW_ZTP_FINISHED"],
 "SW_BFD_SESSION": ["SW_BFD_SESSION_DISCONNECTED","SW_BFD_SESSION_ESTABLISHED"],
 "SW_BGP_NEIGHBOR": ["SW_BGP_NEIGHBOR_DOWN","SW_BGP_NEIGHBOR_UP"],
-"SW_CONFIG": ["SW_CONFIG_FAILED","SW_CONFIG_LOCK_FAILED","SW_CONFIGURED"],
+"SW_CONFIG": ["SW_CONFIG_FAILED","SW_CONFIG_LOCK_FAILED","SW_CONFIG_ERROR_ADDTL_COMMAND","SW_CONFIGURED"],
 "SW_DDOS_PROTOCOL_VIOLATION": ["SW_DDOS_PROTOCOL_VIOLATION_SET","SW_DDOS_PROTOCOL_VIOLATION_CLEAR"],
 "SW_DISCONNECTED": ["SW_DISCONNECTED","SW_CONNECTED"],
 "SW_EVPN_CORE_ISOLATION": ["SW_EVPN_CORE_ISOLATED","SW_EVPN_CORE_ISOLATION_CLEARED"],
@@ -1024,7 +1024,7 @@ def _process_events(events: list) -> dict:
                 event_type,
                 event,
                 "SW_CONFIG_FAILED",
-                ["SW_CONFIG_FAILED", "SW_CONFIG_LOCK_FAILED"],
+                ["SW_CONFIG_FAILED", "SW_CONFIG_LOCK_FAILED","SW_CONFIG_ERROR_ADDTL_COMMAND"],
                 ["SW_CONFIGURED", "SW_RECONFIGURED"]
                 )
         elif event_type.startswith("SW_DDOS_PROTOCOL_VIOLATION"):
@@ -1438,41 +1438,43 @@ NOTE 1:
 This script is working with the following event types (use the "Event Options"
 with the "-t"/"--event_types=" CLI parameter to configure the script):
 
-| Script Event Options       | Mist Triggering Events                 | Mist Clearing Events                                          |
-|----------------------------|----------------------------------------|---------------------------------------------------------------|
-| AP_CONFIG                  | AP_CONFIG_FAILED                       | AP_CONFIGURED,AP_RECONFIGURED                                 |
-| AP_DISCONNECTED            | AP_DISCONNECTED                        | AP_CONNECTED                                                  |
-| AP_RADSEC                  | AP_RADSEC_FAILURE                      | AP_RADSEC_RECOVERY                                            |
-| AP_UPGRADE                 | AP_UPGRADE_FAILED                      | AP_UPGRADED                                                   |
-| GW_ARP                     | GW_ARP_UNRESOLVED                      | GW_ARP_RESOLVED                                               |
-| GW_BGP_NEIGHBOR            | GW_BGP_NEIGHBOR_DOWN                   | GW_BGP_NEIGHBOR_UP                                            |
-| GW_CONFIG                  | GW_CONFIG_FAILED,GW_CONFIG_LOCK_FAILED | GW_CONFIGURED,GW_RECONFIGURED                                 |
-| GW_DISCONNECTED            | GW_DISCONNECTED                        | GW_CONNECTED                                                  |
-| GW_FIB_COUNT               | GW_FIB_COUNT_THRESHOLD_EXCEEDED        | GW_FIB_COUNT_RETURNED_TO_NORMAL                               |
-| GW_FLOW_COUNT              | GW_FLOW_COUNT_THRESHOLD_EXCEEDED       | GW_FLOW_COUNT_RETURNED_TO_NORMAL                              |
-| GW_HA_CONTROL_LINK         | GW_HA_CONTROL_LINK_DOWN                | GW_HA_CONTROL_LINK_UP                                         |
-| GW_HA_HEALTH_WEIGHT        | GW_HA_HEALTH_WEIGHT_LOW                | GW_HA_HEALTH_WEIGHT_RECOVERY                                  |
-| GW_RECOVERY_SNAPSHOT       | GW_RECOVERY_SNAPSHOT_FAILED            | GW_RECOVERY_SNAPSHOT_SUCCEEDED,GW_RECOVERY_SNAPSHOT_NOTNEEDED |
-| GW_TUNNEL                  | GW_TUNNEL_DOWN                         | GW_TUNNEL_UP                                                  |
-| GW_UPGRADE                 | GW_UPGRADE_FAILED                      | GW_UPGRADED                                                   |
-| GW_VPN_PATH                | GW_VPN_PATH_DOWN                       | GW_VPN_PATH_UP                                                |
-| GW_VPN_PEER                | GW_VPN_PEER_DOWN                       | GW_VPN_PEER_UP                                                |
-| GW_ZTP                     | GW_ZTP_FAILED                          | GW_ZTP_FINISHED                                               |
-| SW_BFD_SESSION             | SW_BFD_SESSION_DISCONNECTED            | SW_BFD_SESSION_ESTABLISHED                                    |
-| SW_BGP_NEIGHBOR            | SW_BGP_NEIGHBOR_DOWN                   | SW_BGP_NEIGHBOR_UP                                            |
-| SW_CONFIG                  | SW_CONFIG_FAILED,SW_CONFIG_LOCK_FAILED | SW_CONFIGURED,SW_RECONFIGURED                                 |
-| SW_DDOS_PROTOCOL_VIOLATION | SW_DDOS_PROTOCOL_VIOLATION_SET         | SW_DDOS_PROTOCOL_VIOLATION_CLEAR                              |
-| SW_DISCONNECTED            | SW_DISCONNECTED                        | SW_CONNECTED                                                  |
-| SW_EVPN_CORE_ISOLATION     | SW_EVPN_CORE_ISOLATED                  | SW_EVPN_CORE_ISOLATION_CLEARED                                |
-| SW_FPC_POWER               | SW_FPC_POWER_OFF                       | SW_FPC_POWER_ON                                               |
-| SW_MAC_LEARNING            | SW_MAC_LEARNING_STOPPED                | SW_MAC_LEARNING_RESUMED                                       |
-| SW_MAC_LIMIT               | SW_MAC_LIMIT_EXCEEDED                  | SW_MAC_LIMIT_RESET                                            |
-| SW_OSPF_NEIGHBOR           | SW_OSPF_NEIGHBOR_DOWN                  | SW_OSPF_NEIGHBOR_UP                                           |
-| SW_PORT_BPDU               | SW_PORT_BPDU_BLOCKED                   | SW_PORT_BPDU_ERROR_CLEARED                                    |
-| SW_RECOVERY_SNAPSHOT       | SW_RECOVERY_SNAPSHOT_FAILED            | SW_RECOVERY_SNAPSHOT_SUCCEEDED,SW_RECOVERY_SNAPSHOT_NOTNEEDED |
-| SW_UPGRADE                 | SW_UPGRADE_FAILED                      | SW_UPGRADED                                                   |
-| SW_VC_PORT                 | SW_VC_PORT_DOWN                        | SW_VC_PORT_UP                                                 |
-| SW_ZTP                     | SW_ZTP_FAILED                          | SW_ZTP_FINISHED                                               |
+| Script Event Options       | Mist Triggering Events                                               | Mist Clearing Events                                          |
+|----------------------------|----------------------------------------------------------------------|---------------------------------------------------------------|
+| AP_CONFIG                  | AP_CONFIG_FAILED                                                     | AP_CONFIGURED,AP_RECONFIGURED                                 |
+| AP_DISCONNECTED            | AP_DISCONNECTED                                                      | AP_CONNECTED                                                  |
+| AP_RADSEC                  | AP_RADSEC_FAILURE                                                    | AP_RADSEC_RECOVERY                                            |
+| AP_UPGRADE                 | AP_UPGRADE_FAILED                                                    | AP_UPGRADED                                                   |
+| GW_APPID_INSTALL           | GW_APPID_INSTALL_FAILED                                              | GW_APPID_INSTALLED                                            |
+| GW_ARP                     | GW_ARP_UNRESOLVED                                                    | GW_ARP_RESOLVED                                               |
+| GW_BGP_NEIGHBOR            | GW_BGP_NEIGHBOR_DOWN                                                 | GW_BGP_NEIGHBOR_UP                                            |
+| GW_CONFIG                  | GW_CONFIG_FAILED,GW_CONFIG_LOCK_FAILED                               | GW_CONFIGURED,GW_RECONFIGURED                                 |
+| GW_DISCONNECTED            | GW_DISCONNECTED                                                      | GW_CONNECTED                                                  |
+| GW_FIB_COUNT               | GW_FIB_COUNT_THRESHOLD_EXCEEDED                                      | GW_FIB_COUNT_RETURNED_TO_NORMAL                               |
+| GW_FLOW_COUNT              | GW_FLOW_COUNT_THRESHOLD_EXCEEDED                                     | GW_FLOW_COUNT_RETURNED_TO_NORMAL                              |
+| GW_HA_CONTROL_LINK         | GW_HA_CONTROL_LINK_DOWN                                              | GW_HA_CONTROL_LINK_UP                                         |
+| GW_HA_HEALTH_WEIGHT        | GW_HA_HEALTH_WEIGHT_LOW                                              | GW_HA_HEALTH_WEIGHT_RECOVERY                                  |
+| GW_IDP_INSTALL             | GW_IDP_INSTALL_FAILED                                                | GW_IDP_INSTALL                                                |
+| GW_RECOVERY_SNAPSHOT       | GW_RECOVERY_SNAPSHOT_FAILED                                          | GW_RECOVERY_SNAPSHOT_SUCCEEDED,GW_RECOVERY_SNAPSHOT_NOTNEEDED |
+| GW_TUNNEL                  | GW_TUNNEL_DOWN                                                       | GW_TUNNEL_UP                                                  |
+| GW_UPGRADE                 | GW_UPGRADE_FAILED                                                    | GW_UPGRADED                                                   |
+| GW_VPN_PATH                | GW_VPN_PATH_DOWN                                                     | GW_VPN_PATH_UP                                                |
+| GW_VPN_PEER                | GW_VPN_PEER_DOWN                                                     | GW_VPN_PEER_UP                                                |
+| GW_ZTP                     | GW_ZTP_FAILED                                                        | GW_ZTP_FINISHED                                               |
+| SW_BFD_SESSION             | SW_BFD_SESSION_DISCONNECTED                                          | SW_BFD_SESSION_ESTABLISHED                                    |
+| SW_BGP_NEIGHBOR            | SW_BGP_NEIGHBOR_DOWN                                                 | SW_BGP_NEIGHBOR_UP                                            |
+| SW_CONFIG                  | SW_CONFIG_FAILED,SW_CONFIG_LOCK_FAILED,SW_CONFIG_ERROR_ADDTL_COMMAND | SW_CONFIGURED,SW_RECONFIGURED                                 |
+| SW_DDOS_PROTOCOL_VIOLATION | SW_DDOS_PROTOCOL_VIOLATION_SET                                       | SW_DDOS_PROTOCOL_VIOLATION_CLEAR                              |
+| SW_DISCONNECTED            | SW_DISCONNECTED                                                      | SW_CONNECTED                                                  |
+| SW_EVPN_CORE_ISOLATION     | SW_EVPN_CORE_ISOLATED                                                | SW_EVPN_CORE_ISOLATION_CLEARED                                |
+| SW_FPC_POWER               | SW_FPC_POWER_OFF                                                     | SW_FPC_POWER_ON                                               |
+| SW_MAC_LEARNING            | SW_MAC_LEARNING_STOPPED                                              | SW_MAC_LEARNING_RESUMED                                       |
+| SW_MAC_LIMIT               | SW_MAC_LIMIT_EXCEEDED                                                | SW_MAC_LIMIT_RESET                                            |
+| SW_OSPF_NEIGHBOR           | SW_OSPF_NEIGHBOR_DOWN                                                | SW_OSPF_NEIGHBOR_UP                                           |
+| SW_PORT_BPDU               | SW_PORT_BPDU_BLOCKED                                                 | SW_PORT_BPDU_ERROR_CLEARED                                    |
+| SW_RECOVERY_SNAPSHOT       | SW_RECOVERY_SNAPSHOT_FAILED                                          | SW_RECOVERY_SNAPSHOT_SUCCEEDED,SW_RECOVERY_SNAPSHOT_NOTNEEDED |
+| SW_UPGRADE                 | SW_UPGRADE_FAILED                                                    | SW_UPGRADED                                                   |
+| SW_VC_PORT                 | SW_VC_PORT_DOWN                                                      | SW_VC_PORT_UP                                                 |
+| SW_ZTP                     | SW_ZTP_FAILED                                                        | SW_ZTP_FINISHED                                               |
 
 
 NOTE 2:
