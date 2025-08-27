@@ -78,6 +78,7 @@ except ImportError:
 ENV_FILE = "~/.mist_env"
 CSV_FILE = "./report_sites_sles.csv"
 LOG_FILE = "./script.log"
+CSV_DELIMITER = ","
 AVAILABLE_SLE_TYPES = ["wlan", "lan", "wan"]
 #### LOGS ####
 LOGGER = logging.getLogger(__name__)
@@ -252,7 +253,7 @@ def _format_data(data: dict) -> list:
 def _save_as_csv(data: list, csv_file: str):
     PB.log_title(f"Saving report to {csv_file}", display_pbar=False)
     with open(csv_file, "w", encoding="UTF8", newline="") as f:
-        csv_writer = csv.writer(f)
+        csv_writer = csv.writer(f, delimiter=CSV_DELIMITER)
         csv_writer.writerows(data)
     PB.log_success("Saving to file ", display_pbar=False)
 
