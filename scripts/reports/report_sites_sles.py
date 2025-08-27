@@ -32,7 +32,7 @@ Options:
 -d, --duration=     Duration (10m, 1h, 1d, 1w)
                     default is 1d
 -t, --sle_type=     Types of SLE reports to generate
-                    possible values: wlan, lan, wan
+                    possible values: wlan, wired, wan
                     default is wlan
 -f, --out_file=     define the filepath/filename where to save the data
                     default is "./report_rogues.csv"
@@ -45,7 +45,7 @@ Options:
 -------
 Examples:
 python3 ./report_sites_sles.py
-python3 ./report_sites_sles.py --site_ids=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --duration=4d -t lan,wlan
+python3 ./report_sites_sles.py --site_ids=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --duration=4d -t wlan,wired
 
 """
 
@@ -79,7 +79,7 @@ ENV_FILE = "~/.mist_env"
 CSV_FILE = "./report_sites_sles.csv"
 LOG_FILE = "./script.log"
 CSV_DELIMITER = ","
-AVAILABLE_SLE_TYPES = ["wlan", "lan", "wan"]
+AVAILABLE_SLE_TYPES = ["wlan", "wired", "wan"]
 #### LOGS ####
 LOGGER = logging.getLogger(__name__)
 out = sys.stdout
@@ -339,7 +339,7 @@ Options:
 -d, --duration=     Duration (10m, 1h, 1d, 1w)
                     default is 1d
 -t, --sle_type=     Types of SLE reports to generate
-                    possible values: wlan, lan, wan
+                    possible values: wlan, wired, wan
                     default is wlan
 -f, --out_file=     define the filepath/filename where to save the data
                     default is "./report_rogues.csv"
@@ -352,7 +352,7 @@ Options:
 -------
 Examples:
 python3 ./report_sites_sles.py
-python3 ./report_sites_sles.py --site_ids=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --duration=4d -t lan,wlan
+python3 ./report_sites_sles.py --site_ids=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 --duration=4d -t wlan,wired
 
 """
     )
