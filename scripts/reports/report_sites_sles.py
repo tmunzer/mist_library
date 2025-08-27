@@ -248,6 +248,7 @@ def _format_data(data: dict) -> list:
         for header in headers:
             tmp.append(site_data.get(header, ""))
         formatted.append(tmp)
+    PB.log_success(message, display_pbar=False)
     return formatted
 
 def _save_as_csv(data: list, csv_file: str):
