@@ -8,7 +8,10 @@
 
 -------------------------------------------------------------------------------
 Python script to generate a report of the Mist Sites and resolving the site
-group names
+group names.
+The script will display the report in the console and save it to a CSV file.
+It is possible to customize the columns to include in the report by modifying
+the `REPORT_HEADERS` list.
 
 -------
 Requirements:
@@ -321,7 +324,10 @@ def usage(error_message: str | None = None):
 
 -------------------------------------------------------------------------------
 Python script to generate a report of the Mist Sites and resolving the site
-group names
+group names.
+The script will display the report in the console and save it to a CSV file.
+It is possible to customize the columns to include in the report by modifying
+the `REPORT_HEADERS` list.
 
 -------
 Requirements:
