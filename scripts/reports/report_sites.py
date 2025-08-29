@@ -30,7 +30,7 @@ information about the available parameters).
 -------
 Options:
 -h, --help          display this help
--s, --site_id=      Set the site_id
+-o, --org_id=       Set the org_id
 -f, --out_file=     define the filepath/filename where to save the data
                     default is "./report_rogues.csv"
 -l, --log_file=     define the filepath/filename where to write the logs
@@ -42,7 +42,7 @@ Options:
 -------
 Examples:
 python3 ./report_sites.py
-python3 ./report_sites.py --site_ids=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
+python3 ./report_sites.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
 """
 
@@ -346,7 +346,7 @@ information about the available parameters).
 -------
 Options:
 -h, --help          display this help
--s, --site_id=      Set the site_id
+-o, --org_id=       Set the org_id
 -f, --out_file=     define the filepath/filename where to save the data
                     default is "./report_rogues.csv"
 -l, --log_file=     define the filepath/filename where to write the logs
@@ -358,7 +358,7 @@ Options:
 -------
 Examples:
 python3 ./report_sites.py
-python3 ./report_sites.py --site_ids=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
+python3 ./report_sites.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 """
     )
     if error_message:
