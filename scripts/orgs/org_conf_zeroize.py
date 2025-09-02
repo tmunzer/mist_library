@@ -296,6 +296,8 @@ get_org_steps = {
     "antivirus": {
         "get_mistapi_function": mistapi.api.v1.orgs.avprofiles.listOrgAntivirusProfiles,
         "delete_mistapi_function": mistapi.api.v1.orgs.avprofiles.deleteOrgAntivirusProfile,
+        "text": "Org Antivirus Profiles",
+        "check_next": True,
     }
 }
 
@@ -340,7 +342,7 @@ def start_delete(apisession, org_id):
     for step_name, step in get_org_steps.items():
         options = step.get("get_options", {})
         response = step["get_mistapi_function"](apisession, org_id, **options)
-        if step["check_next"]:
+        if step.get("check_next"):
             data = mistapi.get_all(apisession, response)
         else:
             data = response.data
