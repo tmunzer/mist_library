@@ -423,7 +423,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-o",
         "--org_id",
-        help="Set the org_id where the webhook must be create/delete/retrieved",
+        help="ID of the Mist organization",
         default="",
     )
     parser.add_argument(
@@ -443,6 +443,8 @@ if __name__ == "__main__":
 
     ENV_FILE = args.env_file
     ORG_ID = args.org_id
+    LOG_FILE = args.log_file
+    CSV_FILE = args.csv_file
 
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")
