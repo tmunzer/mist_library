@@ -139,7 +139,7 @@ MISTAPI_MIN_VERSION = "0.52.4"
 try:
     import mistapi
     from mistapi.__logger import console as CONSOLE
-except Exception:
+except ImportError:
     print(
         """
         Critical:
@@ -173,14 +173,29 @@ EVENT_TYPES_DEFINITIONS = {
     "GW_APPID_INSTALL": ["GW_APPID_INSTALL_FAILED", "GW_APPID_INSTALLED"],
     "GW_ARP": ["GW_ARP_UNRESOLVED", "GW_ARP_RESOLVED"],
     "GW_BGP_NEIGHBOR": ["GW_BGP_NEIGHBOR_DOWN", "GW_BGP_NEIGHBOR_UP"],
-    "GW_CONFIG": ["GW_CONFIG_FAILED", "GW_CONFIG_LOCK_FAILED","GW_CONFIG_ERROR_ADDTL_COMMAND","GW_CONFIGURED"],
+    "GW_CONFIG": [
+        "GW_CONFIG_FAILED",
+        "GW_CONFIG_LOCK_FAILED",
+        "GW_CONFIG_ERROR_ADDTL_COMMAND",
+        "GW_CONFIGURED",
+    ],
     "GW_DISCONNECTED": ["GW_DISCONNECTED", "GW_CONNECTED"],
-    "GW_FIB_COUNT": ["GW_FIB_COUNT_THRESHOLD_EXCEEDED", "GW_FIB_COUNT_RETURNED_TO_NORMAL"],
-    "GW_FLOW_COUNT": ["GW_FLOW_COUNT_THRESHOLD_EXCEEDED", "GW_FLOW_COUNT_RETURNED_TO_NORMAL"],
+    "GW_FIB_COUNT": [
+        "GW_FIB_COUNT_THRESHOLD_EXCEEDED",
+        "GW_FIB_COUNT_RETURNED_TO_NORMAL",
+    ],
+    "GW_FLOW_COUNT": [
+        "GW_FLOW_COUNT_THRESHOLD_EXCEEDED",
+        "GW_FLOW_COUNT_RETURNED_TO_NORMAL",
+    ],
     "GW_HA_CONTROL_LINK": ["GW_HA_CONTROL_LINK_DOWN", "GW_HA_CONTROL_LINK_UP"],
     "GW_HA_HEALTH_WEIGHT": ["GW_HA_HEALTH_WEIGHT_LOW", "GW_HA_HEALTH_WEIGHT_RECOVERY"],
     "GW_IDP_INSTALL": ["GW_IDP_INSTALL_FAILED", "GW_IDP_INSTALLED"],
-    "GW_RECOVERY_SNAPSHOT": ["GW_RECOVERY_SNAPSHOT_FAILED", "GW_RECOVERY_SNAPSHOT_SUCCEEDED", "GW_RECOVERY_SNAPSHOT_NOTNEEDED"],
+    "GW_RECOVERY_SNAPSHOT": [
+        "GW_RECOVERY_SNAPSHOT_FAILED",
+        "GW_RECOVERY_SNAPSHOT_SUCCEEDED",
+        "GW_RECOVERY_SNAPSHOT_NOTNEEDED",
+    ],
     "GW_TUNNEL": ["GW_TUNNEL_DOWN", "GW_TUNNEL_UP"],
     "GW_UPGRADE": ["GW_UPGRADE_FAILED", "GW_UPGRADED"],
     "GW_VPN_PATH": ["GW_VPN_PATH_DOWN", "GW_VPN_PATH_UP"],
@@ -188,16 +203,31 @@ EVENT_TYPES_DEFINITIONS = {
     "GW_ZTP": ["GW_ZTP_FAILED", "GW_ZTP_FINISHED"],
     "SW_BFD_SESSION": ["SW_BFD_SESSION_DISCONNECTED", "SW_BFD_SESSION_ESTABLISHED"],
     "SW_BGP_NEIGHBOR": ["SW_BGP_NEIGHBOR_DOWN", "SW_BGP_NEIGHBOR_UP"],
-    "SW_CONFIG": ["SW_CONFIG_FAILED", "SW_CONFIG_LOCK_FAILED", "SW_CONFIG_ERROR_ADDTL_COMMAND", "SW_CONFIGURED",],
-    "SW_DDOS_PROTOCOL_VIOLATION": ["SW_DDOS_PROTOCOL_VIOLATION_SET", "SW_DDOS_PROTOCOL_VIOLATION_CLEAR",],
+    "SW_CONFIG": [
+        "SW_CONFIG_FAILED",
+        "SW_CONFIG_LOCK_FAILED",
+        "SW_CONFIG_ERROR_ADDTL_COMMAND",
+        "SW_CONFIGURED",
+    ],
+    "SW_DDOS_PROTOCOL_VIOLATION": [
+        "SW_DDOS_PROTOCOL_VIOLATION_SET",
+        "SW_DDOS_PROTOCOL_VIOLATION_CLEAR",
+    ],
     "SW_DISCONNECTED": ["SW_DISCONNECTED", "SW_CONNECTED"],
-    "SW_EVPN_CORE_ISOLATION": ["SW_EVPN_CORE_ISOLATED","SW_EVPN_CORE_ISOLATION_CLEARED",],
+    "SW_EVPN_CORE_ISOLATION": [
+        "SW_EVPN_CORE_ISOLATED",
+        "SW_EVPN_CORE_ISOLATION_CLEARED",
+    ],
     "SW_FPC_POWER": ["SW_FPC_POWER_OFF", "SW_FPC_POWER_ON"],
     "SW_MAC_LEARNING": ["SW_MAC_LEARNING_STOPPED", "SW_MAC_LEARNING_RESUMED"],
     "SW_MAC_LIMIT": ["SW_MAC_LIMIT_EXCEEDED", "SW_MAC_LIMIT_RESET"],
     "SW_OSPF_NEIGHBOR": ["SW_OSPF_NEIGHBOR_DOWN", "SW_OSPF_NEIGHBOR_UP"],
     "SW_PORT_BPDU": ["SW_PORT_BPDU_ERROR_CLEARED", "SW_PORT_BPDU_BLOCKED"],
-    "SW_RECOVERY_SNAPSHOT": ["SW_RECOVERY_SNAPSHOT_FAILED", "SW_RECOVERY_SNAPSHOT_SUCCEEDED", "SW_RECOVERY_SNAPSHOT_NOTNEEDED"],
+    "SW_RECOVERY_SNAPSHOT": [
+        "SW_RECOVERY_SNAPSHOT_FAILED",
+        "SW_RECOVERY_SNAPSHOT_SUCCEEDED",
+        "SW_RECOVERY_SNAPSHOT_NOTNEEDED",
+    ],
     "SW_UPGRADE": ["SW_UPGRADE_FAILED", "SW_UPGRADED"],
     "SW_VC_PORT": ["SW_VC_PORT_DOWN", "SW_VC_PORT_UP"],
     "SW_ZTP": ["SW_ZTP_FAILED", "SW_ZTP_FINISHED"],
@@ -207,9 +237,7 @@ EVENT_TYPES_DEFINITIONS = {
 #####################################################################
 # PROGRESS BAR AND DISPLAY
 class ProgressBar:
-    """
-    PROGRESS BAR AND DISPLAY
-    """
+    """Progress bar for long-running operations."""
 
     def __init__(self):
         self.steps_total = 0
@@ -252,30 +280,37 @@ class ProgressBar:
             self._pb_update(size)
 
     def set_steps_total(self, steps_total: int):
+        """Set the total number of steps for the progress bar."""
+        self.steps_count = 0
         self.steps_total = steps_total
 
     def log_message(self, message, display_pbar: bool = True):
+        """Log a message."""
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
     def log_success(self, message, inc: bool = False, display_pbar: bool = True):
+        """Log a success message."""
         LOGGER.info("%s: Success", message)
         self._pb_new_step(
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
+        """Log a warning message."""
         LOGGER.warning("%s: Warning", message)
         self._pb_new_step(
             message, "\033[93m\u2b58\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
+        """Log a failure message."""
         LOGGER.error("%s: Failure", message)
         self._pb_new_step(
             message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_title(self, message, end: bool = False, display_pbar: bool = True):
+        """Log a title message."""
         LOGGER.info("%s", message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
@@ -1012,13 +1047,20 @@ def _process_events(events: list) -> dict:
             _process_gw_arp(device_events, event_type, event)
         elif event_type.startswith("GW_BGP_NEIGHBOR"):
             _process_gw_bgp_neighbor(device_events, event_type, event)
-        elif event_type.startswith("GW_CONFIG_") or event_type in ["GW_CONFIGURED", "GW_RECONFIGURED"]:
+        elif event_type.startswith("GW_CONFIG_") or event_type in [
+            "GW_CONFIGURED",
+            "GW_RECONFIGURED",
+        ]:
             _process_config(
                 device_events,
                 event_type,
                 event,
                 "GW_CONFIG_FAILED",
-                ["GW_CONFIG_FAILED", "GW_CONFIG_LOCK_FAILED", "GW_CONFIG_ERROR_ADDTL_COMMAND"],
+                [
+                    "GW_CONFIG_FAILED",
+                    "GW_CONFIG_LOCK_FAILED",
+                    "GW_CONFIG_ERROR_ADDTL_COMMAND",
+                ],
                 ["GW_CONFIGURED", "GW_RECONFIGURED"],
             )
         elif event_type in ["GW_DISCONNECTED", "GW_CONNECTED"]:
@@ -1102,7 +1144,10 @@ def _process_events(events: list) -> dict:
                 ["GW_ZTP_FINISHED"],
             )
         ####### SW
-        elif event_type.startswith("SW_CONFIG_") or event_type in ["SW_CONFIGURED", "SW_RECONFIGURED"]:
+        elif event_type.startswith("SW_CONFIG_") or event_type in [
+            "SW_CONFIGURED",
+            "SW_RECONFIGURED",
+        ]:
             _process_config(
                 device_events,
                 event_type,
@@ -1461,7 +1506,9 @@ def _export_to_csv(
                                             device_mac,
                                             site_id,
                                         ),
-                                        event_identifier_data.get("details", "").replace("\n", " "),
+                                        event_identifier_data.get(
+                                            "details", ""
+                                        ).replace("\n", " "),
                                     ]
                                 )
                     else:
@@ -1772,16 +1819,57 @@ py -m pip install --upgrade mistapi
 ###############################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Display list of open events/alarms that are not cleared")
-    parser.add_argument("-e", "--env_file", help="define the env file to use", default=None)
-    parser.add_argument("-o", "--org_id", help="Set the org_id where the webhook must be create/delete/retrieved", default="")
-    parser.add_argument("-t", "--event_types", help="comma separated list of event types")
-    parser.add_argument("-d", "--duration", help="duration of the events to look at", default="1d")
-    parser.add_argument("-r", "--trigger_timeout", help="timeout (in minutes) before listing the event if it is not cleared", type=int, default=5)
-    parser.add_argument("-l", "--log_file", help="define the filepath/filename where to write the logs", default=LOG_FILE)
-    parser.add_argument("-v", "--view", help="Type of report to display", choices=["event", "device"], default="event")
-    parser.add_argument("-c", "--csv_file", help="Path to the CSV file where to save the result", default=CSV_FILE)
-    parser.add_argument("-n", "--no-resolve", help="disable the device (device name) resolution", action="store_true", default=False)
+    parser = argparse.ArgumentParser(
+        description="Display list of open events/alarms that are not cleared"
+    )
+    parser.add_argument(
+        "-e", "--env_file", help="define the env file to use", default=None
+    )
+    parser.add_argument(
+        "-o",
+        "--org_id",
+        help="Set the org_id where the webhook must be create/delete/retrieved",
+        default="",
+    )
+    parser.add_argument(
+        "-t", "--event_types", help="comma separated list of event types"
+    )
+    parser.add_argument(
+        "-d", "--duration", help="duration of the events to look at", default="1d"
+    )
+    parser.add_argument(
+        "-r",
+        "--trigger_timeout",
+        help="timeout (in minutes) before listing the event if it is not cleared",
+        type=int,
+        default=5,
+    )
+    parser.add_argument(
+        "-l",
+        "--log_file",
+        help="define the filepath/filename where to write the logs",
+        default=LOG_FILE,
+    )
+    parser.add_argument(
+        "-v",
+        "--view",
+        help="Type of report to display",
+        choices=["event", "device"],
+        default="event",
+    )
+    parser.add_argument(
+        "-c",
+        "--csv_file",
+        help="Path to the CSV file where to save the result",
+        default=CSV_FILE,
+    )
+    parser.add_argument(
+        "-n",
+        "--no-resolve",
+        help="disable the device (device name) resolution",
+        action="store_true",
+        default=False,
+    )
 
     args = parser.parse_args()
 
@@ -1822,12 +1910,5 @@ if __name__ == "__main__":
     APISESSION = mistapi.APISession(env_file=ENV_FILE, show_cli_notif=False)
     APISESSION.login()
     start(
-        APISESSION,
-        ORG_ID,
-        EVENT_TYPES,
-        DURATION,
-        TIMEOUT,
-        VIEW,
-        CSV_FILE,
-        NO_RESOLVE
+        APISESSION, ORG_ID, EVENT_TYPES, DURATION, TIMEOUT, VIEW, CSV_FILE, NO_RESOLVE
     )
