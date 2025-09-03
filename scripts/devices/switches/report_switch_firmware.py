@@ -92,10 +92,6 @@ CSV_FILE = "./report_switch_firmware.csv"
 LOG_FILE = "./script.log"
 ENV_FILE = "~/.mist_env"
 
-
-###############################################################################
-### PROGRESS BAR
-
 #####################################################################
 # PROGRESS BAR AND DISPLAY
 class ProgressBar:
