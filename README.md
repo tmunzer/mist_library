@@ -84,7 +84,7 @@ Notes:
 
 - `scripts/` — main scripts grouped by topic (configuration, orgs, sites, devices, exports, reports, nac, clients)
 - `utils/` — helper utilities (e.g. encryption)
-- `v-tool/` — additional tooling included for convenience
+- `v-tool/` — additional tooling
 - `requirements.txt` — Python dependencies
 
 Each script contains a short header describing purpose, options and examples. Run any script with `-h` for usage details.
