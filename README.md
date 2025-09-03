@@ -66,21 +66,13 @@ There is a short description at the beginning of each script explaining the purp
 > **IMPORTANT NOTE**:
 Each script has description and documentation at the beginning of the file. Please check this information first, it is providing useful information on how to use each script.
 
+
 ## Configuration
 | Category | Script | Description |
 | ---- | ---- | ---- |
 | Configuration | [config_ap_auto_upgrade.py](scripts/configuration/config_ap_auto_upgrade.py) | Python script update the Mist AP Auto_upgrade parameters in the site settings |
 | Configuration | [config_auto_site_assignment.py](scripts/configuration/config_auto_site_assignment.py) | Python script to update the org auto assignment rules |
 | Configuration | [config_webhook.py](scripts/configuration/config_webhook.py) | This script can be used to list/add/delete Webhooks from Org/Site |
-| Orgs | [clone_template.py](scripts/orgs/clone_template.py) | Python script to clone a specific template from an organization to another (or the same) organization. |
-| Orgs - Inventory | [inventory_assign.py](scripts/orgs/inventory_assign.py) | Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org. |
-| Orgs - Inventory | [inventory_claim.py](scripts/orgs/inventory_claim.py) | Python script to claim devices to an org from a CSV file. |
-| Orgs | [validate_site_variables.py](scripts/orgs/validate_site_variables.py) | Python script to validate that all the variables used in the templates used by each site are configured at the site level. The result is displayed on the console and saved in a CSV file. |
-| Sites | [fix_sites_geocoding.py](scripts/sites/fix_sites_geocoding.py) | Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing. |
-| Sites | [site_conf_psk.py](scripts/sites/site_conf_psk.py) |  |
-| Sites | [site_conf_wlan.py](scripts/sites/site_conf_wlan.py) | This script can be used to list/add/delete an SSID from Org/Site |
-| Sites | [update_sitegroups.py](scripts/sites/update_sitegroups.py) | Python script update the sitegroups assigned to sites based on a CSV file. The script can append the new sitegroups (default) or replace the sitegroups currently assigned with the new list. |
-| Sites | [update_sites_templates.py](scripts/sites/update_sites_templates.py) | Python script update the templates assigned to Mist Sites based on a CSV file, and/or update the auto assignment rules based on IP Subnet. |
 
 ## Configuration - EVPN
 | Category | Script | Description |
@@ -117,7 +109,7 @@ Each script has description and documentation at the beginning of the file. Plea
 | Devices - Gateway | [cluster_node_check.py](scripts/devices/gateways/cluster_node_check.py) | Python script to retrieve the role of each Gateway Cluster nodes across a whole Organization. |
 | Devices - Gateway | [report_gateway_firmware.py](scripts/devices/gateways/report_gateway_firmware.py) | Python script to report the firmware deployed on all the SRX for a specified org/site with, for each Module, the Running Version, the Backup version, the Pending version, and some other information |
 | Devices - Switch | [check_local_commit_events.py](scripts/devices/switches/check_local_commit_events.py) | This script can be used to retrieve and save into a file the CLI Commit events (commit done locally one the switches) for all the switches belonging to a Mist Organization. |
-| Devices - Gateway | [fix_switch_backup_firmware.py](scripts/devices/switches/fix_switch_backup_firmware.py) | Python script trigger a snapshot/firmware backup on EX devices. This script is using the CSV report for the report_switch_firmware.py script to identify the EX on which the command must be triggered. |
+| Devices - Switch | [fix_switch_backup_firmware.py](scripts/devices/switches/fix_switch_backup_firmware.py) | Python script trigger a snapshot/firmware backup on EX devices. This script is using the CSV report for the report_switch_firmware.py script to identify the EX on which the command must be triggered. |
 | Devices - Switch | [update_port_config.py](scripts/devices/switches/update_port_config.py) | Python script to reconfigure switch interfaces based on a CSV file. The script will create or replace device override at the switch level to reconfigure the interfaces. |
 | Devices - Switch | [toggle_poe.py](scripts/devices/switches/toggle_poe.py) | Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template. |
 | Devices - Switch | [report_switch_firmware.py](scripts/devices/switches/report_switch_firmware.py) | Python script to generates a list of all the switches for a specified org/site with the snapshot/backup status |
@@ -125,20 +117,32 @@ Each script has description and documentation at the beginning of the file. Plea
 ## Imports
 | Category | Script | Description |
 | ---- | ---- | ---- |
-| Clients | [import_guest.py](scripts/clients/import_guests.py) | Python script import or update a list of Guests from a CSV file into a Mist Org or Mist Site |
+| Clients | [import_guests.py](scripts/clients/import_guests.py) | Python script import or update a list of Guests from a CSV file into a Mist Org or Mist Site |
 | NAC | [import_client_macs.py](scripts/nac/import_client_macs.py) | Python script import import a list of MAC Address into "Client List" Mist NAC Labels from a CSV File. |
 | NAC | [import_user_macs.py](scripts/nac/import_user_macs.py) | Python script import import a list of MAC Address as "NAC Endpoints" from a CSV File. |
 | Orgs - Admins | [import_admins.py](scripts/orgs/admins/import_admins.py) | Python script to invite/add administrators from a CSV file. |
+| Orgs - Inventory | [inventory_assign.py](scripts/orgs/inventory_assign.py) | Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org. |
+| Orgs - Inventory | [inventory_claim.py](scripts/orgs/inventory_claim.py) | Python script to claim devices to an org from a CSV file. |
+| Orgs | [clone_template.py](scripts/orgs/clone_template.py) | Python script to clone a specific template from an organization to another (or the same) organization. |
+| Orgs | [validate_site_variables.py](scripts/orgs/validate_site_variables.py) | Python script to validate that all the variables used in the templates used by each site are configured at the site level. The result is displayed on the console and saved in a CSV file. |
 | Sites | [import_floorplans.py](scripts/sites/import_floorplans.py) | Python script to import multiple Ekahau/iBwave project into Mist Organization. |
 | Sites | [import_sites.py](scripts/sites/import_sites.py) | Python script automate the sites creation in a Mist Org from a CSV file. |
 | Sites | [import_psk.py](scripts/sites/import_psk.py) | This script will import PSKs from a CSV file to one or multiple sites. |
+| Sites | [fix_sites_geocoding.py](scripts/sites/fix_sites_geocoding.py) | Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing. |
+| Sites | [site_conf_psk.py](scripts/sites/site_conf_psk.py) |  |
+| Sites | [site_conf_wlan.py](scripts/sites/site_conf_wlan.py) | This script can be used to list/add/delete an SSID from Org/Site |
+| Sites | [update_sitegroups.py](scripts/sites/update_sitegroups.py) | Python script update the sitegroups assigned to sites based on a CSV file. The script can append the new sitegroups (default) or replace the sitegroups currently assigned with the new list. |
+| Sites | [update_sites_templates.py](scripts/sites/update_sites_templates.py) | Python script update the templates assigned to Mist Sites based on a CSV file, and/or update the auto assignment rules based on IP Subnet. |
 
 ## Reports
 | Category | Script | Description |
 | ---- | ---- | ---- |
 | Reports | [export_inventory.py](scripts/exports/export_inventory.py) | Python script to export the inventory from an organization. The export will include all the information available from the org inventory, including the claim codes. |
 | Reports | [export_search.py](scripts/exports/export_search.py) | Python script to export historical data from Mist API and save the result in CSV of JSON format. |
-| Reports | [list_open_events.py](https://github.com/tmunzer/mist_library/blob/master/scripts/reports/list_open_events.py) | Python script to display the list of events/alarms that are not cleared. The script is trying to correlate the different events to identify the "opening" and the "closing" events, and only display the event if it is not "cleared" for more than the `trigger_timeout`. |
+| Reports | [list_open_events.py](scripts/reports/list_open_events.py) | Python script to display the list of events/alarms that are not cleared. The script is trying to correlate the different events to identify the "opening" and the "closing" events, and only display the event if it is not "cleared" for more than the `trigger_timeout`. |
 | Reports | [report_app_usage.py](scripts/reports/report_app_usage.py) | Python script to generate a report of the application usage on a specific site |
 | Reports | [report_rogues.py](scripts/reports/report_rogues.py) | Python script to generate a Rogue AP report. |
+| Reports | [report_sites_sles.py](scripts/reports/report_sites_sles.py) | Python script to generate a report of the Site SLE (Service Level Expectations). The report includes key metrics and insights for each site. The script will display the report in the console and save it to a CSV file. |
+| Reports | [report_sites.py](scripts/reports/report_sites.py) | Python script to generate a report of the Mist Sites and resolving the site group names. The script will display the report in the console and save it to a CSV file. It is possible to customize the columns to include in the report by modifying the `REPORT_HEADERS` list. |
 | Reports | [report_wlans.py](scripts/reports/report_wlans.py) | Python script to list all WLANs from orgs/sites and their parameters, and save it to a CSV file. |
+
