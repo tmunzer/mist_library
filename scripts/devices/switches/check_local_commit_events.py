@@ -7,7 +7,7 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-This script can be used to retrieve and save into a file the CLI Commit events
+This script can be used to retrieve and save into files the CLI Commit events
 (commit done locally one the switches) for all the switches belonging to a Mist 
 Organization.
 
@@ -73,7 +73,7 @@ python3 ./check_local_commit_events.py \
 #### IMPORTS ####
 import os
 import sys
-import getopt
+import argparse
 import logging
 
 MISTAPI_MIN_VERSION = "0.52.2"
@@ -81,7 +81,8 @@ MISTAPI_MIN_VERSION = "0.52.2"
 try:
     import mistapi
     from mistapi.__logger import console as CONSOLE
-except:
+
+except ImportError:
     print(
         """
         Critical: 
@@ -105,13 +106,10 @@ LOG_FILE = "./script.log"
 #### LOGS ####
 LOGGER = logging.getLogger(__name__)
 
-
-###############################################################################
+#####################################################################
 # PROGRESS BAR AND DISPLAY
 class ProgressBar:
-    """
-    PROGRESS BAR AND DISPLAY
-    """
+    """Progress bar for long-running operations."""
 
     def __init__(self):
         self.steps_total = 0
@@ -124,9 +122,9 @@ class ProgressBar:
         percent = self.steps_count / self.steps_total
         delta = 17
         x = int((size - delta) * percent)
-        print(f"Progress: ", end="")
-        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
-        print(f"{int(percent*100)}%".rjust(5), end="")
+        print("Progress: ", end="")
+        print(f"[{'█' * x}{'.' * (size - delta - x)}]", end="")
+        print(f"{int(percent * 100)}%".rjust(5), end="")
 
     def _pb_new_step(
         self,
@@ -154,31 +152,38 @@ class ProgressBar:
             self._pb_update(size)
 
     def set_steps_total(self, steps_total: int):
+        """Set the total number of steps for the progress bar."""
+        self.steps_count = 0
         self.steps_total = steps_total
 
     def log_message(self, message, display_pbar: bool = True):
+        """Log a message."""
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
     def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.info(f"{message}: Success")
+        """Log a success message."""
+        LOGGER.info("%s: Success", message)
         self._pb_new_step(
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.warning(f"{message}: Warning")
+        """Log a warning message."""
+        LOGGER.warning("%s: Warning", message)
         self._pb_new_step(
-            message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar
+            message, "\033[93m\u2b58\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.error(f"{message}: Failure")
+        """Log a failure message."""
+        LOGGER.error("%s: Failure", message)
         self._pb_new_step(
             message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_title(self, message, end: bool = False, display_pbar: bool = True):
-        LOGGER.info(f"{message}")
+        """Log a title message."""
+        LOGGER.info("%s", message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
 
 
@@ -222,7 +227,7 @@ def _find_sites(apisession: mistapi.APISession, org_id: str) -> list:
         else:
             PB.log_failure(message, display_pbar=False)
             sys.exit(100)
-    except:
+    except Exception:
         PB.log_failure(message, display_pbar=False)
         LOGGER.error("Exception occurred", exc_info=True)
         sys.exit(100)
@@ -248,7 +253,7 @@ def _find_events(apisession: mistapi.APISession, site_id: str, duration: str) ->
     """
     try:
         message = f"Site {site_id}: retrieving CLI Commit Events"
-        PB.log_message(message,  display_pbar=True)
+        PB.log_message(message, display_pbar=True)
         resp = mistapi.api.v1.sites.devices.searchSiteDeviceEvents(
             apisession, site_id, type="SW_CONFIGURED", limit=1000, duration=duration
         )
@@ -259,7 +264,7 @@ def _find_events(apisession: mistapi.APISession, site_id: str, duration: str) ->
         else:
             PB.log_failure(message, inc=True, display_pbar=True)
             sys.exit(100)
-    except:
+    except Exception:
         PB.log_failure(message, inc=True, display_pbar=True)
         LOGGER.error("Exception occurred", exc_info=True)
         sys.exit(100)
@@ -268,7 +273,7 @@ def _find_events(apisession: mistapi.APISession, site_id: str, duration: str) ->
 def _process_events(events: list, site_id: str) -> dict:
     cli_events = {}
     message = f"Site {site_id}: processing CLI Commit Events"
-    PB.log_message(message,  display_pbar=True)
+    PB.log_message(message, display_pbar=True)
     for event in events:
         if event.get("commit_method") == "cli":
             config_diff = event.get("config_diff", "unknown")
@@ -295,27 +300,31 @@ def _process_events(events: list, site_id: str) -> dict:
 def _save_events(events: dict, site_id: str) -> None:
     if len(events) > 0:
         message = f"Site {site_id}: saving CLI Commit Events"
-        PB.log_message(message,  display_pbar=True)
+        PB.log_message(message, display_pbar=True)
         try:
             if not os.path.exists(site_id):
                 os.makedirs(site_id)
             for mac, switch_events in events.items():
                 file_path = f"./{site_id}/{mac}"
-                sorted_switch_events = sorted(switch_events, key=lambda d: d["timestamp"], reverse=True)
-                with open(file_path, 'w') as f:
+                sorted_switch_events = sorted(
+                    switch_events, key=lambda d: d["timestamp"], reverse=True
+                )
+                with open(file_path, "w") as f:
                     for e in sorted_switch_events:
-                        f.write(f"-------------- commit at {e.get('timestamp')} - user {e.get('commit_user')} --------------\n")
+                        f.write(
+                            f"-------------- commit at {e.get('timestamp')} - user {e.get('commit_user')} --------------\n"
+                        )
                         f.write(e.get("config_diff"))
                         f.write("\n-\n")
                         f.write(f"result: {e.get('result')}\n\n")
-        except Exception as e:
+        except Exception:
             PB.log_failure(message, inc=True, display_pbar=True)
             LOGGER.error("Exception occurred", exc_info=True)
             return
     else:
         message = f"Site {site_id}: no CLI Commit Events to save"
-        PB.log_message(message,  display_pbar=True)
-    PB.log_success(message,  inc=True, display_pbar=True)
+        PB.log_message(message, display_pbar=True)
+    PB.log_success(message, inc=True, display_pbar=True)
 
 
 def _check_folder(folder: str, org_id: str) -> None:
@@ -345,11 +354,12 @@ def _processing_sites(
         cli_events = _process_events(events, site_id)
         _save_events(cli_events, site_id)
 
+
 ###############################################################################
 # START
 def start(
     apisession: mistapi.APISession,
-    org_id: str = None,
+    org_id: str = "",
     duration: str = "7d",
     folder: str = "./cli_commit_events",
 ):
@@ -383,7 +393,7 @@ def start(
 
 ###############################################################################
 # USAGE
-def usage(error_message: str = None):
+def usage(error_message: str|None = None):
     """
     show script usage
     """
@@ -397,7 +407,7 @@ def usage(error_message: str = None):
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-This script can be used to retrieve and save into a file the CLI Commit events
+This script can be used to retrieve and save into files the CLI Commit events
 (commit done locally one the switches) for all the switches belonging to a Mist 
 Organization.
 
@@ -506,7 +516,7 @@ py -m pip install --upgrade mistapi
             '"mistapi" package version %s is required, '
             "you are currently using version %s.",
             MISTAPI_MIN_VERSION,
-            mistapi.__version__
+            mistapi.__version__,
         )
 
 
@@ -514,40 +524,60 @@ py -m pip install --upgrade mistapi
 ##### ENTRY POINT ####
 
 if __name__ == "__main__":
-    try:
-        opts, args = getopt.getopt(
-            sys.argv[1:],
-            "ho:d:f:e:l",
-            ["help", "org_id=", "duration=", "folder=", "env=", "log_file="],
-        )
-    except getopt.GetoptError as err:
-        CONSOLE.error(err)
-        usage()
+    parser = argparse.ArgumentParser(
+        description="Retrieve and save CLI Commit events from Mist switches",
+        add_help=False,
+    )
+    # Add help manually to maintain control over usage function
+    parser.add_argument("-h", "--help", action="store_true", help="display this help")
 
-    ORG_ID = None
-    DURATION = "7d"
-    FOLDER = "./cli_commit_events"
-    for o, a in opts:
-        if o in ["-h", "--help"]:
-            usage()
-        elif o in ["-o", "--org_id"]:
-            ORG_ID = a
-        elif o in ["-d", "--duration"]:
-            DURATION = a
-        elif o in ["-f", "--folder"]:
-            FOLDER = a
-        elif o in ["-e", "--env"]:
-            ENV_FILE = a
-        elif o in ["-l", "--log_file"]:
-            LOG_FILE = a
-        else:
-            assert False, "unhandled option"
+    parser.add_argument(
+        "-o", "--org_id", help="Set the org_id where the events must be retrieved"
+    )
+    parser.add_argument(
+        "-d",
+        "--duration",
+        default="7d",
+        help="retrieve the CLI commits for the specified duration (default: 7d)",
+    )
+    parser.add_argument(
+        "-f",
+        "--folder",
+        default="./cli_commit_events",
+        help="folder where to save the files (default: ./cli_commit_events)",
+    )
+    parser.add_argument(
+        "-e",
+        "--env",
+        default=ENV_FILE,
+        help="define the env file to use (default: ~/.mist_env)",
+    )
+    parser.add_argument(
+        "-l",
+        "--log_file",
+        default=LOG_FILE,
+        help="define the filepath/filename where to write the logs (default: ./script.log)",
+    )
+
+    args = parser.parse_args()
+
+    ORG_ID = args.org_id
+    DURATION = args.duration
+    FOLDER = args.folder
+    ENV_FILE = args.env
+    LOG_FILE = args.log_file
+    
+    # Validate duration format
+    if not DURATION.endswith(("m", "h", "d", "w")):
+        usage(
+            f'Invalid -d / --duration parameter value, should be something like "10m", "2h", "7d", "1w"... Got "{DURATION}".'
+        )
 
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")
     LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### START ###
-    apisession = mistapi.APISession(env_file=ENV_FILE)
-    apisession.login()
-    start(apisession, ORG_ID, DURATION, FOLDER)
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
+    start(APISESSION, ORG_ID, DURATION, FOLDER)
