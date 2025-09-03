@@ -1,148 +1,249 @@
-# Mist_library
+# mist_library
 
-Examples of Python scripts using the [Mist APIs](https://www.mist.com)
-These scripts are using the [mistapi Python package](https://pypi.org/project/mistapi/) to simplify the authentication process.
+Utilities and example Python scripts that use the Mist Cloud APIs (via the [`mistapi`](https://pypi.org/project/mistapi/) package) to automate configuration, backups, imports and reporting for Mist organizations and sites.
 
-# Menu
+This repository collects small, focused scripts that are ready to run and easy to adapt for your environment.
 
-- [Mist\_library](#mist_library)
-- [Menu](#menu)
-  - [MIT LICENSE](#mit-license)
-- [Description](#description)
-  - [Usage](#usage)
-  - [Environment File](#environment-file)
-- [Scripts](#scripts)
-  - [Configuration](#configuration)
-  - [Backup \& Restore](#backup--restore)
-  - [Devices](#devices)
-  - [Imports](#imports)
-  - [Reports](#reports)
 
-## MIT LICENSE
+## License
 
-Copyright (c) 2023 Thomas Munzer
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+## Highlights
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+- Collection of scripts for: configuration, EVPN, device operations, org/site backups & restores, imports, and reports.
+- Uses the [`mistapi`](https://pypi.org/project/mistapi/) Python package for authentication and API calls.
+- Scripts accept an environment file or interactive credentials and support dry-run modes where applicable.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+## Quick start
 
-# Description
+Prerequisites:
 
-## Usage
+- Python 3.8+ (recommend 3.9+)
+- A Mist API token or username/password with appropriate privileges
+- Repository checked out locally
 
-These scripts are using the [mistapi Python package](https://pypi.org/project/mistapi/) to manage the authentication process with the Mist Cloud.
-This package can use API Token authentication or Login/Password:
+Install dependencies (recommended in a virtualenv):
 
-- saved in a `.mist_env` file located in your home folder (see below for the env file description)
-- saved in a file and passed with the `-e` or `--env` parameter to the script (see below for the env file description)
-- if no env file is found, the script will ask for the Login/Passwd
-
-## Environment File
-
-The environment file can be used to store all the information requested by the scripts. It can be used to easily store and used different environments and automate the execution of the scripts without having to save credential information in the script itself.
-| Variable Name | Type | Default | Comment |
-| ------------- | ---- | ------ | ------- |
-MIST_HOST | string | None | The Mist Cloud to use. It must be the "api" one (e.g. `api.mist.com`, `api.eu.mist.com`, ...) |
-MIST_APITOKEN | string | None | The API Token to use. |
-MIST_USER | string | None | The login to use if no API Token is provided (apitoken use is preferred) |
-MIST_PASSWORD | string | None | The password to use if no API Token is provided (apitoken use is preferred) |
-CONSOLE_LOG_LEVEL | int | 20 | The minimum log level to display on the console, using `logging` schema (0 = Disabled, 10 = Debug, 20 = Info, 30 = Warning, 40 = Error, 50 = Critical) |
-LOGGING_LOG_LEVEL | int | 10 | The minimum log level to log on the file, using `logging` schema (0 = Disabled, 10 = Debug, 20 = Info, 30 = Warning, 40 = Error, 50 = Critical). This is only used when the script calling `mistapi` is using Python `logging` package and is configured to log to a file |
-
-An example of the environment file content is:
-
-```
-MIST_HOST = api.mist.com
-MIST_APITOKEN = xxxxxx
+```bash
+python -m pip install -r requirements.txt
 ```
 
-# Scripts
+Run a script example (prints help):
 
-The scripts are located in the `scripts` folder. They can be used as-is, or customized if needed.
-There is a short description at the beginning of each script explaining the purpose of the script, the available options, and how to use it. They are also accepting the `-h` option which will display the script help.
+```bash
+python scripts/orgs/org_conf_deploy.py -h
+```
 
-> **IMPORTANT NOTE**:
-Each script has description and documentation at the beginning of the file. Please check this information first, it is providing useful information on how to use each script.
+Or run with a specific environment file:
+
+```bash
+python scripts/orgs/org_conf_deploy.py -e my_env_file
+```
+
+## Environment file
+
+You can store credentials and common options in an environment file. By default the scripts look for `~/.mist_env` (scripts commonly use `ENV_FILE = "~/.mist_env"`) but you can pass `-e /path/to/env` to use a different file.
+
+Authoritative env vars:
+
+- `MIST_HOST` — Mist API host (for example `api.mist.com`).
+- `MIST_APITOKEN` — API token (preferred authentication).
+- `MIST_USER` / `MIST_PASSWORD` — username / password fallback when no token is provided.
+- `MIST_VAULT_MOUNT_POINT`, `MIST_VAULT_PATH`, `MIST_VAULT_TOKEN`, `MIST_VAULT_URL` — Vault integration variables used by `mistapi` when retrieving secrets from a HashiCorp Vault instance.
+- `CONSOLE_LOG_LEVEL`, `LOGGING_LOG_LEVEL` — optional numeric logging levels used in several scripts (not required by `mistapi` itself, but useful to control verbosity).
+
+If no credentials are present in the env file, most scripts will prompt interactively for missing values or fall back to the `mistapi` login flow.
+
+Example `~/.mist_env` (minimal):
+
+```ini
+# Required: set either MIST_APITOKEN or the user/password pair
+MIST_HOST=api.mist.com
+MIST_APITOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Or, alternatively:
+# MIST_USER=your.username@example.com
+# MIST_PASSWORD=yourpassword
+
+# Optional logging controls used by some scripts
+CONSOLE_LOG_LEVEL=20
+LOGGING_LOG_LEVEL=10
+
+# Optional: Vault integration (only if you use HashiCorp Vault with mistapi)
+# MIST_VAULT_URL=https://vault.example.com
+# MIST_VAULT_TOKEN=xxxxx
+# MIST_VAULT_MOUNT_POINT=secret
+# MIST_VAULT_PATH=secret/data/mist
+```
+
+Notes:
+
+- The list above for [`mistapi`](https://pypi.org/project/mistapi/) env vars was verified against the installed `mistapi` package (v0.57.x). If you pin or use an older `mistapi` version, the available behavior may differ; several scripts in this repo include a `MISTAPI_MIN_VERSION` constant — check the script header for compatibility notes.
+
+## Repository layout
+
+- `scripts/` — main scripts grouped by topic (configuration, orgs, sites, devices, exports, reports, nac, clients)
+- `utils/` — helper utilities (e.g. encryption)
+- `v-tool/` — additional tooling included for convenience
+- `requirements.txt` — Python dependencies
+
+Each script contains a short header describing purpose, options and examples. Run any script with `-h` for usage details.
+
+## Example workflows
+
+- Backup an organization configuration:
+
+```bash
+python scripts/orgs/org_conf_backup.py -e ~/.mist_env --org-id <ORG_ID>
+```
+
+- Deploy a saved org configuration (dry-run first):
+
+```bash
+python scripts/orgs/org_conf_deploy.py -e ~/.mist_env --file backup.json --dry-run
+```
+
+- Import guests from CSV into a site:
+
+```bash
+python scripts/clients/import_guests.py -e ~/.mist_env --site <SITE_ID> --csv guests.csv
+```
+
+## Finding scripts
+
+There are many scripts. Here are a few high-level categories (see `scripts/` for the full list):
+
+- Configuration: `scripts/configuration/` (webhooks, auto-assignment, AP auto-upgrade)
+- EVPN helpers: `scripts/configuration/evpn_topology/`
+- Orgs / Backups: `scripts/orgs/` (backup, deploy, clone, inventory)
+- Devices: `scripts/devices/` (AP, gateway, switch helpers)
+- Imports: `scripts/clients/`, `scripts/nac/`, `scripts/sites/` (CSV-driven imports)
+- Reports / Exports: `scripts/reports/`, `scripts/exports/`
 
 
-## Configuration
-| Category | Script | Description |
-| ---- | ---- | ---- |
-| Configuration | [config_ap_auto_upgrade.py](scripts/configuration/config_ap_auto_upgrade.py) | Python script update the Mist AP Auto_upgrade parameters in the site settings |
-| Configuration | [config_auto_site_assignment.py](scripts/configuration/config_auto_site_assignment.py) | Python script to update the org auto assignment rules |
-| Configuration | [config_webhook.py](scripts/configuration/config_webhook.py) | This script can be used to list/add/delete Webhooks from Org/Site |
+## Scripts index
 
-## Configuration - EVPN
-| Category | Script | Description |
-| ---- | ---- | ---- |
-| Configuration - EVPN | [provision_evpntoplogy_vlans.py](scripts/configuration/evpn_topology/provision_evpntoplogy_vlans.py) | Python script generate VLANs and VRFs for EVPN Topologies |
-| Configuration - EVPN | [update_evpn_switch_ip.py](scripts/configuration/evpn_topology/update_evpn_switch_ip.py) | Python script to update the IP addresses of the switches in an EVPN Topology. The script will generate the IP addresses based on the networks defined in the EVPN Topology and the number of switches to update, and only update the switches that are part of the Routing layer. |
+Below is a full index of scripts included in this repository. Each entry contains a short description and a relative link to the script.
 
-## Backup & Restore
-| Category | Script | Description |
-| ---- | ---- | ---- |
-| Orgs | [org_clone.py](scripts/orgs/org_clone.py) | Python script to clone a whole organization to another one. The destination org can be an existing org, or it can be created during the process. |
-| Orgs | [org_migration.py](scripts/orgs/org_migration.py) | Python script to migrate a whole organization and the devices to another one. The destination org can be an existing org, or it can be created during the process. |
-| Orgs | [org_complete_backup.py](scripts/orgs/org_complete_backup.py) | Python script to backup a whole organization configuration and devices. |
-| Orgs | [org_complete_backup_encrypted.py](scripts/orgs/org_complete_backup_encrypted.py) | Python script to backup a whole organization configuration and devices in AES encrypted file. |
-| Orgs | [org_conf_backup.py](scripts/orgs/org_conf_backup.py) | Python script to backup a whole organization. |
-| Orgs | [org_conf_backup_encrypted.py](scripts/orgs/org_conf_backup_encrypted.py) | Python script to backup a whole organization in AES encrypted file. |
-| Orgs | [org_conf_deploy.py](scripts/orgs/org_conf_deploy.py) | Python script to deploy organization backup/template file. |
-| Orgs | [org_conf_zeroize.py](scripts/orgs/org_conf_zeroize.py) | Python script to zeroize an organization. This script will remove all the configuration, all the sites and all the objects from the organization. |
-| Orgs | [org_inventory_backup.py](scripts/orgs/org_inventory_backup.py) | Python script to backup all the devices from an organization. It will backup the devices claim codes (if any), configuration (including position on the maps) and pictures. |
-| Orgs | [org_inventory_backup_encrypted.py](scripts/orgs/org_inventory_backup_encrypted.py) | Python script to backup all the devices from an organization in AES encrypted file. It will backup the devices claim codes (if any), configuration (including position on the maps) and pictures. |
-| Orgs | [org_inventory_deploy.py](scripts/orgs/org_inventory_deploy.py) | Python script to deploy organization inventory backup file. By default, this script can run in "Dry Run" mode to validate the destination org configuration and raise warning if any object from the source org is missing in the destination org. |
-| Orgs | [org_inventory_restore_pictures.py](scripts/orgs/org_inventory_restore_pictures.py) | Python script to restore device images from an inventory backup file. |
-| Sites | [site_conf_backup.py](scripts/sites/site_conf_backup.py) | Python script to backup a whole site. |
+### Organization / backup / deploy
 
-## Devices
-| Category | Script | Description |
-| ---- | ---- | ---- |
-| Devices | [rename_devices.py](scripts/devices/rename_devices.py) | Python script to rename devices (AP, Switch, Router) from a CSV file. The script will automatically locate the site where the device is assigned, and update its name. |
-| Devices - AP | [configure_ap_mgmt_vlan.py](scripts/devices/aps/configure_ap_mgmt_vlan.py) | Python script reconfigure Management VLAN on all the Mist APs from one or multiple sites. |
-| Devices - AP | [report_power_constrained_aps.py](scripts/devices/aps/report_power_constrained_aps.py) | Python script to list APs with power constraints (with limited power supply). The result is displayed on the console and saved in a CSV file. |
-| Devices - AP | [report_bssids.py](scripts/devices/aps/report_bssids.py) | Python script to list all Access Points from orgs/sites and their associated BSSIDs. |
-| Devices - Gateway | [fix_gateway_backup_firmware.py](scripts/devices/gateways/fix_gateway_backup_firmware.py) | Python script trigger a snapshot/firmware backup on SRX devices. This script is using the CSV report for the report_gateway_firmware.py script to identify the SRX on which the command must be triggered. |
-| Devices - Gateway | [bgp_peers_peak_values.py](scripts/devices/gateways/bgp_peers_peak_values.py) | Python script to retrieve VPN Peers statistics for gateways assigned to a site. |
-| Devices - Gateway | [cluster_node_check.py](scripts/devices/gateways/cluster_node_check.py) | Python script to retrieve the role of each Gateway Cluster nodes across a whole Organization. |
-| Devices - Gateway | [report_gateway_firmware.py](scripts/devices/gateways/report_gateway_firmware.py) | Python script to report the firmware deployed on all the SRX for a specified org/site with, for each Module, the Running Version, the Backup version, the Pending version, and some other information |
-| Devices - Switch | [check_local_commit_events.py](scripts/devices/switches/check_local_commit_events.py) | This script can be used to retrieve and save into a file the CLI Commit events (commit done locally one the switches) for all the switches belonging to a Mist Organization. |
-| Devices - Switch | [fix_switch_backup_firmware.py](scripts/devices/switches/fix_switch_backup_firmware.py) | Python script trigger a snapshot/firmware backup on EX devices. This script is using the CSV report for the report_switch_firmware.py script to identify the EX on which the command must be triggered. |
-| Devices - Switch | [update_port_config.py](scripts/devices/switches/update_port_config.py) | Python script to reconfigure switch interfaces based on a CSV file. The script will create or replace device override at the switch level to reconfigure the interfaces. |
-| Devices - Switch | [toggle_poe.py](scripts/devices/switches/toggle_poe.py) | Python script to enable/disable/toggle PoE for a specified Port Profile in a Switch Template. |
-| Devices - Switch | [report_switch_firmware.py](scripts/devices/switches/report_switch_firmware.py) | Python script to generates a list of all the switches for a specified org/site with the snapshot/backup status |
+- [scripts/orgs/org_complete_backup.py](scripts/orgs/org_complete_backup.py) — Backup an entire organization configuration and devices (combines conf + inventory backups).
+- [scripts/orgs/org_complete_backup_encrypted.py](scripts/orgs/org_complete_backup_encrypted.py) — Same as `org_complete_backup.py` but writes an AES-encrypted backup.
+- [scripts/orgs/org_conf_backup.py](scripts/orgs/org_conf_backup.py) — Backup organization configuration objects (sites, templates, policies, etc.).
+- [scripts/orgs/org_conf_backup_encrypted.py](scripts/orgs/org_conf_backup_encrypted.py) — AES-encrypted organization configuration backup.
+- [scripts/orgs/org_conf_deploy.py](scripts/orgs/org_conf_deploy.py) — Deploy an organization configuration backup/template to a destination org (supports dry-run).
+- [scripts/orgs/org_conf_deploy_only.py](scripts/orgs/org_conf_deploy_only.py) — Deploy configuration objects only (helper used during deploy flows).
+- [scripts/orgs/org_conf_zeroize.py](scripts/orgs/org_conf_zeroize.py) — Zeroize an organization (remove config, sites and objects).
+- [scripts/orgs/org_inventory_backup.py](scripts/orgs/org_inventory_backup.py) — Backup all devices from an organization (claims, config, map positions, pictures).
+- [scripts/orgs/org_inventory_backup_encrypted.py](scripts/orgs/org_inventory_backup_encrypted.py) — AES-encrypted inventory backup.
+- [scripts/orgs/org_inventory_deploy.py](scripts/orgs/org_inventory_deploy.py) — Deploy inventory backup files to an organization (supports dry-run).
+- [scripts/orgs/org_inventory_restore_pictures.py](scripts/orgs/org_inventory_restore_pictures.py) — Restore device images from an inventory backup.
+- [scripts/orgs/org_clone.py](scripts/orgs/org_clone.py) — Clone a full organization to another org (configuration + optional creations).
+- [scripts/orgs/org_migration.py](scripts/orgs/org_migration.py) — Migrate an organization and optionally its devices to another org (supports unclaim options).
+- [scripts/orgs/inventory_claim.py](scripts/orgs/inventory_claim.py) — Claim devices to an org from a CSV list of claim codes.
+- [scripts/orgs/inventory_assign.py](scripts/orgs/inventory_assign.py) — Assign claimed devices to sites from a CSV.
+- [scripts/orgs/clone_template.py](scripts/orgs/clone_template.py) — Clone a single template (WLAN/LAN/WAN/HUB) between orgs.
+- [scripts/orgs/validate_site_variables.py](scripts/orgs/validate_site_variables.py) — Validate that variables used by templates are configured at the site level.
 
-## Imports
-| Category | Script | Description |
-| ---- | ---- | ---- |
-| Clients | [import_guests.py](scripts/clients/import_guests.py) | Python script import or update a list of Guests from a CSV file into a Mist Org or Mist Site |
-| NAC | [import_client_macs.py](scripts/nac/import_client_macs.py) | Python script import import a list of MAC Address into "Client List" Mist NAC Labels from a CSV File. |
-| NAC | [import_user_macs.py](scripts/nac/import_user_macs.py) | Python script import import a list of MAC Address as "NAC Endpoints" from a CSV File. |
-| Orgs - Admins | [import_admins.py](scripts/orgs/admins/import_admins.py) | Python script to invite/add administrators from a CSV file. |
-| Orgs - Inventory | [inventory_assign.py](scripts/orgs/inventory_assign.py) | Python script to assign devices to sites from a CSV file. The devices MUST already have been claimed on the org. |
-| Orgs - Inventory | [inventory_claim.py](scripts/orgs/inventory_claim.py) | Python script to claim devices to an org from a CSV file. |
-| Orgs | [clone_template.py](scripts/orgs/clone_template.py) | Python script to clone a specific template from an organization to another (or the same) organization. |
-| Orgs | [validate_site_variables.py](scripts/orgs/validate_site_variables.py) | Python script to validate that all the variables used in the templates used by each site are configured at the site level. The result is displayed on the console and saved in a CSV file. |
-| Sites | [import_floorplans.py](scripts/sites/import_floorplans.py) | Python script to import multiple Ekahau/iBwave project into Mist Organization. |
-| Sites | [import_sites.py](scripts/sites/import_sites.py) | Python script automate the sites creation in a Mist Org from a CSV file. |
-| Sites | [import_psk.py](scripts/sites/import_psk.py) | This script will import PSKs from a CSV file to one or multiple sites. |
-| Sites | [fix_sites_geocoding.py](scripts/sites/fix_sites_geocoding.py) | Python script check if all the sites have geo information configured (lat/lng, country_code, timezone), and update the site information when missing. |
-| Sites | [site_conf_psk.py](scripts/sites/site_conf_psk.py) |  |
-| Sites | [site_conf_wlan.py](scripts/sites/site_conf_wlan.py) | This script can be used to list/add/delete an SSID from Org/Site |
-| Sites | [update_sitegroups.py](scripts/sites/update_sitegroups.py) | Python script update the sitegroups assigned to sites based on a CSV file. The script can append the new sitegroups (default) or replace the sitegroups currently assigned with the new list. |
-| Sites | [update_sites_templates.py](scripts/sites/update_sites_templates.py) | Python script update the templates assigned to Mist Sites based on a CSV file, and/or update the auto assignment rules based on IP Subnet. |
+#### Org admins
 
-## Reports
-| Category | Script | Description |
-| ---- | ---- | ---- |
-| Reports | [export_inventory.py](scripts/exports/export_inventory.py) | Python script to export the inventory from an organization. The export will include all the information available from the org inventory, including the claim codes. |
-| Reports | [export_search.py](scripts/exports/export_search.py) | Python script to export historical data from Mist API and save the result in CSV of JSON format. |
-| Reports | [list_open_events.py](scripts/reports/list_open_events.py) | Python script to display the list of events/alarms that are not cleared. The script is trying to correlate the different events to identify the "opening" and the "closing" events, and only display the event if it is not "cleared" for more than the `trigger_timeout`. |
-| Reports | [report_app_usage.py](scripts/reports/report_app_usage.py) | Python script to generate a report of the application usage on a specific site |
-| Reports | [report_rogues.py](scripts/reports/report_rogues.py) | Python script to generate a Rogue AP report. |
-| Reports | [report_sites_sles.py](scripts/reports/report_sites_sles.py) | Python script to generate a report of the Site SLE (Service Level Expectations). The report includes key metrics and insights for each site. The script will display the report in the console and save it to a CSV file. |
-| Reports | [report_sites.py](scripts/reports/report_sites.py) | Python script to generate a report of the Mist Sites and resolving the site group names. The script will display the report in the console and save it to a CSV file. It is possible to customize the columns to include in the report by modifying the `REPORT_HEADERS` list. |
-| Reports | [report_wlans.py](scripts/reports/report_wlans.py) | Python script to list all WLANs from orgs/sites and their parameters, and save it to a CSV file. |
+- [scripts/orgs/admins/import_admins.py](scripts/orgs/admins/import_admins.py) — Invite/add administrators from a CSV.
+- [scripts/orgs/admins/uninvite_admins.py](scripts/orgs/admins/uninvite_admins.py) — Remove/uninvite administrators.
 
+
+### Configuration
+
+- [scripts/configuration/config_webhook.py](scripts/configuration/config_webhook.py) — List/add/delete org/site webhooks.
+- [scripts/configuration/config_webhook_settings.json](scripts/configuration/config_webhook_settings.json) — Example/default webhook settings used by the webhook scripts.
+- [scripts/configuration/config_ap_auto_upgrade.py](scripts/configuration/config_ap_auto_upgrade.py) — Update AP auto-upgrade parameters in site settings.
+- [scripts/configuration/config_auto_site_assignment.py](scripts/configuration/config_auto_site_assignment.py) — Update org auto-assignment rules (IP subnet based site assignment).
+
+#### EVPN helpers
+
+- [scripts/configuration/evpn_topology/provision_evpntoplogy_vlans.py](scripts/configuration/evpn_topology/provision_evpntoplogy_vlans.py) — Generate VLANs and VRFs for EVPN topologies.
+- [scripts/configuration/evpn_topology/update_evpn_switch_ip.py](scripts/configuration/evpn_topology/update_evpn_switch_ip.py) — Update switch IP addresses inside an EVPN topology.
+
+
+### Devices
+
+- [scripts/devices/rename_devices.py](scripts/devices/rename_devices.py) — Rename devices (AP, Switch, Router) from a CSV; finds site automatically.
+
+#### AP helpers
+
+- [scripts/devices/aps/configure_ap_mgmt_vlan.py](scripts/devices/aps/configure_ap_mgmt_vlan.py) — Reconfigure management VLAN on APs across sites.
+- [scripts/devices/aps/report_power_constrained_aps.py](scripts/devices/aps/report_power_constrained_aps.py) — Report APs with power constraints; output CSV.
+- [scripts/devices/aps/report_bssids.py](scripts/devices/aps/report_bssids.py) — List APs and their BSSIDs for orgs/sites.
+
+#### Gateway helpers
+
+- [scripts/devices/gateways/report_gateway_firmware.py](scripts/devices/gateways/report_gateway_firmware.py) — Report SRX firmware versions and snapshot/backup status.
+- [scripts/devices/gateways/cluster_node_check.py](scripts/devices/gateways/cluster_node_check.py) — Report cluster node roles across an org.
+- [scripts/devices/gateways/fix_gateway_backup_firmware.py](scripts/devices/gateways/fix_gateway_backup_firmware.py) — Trigger snapshot/firmware backup on SRX devices.
+- [scripts/devices/gateways/bgp_peers_peak_values.py](scripts/devices/gateways/bgp_peers_peak_values.py) — Retrieve VPN peer statistics for gateways.
+
+#### Switch helpers
+
+- [scripts/devices/switches/check_local_commit_events.py](scripts/devices/switches/check_local_commit_events.py) — Retrieve CLI commit events from switches in an org.
+- [scripts/devices/switches/fix_switch_backup_firmware.py](scripts/devices/switches/fix_switch_backup_firmware.py) — Trigger snapshot/firmware backup on EX switches.
+- [scripts/devices/switches/update_port_config.py](scripts/devices/switches/update_port_config.py) — Reconfigure switch interfaces from a CSV by creating/updating device overrides.
+- [scripts/devices/switches/toggle_poe.py](scripts/devices/switches/toggle_poe.py) — Enable/disable/toggle PoE for a port profile in a switch template.
+- [scripts/devices/switches/report_switch_firmware.py](scripts/devices/switches/report_switch_firmware.py) — Generate report of switch snapshot/backup status.
+
+
+### Clients / NAC / Imports
+
+- [scripts/clients/import_guests.py](scripts/clients/import_guests.py) — Import or update Guests from a CSV into an org or site.
+- [scripts/nac/import_client_macs.py](scripts/nac/import_client_macs.py) — Import client MAC addresses into NAC labels from CSV.
+- [scripts/nac/import_user_macs.py](scripts/nac/import_user_macs.py) — Import MAC addresses as NAC endpoints from CSV.
+
+
+### Sites
+
+- [scripts/sites/import_sites.py](scripts/sites/import_sites.py) — Create sites in an org from a CSV.
+- [scripts/sites/import_floorplans.py](scripts/sites/import_floorplans.py) — Import Ekahau / iBwave floorplans into Mist.
+- [scripts/sites/import_psk.py](scripts/sites/import_psk.py) — Import PSKs for sites from a CSV.
+- [scripts/sites/site_conf_backup.py](scripts/sites/site_conf_backup.py) — Backup a single site's configuration.
+- [scripts/sites/site_conf_psk.py](scripts/sites/site_conf_psk.py) — Site PSK configuration helper.
+- [scripts/sites/site_conf_wlan.py](scripts/sites/site_conf_wlan.py) — Manage SSIDs (list/add/delete) at org/site level.
+- [scripts/sites/site_conf_wlan_settings.json](scripts/sites/site_conf_wlan_settings.json) — Example WLAN settings used by scripts.
+- [scripts/sites/update_sitegroups.py](scripts/sites/update_sitegroups.py) — Update the sitegroups assigned to sites from a CSV (append or replace).
+- [scripts/sites/update_sites_templates.py](scripts/sites/update_sites_templates.py) — Update templates assigned to sites and auto-assignment rules from a CSV.
+- [scripts/sites/fix_sites_geocoding.py](scripts/sites/fix_sites_geocoding.py) — Ensure sites have geo info (lat/lng, country_code, timezone) and fix missing data.
+- [scripts/sites/not_migrated_to_mistapi/site_conf_restore.py](scripts/sites/not_migrated_to_mistapi/site_conf_restore.py) — Legacy/site-specific restore helper (not migrated to mistapi).
+
+
+### Exports & Reports
+
+- [scripts/exports/export_inventory.py](scripts/exports/export_inventory.py) — Export org inventory to CSV/JSON (includes claim codes).
+- [scripts/exports/export_search.py](scripts/exports/export_search.py) — Export historical data from Mist API to CSV/JSON.
+- [scripts/exports/export_org_events.py](scripts/exports/export_org_events.py) — Export organization events.
+- [scripts/exports/compare_org_events_summary.py](scripts/exports/compare_org_events_summary.py) — Helper to compare/aggregate exported org event summaries.
+
+#### Reports
+
+- [scripts/reports/report_sites.py](scripts/reports/report_sites.py) — Generate a report of sites (resolves site group names); CSV output.
+- [scripts/reports/report_sites_sles.py](scripts/reports/report_sites_sles.py) — Generate Site SLE (Service Level Expectations) reports.
+- [scripts/reports/report_wlans.py](scripts/reports/report_wlans.py) — List all WLANs and parameters for orgs/sites; CSV output.
+- [scripts/reports/report_inventory_site_notes.py](scripts/reports/report_inventory_site_notes.py) — Inventory report augmented with site notes and metadata.
+- [scripts/reports/report_rogues.py](scripts/reports/report_rogues.py) — Generate Rogue AP reports.
+- [scripts/reports/report_app_usage.py](scripts/reports/report_app_usage.py) — Application usage report for a site (hours/duration based).
+- [scripts/reports/report_wlans.py](scripts/reports/report_wlans.py) — WLANs report (duplicate listing for quick access).
+- [scripts/reports/list_open_events.py](scripts/reports/list_open_events.py) — Display events/alarms that are still open (tries to correlate open/close events).
+- [scripts/reports/list_webhook_deliveries.py](scripts/reports/list_webhook_deliveries.py) — Extract and filter webhook deliveries; CSV export.
+
+
+### Utilities
+
+- [scripts/utils/encryption.py](scripts/utils/encryption.py) — Utility functions for AES encryption/decryption used by encrypted backups.
+
+
+
+## Contributing
+
+Contributions are welcome. Good ways to help:
+
+- Open issues for bugs or feature requests
+- Send small, focused pull requests that include a short description and example usage
+- Add or update script documentation at the top of the script file
+
+When editing scripts, keep backwards compatibility where possible and include tests or a smoke-check if you add complex logic.
