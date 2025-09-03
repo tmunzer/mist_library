@@ -59,26 +59,27 @@ python3 ./org_conf_zeroise.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n m
 #####################################################################
 #### IMPORTS ####
 import sys
-import getopt
+import argparse
 import logging
 
 MISTAPI_MIN_VERSION = "0.56.1"
 
 try:
     import mistapi
-    from mistapi.__logger import console
-except:
-        print("""
-        Critical: 
-        \"mistapi\" package is missing. Please use the pip command to install it.
+    from mistapi.__logger import console as CONSOLE
+except ImportError:
+    print("""
+    Critical: 
+    \"mistapi\" package is missing. Please use the pip command to install it.
 
-        # Linux/macOS
-        python3 -m pip install mistapi
+    # Linux/macOS
+    python3 -m pip install mistapi
 
-        # Windows
-        py -m pip install mistapi
-        """)
-        sys.exit(2)
+    # Windows
+    py -m pip install mistapi
+    """)
+    sys.exit(2)
+        
 #####################################################################
 #### PARAMETERS #####
 ids_to_not_delete = []
@@ -302,43 +303,105 @@ get_org_steps = {
 }
 
 
+#####################################################################
+# PROGRESS BAR AND DISPLAY
+class ProgressBar:
+    """Progress bar for long-running operations."""
+
+    def __init__(self):
+        self.steps_total = 0
+        self.steps_count = 0
+
+    def _pb_update(self, size: int = 80):
+        if self.steps_count > self.steps_total:
+            self.steps_count = self.steps_total
+
+        percent = self.steps_count / self.steps_total
+        delta = 17
+        x = int((size - delta) * percent)
+        print("Progress: ", end="")
+        print(f"[{'█' * x}{'.' * (size - delta - x)}]", end="")
+        print(f"{int(percent * 100)}%".rjust(5), end="")
+
+    def _pb_new_step(
+        self,
+        message: str,
+        result: str,
+        inc: bool = False,
+        size: int = 80,
+        display_pbar: bool = True,
+    ):
+        if inc:
+            self.steps_count += 1
+        text = f"\033[A\033[F{message}"
+        print(f"{text} ".ljust(size + 4, "."), result)
+        print("".ljust(80))
+        if display_pbar:
+            self._pb_update(size)
+
+    def _pb_title(
+        self, text: str, size: int = 80, end: bool = False, display_pbar: bool = True
+    ):
+        print("\033[A")
+        print(f" {text} ".center(size, "-"), "\n")
+        if not end and display_pbar:
+            print("".ljust(80))
+            self._pb_update(size)
+
+    def set_steps_total(self, steps_total: int):
+        """Set the total number of steps for the progress bar."""
+        self.steps_count = 0
+        self.steps_total = steps_total
+
+    def log_message(self, message, display_pbar: bool = True):
+        """Log a message."""
+        self._pb_new_step(message, " ", display_pbar=display_pbar)
+
+    def log_success(self, message, inc: bool = False, display_pbar: bool = True):
+        """Log a success message."""
+        LOGGER.info("%s: Success", message)
+        self._pb_new_step(
+            message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
+
+    def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
+        """Log a warning message."""
+        LOGGER.warning("%s: Warning", message)
+        self._pb_new_step(
+            message, "\033[93m\u2b58\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
+
+    def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
+        """Log a failure message."""
+        LOGGER.error("%s: Failure", message)
+        self._pb_new_step(
+            message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
+
+    def log_title(self, message, end: bool = False, display_pbar: bool = True):
+        """Log a title message."""
+        LOGGER.info("%s", message)
+        self._pb_title(message, end=end, display_pbar=display_pbar)
+
+
+PB = ProgressBar()
+
 
 ##########################################################################################
-#### FUNCTIONS ####
-def log_message(message):
-    print(f"{message}".ljust(79, "."), end="", flush=True)
-
-
-def log_debug(message):
-    LOGGER.debug(f"{message}")
-
-
-def log_error(message):
-    LOGGER.error(f"{message}")
-
-
-def log_success(message):
-    print("\033[92m\u2714\033[0m")
-    LOGGER.info(f"{message}: Success")
-
-
-def log_failure(message):
-    print("\033[31m\u2716\033[0m")
-    LOGGER.exception(f"{message}: Failure")
-
-
+# WARNING FUNCTIONS
 def display_warning(message, expected_response: str = "y"):
+    """Display a warning message and wait for user confirmation."""
     resp = "x"
     print()
     resp = input(message)
     if not resp.lower() == expected_response.lower():
-        console.warning("User Interruption... Exiting...")
+        CONSOLE.warning("User Interruption... Exiting...")
         sys.exit(0)
-
-
+        
 ##########################################################################################
 # COMMON FUNCTIONS
 def start_delete(apisession, org_id):
+    """Start the deletion process for the organization."""
     for step_name, step in get_org_steps.items():
         options = step.get("get_options", {})
         response = step["get_mistapi_function"](apisession, org_id, **options)
@@ -347,32 +410,35 @@ def start_delete(apisession, org_id):
         else:
             data = response.data
         for entry in data:
-            if not entry["id"] in ids_to_not_delete:
+            if entry["id"] not in ids_to_not_delete:
                 try:
                     message = f"Deleting {step_name} with ID {entry['id']} "
-                    log_message(message)
+                    PB.log_message(message)
                     if step_name == "sites":
                         step["delete_mistapi_function"](apisession, entry["id"])
                     else:
                         step["delete_mistapi_function"](apisession, org_id, entry["id"])
-                    log_success(message)
-                except:
-                    log_failure(message)
+                    PB.log_success(message)
+                except Exception:
+                    PB.log_failure(message)
 
 
 def create_primary_site(apisession, org_id):
+    """Create the primary site."""
     primary_site = {
         "name": "Primary Site",
     }
     primary_site = mistapi.api.v1.orgs.sites.createOrgSite(
         apisession, org_id, primary_site
     ).data
-    ids_to_not_delete.append(primary_site["id"])
+    if isinstance(primary_site, dict):
+        ids_to_not_delete.append(primary_site["id"])
 
 
 ##########################################################################################
 # SCRIPT FUNCTIONS
 def check_org_name(org_name):
+    """Check if the organization name matches the expected name."""
     while True:
         print()
         resp = input(
@@ -381,18 +447,20 @@ def check_org_name(org_name):
         if resp == org_name:
             return True
         else:
-            console.warning("The organization names do not match... Please try again...")
+            CONSOLE.warning("The organization names do not match... Please try again...")
 
 
 def start(apisession, org_id, org_name_from_user):
+    """Start the organization reset process."""
+    org_name_from_mist = ""
     if not org_id:
         org_id = mistapi.cli.select_org(apisession)[0]
-    org_name_from_mist = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data[
-        "name"
-    ]
+    org_data = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data
+    if isinstance(org_data, dict):
+        org_name_from_mist = org_data.get("name", "")
 
     if org_name_from_mist == org_name_from_user:
-        console.info("Org name validated from script parameters")
+        CONSOLE.info("Org name validated from script parameters")
     else:
         check_org_name(org_name_from_mist)
     display_warning(
@@ -408,7 +476,7 @@ def start(apisession, org_id, org_name_from_user):
     create_primary_site(apisession, org_id)
 
     print()
-    console.info(
+    CONSOLE.info(
         f"All objects removed... Organization {org_name_from_mist} is back to default..."
     )
 
@@ -478,7 +546,7 @@ python3 ./org_conf_zeroise.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n m
 '''
     )
     if error_message:
-        console.critical(error_message)
+        CONSOLE.critical(error_message)
     sys.exit(0)
 
 
@@ -547,31 +615,20 @@ py -m pip install --upgrade mistapi
 #####################################################################
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
-    try:
-        opts, args = getopt.getopt(
-            sys.argv[1:],
-            "ho:n:e:l:",
-            ["help", "org_id=", "org_name=", "env=", "log_file="],
-        )
-    except getopt.GetoptError as err:
-        console.error(err.msg)
-        usage()
-
-    ORG_ID = None
-    ORG_NAME = None
-    for o, a in opts:
-        if o in ["-h", "--help"]:
-            usage()
-        elif o in ["-o", "--org_id"]:
-            ORG_ID = a
-        elif o in ["-n", "--org_name"]:
-            ORG_NAME = a
-        elif o in ["-e", "--env"]:
-            ENV_FILE = a
-        elif o in ["-l", "--log_file"]:
-            LOG_FILE = a
-        else:
-            assert False, "unhandled option"
+    parser = argparse.ArgumentParser(description="Zeroise an organization by removing all objects and configuration.")
+    parser.add_argument("-o", "--org_id", help="Set the org_id")
+    parser.add_argument("-n", "--org_name", help="Org name to reset, for validation")
+    parser.add_argument("-l", "--log_file", default="./script.log", 
+                       help="define the filepath/filename where to write the logs (default: ./script.log)")
+    parser.add_argument("-e", "--env", default="~/.mist_env",
+                       help="define the env file to use (default: ~/.mist_env)")
+    
+    args = parser.parse_args()
+    
+    ORG_ID = args.org_id
+    ORG_NAME = args.org_name
+    ENV_FILE = args.env
+    LOG_FILE = args.log_file
 
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")
