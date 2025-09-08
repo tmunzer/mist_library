@@ -188,24 +188,20 @@ def _process_fpc(
     data: list,
 ) -> None:
     LOGGER.debug("Processing FPC: %s", fpc)
-    fpv_version = fpc.get("version")
+    fpc_version = fpc.get("version")
     fpc_snapshot_version = fpc.get("recovery_version")
     fpc_backup_version = None
     if not fpc_snapshot_version:
         fpc_backup_version = fpc.get("backup_version")
     fpc_need_snapshot = False
-    if fpc.get("vc_version"):
-        if (
-            (
-                fpc_backup_version
-                and fpv_version != fpc_backup_version
-            )
-            or (
-                fpc_snapshot_version
-                and fpv_version != fpc_snapshot_version
-            )
-            or (not fpc.get("backup_version") and not fpc.get("recovery_version"))
-        ):
+    if fpc_version:
+        if fpc_snapshot_version:
+            if fpc_version != fpc_snapshot_version:
+                fpc_need_snapshot = True
+        elif fpc_backup_version:
+            if fpc_version != fpc_backup_version:
+                fpc_need_snapshot = True
+        else:
             fpc_need_snapshot = True
     module = {
         "vc_name": vc_name,
@@ -215,7 +211,7 @@ def _process_fpc(
         "fpc_serial": fpc.get("serial"),
         "fpc_mac": fpc.get("mac"),
         "fpc_model": fpc.get("model"),
-        "fpc_version": fpv_version,
+        "fpc_version": fpc_version,
         "fpc_snapshot_version": fpc_snapshot_version,
         "fpc_backup_version": fpc_backup_version,
         "fpc_need_snapshot": fpc_need_snapshot,
