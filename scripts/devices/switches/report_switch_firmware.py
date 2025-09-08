@@ -92,6 +92,7 @@ CSV_FILE = "./report_switch_firmware.csv"
 LOG_FILE = "./script.log"
 ENV_FILE = "~/.mist_env"
 
+
 #####################################################################
 # PROGRESS BAR AND DISPLAY
 class ProgressBar:
@@ -186,30 +187,43 @@ def _process_fpc(
     fpc: dict,
     data: list,
 ) -> None:
-    data.append(
-        {
-            "vc_name": vc_name,
-            "vc_version": vc_version,
-            "vc_device_id": vc_device_id,
-            "vc_site_id": vc_site_id,
-            "fpc_serial": fpc.get("serial"),
-            "fpc_mac": fpc.get("mac"),
-            "fpc_model": fpc.get("model"),
-            "fpc_version": fpc.get("version"),
-            "fpc_snapshot_version": fpc.get("recovery_version"),
-            "fpc_backup_version": fpc.get("backup_version"),
-            "fpc_need_snapshot": (
-                fpc.get("backup_version")
-                and fpc.get("version") != fpc.get("backup_version")
+    LOGGER.debug("Processing FPC: %s", fpc)
+    fpv_version = fpc.get("version")
+    fpc_snapshot_version = fpc.get("recovery_version")
+    fpc_backup_version = None
+    if not fpc_snapshot_version:
+        fpc_backup_version = fpc.get("backup_version")
+    fpc_need_snapshot = False
+    if fpc.get("vc_version"):
+        if (
+            (
+                fpc_backup_version
+                and fpv_version != fpc_backup_version
             )
             or (
-                fpc.get("recovery_version")
-                and fpc.get("version") != fpc.get("recovery_version")
-            ),
-            "fpc_pending_version": fpc.get("pending_version"),
-            "fpc_need_reboot": fpc.get("pending_version", "") != "",
-        }
-    )
+                fpc_snapshot_version
+                and fpv_version != fpc_snapshot_version
+            )
+            or (not fpc.get("backup_version") and not fpc.get("recovery_version"))
+        ):
+            fpc_need_snapshot = True
+    module = {
+        "vc_name": vc_name,
+        "vc_version": vc_version,
+        "vc_device_id": vc_device_id,
+        "vc_site_id": vc_site_id,
+        "fpc_serial": fpc.get("serial"),
+        "fpc_mac": fpc.get("mac"),
+        "fpc_model": fpc.get("model"),
+        "fpc_version": fpv_version,
+        "fpc_snapshot_version": fpc_snapshot_version,
+        "fpc_backup_version": fpc_backup_version,
+        "fpc_need_snapshot": fpc_need_snapshot,
+        "fpc_pending_version": fpc.get("pending_version"),
+        "fpc_need_reboot": fpc.get("pending_version", "") != "",
+    }
+    LOGGER.debug("Processed module data: %s", module)
+    data.append(module)
 
 
 def _process_switches(switches: list) -> list:
@@ -230,7 +244,7 @@ def _process_switches(switches: list) -> list:
 
 
 def _get_org_switches(apisession, org_id: str) -> list:
-    message=" Retrieving Switches "
+    message = " Retrieving Switches "
     PB.log_message(message, display_pbar=False)
     try:
         response = mistapi.api.v1.orgs.stats.listOrgDevicesStats(
@@ -270,7 +284,6 @@ def _save_as_csv(
     append_dt: bool,
     append_ts: bool,
 ):
-
     headers = []
     total = len(data)
     message = "Generating CSV Headers"
@@ -555,7 +568,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    
 
     if args.help:
         usage()

@@ -171,8 +171,21 @@ PB = ProgressBar()
 def _process_switches(apisession: mistapi.APISession, switches: list) -> None:
     PB.set_steps_total(len(switches))
     for switch in switches:
-        site_id = switch.get("cluster_site_id")
-        device_id = switch.get("cluster_device_id")
+        LOGGER.debug("Processing device: %s", switch)
+        if switch.get("cluster_site_id"):
+            site_id = switch.get("cluster_site_id")
+        elif switch.get("vc_site_id"):
+            site_id = switch.get("vc_site_id")
+        else:
+            site_id = switch.get("site_id")
+            
+        if switch.get("cluster_device_id"):
+            device_id = switch.get("cluster_device_id")
+        elif switch.get("vc_device_id"):
+            device_id = switch.get("vc_device_id")
+        else:
+            device_id = switch.get("device_id")
+            
         device_mac = switch.get("module_mac")
         message = f"Processing device {device_id}"
         PB.log_message(message)
@@ -208,11 +221,15 @@ def _read_csv(csv_file: str, site_id: str) -> list:
             reader = csv.DictReader(filter(lambda row: row[0] != "#", f))
             for row in reader:
                 if site_id and row.get("vc_site_id") != site_id:
+                    LOGGER.debug("Skipping row due to site_id filter: %s", row)
                     continue
                 if row.get("fpc_need_snapshot") != "True":
+                    LOGGER.debug("Skipping row due to fpc_need_snapshot filter: %s", row)
                     continue
                 if row.get("vc_device_id") in device_ids:
+                    LOGGER.debug("Skipping row due to duplicate vc_device_id: %s", row)
                     continue
+                LOGGER.debug("Adding row to process: %s", row)
                 data.append(row)
                 device_ids.append(row.get("cluster_device_id"))
         PB.log_success(message, inc=False, display_pbar=False)
