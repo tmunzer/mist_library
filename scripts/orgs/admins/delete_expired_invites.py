@@ -192,8 +192,9 @@ def _unclaim_admins(apisession: mistapi.APISession, org_id: str, admins: list):
         message = f"Removing admin {admin.get('email')}"
         PB.log_message(message, display_pbar=True)
         try:
+            LOGGER.debug("Uninviting admin %s", admin)
             resp = mistapi.api.v1.orgs.invites.uninviteOrgAdmin(
-                apisession, org_id, admin.get("id")
+                apisession, org_id, admin.get("invite_id")
             )
             if resp and resp.status_code == 200:
                 PB.log_success(message, inc=True, display_pbar=True)
