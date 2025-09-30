@@ -152,7 +152,7 @@ class ProgressBar:
         percent = self.steps_count / self.steps_total
         delta = 17
         x = int((size - delta) * percent)
-        print(f"Progress: ", end="")
+        print("Progress: ", end="")
         print(f"[{'█' * x}{'.' * (size - delta - x)}]", end="")
         print(f"{int(percent * 100)}%".rjust(5), end="")
 
@@ -193,19 +193,19 @@ class ProgressBar:
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
     def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.info(f"{message}: Success")
+        LOGGER.info("%s: Success", message)
         self._pb_new_step(
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.warning(f"{message}")
+        LOGGER.warning("%s", message)
         self._pb_new_step(
             message, "\033[93m\u2b58\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.error(f"{message}: Failure")
+        LOGGER.error("%s: Failure", message)
         self._pb_new_step(
             message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
         )
@@ -405,6 +405,7 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id: str):
             if not fields:
                 i = 0
                 for column in line:
+                    column = column.replace("#", "")
                     column = re.sub("[^a-zA-Z_] ", "", column)
                     fields.append(column)
                     if "site" in column:
@@ -448,7 +449,7 @@ def _read_csv_file(apisession: mistapi.APISession, file_path: str, org_id: str):
                     elif "name" in fields:
                         use_name = True
 
-                    message = "Retrieving device list from Mist"
+                    message = "Retrieving de>vice list from Mist"
                     PB.log_message(message, display_pbar=False)
                     try:
                         response = mistapi.api.v1.orgs.inventory.getOrgInventory(
