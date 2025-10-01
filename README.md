@@ -185,7 +185,7 @@ Below is a full index of scripts included in this repository. Each entry contain
 #### Switch helpers
 
 - [scripts/devices/switches/check_local_commit_events.py](scripts/devices/switches/check_local_commit_events.py) — Retrieve CLI commit events from switches in an org.
-- [scripts/devices/switches/fix_switch_backup_firmware.py](scripts/devices/switches/fix_switch_backup_firmware.py) — Trigger snapshot/firmware backup on EX switches.
+- [scripts/devices/switches/fix_switch_backup_firmware.py](scripts/devices/switches/fix_switch_backup_firmware.py) — Python script to automate firmware snapshot/backup operations on Juniper EX.
 - [scripts/devices/switches/update_port_config.py](scripts/devices/switches/update_port_config.py) — Reconfigure switch interfaces from a CSV by creating/updating device overrides.
 - [scripts/devices/switches/toggle_poe.py](scripts/devices/switches/toggle_poe.py) — Enable/disable/toggle PoE for a port profile in a switch template.
 - [scripts/devices/switches/report_switch_firmware.py](scripts/devices/switches/report_switch_firmware.py) — Generate report of switch snapshot/backup status.

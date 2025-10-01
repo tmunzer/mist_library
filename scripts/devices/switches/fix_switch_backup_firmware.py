@@ -7,9 +7,35 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script trigger a snapshot/firmware backup on EX devices.
-This script is using the CSV report for the report_switch_firmware.py script to
-identify the EX on which the command must be triggered.
+Python script to automate firmware snapshot/backup operations on Juniper EX. 
+This script processes CSV reports from the report_switch_firmware.py script to
+identify and remediate switches with missing snapshot or backup firmware
+partitions.
+
+Key features:
+- Automated identification of switches needing firmware backup
+- CSV-based input from firmware reporting tools
+- Site-specific filtering for targeted operations
+- Bulk processing with progress tracking
+- Safety confirmation prompts (unless auto-approved)
+- Support for both standalone and clustered switches
+
+How it works:
+1. Reads CSV report identifying switches needing firmware backup
+2. Filters switches based on site criteria (if specified)
+3. Displays list of affected switches for user review
+4. Triggers firmware snapshot/backup API calls for each switch
+5. Monitors and reports operation success/failure
+
+Use cases:
+- Preventive maintenance to ensure backup firmware availability
+- Remediation after firmware upgrade issues
+- Compliance with backup firmware policies
+- Disaster recovery preparation
+- Mass deployment firmware backup operations
+
+IMPORTANT: This script triggers firmware backup operations that may impact
+switch performance during execution. Use during maintenance windows when possible.
 
 -------
 Requirements:
@@ -178,14 +204,14 @@ def _process_switches(apisession: mistapi.APISession, switches: list) -> None:
             site_id = switch.get("vc_site_id")
         else:
             site_id = switch.get("site_id")
-            
+
         if switch.get("cluster_device_id"):
             device_id = switch.get("cluster_device_id")
         elif switch.get("vc_device_id"):
             device_id = switch.get("vc_device_id")
         else:
             device_id = switch.get("device_id")
-            
+
         device_mac = switch.get("module_mac")
         message = f"Processing device {device_id}"
         PB.log_message(message)
@@ -294,9 +320,35 @@ def usage(error_message: str|None = None):
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script trigger a snapshot/firmware backup on EX devices.
-This script is using the CSV report for the report_switch_firmware.py script to
-identify the EX on which the command must be triggered.
+Python script to automate firmware snapshot/backup operations on Juniper EX. 
+This script processes CSV reports from the report_switch_firmware.py script to
+identify and remediate switches with missing snapshot or backup firmware
+partitions.
+
+Key features:
+- Automated identification of switches needing firmware backup
+- CSV-based input from firmware reporting tools
+- Site-specific filtering for targeted operations
+- Bulk processing with progress tracking
+- Safety confirmation prompts (unless auto-approved)
+- Support for both standalone and clustered switches
+
+How it works:
+1. Reads CSV report identifying switches needing firmware backup
+2. Filters switches based on site criteria (if specified)
+3. Displays list of affected switches for user review
+4. Triggers firmware snapshot/backup API calls for each switch
+5. Monitors and reports operation success/failure
+
+Use cases:
+- Preventive maintenance to ensure backup firmware availability
+- Remediation after firmware upgrade issues
+- Compliance with backup firmware policies
+- Disaster recovery preparation
+- Mass deployment firmware backup operations
+
+IMPORTANT: This script triggers firmware backup operations that may impact
+switch performance during execution. Use during maintenance windows when possible.
 
 -------
 Requirements:
