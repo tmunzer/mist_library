@@ -7,7 +7,33 @@
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to uninvite (remove) expired admin invites.
+Python script to automatically identify and remove expired administrator
+invitations from a Mist organization. This script helps maintain clean
+administrator lists by removing stale invitations that were never accepted.
+
+Key features:
+- Automatically scans for expired admin invitations
+- Dry-run mode by default to preview changes before execution
+- Organization validation to prevent accidental modifications
+- Detailed logging and progress tracking
+- Safe execution with confirmation requirements
+- Comprehensive reporting of actions taken
+
+How it works:
+1. Retrieves all pending admin invitations from the organization
+2. Identifies invitations that have exceeded their expiration period
+3. Displays a list of expired invitations for review
+4. Removes expired invitations when explicitly confirmed (--apply flag)
+
+Benefits:
+- Improves security by removing unused access grants
+- Keeps administrator lists clean and current
+- Reduces administrative overhead
+- Helps with compliance and access auditing
+- Prevents confusion from stale invitation entries
+
+SAFETY: Script runs in dry-run mode by default. Use --apply flag only after
+reviewing the list of expired invitations to be removed.
 
 -------
 Requirements:
@@ -20,7 +46,7 @@ If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
 It is recommended to use an environment file to store the required information
-to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
 information about the available parameters).
 
 -------
@@ -34,13 +60,13 @@ Script Parameters:
 
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
--e, --env=              define the env file to use (see mistapi env file 
+-e, --env=              define the env file to use (see mistapi env file
                         documentation here: https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
 
 -------
 Examples:
-python3 ./delete_expired_invites.py     
+python3 ./delete_expired_invites.py
 python3 ./delete_expired_invites.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "My Mist Org"
 
 """
@@ -50,7 +76,7 @@ python3 ./delete_expired_invites.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "
 import logging
 import sys
 import datetime
-import getopt
+import argparse
 
 MISTAPI_MIN_VERSION = "0.52.4"
 
@@ -170,6 +196,7 @@ PB = ProgressBar()
 #####################################################################
 #### FUNCTIONS ####
 
+
 def _load_admins(apisession: mistapi.APISession, org_id: str) -> list:
     message = "Loading admins list"
     PB.log_message(message, display_pbar=False)
@@ -180,12 +207,12 @@ def _load_admins(apisession: mistapi.APISession, org_id: str) -> list:
             if isinstance(resp.data, list):
                 return resp.data
         PB.log_failure(message, inc=False, display_pbar=False)
-        return []    
+        return []
     except Exception:
         PB.log_failure(message, inc=False, display_pbar=False)
         LOGGER.error("Exception occurred", exc_info=True)
         sys.exit(2)
-    
+
 
 def _unclaim_admins(apisession: mistapi.APISession, org_id: str, admins: list):
     for admin in admins:
@@ -204,7 +231,8 @@ def _unclaim_admins(apisession: mistapi.APISession, org_id: str, admins: list):
             PB.log_failure(message, inc=True, display_pbar=True)
             LOGGER.error("Exception occurred", exc_info=True)
 
-def _process_admins(admins:list)->list:
+
+def _process_admins(admins: list) -> list:
     expired_invites = []
     now = datetime.datetime.now()
     message = "Processing admins list"
@@ -213,18 +241,20 @@ def _process_admins(admins:list)->list:
         if admin.get("expire_time") and admin.get("expire_time") > 0:
             expire_time = datetime.datetime.fromtimestamp(admin.get("expire_time"))
             if expire_time < now:
-                expired_invites.append({
-                    "invite_id": admin.get("invite_id"),
-                    "email": admin.get("email"),
-                    "first_name": admin.get("first_name"),
-                    "last_name": admin.get("last_name"),
-                    "expiration_timestamp": str(admin.get("expire_time")),
-                    "expiration_date": expire_time,
-                    
-                })
+                expired_invites.append(
+                    {
+                        "invite_id": admin.get("invite_id"),
+                        "email": admin.get("email"),
+                        "first_name": admin.get("first_name"),
+                        "last_name": admin.get("last_name"),
+                        "expiration_timestamp": str(admin.get("expire_time")),
+                        "expiration_date": expire_time,
+                    }
+                )
     PB.log_success(message, display_pbar=False)
-    sorted(expired_invites, key=lambda d: d['expiration_timestamp'], reverse=True)
+    sorted(expired_invites, key=lambda d: d["expiration_timestamp"], reverse=True)
     return expired_invites
+
 
 def _check_org_name_in_script_param(
     apisession: mistapi.APISession, org_id: str, org_name: str = ""
@@ -255,7 +285,7 @@ def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str =
             print("The organization names do not match... Please try again...")
 
 
-def _check_confirmation()-> bool:
+def _check_confirmation() -> bool:
     while True:
         response = input("Do you want to delete the listed invitations (y/N) ? ")
         if response.lower() == "y":
@@ -264,7 +294,10 @@ def _check_confirmation()-> bool:
             print("Deletion canceled... Exiting...")
             sys.exit(0)
 
-def start(apisession: mistapi.APISession, org_id: str, org_name: str, dry_run: bool=True):
+
+def start(
+    apisession: mistapi.APISession, org_id: str, org_name: str, dry_run: bool = True
+):
     """
     Start the process to rename the devices
 
@@ -282,9 +315,9 @@ def start(apisession: mistapi.APISession, org_id: str, org_name: str, dry_run: b
         default: "./uninvite_admins.py"
     """
     LOGGER.debug("start")
-    LOGGER.debug(f"start:parameter:org_id:{org_id}")
-    LOGGER.debug(f"start:parameter:org_name:{org_name}")
-    LOGGER.debug(f"start:parameter:dry_run:{dry_run}")
+    LOGGER.debug("start:parameter:org_id:%s", org_id)
+    LOGGER.debug("start:parameter:org_name:%s", org_name)
+    LOGGER.debug("start:parameter:dry_run:%s", dry_run)
 
     if org_id and org_name:
         if not _check_org_name_in_script_param(apisession, org_id, org_name):
@@ -300,12 +333,17 @@ def start(apisession: mistapi.APISession, org_id: str, org_name: str, dry_run: b
 
     admins = _load_admins(apisession, org_id)
     expired_invites = _process_admins(admins)
-    mistapi.cli.display_list_of_json_as_table(expired_invites, ["invite_id", "email", "first_name", "last_name", "expiration_date"])
+    mistapi.cli.display_list_of_json_as_table(
+        expired_invites,
+        ["invite_id", "email", "first_name", "last_name", "expiration_date"],
+    )
     print()
     print(f"{len(expired_invites)} expired invitation(s)")
     print()
     if dry_run:
-        print("Script in Dry Run mode, please use the -a/--apply parameter to delete the accounts... Exiting...")
+        print(
+            "Script in Dry Run mode, please use the -a/--apply parameter to delete the accounts... Exiting..."
+        )
         sys.exit(0)
     elif len(expired_invites) == 0:
         print("No invites to delete... Exiting...")
@@ -318,7 +356,7 @@ def start(apisession: mistapi.APISession, org_id: str, org_name: str, dry_run: b
 
 #####################################################################
 ##### USAGE ####
-def usage(error_message: str | None= None):
+def usage(error_message: str | None = None):
     """
     display usage
 
@@ -328,7 +366,7 @@ def usage(error_message: str | None= None):
         if error_message is set, display it after the usage
     """
     print(
-"""
+        """
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -337,7 +375,33 @@ def usage(error_message: str | None= None):
     This script is licensed under the MIT License.
 
 -------------------------------------------------------------------------------
-Python script to uninvite (remove) expired admin invites.
+Python script to automatically identify and remove expired administrator
+invitations from a Mist organization. This script helps maintain clean
+administrator lists by removing stale invitations that were never accepted.
+
+Key features:
+- Automatically scans for expired admin invitations
+- Dry-run mode by default to preview changes before execution
+- Organization validation to prevent accidental modifications
+- Detailed logging and progress tracking
+- Safe execution with confirmation requirements
+- Comprehensive reporting of actions taken
+
+How it works:
+1. Retrieves all pending admin invitations from the organization
+2. Identifies invitations that have exceeded their expiration period
+3. Displays a list of expired invitations for review
+4. Removes expired invitations when explicitly confirmed (--apply flag)
+
+Benefits:
+- Improves security by removing unused access grants
+- Keeps administrator lists clean and current
+- Reduces administrative overhead
+- Helps with compliance and access auditing
+- Prevents confusion from stale invitation entries
+
+SAFETY: Script runs in dry-run mode by default. Use --apply flag only after
+reviewing the list of expired invitations to be removed.
 
 -------
 Requirements:
@@ -421,41 +485,61 @@ py -m pip install --upgrade mistapi
             '"mistapi" package version %s is required, '
             "you are currently using version %s.",
             MISTAPI_MIN_VERSION,
-            mistapi.__version__
+            mistapi.__version__,
         )
 
 
 #####################################################################
 ##### ENTRY POINT ####
 if __name__ == "__main__":
-    try:
-        opts, args = getopt.getopt(
-            sys.argv[1:],
-            "ho:n:ae:l:",
-            ["help", "org_id=", "org_name=", "apply", "env=", "log_file="],
-        )
-    except getopt.GetoptError as err:
-        console.error(err.msg)
+    parser = argparse.ArgumentParser(
+        description="Automatically identify and remove expired administrator invitations from a Mist organization.",
+        add_help=False,
+    )
+    parser.add_argument(
+        "-h",
+        "--help",
+        action="store_true",
+        help="Display this help message and exit",
+    )
+    parser.add_argument("-o", "--org_id", type=str, help="ID of the Mist Org")
+    parser.add_argument(
+        "-n",
+        "--org_name",
+        type=str,
+        help="Name of the Mist Org (used for validation purpose)",
+    )
+    parser.add_argument(
+        "-a",
+        "--apply",
+        action="store_true",
+        help="Apply changes (delete flagged accounts)",
+    )
+    parser.add_argument(
+        "-e",
+        "--env",
+        type=str,
+        default=ENV_FILE,
+        help="Env file to use (default: ~/.mist_env)",
+    )
+    parser.add_argument(
+        "-l",
+        "--log_file",
+        type=str,
+        default=LOG_FILE,
+        help="Log file path (default: ./script.log)",
+    )
+
+    args = parser.parse_args()
+
+    if args.help:
         usage()
         
-    ORG_ID = ""
-    ORG_NAME = ""
-    DRY_RUN = True
-    for o, a in opts:
-        if o in ["-h", "--help"]:
-            usage()
-        elif o in ["-o", "--org_id"]:
-            ORG_ID = a
-        elif o in ["-n", "--org_name"]:
-            ORG_NAME = a
-        elif o in ["-a", "--apply"]:
-            DRY_RUN = False
-        elif o in ["-e", "--env"]:
-            ENV_FILE = a
-        elif o in ["-l", "--log_file"]:
-            LOG_FILE = a
-        else:
-            assert False, "unhandled option"
+    ORG_ID = args.org_id if args.org_id else ""
+    ORG_NAME = args.org_name if args.org_name else ""
+    DRY_RUN = not args.apply
+    ENV_FILE = args.env
+    LOG_FILE = args.log_file
 
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")

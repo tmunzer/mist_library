@@ -149,6 +149,7 @@ Below is a full index of scripts included in this repository. Each entry contain
 
 - [scripts/orgs/admins/import_admins.py](scripts/orgs/admins/import_admins.py) — Invite/add administrators from a CSV.
 - [scripts/orgs/admins/delete_admins.py](scripts/orgs/admins/delete_admins.py) — Python script to revoke (remove) administrator access from a Mist organization using a CSV file containing administrator information. This script provides a safe and efficient way to bulk remove multiple administrators from an organization.
+- [scripts/orgs/admins/delete_expired_invites.py](scripts/orgs/admins/delete_expired_invites.py) — Python script to automatically identify and remove expired administrator invitations from a Mist organization. This script helps maintain clean administrator lists by removing stale invitations that were never accepted.
 
 
 ### Configuration
