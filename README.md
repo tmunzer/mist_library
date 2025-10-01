@@ -221,15 +221,16 @@ Below is a full index of scripts included in this repository. Each entry contain
 
 #### Reports
 
+- [scripts/reports/report_admins_last_login.py](scripts/reports/report_admins_last_login.py) — Python script to generate a CSV report of organization admins and their last  login activity
+- [scripts/reports/report_app_usage.py](scripts/reports/report_app_usage.py) — Application usage report for a site (hours/duration based).
+- [scripts/reports/list_open_events.py](scripts/reports/list_open_events.py) — Display events/alarms that are still open (tries to correlate open/close events).
 - [scripts/reports/report_sites.py](scripts/reports/report_sites.py) — Generate a report of sites (resolves site group names); CSV output.
 - [scripts/reports/report_sites_sles.py](scripts/reports/report_sites_sles.py) — Generate Site SLE (Service Level Expectations) reports.
 - [scripts/reports/report_wlans.py](scripts/reports/report_wlans.py) — List all WLANs and parameters for orgs/sites; CSV output.
 - [scripts/reports/report_inventory_site_notes.py](scripts/reports/report_inventory_site_notes.py) — Inventory report augmented with site notes and metadata.
 - [scripts/reports/report_rogues.py](scripts/reports/report_rogues.py) — Generate Rogue AP reports.
-- [scripts/reports/report_app_usage.py](scripts/reports/report_app_usage.py) — Application usage report for a site (hours/duration based).
-- [scripts/reports/report_wlans.py](scripts/reports/report_wlans.py) — WLANs report (duplicate listing for quick access).
-- [scripts/reports/list_open_events.py](scripts/reports/list_open_events.py) — Display events/alarms that are still open (tries to correlate open/close events).
 - [scripts/reports/list_webhook_deliveries.py](scripts/reports/list_webhook_deliveries.py) — Extract and filter webhook deliveries; CSV export.
+- [scripts/reports/report_wlans.py](scripts/reports/report_wlans.py) — WLANs report (duplicate listing for quick access).
 
 
 ### Utilities
