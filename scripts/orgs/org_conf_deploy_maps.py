@@ -1,0 +1,999 @@
+"""
+-------------------------------------------------------------------------------
+
+    Written by Thomas Munzer (tmunzer@juniper.net)
+    Github repository: https://github.com/tmunzer/Mist_library/
+
+    This script is licensed under the MIT License.
+
+-------------------------------------------------------------------------------
+Python script to deploy floorplans from an organization backup/template file.
+You can use the script "org_conf_backup.py" to generate the backup file from an
+existing organization.
+
+This script will not override existing objects. If the floorplans already exist,
+new ones will be created in the destination organization. 
+
+Please note:
+- Only the sites existing in the destination organization will be processed.
+- The Sites must already exist in the destination organization before running
+this script, and they must have the same name as in the source organization.
+
+The script will deploy the following objects:
+- Floorplans (with images if available)
+- Zones
+- RSSI Zones
+- Virtual Beacons
+
+-------
+Requirements:
+mistapi: https://pypi.org/project/mistapi/
+
+-------
+Usage:
+This script can be run as is (without parameters), or with the options below.
+If no options are defined, or if options are missing, the missing options will
+be asked by the script or the default values will be used.
+
+It is recommended to use an environment file to store the required information
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
+information about the available parameters).
+
+-------
+Script Parameters:
+-h, --help              display this help
+-o, --org_id=           Only if the destination org already exists. org_id where to
+                        deploy the configuration
+-n, --org_name=         Org name where to deploy the configuration:
+                            - if org_id is provided (existing org), used to validate
+                            the destination org
+                            - if org_id is not provided (new org), the script will
+                            create a new org and name it with the org_name value
+-f, --backup_folder=    Path to the folder where to save the org backup (a subfolder
+                        will be created with the org name)
+                        default is "./org_backup"
+-b, --source_backup=    Name of the backup/template to deploy. This is the name of
+                        the folder where all the backup files are stored.
+-l, --log_file=         define the filepath/filename where to write the logs
+                        default is "./script.log"
+-e, --env=              define the env file to use (see mistapi env file documentation
+                        here: https://pypi.org/project/mistapi/)
+                        default is "~/.mist_env"
+-k, --keyring_service=  Keyring service name to retrieve the MIST_HOST and MIST_APITOKEN
+                        or MIST_USERNAME and MIST_PASSWORD.
+                        If this parameter is used, the --env parameter will be ignored.
+                        Default is None
+
+-------
+Examples:
+python3 ./org_conf_deploy_maps.py
+python3 ./org_conf_deploy_maps.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "my test org"
+
+"""
+
+#### IMPORTS ####
+import logging
+import json
+import os
+import sys
+import argparse
+import signal
+
+MISTAPI_MIN_VERSION = "0.58.0"
+
+try:
+    import mistapi
+    from mistapi.__logger import console
+except ImportError:
+    print(
+        """
+        Critical:
+        \"mistapi\" package is missing. Please use the pip command to install it.
+
+        # Linux/macOS
+        python3 -m pip install mistapi
+
+        # Windows
+        py -m pip install mistapi
+        """
+    )
+    sys.exit(2)
+
+#####################################################################
+#### PARAMETERS #####
+BACKUP_FOLDER = "./org_backup"
+BACKUP_FILE = "org_conf_file.json"
+LOG_FILE = "./script.log"
+FILE_PREFIX = ".".join(BACKUP_FILE.split(".")[:-1])
+ENV_FILE = "~/.mist_env"
+
+#####################################################################
+#### LOGS ####
+LOGGER = logging.getLogger(__name__)
+
+#####################################################################
+#### GLOBALS #####
+SYS_EXIT = False
+
+
+def sigint_handler(signal, frame):
+    global SYS_EXIT
+    SYS_EXIT = True
+    print("[Ctrl C],KeyboardInterrupt exception occurred.")
+
+
+signal.signal(signal.SIGINT, sigint_handler)
+
+
+##########################################################################################
+# CLASS TO MANAGE UUIDS UPDATES (replace UUIDs from source org to the newly created ones)
+class UUIDM:
+    """
+    CLASS TO MANAGE UUIDS UPDATES (replace UUIDs from source org to the newly created ones)
+    """
+
+    def __init__(self):
+        self.uuids = {}
+        self.uuid_names = {}
+        self.requests_to_replay = []
+
+    def add_uuid(
+        self, new: str | None, old: str | None, name: str | None = None
+    ) -> None:
+        """
+        Add a new UUID mapping to the dictionary.
+        :param new: The new UUID to be added.
+        :param old: The old UUID that the new UUID replaces.
+        """
+        if new and old:
+            LOGGER.debug("add_uuid: old_id %s matching new_id %s", old, new)
+            self.uuids[old] = new
+            if name:
+                self.uuid_names[old] = name
+                self.uuid_names[new] = name
+        else:
+            LOGGER.warning("add_uuid: old_id %s matching new_id %s", old, new)
+
+    def get_new_uuid(self, old: str) -> str:
+        """
+        Get the new UUID that replaces the old UUID.
+        :param old: The old UUID to be replaced.
+        :return: The new UUID if it exists, otherwise None.
+        """
+        return self.uuids.get(old, "")
+
+    def get_uuid_name(self, uuid: str) -> str | None:
+        """
+        Get the name associated with a UUID.
+        :param uuid: The UUID to look up.
+        :return: The name if it exists, otherwise None.
+        """
+        return self.uuid_names.get(uuid, None)
+
+
+UUID_MATCHING = UUIDM()
+
+
+#####################################################################
+# PROGRESS BAR AND DISPLAY
+class ProgressBar:
+    """
+    PROGRESS BAR AND DISPLAY
+    """
+
+    def __init__(self):
+        self.steps_total = 0
+        self.steps_count = 0
+
+    def _pb_update(self, size: int = 80):
+        if self.steps_count > self.steps_total:
+            self.steps_count = self.steps_total
+
+        percent = self.steps_count / self.steps_total
+        delta = 17
+        x = int((size - delta) * percent)
+        print("Progress: ", end="")
+        print(f"[{'█' * x}{'.' * (size - delta - x)}]", end="")
+        print(f"{int(percent * 100)}%".rjust(5), end="")
+
+    def _pb_new_step(
+        self,
+        message: str,
+        result: str,
+        inc: bool = False,
+        size: int = 80,
+        display_pbar: bool = True,
+    ):
+        if inc:
+            self.steps_count += 1
+        text = f"\033[A\033[F{message}"
+        print(f"{text} ".ljust(size + 4, "."), result)
+        print("".ljust(80))
+        if display_pbar:
+            self._pb_update(size)
+
+    def _pb_title(
+        self, text: str, size: int = 80, end: bool = False, display_pbar: bool = True
+    ):
+        print("\033[A")
+        print(f" {text} ".center(size, "-"), "\n")
+        if not end and display_pbar:
+            print("".ljust(80))
+            self._pb_update(size)
+
+    def set_steps_total(self, steps_total: int) -> None:
+        """
+        Set the total number of steps for the progress bar.
+        :param steps_total: The total number of steps
+        """
+        self.steps_total = steps_total
+
+    def log_message(self, message, display_pbar: bool = True) -> None:
+        """
+        Log a message in the progress bar.
+        :param message: The message to log
+        :param display_pbar: If True, the progress bar will be displayed after the message
+        """
+        self._pb_new_step(message, " ", display_pbar=display_pbar)
+
+    def log_debug(self, message) -> None:
+        """
+        Log a debug message.
+        :param message: The debug message to log
+        """
+        LOGGER.debug(message)
+
+    def log_success(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a success message in the progress bar.
+        :param message: The success message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the success
+        """
+        LOGGER.info("%s: Success", message)
+        self._pb_new_step(
+            message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
+
+    def log_warning(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a warning message in the progress bar.
+        :param message: The warning message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the warning
+        """
+        LOGGER.warning(message)
+        self._pb_new_step(
+            message, "\033[93m\u2b58\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
+
+    def log_failure(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a failure message in the progress bar.
+        :param message: The failure message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the failure
+        """
+        LOGGER.error("%s: Failure", message)
+        self._pb_new_step(
+            message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
+
+    def log_title(self, message, end: bool = False, display_pbar: bool = True) -> None:
+        """
+        Log a title message in the progress bar.
+        :param message: The title message to log
+        :param end: If True, the progress bar will not be displayed after the title
+        :param display_pbar: If True, the progress bar will be displayed after the title
+        """
+        LOGGER.info(message)
+        self._pb_title(message, end=end, display_pbar=display_pbar)
+
+
+PB = ProgressBar()
+
+
+##########################################################################################
+##########################################################################################
+# DEPLOY FUNCTIONS
+##########################################################################################
+# COMMON FUNCTION
+def _deploy_floorplan(
+    apisession: mistapi.APISession,
+    site_id: str,
+    data: dict,
+) -> str:
+    LOGGER.debug("conf_deploy:_deploy_floorplan")
+    if SYS_EXIT:
+        sys.exit(0)
+    old_id = None
+    new_id = ""
+    object_name = data.get("name", "<unknown>")
+    if "id" in data:
+        old_id = data["id"]
+    else:
+        old_id = None
+
+    message = f"{object_name}: Creating Floorplan"
+    PB.log_message(message)
+
+    try:
+        response = mistapi.api.v1.sites.maps.createSiteMap(apisession, site_id, data)
+        if response.status_code == 200:
+            new_id = response.data.get("id", "")
+            PB.log_success(message, inc=True)
+        else:
+            PB.log_failure(message, inc=True)
+    except Exception:
+        PB.log_failure(message, inc=True)
+        LOGGER.error("Exception occurred", exc_info=True)
+    UUID_MATCHING.add_uuid(new_id, old_id)
+    return new_id
+
+
+def _deploy_floorplan_image(
+    apisession: mistapi.APISession,
+    old_org_id: str,
+    old_site_id: str,
+    new_site_id: str,
+    old_map_id: str,
+    new_map_id: str,
+    floorplan_name: str,
+) -> None:
+    LOGGER.debug("conf_deploy:_deploy_site_maps")
+    if SYS_EXIT:
+        sys.exit(0)
+
+    if not new_map_id:
+        LOGGER.warning(
+            "new id not returned for old_id %s, trying to find a match", old_map_id
+        )
+        new_map_id = UUID_MATCHING.get_new_uuid(old_map_id)
+    if not new_map_id:
+        LOGGER.error("no match for old_id %s", old_map_id)
+    image_name = (
+        f"{FILE_PREFIX}_org_{old_org_id}_site_{old_site_id}_map_{old_map_id}.png"
+    )
+    if os.path.isfile(image_name):
+        message = f"{floorplan_name}: Uploading image floorplan"
+        PB.log_message(message)
+        try:
+            mistapi.api.v1.sites.maps.addSiteMapImageFile(
+                apisession, new_site_id, new_map_id, image_name
+            )
+            PB.log_success(message)
+        except Exception:
+            PB.log_failure(message)
+            LOGGER.error("Exception occurred", exc_info=True)
+    else:
+        PB.log_debug(f"{floorplan_name}: No image found for")
+        return
+
+
+def _deploy_zones(
+    apisession: mistapi.APISession,
+    site_id: str,
+    data: dict,
+) -> None:
+    LOGGER.debug("conf_deploy:_deploy_zones")
+    if SYS_EXIT:
+        sys.exit(0)
+
+    data["map_id"] = UUID_MATCHING.get_new_uuid(data.get("map_id", ""))
+
+    object_name = f'"{data.get("name", "<unknown>")}"'
+    message = f"Creating Zone: {object_name}"
+    PB.log_message(message)
+
+    try:
+        response = mistapi.api.v1.sites.zones.createSiteZone(apisession, site_id, data)
+        if response.status_code == 200:
+            PB.log_success(message, inc=True)
+        else:
+            PB.log_failure(message, inc=True)
+    except Exception:
+        PB.log_failure(message, inc=True)
+        LOGGER.error("Exception occurred", exc_info=True)
+
+
+def _deploy_rssi_zones(
+    apisession: mistapi.APISession,
+    site_id: str,
+    data: dict,
+) -> None:
+    LOGGER.debug("conf_deploy:_deploy_rssi_zones")
+    if SYS_EXIT:
+        sys.exit(0)
+
+    data["map_id"] = UUID_MATCHING.get_new_uuid(data.get("map_id", ""))
+
+    object_name = f'"{data.get("name", "<unknown>")}"'
+    message = f"Creating RSSI Zone: {object_name}"
+    PB.log_message(message)
+
+    try:
+        response = mistapi.api.v1.sites.rssizones.createSiteRssiZone(
+            apisession, site_id, data
+        )
+        if response.status_code == 200:
+            PB.log_success(message, inc=True)
+        else:
+            PB.log_failure(message, inc=True)
+    except Exception:
+        PB.log_failure(message, inc=True)
+        LOGGER.error("Exception occurred", exc_info=True)
+
+
+def _deploy_virtual_beacons(
+    apisession: mistapi.APISession,
+    site_id: str,
+    data: dict,
+) -> None:
+    LOGGER.debug("conf_deploy:_deploy_virtual_beacons")
+    if SYS_EXIT:
+        sys.exit(0)
+
+    data["map_id"] = UUID_MATCHING.get_new_uuid(data.get("map_id", ""))
+
+    object_name = f'"{data.get("name", "<unknown>")}"'
+    message = f"Creating Virtual Beacon: {object_name}"
+    PB.log_message(message)
+
+    try:
+        response = mistapi.api.v1.sites.vbeacons.createSiteVBeacon(
+            apisession, site_id, data
+        )
+        if response.status_code == 200:
+            PB.log_success(message, inc=True)
+        else:
+            PB.log_failure(message, inc=True)
+    except Exception:
+        PB.log_failure(message, inc=True)
+        LOGGER.error("Exception occurred", exc_info=True)
+
+
+def _site_ids_mapping(
+    apisession: mistapi.APISession,
+    new_org_id: str,
+    backup_sites: dict,
+) -> None:
+    LOGGER.debug("conf_deploy:_site_ids_mapping")
+    old_site_ids = {}
+    for site in backup_sites:
+        old_site_id = site.get("id")
+        site_name = site.get("name")
+        if old_site_id and site_name:
+            old_site_ids[site_name] = old_site_id
+
+    try:
+        response = mistapi.api.v1.orgs.sites.listOrgSites(apisession, new_org_id)
+        if response.status_code == 200:
+            for site in response.data:
+                new_site_id = site.get("id")
+                site_name = site.get("name")
+                if old_site_ids.get(site_name):
+                    LOGGER.info(
+                        "_site_ids_mapping: mapping old_site_id %s to new_site_id %s",
+                        old_site_ids[site_name],
+                        site["id"],
+                    )
+                    UUID_MATCHING.add_uuid(
+                        new_site_id, old_site_ids[site_name], site_name
+                    )
+                else:
+                    LOGGER.warning(
+                        "_site_ids_mapping: no old_site_id found for site_name %s",
+                        site_name,
+                    )
+        else:
+            console.critical(
+                f"Unable to retrieve the sites list for org {new_org_id}: {response.data}"
+            )
+            sys.exit(3)
+    except Exception:
+        LOGGER.error("Exception occurred", exc_info=True)
+        sys.exit(3)
+
+
+def _start_deploy_maps(
+    apisession: mistapi.APISession,
+    org_id: str,
+    org_name: str,
+    backup_folder: str,
+    src_org_name: str = "",
+    source_backup: str = "",
+) -> None:
+    LOGGER.debug("conf_deploy:_start_deploy_maps")
+    _go_to_backup_folder(backup_folder, src_org_name, source_backup)
+    print()
+    try:
+        message = f"Loading template/backup file {BACKUP_FILE} "
+        PB.log_message(message, display_pbar=False)
+        with open(BACKUP_FILE) as f:
+            backup = json.load(f)
+        PB.log_success(message, display_pbar=False)
+    except Exception:
+        PB.log_failure(message, display_pbar=False)
+        console.critical("Unable to load the template/bakup")
+        LOGGER.error("Exception occurred", exc_info=True)
+        sys.exit(1)
+
+    _site_ids_mapping(apisession, org_id, backup.get("org", {}).get("sites", []))
+
+    try:
+        message = f"Analyzing template/backup file {BACKUP_FILE} "
+        sites_in_new_org = []
+        sites_with_maps = []
+        maps_to_restore = 0
+        steps = 0
+        PB.log_message(message, display_pbar=False)
+        for site_id in backup.get("sites", []):
+            if UUID_MATCHING.get_new_uuid(site_id):
+                sites_in_new_org.append(site_id)
+                if len(backup["sites"][site_id].get("maps", [])) > 0:
+                    sites_with_maps.append(site_id)
+                    maps_to_restore += len(backup["sites"][site_id].get("maps", []))
+                    steps += len(backup["sites"][site_id].get("maps", []))
+                steps += len(backup["sites"][site_id].get("zones", []))
+                steps += len(backup["sites"][site_id].get("rssizones", []))
+                steps += len(backup["sites"][site_id].get("vbeacons", []))
+        PB.set_steps_total(steps)
+        PB.log_success(message, display_pbar=False)
+        console.info(f"The process will deploy {maps_to_restore} new objects")
+    except Exception:
+        PB.log_failure(message, display_pbar=False)
+        console.critical("Unable to parse the template/backup file")
+        LOGGER.error("Exception occurred", exc_info=True)
+        sys.exit(1)
+    if backup:
+        _display_warning(
+            f"You are about to deploy {maps_to_restore} maps "
+            f"from the template/backup into the organization {org_name} "
+            f"with the id {org_id}.\n\n"
+            f"Sites in the new organization: {len(sites_in_new_org)}\n"
+            f"Sites with maps to restore: {len(sites_with_maps)}\n\n"
+            f"Do you want to continue ([Y]es, [N]o, [D]etails)? ",
+            sites_in_new_org,
+            sites_with_maps,
+        )
+        for old_site_id in sites_with_maps:
+            new_site_id = UUID_MATCHING.get_new_uuid(old_site_id)
+            site_name = UUID_MATCHING.get_uuid_name(old_site_id)
+            PB.log_title(f"Deploying maps for site {site_name}")
+            for map_data in backup["sites"][old_site_id].get("maps", []):
+                old_map_id = map_data.get("id", "")
+                floorplan_name = map_data.get("name", "<unknown>")
+                new_map_id = _deploy_floorplan(
+                    apisession,
+                    new_site_id,
+                    map_data,
+                )
+                _deploy_floorplan_image(
+                    apisession,
+                    backup.get("org", {}).get("id", ""),
+                    old_site_id,
+                    new_site_id,
+                    old_map_id,
+                    new_map_id,
+                    floorplan_name,
+                )
+            for zone_data in backup["sites"][old_site_id].get("zones", []):
+                _deploy_zones(
+                    apisession,
+                    new_site_id,
+                    zone_data,
+                )
+            for rssi_zone_data in backup["sites"][old_site_id].get("rssizones", []):
+                _deploy_rssi_zones(
+                    apisession,
+                    new_site_id,
+                    rssi_zone_data,
+                )
+            for vbeacon_data in backup["sites"][old_site_id].get("vbeacons", []):
+                _deploy_virtual_beacons(
+                    apisession,
+                    new_site_id,
+                    vbeacon_data,
+                )
+
+
+#####################################################################
+#### MENUS ####
+def _chdir(path: str) -> bool:
+    try:
+        os.chdir(path)
+        return True
+    except FileNotFoundError:
+        console.error("The specified path does not exist.")
+        return False
+    except NotADirectoryError:
+        console.error("The specified path is not a directory.")
+        return False
+    except PermissionError:
+        console.error(
+            "You do not have the necessary permissions "
+            "to access the specified directory."
+        )
+        return False
+    except Exception as e:
+        console.error(f"An error occurred: {e}")
+        return False
+
+
+def _display_warning(message, sites_in_new_org: list, sites_with_maps: list) -> None:
+    resp = "x"
+    while resp.lower() not in ["y", "n", "d", ""]:
+        print()
+        resp = input(message)
+    if resp.lower() == "n" or resp.lower() == "":
+        console.error("Interruption... Exiting...")
+        LOGGER.error("Interruption... Exiting...")
+        sys.exit(0)
+    elif resp.lower() == "d":
+        print("Displaying detailed information...")
+        for site in sites_in_new_org:
+            site_name = UUID_MATCHING.get_uuid_name(site)
+            if site in sites_with_maps:
+                print(f'Site "{site_name}" ({site}) has maps to restore.')
+            else:
+                print(f'Site "{site_name}" ({site}) has no maps to restore.')
+        return _display_warning(message, sites_in_new_org, sites_with_maps)
+
+    if resp.lower() != "y":
+        console.error("Interruption... Exiting...")
+        LOGGER.error("Interruption... Exiting...")
+        sys.exit(0)
+
+
+def _select_backup_folder(folders) -> None:
+    i = 0
+    print("Available Templates/Backups:")
+    while i < len(folders):
+        print(f"{i}) {folders[i]}")
+        i += 1
+    folder = None
+    while folder is None:
+        resp = input(
+            f"Which template/backup do you want to deploy (0-{i - 1}, or q to quit)? "
+        )
+        if resp.lower() == "q":
+            console.error("Interruption... Exiting...")
+            LOGGER.error("Interruption... Exiting...")
+            sys.exit(0)
+        try:
+            respi = int(resp)
+            if respi >= 0 and respi <= i:
+                folder = folders[respi]
+            else:
+                print(f'The entry value "{respi}" is not valid. Please try again...')
+        except Exception:
+            print("Only numbers are allowed. Please try again...")
+    _chdir(folder)
+
+
+def _go_to_backup_folder(
+    backup_folder: str, src_org_name: str = "", source_backup: str = ""
+) -> None:
+    print()
+    print(" Source Backup/Template ".center(80, "-"))
+    print()
+    _chdir(backup_folder)
+    folders = []
+    for entry in os.listdir("./"):
+        if os.path.isdir(os.path.join("./", entry)):
+            folders.append(entry)
+    folders = sorted(folders, key=str.casefold)
+    if source_backup in folders and _chdir(source_backup):
+        print(f"Template/Backup {source_backup} found. It will be automatically used.")
+    elif src_org_name in folders:
+        print(f"Template/Backup found for organization {src_org_name}.")
+        loop = True
+        while loop:
+            resp = input("Do you want to use this template/backup (y/N)? ")
+            if resp.lower() in ["y", "n", " "]:
+                loop = False
+                if resp.lower() == "y" and _chdir(src_org_name):
+                    pass
+                else:
+                    _select_backup_folder(folders)
+    else:
+        print(
+            f"No Template/Backup found for organization {src_org_name}. "
+            f"Please select a folder in the following list."
+        )
+        _select_backup_folder(folders)
+
+
+def _check_org_name_in_script_param(
+    apisession: mistapi.APISession, org_id: str, org_name: str = ""
+):
+    response = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id)
+    if response.status_code != 200:
+        console.critical(f"Unable to retrieve the org information: {response.data}")
+        sys.exit(3)
+    org_name_from_mist = response.data["name"]
+    return org_name == org_name_from_mist
+
+
+def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str = ""):
+    if not org_name:
+        org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
+    while True:
+        print()
+        resp = input(
+            "To avoid any error, please confirm the current destination orgnization name: "
+        )
+        if resp == org_name:
+            return org_id, org_name
+        else:
+            print()
+            print("The orgnization names do not match... Please try again...")
+
+
+def _select_dest_org(apisession: mistapi.APISession):
+    print()
+    print(" Destination Org ".center(80, "-"))
+    print()
+    org_id = mistapi.cli.select_org(apisession)[0]
+    org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
+    return org_id, org_name
+
+
+#####################################################################
+#### START ####
+def start(
+    apisession: mistapi.APISession,
+    org_id: str = "",
+    org_name: str = "",
+    backup_folder_param: str = "",
+    src_org_name: str = "",
+    source_backup: str = "",
+):
+    """
+    Start the process to deploy a backup/template
+
+    PARAMS
+    -------
+    apisession : mistapi.APISession
+        mistapi session, already logged in
+    org_id : str
+        only if the destination org already exists. org_id where to deploy the configuration
+    org_name : str
+        Org name where to deploy the configuration:
+        * if org_id is provided (existing org), used to validate the destination org
+        * if org_id is not provided (new org), the script will create a new org and name it with
+        the org_name value
+    backup_folder_param : str
+        Path to the folder where to save the org backup (a subfolder will be created with the org
+        name). default is "./org_backup"
+    src_org_name : str
+        Name of the backup/template to deploy. This is the name of the folder where all the backup
+        files are stored. If the backup is found, the script will ask for a confirmation to use it
+    source_backup : str
+        Name of the backup/template to deploy. This is the name of the folder where all the backup
+        files are stored. If the backup is found, the script will NOT ask for a confirmation to use
+        it
+    """
+    current_folder = os.getcwd()
+    if not backup_folder_param:
+        backup_folder_param = BACKUP_FOLDER
+
+    if org_id and org_name:
+        if not _check_org_name_in_script_param(apisession, org_id, org_name):
+            console.critical(f"Org name {org_name} does not match the org {org_id}")
+            sys.exit(0)
+    elif org_id and not org_name:
+        org_id, org_name = _check_org_name(apisession, org_id)
+    elif not org_id and not org_name:
+        org_id, org_name = _select_dest_org(apisession)
+    else:  # should not since we covered all the possibilities...
+        sys.exit(0)
+
+    _start_deploy_maps(
+        apisession, org_id, org_name, backup_folder_param, src_org_name, source_backup
+    )
+    os.chdir(current_folder)
+
+
+#####################################################################
+#### USAGE ####
+def usage():
+    print(
+        """
+-------------------------------------------------------------------------------
+
+    Written by Thomas Munzer (tmunzer@juniper.net)
+    Github repository: https://github.com/tmunzer/Mist_library/
+
+    This script is licensed under the MIT License.
+
+-------------------------------------------------------------------------------
+Python script to deploy floorplans from an organization backup/template file.
+You can use the script "org_conf_backup.py" to generate the backup file from an
+existing organization.
+
+This script will not override existing objects. If the floorplans already exist,
+new ones will be created in the destination organization. 
+
+Please note:
+- Only the sites existing in the destination organization will be processed.
+- The Sites must already exist in the destination organization before running
+this script, and they must have the same name as in the source organization.
+
+The script will deploy the following objects:
+- Floorplans (with images if available)
+- Zones
+- RSSI Zones
+- Virtual Beacons
+
+-------
+Requirements:
+mistapi: https://pypi.org/project/mistapi/
+
+-------
+Usage:
+This script can be run as is (without parameters), or with the options below.
+If no options are defined, or if options are missing, the missing options will
+be asked by the script or the default values will be used.
+
+It is recommended to use an environment file to store the required information
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
+information about the available parameters).
+
+-------
+Script Parameters:
+-h, --help              display this help
+-o, --org_id=           Only if the destination org already exists. org_id where to
+                        deploy the configuration
+-n, --org_name=         Org name where to deploy the configuration:
+                            - if org_id is provided (existing org), used to validate
+                            the destination org
+                            - if org_id is not provided (new org), the script will
+                            create a new org and name it with the org_name value
+-f, --backup_folder=    Path to the folder where to save the org backup (a subfolder
+                        will be created with the org name)
+                        default is "./org_backup"
+-b, --source_backup=    Name of the backup/template to deploy. This is the name of
+                        the folder where all the backup files are stored.
+-l, --log_file=         define the filepath/filename where to write the logs
+                        default is "./script.log"
+-e, --env=              define the env file to use (see mistapi env file documentation
+                        here: https://pypi.org/project/mistapi/)
+                        default is "~/.mist_env"
+-k, --keyring_service=  Keyring service name to retrieve the MIST_HOST and MIST_APITOKEN
+                        or MIST_USERNAME and MIST_PASSWORD.
+                        If this parameter is used, the --env parameter will be ignored.
+                        Default is None
+
+-------
+Examples:
+python3 ./org_conf_deploy_maps.py
+python3 ./org_conf_deploy_maps.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "my test org"
+
+"""
+    )
+    sys.exit(0)
+
+
+def check_mistapi_version():
+    """Check if the installed mistapi version meets the minimum requirement."""
+
+    current_version = mistapi.__version__.split(".")
+    required_version = MISTAPI_MIN_VERSION.split(".")
+
+    try:
+        for i, req in enumerate(required_version):
+            if current_version[int(i)] > req:
+                break
+            if current_version[int(i)] < req:
+                raise ImportError(
+                    f'"mistapi" package version {MISTAPI_MIN_VERSION} is required '
+                    f"but version {mistapi.__version__} is installed."
+                )
+    except ImportError as e:
+        LOGGER.critical(str(e))
+        LOGGER.critical("Please use the pip command to update it.")
+        LOGGER.critical("")
+        LOGGER.critical("    # Linux/macOS")
+        LOGGER.critical("    python3 -m pip install --upgrade mistapi")
+        LOGGER.critical("")
+        LOGGER.critical("    # Windows")
+        LOGGER.critical("    py -m pip install --upgrade mistapi")
+        print(
+            f"""
+Critical:\r\n
+{e}\r\n
+Please use the pip command to update it.
+# Linux/macOS
+python3 -m pip install --upgrade mistapi
+# Windows
+py -m pip install --upgrade mistapi
+            """
+        )
+        sys.exit(2)
+    finally:
+        LOGGER.info(
+            '"mistapi" package version %s is required, '
+            "you are currently using version %s.",
+            MISTAPI_MIN_VERSION,
+            mistapi.__version__,
+        )
+
+
+#####################################################################
+#### SCRIPT ENTRYPOINT ####
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Deploy organization backup/template file.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+python3 ./org_conf_deploy.py
+python3 ./org_conf_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "my test org"
+        """,
+    )
+
+    parser.add_argument(
+        "-o",
+        "--org_id",
+        help="Only if the destination org already exists. org_id where to deploy the configuration",
+    )
+    parser.add_argument(
+        "-n", "--org_name", help="Org name where to deploy the configuration"
+    )
+    parser.add_argument(
+        "-e",
+        "--env",
+        default=ENV_FILE,
+        help="define the env file to use (default: ~/.mist_env)",
+    )
+    parser.add_argument(
+        "-l",
+        "--log_file",
+        default=LOG_FILE,
+        help="define the filepath/filename where to write the logs (default: ./script.log)",
+    )
+    parser.add_argument(
+        "-f",
+        "--backup_folder",
+        help="Path to the folder where to save the org backup (default: ./org_backup)",
+    )
+    parser.add_argument(
+        "-b", "--source_backup", help="Name of the backup/template to deploy"
+    )
+    parser.add_argument(
+        "-k",
+        "--keyring_service",
+        help="Keyring service name to retrieve the Mist API cloud and API token or username/password",
+        default=None,
+    )
+
+    args = parser.parse_args()
+
+    ORG_ID = args.org_id
+    ORG_NAME = args.org_name
+    BACKUP_FOLDER_PARAM = args.backup_folder
+    SOURCE_BACKUP = args.source_backup
+    ENV_FILE = args.env
+    LOG_FILE = args.log_file
+    KEYRING_SERVICE = args.keyring_service
+
+    if KEYRING_SERVICE:
+        ENV_FILE = None
+
+    #### LOGS ####
+    logging.basicConfig(filename=LOG_FILE, filemode="w")
+    LOGGER.setLevel(logging.DEBUG)
+    check_mistapi_version()
+    ### START ###
+    APISESSION = mistapi.APISession(env_file=ENV_FILE, keyring_service=KEYRING_SERVICE)
+    APISESSION.login()
+    start(
+        APISESSION, ORG_ID, ORG_NAME, BACKUP_FOLDER_PARAM, source_backup=SOURCE_BACKUP
+    )
