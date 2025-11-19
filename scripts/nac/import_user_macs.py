@@ -28,11 +28,11 @@ information about the available parameters).
 CSV Example:
 Example 1:
 #mac,labels,vlan,notes,name,radius_group
-921b638445cd,"bldg1,flor1",vlan-100
-721b638445ef,"bldg2,flor2",vlan-101,Canon Printers
-721b638445ee,"bldg3,flor3",vlan-102,Printer2,VIP
-921b638445ce,"bldg4,flor4",vlan-103
-921b638445cf,"bldg5,flor5",vlan-104
+921b638445cd,"bldg1,floor1",vlan-100
+721b638445ef,"bldg2,floor2",vlan-101,Canon Printers
+721b638445ee,"bldg3,floor3",vlan-102,Printer2,VIP
+921b638445ce,"bldg4,floor4",vlan-103
+921b638445cf,"bldg5,floor5",vlan-104
 
 
 ------
