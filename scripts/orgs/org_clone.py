@@ -269,9 +269,11 @@ def _check_src_org(
 ) -> tuple[str, str]:
     _print_new_step("SOURCE Org")
     if src_org_id and src_org_name:
-        if not _check_org_name_in_script_param(
+        if _check_org_name_in_script_param(
             src_apisession, src_org_id, src_org_name
         ):
+            return src_org_id, src_org_name
+        else:
             console.critical(
                 f"Org name {src_org_name} does not match the org {src_org_id}"
             )
@@ -294,19 +296,19 @@ def _check_dst_org(
     dst_apisession: mistapi.APISession,
     dst_org_id: str,
     dst_org_name: str,
-    src_org_id: str,
-    src_org_name: str,
 ) -> tuple[str, str]:
     if dst_org_id and dst_org_name:
-        if not _check_org_name_in_script_param(
-            dst_apisession, dst_org_id, src_org_name
+        if _check_org_name_in_script_param(
+            dst_apisession, dst_org_id, dst_org_name
         ):
+            return dst_org_id, dst_org_name
+        else:
             console.critical(
-                f"Org name {src_org_name} does not match the org {src_org_id}"
+                f"Org name {dst_org_name} does not match the org {dst_org_id}"
             )
             sys.exit(0)
     elif dst_org_id and not dst_org_name:
-        return _check_org_name(dst_apisession, src_org_id, "destination")
+        return _check_org_name(dst_apisession, dst_org_id, "destination")
     elif not dst_org_id and dst_org_name:
         response = mistapi.api.v1.orgs.orgs.createOrg(
             dst_apisession, {"name": dst_org_name}
@@ -351,9 +353,7 @@ def start(
     if not dst_apisession:
         dst_apisession = src_apisession
     src_org_id, src_org_name = _check_src_org(src_apisession, src_org_id, src_org_name)
-    dst_org_id, dst_org_name = _check_dst_org(
-        dst_apisession, dst_org_id, dst_org_name, src_org_id, src_org_name
-    )
+    dst_org_id, dst_org_name = _check_dst_org(dst_apisession, dst_org_id, dst_org_name)
 
     _backup_org(src_apisession, src_org_id, backup_folder_param)
     _backup_inventory(src_apisession, src_org_id, backup_folder_param)
