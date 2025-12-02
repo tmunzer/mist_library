@@ -230,6 +230,7 @@ Below is a full index of scripts included in this repository. Each entry contain
 - [scripts/reports/report_wlans.py](scripts/reports/report_wlans.py) — List all WLANs and parameters for orgs/sites; CSV output.
 - [scripts/reports/report_inventory_site_notes.py](scripts/reports/report_inventory_site_notes.py) — Inventory report augmented with site notes and metadata.
 - [scripts/reports/report_rogues.py](scripts/reports/report_rogues.py) — Generate Rogue AP reports.
+- [scripts/reports/report_wan_services_usage.py](scripts/reports/report_wan_services_usage.py) — Report WAN Services usage across Gateway Templates, Hub Profiles, Service Policies and Gateways.
 - [scripts/reports/list_webhook_deliveries.py](scripts/reports/list_webhook_deliveries.py) — Extract and filter webhook deliveries; CSV export.
 - [scripts/reports/report_wlans.py](scripts/reports/report_wlans.py) — WLANs report (duplicate listing for quick access).
 
