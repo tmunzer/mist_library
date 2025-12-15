@@ -56,7 +56,7 @@ Script Parameters:
 
 -o, --org_id=           Mist Org ID where the devices are claimed to
 -c, --csv_file=         CSV File to use.
-                        default is "./toggle_managed.csv"
+                        default is "./update_managed_status.csv"
 -m, --managed=          set to "true" to set the devices to managed,
                         "false" to set them to unmanaged.
 
@@ -68,8 +68,8 @@ Script Parameters:
 
 -------
 Examples:
-python3 ./toggle_managed.py
-python3 ./toggle_managed.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -m true
+python3 ./update_managed_status.py
+python3 ./update_managed_status.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -m true
 
 """
 
@@ -104,7 +104,7 @@ except ImportError:
 #### PARAMETERS #####
 LOG_FILE = "./script.log"
 ENV_FILE = "~/.mist_env"
-CSV_FILE = "./toggle_managed.csv"
+CSV_FILE = "./update_managed_status.csv"
 
 #####################################################################
 #### LOGS ####
@@ -399,7 +399,7 @@ def start(apisession: mistapi.APISession, org_id: str, csv_file: str, managed: b
         configuration
     csv_file : str
         Path to the csv_file where the information are stored.
-        default: "./toggle_managed.csv"
+        default: "./update_managed_status.csv"
     managed : str
         Set to "true" to set the devices to managed, "false" to set them to unmanaged.
     """
@@ -486,7 +486,7 @@ Script Parameters:
 
 -o, --org_id=           Mist Org ID where the devices are claimed to
 -c, --csv_file=         CSV File to use.
-                        default is "./toggle_managed.csv"
+                        default is "./update_managed_status.csv"
 -m, --managed=          set to "true" to set the devices to managed,
                         "false" to set them to unmanaged.
 
@@ -498,8 +498,8 @@ Script Parameters:
 
 -------
 Examples:
-python3 ./toggle_managed.py
-python3 ./toggle_managed.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -m true
+python3 ./update_managed_status.py
+python3 ./update_managed_status.py -o 203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -m true
 
 """)
     if error_message:

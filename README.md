@@ -168,7 +168,7 @@ Below is a full index of scripts included in this repository. Each entry contain
 ### Devices
 
 - [scripts/devices/rename_devices.py](scripts/devices/rename_devices.py) — Rename devices (AP, Switch, Router) from a CSV; finds site automatically.
-- [scripts/devices/toggle_managed.py](scripts/devices/toggle_managed.py) — Enable/disable managed mode on devices from a CSV; finds site automatically.
+- [scripts/devices/update_managed_status.py](scripts/devices/update_managed_status.py) — Enable/disable managed mode on devices from a CSV; finds site automatically.
 
 #### AP helpers
 
