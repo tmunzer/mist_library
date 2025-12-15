@@ -211,7 +211,7 @@ def _update_devices(apisession: mistapi.APISession, devices: list, managed: bool
             )
         else:
             try:
-                if managed :
+                if managed:
                     disable_auto_config = False
                 else:
                     disable_auto_config = True
@@ -219,7 +219,10 @@ def _update_devices(apisession: mistapi.APISession, devices: list, managed: bool
                     apisession,
                     site_id=device_site_id,
                     device_id=device_id,
-                    body={"disable_auto_config": disable_auto_config, "managed": managed},
+                    body={
+                        "disable_auto_config": disable_auto_config,
+                        "managed": managed,
+                    },
                 )
                 if resp.status_code == 200:
                     mist_disable_auto_config = resp.data.get("disable_auto_config")
@@ -243,7 +246,7 @@ def _update_devices(apisession: mistapi.APISession, devices: list, managed: bool
                         PB.log_warning(message, inc=True)
                 else:
                     LOGGER.error(
-                        "_update_devices:unable to rename"
+                        "_update_devices:unable to update"
                         " device %s. Got HTTP%d from Mist",
                         device_info,
                         resp.status_code,
@@ -279,7 +282,7 @@ def _read_csv_file(csv_file: str) -> tuple[str, list]:
     LOGGER.debug("_read_csv_file:parameter:csv_file:%s", csv_file)
     fields = []
     devices = []
-    info_field = "None"  # will be eith "mac" or "serial"
+    info_field = "None"  # will be either "mac" or "serial"
     column_info_field = -1
     PB.log_message("Processing CSV file", display_pbar=False)
     with open(csv_file, "r", encoding="utf-8") as f:
@@ -341,7 +344,7 @@ def _read_csv_file(csv_file: str) -> tuple[str, list]:
                     LOGGER.debug("_read_csv_file:new device:%s", info)
 
     LOGGER.debug(
-        "_read_csv_file:got %d devices to rename from %s", len(devices), csv_file
+        "_read_csv_file:got %d devices to update from %s", len(devices), csv_file
     )
     PB.log_success("Processing CSV file", display_pbar=False, inc=False)
     return info_field, devices
@@ -356,12 +359,12 @@ def _processing_data(info_field: str, devices_from_csv: list, inventory: list) -
         for device in inventory:
             device_info = device[info_field]
             if device_info in devices_from_csv:
-                LOGGER.debug("_processing_data:device %s will be renamed", device_info)
+                LOGGER.debug("_processing_data:device %s will be updated", device_info)
                 data = {
-                    "site_id": device.get("site_id"), 
+                    "site_id": device.get("site_id"),
                     "id": device.get("id"),
                     "name": device.get("name"),
-                    }
+                }
                 result.append(data)
                 LOGGER.debug("_processing_data:%s", data)
         PB.log_success(message, display_pbar=False)
@@ -388,7 +391,7 @@ def _prepare_data(apisession: mistapi.APISession, org_id: str, csv_file: str) ->
 
 def start(apisession: mistapi.APISession, org_id: str, csv_file: str, managed: bool):
     """
-    Start the process to rename the devices
+    Start the process to update the devices
 
     PARAMS
     -------
@@ -556,7 +559,7 @@ py -m pip install --upgrade mistapi
 ##### ENTRY POINT ####
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Report the usage of WAN Services across Gateway Templates, Hub Profiles, Service Policies and Gateways."
+        description="Enable/disable managed mode on devices from a CSV; finds site automatically."
     )
     parser.add_argument("-e", "--env_file", type=str, help="define the env file to use")
     parser.add_argument("-o", "--org_id", type=str, help="Organization ID")
@@ -589,12 +592,12 @@ if __name__ == "__main__":
     CSV_FILE = args.csv_file
     LOG_FILE = args.log_file
     MANAGED = None
-    
+
     if args.managed.lower() == "true":
         MANAGED = True
     elif args.managed.lower() == "false":
         MANAGED = False
-    
+
     if MANAGED is None:
         console.error(
             "Please specify if the devices must be set to managed or unmanaged "
