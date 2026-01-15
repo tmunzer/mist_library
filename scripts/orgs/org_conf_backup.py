@@ -45,6 +45,8 @@ Script Parameters:
 -e, --env=              define the env file to use (see mistapi env file
                         documentation here: https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
+-k, --keyring=          define the Keyring service name to retrieve the Mist
+                        API cloud and API token or username/password
 
 -------
 Examples:
@@ -63,7 +65,7 @@ import signal
 import sys
 import argparse
 
-MISTAPI_MIN_VERSION = "0.55.6"
+MISTAPI_MIN_VERSION = "0.58.0"
 
 try:
     import mistapi
@@ -274,6 +276,11 @@ ORG_STEPS:dict[str, Step] = {
     "wxtunnels": Step(
         mistapi_function=mistapi.api.v1.orgs.wxtunnels.listOrgWxTunnels,
         text="Org wxtunnels",
+        check_next=True,
+    ),
+    "nacportals": Step(
+        mistapi_function=mistapi.api.v1.orgs.nacportals.listOrgNacPortals,
+        text="Org nacportals",
         check_next=True,
     ),
     "nactags": Step(
@@ -520,6 +527,7 @@ def _backup_wlan_portal(org_id, site_id, wlans) -> None:
             try:
                 message = f"portal template for wlan {wlan_id}"
                 PB.log_message(message)
+                LOGGER.debug("Downloading portal template: %s", wlan["portal_template_url"])
                 urllib.request.urlretrieve(
                     wlan["portal_template_url"], portal_file_name
                 )
@@ -531,6 +539,7 @@ def _backup_wlan_portal(org_id, site_id, wlans) -> None:
             try:
                 message = f"portal image for wlan {wlan_id}"
                 PB.log_message(message)
+                LOGGER.debug("Downloading portal image: %s", wlan["portal_image"])
                 urllib.request.urlretrieve(wlan["portal_image"], portal_image)
                 PB.log_success(message)
             except Exception:
@@ -869,6 +878,8 @@ Script Parameters:
 -e, --env=              define the env file to use (see mistapi env file 
                         documentation here: https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
+-k, --keyring=          define the Keyring service name to retrieve the Mist
+                        API cloud and API token or username/password
 
 -------
 Examples:
@@ -956,6 +967,12 @@ python3 ./org_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
         default=DEFAULT_BACKUP_FOLDER,
         help="Path to the folder where to save the org backup",
     )
+    parser.add_argument(
+        "-k",
+        "--keyring_service",
+        help="Keyring service name to retrieve the Mist API cloud and API token or username/password",
+        default=None,
+    )
 
     timestamp_group = parser.add_mutually_exclusive_group()
     timestamp_group.add_argument(
@@ -980,13 +997,17 @@ python3 ./org_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
     BACKUP_NAME_TS = args.timestamp
     ENV_FILE = args.env
     LOG_FILE = args.log_file
+    KEYRING_SERVICE = args.keyring_service
+    
+    if KEYRING_SERVICE:
+        ENV_FILE = None
 
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")
     LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### START ###
-    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION = mistapi.APISession(env_file=ENV_FILE, keyring_service=KEYRING_SERVICE)
     APISESSION.login()
 
     ### START ###
