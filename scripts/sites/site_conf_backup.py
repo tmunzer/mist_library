@@ -98,31 +98,31 @@ LOGGER = logging.getLogger(__name__)
 # BACKUP OBJECTS REFS
 ORG_STEPS = {
     "alarmtemplate": {
-        "mistapi_function": mistapi.api.v1.orgs.alarmtemplates.listOrgAlarmTemplates,
+        "mistapi_function": mistapi.api.v1.orgs.alarmtemplates.getOrgAlarmTemplate,
         "text": "Org alarmtemplates",
     },
     "aptemplate": {
-        "mistapi_function": mistapi.api.v1.orgs.aptemplates.listOrgAptemplates,
+        "mistapi_function": mistapi.api.v1.orgs.aptemplates.getOrgAptemplate,
         "text": "Org aptemplates",
     },
     "rftemplate": {
-        "mistapi_function": mistapi.api.v1.orgs.rftemplates.listOrgRfTemplates,
+        "mistapi_function": mistapi.api.v1.orgs.rftemplates.getOrgRfTemplate,
         "text": "Org rftemplates",
     },
     "networktemplate": {
-        "mistapi_function": mistapi.api.v1.orgs.networktemplates.listOrgNetworkTemplates,
+        "mistapi_function": mistapi.api.v1.orgs.networktemplates.getOrgNetworkTemplate,
         "text": "Org networktemplates",
     },
     "gatewaytemplate": {
-        "mistapi_function": mistapi.api.v1.orgs.gatewaytemplates.listOrgGatewayTemplates,
+        "mistapi_function": mistapi.api.v1.orgs.gatewaytemplates.getOrgGatewayTemplate,
         "text": "Org gatewaytemplates",
     },
     "secpolicy": {
-        "mistapi_function": mistapi.api.v1.orgs.secpolicies.listOrgSecPolicies,
+        "mistapi_function": mistapi.api.v1.orgs.secpolicies.getOrgSecPolicy,
         "text": "Org secpolicies",
     },
     "sitetemplate": {
-        "mistapi_function": mistapi.api.v1.orgs.sitetemplates.listOrgSiteTemplates,
+        "mistapi_function": mistapi.api.v1.orgs.sitetemplates.getOrgSiteTemplate,
         "text": "Org sitetemplates",
     },
 }
@@ -211,12 +211,15 @@ def _do_backup(
     scope_id: str,
     message: str,
     request_type: str = "",
+    obj_id: str = "",
 ) -> dict | list | None:
     try:
         _log_message(message)
         response = None
         if request_type:
             response = backup_function(mist_session, scope_id, type=request_type)
+        elif obj_id:
+            response = backup_function(mist_session, scope_id, obj_id)
         else:
             response = backup_function(mist_session, scope_id)
         if response.status_code == 200:
@@ -314,9 +317,10 @@ def _backup_site(apisession, site_id, site_name, org_id):
     _backup_wlan_portal(org_id, site_id, site_backup["site"]["wlans"])
 
     for step_name, step in ORG_STEPS.items():
-        if site_backup["site"]["info"].get(f"{step_name}_id"):
+        id = site_backup["site"]["info"].get(f"{step_name}_id")
+        if id:
             site_backup[step_name] = _do_backup(
-                apisession, step["mistapi_function"], org_id, step["text"]
+                apisession, step["mistapi_function"], org_id, step["text"], obj_id=id
             )
 
     if site_backup["site"].get("sitegroup_ids"):
