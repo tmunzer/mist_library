@@ -31,13 +31,16 @@ information about the available parameters).
 -------
 Script Parameters:
 -h, --help              display this help
+
 -o, --org_id=           Set the org_id (required to backup templates assigned to the site)
 -s, --site_ids          Set the list of site_ids to backup, comma separated
                         If the site_ids is not provided, the script will propose to
                         select the site to backup
--b, --backup_folder=    Path to the folder where to save the org backup (a subfolder
-                        will be created with the org name)
-                        default is "./org_backup"
+                        
+-b, --backup_folder=    Path to the folder where to save the site backup (a subfolder
+                        will be created with the org name and with the site name)
+                        default is "./site_backup"
+                        
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
 -e, --env=              define the env file to use (see mistapi env file documentation
@@ -317,10 +320,10 @@ def _backup_site(apisession, site_id, site_name, org_id):
     _backup_wlan_portal(org_id, site_id, site_backup["site"]["wlans"])
 
     for step_name, step in ORG_STEPS.items():
-        id = site_backup["site"]["info"].get(f"{step_name}_id")
-        if id:
+        obj_id = site_backup["site"]["info"].get(f"{step_name}_id")
+        if obj_id:
             site_backup[step_name] = _do_backup(
-                apisession, step["mistapi_function"], org_id, step["text"], obj_id=id
+                apisession, step["mistapi_function"], org_id, step["text"], obj_id=obj_id
             )
 
     if site_backup["site"].get("sitegroup_ids"):
@@ -472,13 +475,16 @@ information about the available parameters).
 -------
 Script Parameters:
 -h, --help              display this help
+
 -o, --org_id=           Set the org_id (required to backup templates assigned to the site)
--s, --site_ids          Set the list of site_ids to backup, comma separated 
+-s, --site_ids          Set the list of site_ids to backup, comma separated
                         If the site_ids is not provided, the script will propose to
                         select the site to backup
--b, --backup_folder=    Path to the folder where to save the org backup (a subfolder
-                        will be created with the org name)
+                        
+-b, --backup_folder=    Path to the folder where to save the site backup (a subfolder
+                        will be created with the org name and with the site name)
                         default is "./site_backup"
+                        
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
 -e, --env=              define the env file to use (see mistapi env file documentation 
