@@ -25,14 +25,14 @@ If no options are defined, or if options are missing, the missing options will
 be asked by the script or the default values will be used.
 
 It is recommended to use an environment file to store the required information
-to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
 information about the available parameters).
 
 -------
 Script Parameters:
 -h, --help              display this help
 -o, --org_id=           Set the org_id (required to backup templates assigned to the site)
--s, --site_ids          Set the list of site_ids to backup, comma separated 
+-s, --site_ids          Set the list of site_ids to backup, comma separated
                         If the site_ids is not provided, the script will propose to
                         select the site to backup
 -b, --backup_folder=    Path to the folder where to save the org backup (a subfolder
@@ -40,7 +40,7 @@ Script Parameters:
                         default is "./org_backup"
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
--e, --env=              define the env file to use (see mistapi env file documentation 
+-e, --env=              define the env file to use (see mistapi env file documentation
                         here: https://pypi.org/project/mistapi/)
                         default is "~/.mist_env"
 
@@ -57,14 +57,15 @@ import json
 import urllib.request
 import os
 import sys
-import getopt
+import argparse
+from typing import Callable
 
 MISTAPI_MIN_VERSION = "0.44.1"
 
 try:
     import mistapi
     from mistapi.__logger import console
-except:
+except ImportError:
     print(
         """
         Critical: 
@@ -100,6 +101,10 @@ ORG_STEPS = {
         "mistapi_function": mistapi.api.v1.orgs.alarmtemplates.listOrgAlarmTemplates,
         "text": "Org alarmtemplates",
     },
+    "aptemplate": {
+        "mistapi_function": mistapi.api.v1.orgs.aptemplates.listOrgAptemplates,
+        "text": "Org aptemplates",
+    },
     "rftemplate": {
         "mistapi_function": mistapi.api.v1.orgs.rftemplates.listOrgRfTemplates,
         "text": "Org rftemplates",
@@ -108,9 +113,17 @@ ORG_STEPS = {
         "mistapi_function": mistapi.api.v1.orgs.networktemplates.listOrgNetworkTemplates,
         "text": "Org networktemplates",
     },
+    "gatewaytemplate": {
+        "mistapi_function": mistapi.api.v1.orgs.gatewaytemplates.listOrgGatewayTemplates,
+        "text": "Org gatewaytemplates",
+    },
     "secpolicy": {
         "mistapi_function": mistapi.api.v1.orgs.secpolicies.listOrgSecPolicies,
         "text": "Org secpolicies",
+    },
+    "sitetemplate": {
+        "mistapi_function": mistapi.api.v1.orgs.sitetemplates.listOrgSiteTemplates,
+        "text": "Org sitetemplates",
     },
 }
 SITE_STEPS = {
@@ -179,39 +192,51 @@ SITE_STEPS = {
 
 #####################################################################
 #### BACKUP FUNCTIONS ####
-def log_message(message):
+def _log_message(message):
     print(f"{message}".ljust(79, "."), end="", flush=True)
 
 
-def log_success(message):
+def _log_success(message):
     print("\033[92m\u2714\033[0m")
-    LOGGER.info(f"{message}: Success")
+    LOGGER.info("%s: Success", message)
 
 
-def log_failure(message):
+def _log_failure(message):
     print("\033[31m\u2716\033[0m")
-    LOGGER.exception(f"{message}: Failure")
-
+    LOGGER.exception("%s: Failure", message)
 
 def _do_backup(
-    mist_session, backup_function, scope_id, message, request_type: str = None
-):
+    mist_session: mistapi.APISession,
+    backup_function: Callable,
+    scope_id: str,
+    message: str,
+    request_type: str = "",
+) -> dict | list | None:
     try:
-        log_message(message)
+        _log_message(message)
+        response = None
         if request_type:
             response = backup_function(mist_session, scope_id, type=request_type)
         else:
             response = backup_function(mist_session, scope_id)
-        data = mistapi.get_all(mist_session, response)
-        log_success(message)
-        return data
-    except Exception as e:
-        log_failure(message)
+        if response.status_code == 200:
+            if isinstance(response.data, list):
+                data = mistapi.get_all(mist_session, response)
+            else:
+                data = response.data
+            _log_success(message)
+            LOGGER.debug("%s: %s", message, data)
+            return data
+        else:
+            _log_failure(message)
+            return None
+    except Exception:
+        _log_failure(message)
         LOGGER.error("Exception occurred", exc_info=True)
         return None
 
 
-def _backup_wlan_portal(org_id, site_id, wlans):
+def _backup_wlan_portal(_, site_id, wlans):
     for wlan in wlans:
         if not site_id:
             portal_file_name = f"{FILE_PREFIX}_wlan_{wlan['id']}.json"
@@ -231,7 +256,7 @@ def _backup_wlan_portal(org_id, site_id, wlans):
                     wlan["portal_template_url"], portal_file_name
                 )
                 print("\033[92m\u2714\033[0m")
-            except:
+            except Exception:
                 print("\033[31m\u2716\033[0m")
         if "portal_image" in wlan:
             print(
@@ -242,7 +267,7 @@ def _backup_wlan_portal(org_id, site_id, wlans):
             try:
                 urllib.request.urlretrieve(wlan["portal_image"], portal_image)
                 print("\033[92m\u2714\033[0m")
-            except:
+            except Exception:
                 print("\033[31m\u2716\033[0m")
 
 
@@ -270,23 +295,26 @@ def _backup_site(apisession, site_id, site_name, org_id):
             "wxtunnels": {},
             "zones": {},
         },
-        "rftemplate": {},
-        "secpolicy": {},
         "alarmtemplate": {},
+        "aptemplate": {},
+        "rftemplate": {},
         "networktemplate": {},
+        "gatewaytemplate": {},
+        "secpolicy": {},
+        "sitetemplate": {},
         "sitegroup_names": [],
     }
 
-    for step_name in SITE_STEPS:
-        step = SITE_STEPS[step_name]
+
+    for step_name, step in SITE_STEPS.items():
         site_backup["site"][step_name] = _do_backup(
             apisession, step["mistapi_function"], site_id, step["text"]
         )
 
     _backup_wlan_portal(org_id, site_id, site_backup["site"]["wlans"])
 
-    for step_name in ORG_STEPS:
-        if site_backup["site"].get(f"{step_name}_id"):
+    for step_name, step in ORG_STEPS.items():
+        if site_backup["site"]["info"].get(f"{step_name}_id"):
             site_backup[step_name] = _do_backup(
                 apisession, step["mistapi_function"], org_id, step["text"]
             )
@@ -311,7 +339,7 @@ def _backup_site(apisession, site_id, site_name, org_id):
                 image_name = f"{FILE_PREFIX}_site_{site_id}_map_{xmap['id']}.png"
                 urllib.request.urlretrieve(url, image_name)
                 print("\033[92m\u2714\033[0m")
-            except:
+            except Exception:
                 print("\033[31m\u2716\033[0m")
 
     return site_backup
@@ -320,12 +348,16 @@ def _backup_site(apisession, site_id, site_name, org_id):
 #####################################################################
 #### SAVING FUNCTIONS ####
 def _save_to_file(site_name, backup):
-    print(f"Saving backup to {site_name}/{BACKUP_FILE} file...".ljust(79, "."), end="", flush=True)
+    print(
+        f"Saving backup to {site_name}/{BACKUP_FILE} file...".ljust(79, "."),
+        end="",
+        flush=True,
+    )
     try:
-        with open(BACKUP_FILE, "w") as f:
+        with open(BACKUP_FILE, "w", encoding="utf-8") as f:
             json.dump(backup, f)
         print("\033[92m\u2714\033[0m")
-    except:
+    except Exception:
         print("\033[31m\u2716\033[0m")
 
 
@@ -335,7 +367,7 @@ def _goto_folder(folder_name):
     os.chdir(folder_name)
 
 
-def start_site_backup(apisession, org_id, org_name, site_ids, backup_folder):
+def _start_site_backup(apisession, org_id, org_name, site_ids, backup_folder):
     _goto_folder(backup_folder)
     _goto_folder(org_name)
 
@@ -355,9 +387,23 @@ def start_site_backup(apisession, org_id, org_name, site_ids, backup_folder):
 
 
 def start(
-    apisession: mistapi.APISession, org_id: str, site_ids: list, backup_folder: str):
+    apisession: mistapi.APISession,
+    org_id: str,
+    site_ids: list,
+    backup_folder: str,
+) -> None:
+    """
+    Main function to start the site backup process
+    
+    :param apisession: mistapi.APISession object
+    :param org_id: organization ID where the site(s) belong to
+    :param site_ids: list of site IDs to backup
+    :param backup_folder: path to the folder where to save the backup files
+    :return: None
+    """
     if not org_id:
         org_id = mistapi.cli.select_org(apisession)[0]
+        org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
     if not site_ids:
         site_ids = mistapi.cli.select_site(apisession, org_id, allow_many=True)
     else:
@@ -370,16 +416,18 @@ def start(
             org_site_ids.append(site["id"])
 
         for site_id in site_ids:
-            if  site_id in org_site_ids:
-                LOGGER.info(f"site ID {site_id} belong to the org {org_name}")
+            if site_id in org_site_ids:
+                LOGGER.info("site ID %s belong to the org %s", site_id, org_name)
             else:
-                console.critical(f"Site ID {site_id} does not belong to the Org {org_name}. Exiting...")
+                console.critical(
+                    f"Site ID {site_id} does not belong to the Org {org_name}. Exiting..."
+                )
                 sys.exit(255)
 
     current_folder = os.getcwd()
     if not backup_folder:
         backup_folder = BACKUP_FOLDER
-    start_site_backup(apisession, org_id, org_name, site_ids, backup_folder)
+    _start_site_backup(apisession, org_id, org_name, site_ids, backup_folder)
     os.chdir(current_folder)
 
 
@@ -426,7 +474,7 @@ Script Parameters:
                         select the site to backup
 -b, --backup_folder=    Path to the folder where to save the org backup (a subfolder
                         will be created with the org name)
-                        default is "./org_backup"
+                        default is "./site_backup"
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
 -e, --env=              define the env file to use (see mistapi env file documentation 
@@ -446,33 +494,74 @@ python3 ./site_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -s a
 #####################################################################
 ##### ENTRY POINT ####
 if __name__ == "__main__":
-    try:
-        opts, args = getopt.getopt(
-            sys.argv[1:],
-            "ho:s:e:l:b:",
-            ["help", "org_id=", "site_ids=", "env=", "log_file=", "backup_folder="],
-        )
-    except getopt.GetoptError as err:
-        console.error(err)
+    parser = argparse.ArgumentParser(
+        description="Script to backup a whole site from a Mist Organization.",
+        formatter_class=argparse.RawTextHelpFormatter,
+        add_help=False,
+        epilog="""
+Examples:
+python3 ./site_conf_backup.py
+python3 ./site_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -s a39d0e91-xxxx-xxxx-xxxx-42df868c5a0b
+        """,
+    )
+    parser.add_argument(
+        "-h",
+        "--help",
+        action="store_true",
+        help="Display this help message and exit",
+    )
+    parser.add_argument(
+        "-o",
+        "--org_id",
+        help="Set the org_id (required to backup templates assigned to the site)",
+        type=str,
+        default="",
+    )
+    parser.add_argument(
+        "-s",
+        "--site_ids",
+        help="Set the list of site_ids to backup, comma separated \n"
+        "If the site_ids is not provided, the script will propose to \n"
+        "select the site to backup",
+        type=str,
+        default="",
+    )
+    parser.add_argument(
+        "-e",
+        "--env",
+        help="define the env file to use (default: ~/.mist_env)",
+        type=str,
+        default="~/.mist_env",
+    )
+    parser.add_argument(
+        "-l",
+        "--log_file",
+        help="define the filepath/filename where to write the logs",
+        type=str,
+        default="./script.log",
+    )
+    parser.add_argument(
+        "-b",
+        "--backup_folder",
+        help="Path to the folder where to save the org backup (a subfolder \n"
+        "will be created with the org name)",
+        type=str,
+        default="./site_backup",
+    )
+
+    args = parser.parse_args()
+    
+    if args.help:
         usage()
 
-    ORG_ID = None
-    SITE_IDS = None
-    for o, a in opts:
-        if o in ["-h", "--help"]:
-            usage()
-        elif o in ["-o", "--org_id"]:
-            ORG_ID = a
-        elif o in ["-s", "--site_ids"]:
-            SITE_IDS = a.split(",")
-        elif o in ["-e", "--env"]:
-            ENV_FILE = a
-        elif o in ["-l", "--log_file"]:
-            LOG_FILE = a
-        elif o in ["-b", "--backup_folder"]:
-            BACKUP_FOLDER = a
-        else:
-            assert False, "unhandled option"
+    ORG_ID = args.org_id
+    if args.site_ids:
+        SITE_IDS = args.site_ids.split(",")
+    else:
+        SITE_IDS = []
+    ENV_FILE = args.env
+    LOG_FILE = args.log_file
+    BACKUP_FOLDER = args.backup_folder
 
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")
