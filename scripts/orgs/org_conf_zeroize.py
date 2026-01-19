@@ -413,14 +413,14 @@ def start_delete(apisession, org_id):
             if entry["id"] not in ids_to_not_delete:
                 try:
                     message = f"Deleting {step_name} with ID {entry['id']} "
-                    PB.log_message(message)
+                    PB.log_message(message, display_pbar=False)
                     if step_name == "sites":
                         step["delete_mistapi_function"](apisession, entry["id"])
                     else:
                         step["delete_mistapi_function"](apisession, org_id, entry["id"])
-                    PB.log_success(message)
+                    PB.log_success(message, display_pbar=False)
                 except Exception:
-                    PB.log_failure(message)
+                    PB.log_failure(message, display_pbar=False)
 
 
 def create_primary_site(apisession, org_id):
