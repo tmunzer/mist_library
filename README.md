@@ -205,6 +205,7 @@ Below is a full index of scripts included in this repository. Each entry contain
 - [scripts/sites/import_floorplans.py](scripts/sites/import_floorplans.py) — Import Ekahau / iBwave floorplans into Mist.
 - [scripts/sites/import_psk.py](scripts/sites/import_psk.py) — Import PSKs for sites from a CSV.
 - [scripts/sites/site_conf_backup.py](scripts/sites/site_conf_backup.py) — Backup a single site's configuration.
+- [scripts/sites/site_conf_deploy.py](scripts/sites/site_conf_deploy.py) — Deploy a single site's configuration backup (supports dry-run).
 - [scripts/sites/site_conf_psk.py](scripts/sites/site_conf_psk.py) — Site PSK configuration helper.
 - [scripts/sites/site_conf_wlan.py](scripts/sites/site_conf_wlan.py) — Manage SSIDs (list/add/delete) at org/site level.
 - [scripts/sites/site_conf_wlan_settings.json](scripts/sites/site_conf_wlan_settings.json) — Example WLAN settings used by scripts.
