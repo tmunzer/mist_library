@@ -41,6 +41,9 @@ Script Parameters:
                         will be created with the org name and with the site name)
                         default is "./site_backup"
                         
+-u, --unsecure          Use unsecure connection (no SSL verification) to download portal and
+                        floorplan images
+                        
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
 -e, --env=              define the env file to use (see mistapi env file documentation
@@ -127,6 +130,10 @@ ORG_STEPS = {
     "sitetemplate": {
         "mistapi_function": mistapi.api.v1.orgs.sitetemplates.getOrgSiteTemplate,
         "text": "Org sitetemplates",
+    },
+    "sitegroups": {
+        "mistapi_function": mistapi.api.v1.orgs.sitegroups.getOrgSiteGroup,
+        "text": "Org sitegroups",
     },
 }
 SITE_STEPS = {
@@ -263,6 +270,7 @@ def _backup_wlan_portal(_, site_id, wlans):
                 )
                 print("\033[92m\u2714\033[0m")
             except Exception:
+                LOGGER.error("Failed to backup portal template for WLAN %s", wlan['ssid'], exc_info=True)
                 print("\033[31m\u2716\033[0m")
         if "portal_image" in wlan:
             print(
@@ -274,6 +282,7 @@ def _backup_wlan_portal(_, site_id, wlans):
                 urllib.request.urlretrieve(wlan["portal_image"], portal_image)
                 print("\033[92m\u2714\033[0m")
             except Exception:
+                LOGGER.error("Failed to backup portal image for WLAN %s", wlan['ssid'], exc_info=True)
                 print("\033[31m\u2716\033[0m")
 
 
@@ -308,7 +317,7 @@ def _backup_site(apisession, site_id, site_name, org_id):
         "gatewaytemplate": {},
         "secpolicy": {},
         "sitetemplate": {},
-        "sitegroup_names": [],
+        "sitegroups": [],
     }
 
 
@@ -320,19 +329,17 @@ def _backup_site(apisession, site_id, site_name, org_id):
     _backup_wlan_portal(org_id, site_id, site_backup["site"]["wlans"])
 
     for step_name, step in ORG_STEPS.items():
-        obj_id = site_backup["site"]["info"].get(f"{step_name}_id")
-        if obj_id:
-            site_backup[step_name] = _do_backup(
-                apisession, step["mistapi_function"], org_id, step["text"], obj_id=obj_id
-            )
-
-    if site_backup["site"].get("sitegroup_ids"):
-        for sitegroup_id in site_backup["site"]["sitegroup_ids"]:
-            sitegroup_info = mistapi.api.v1.orgs.sitegroups.getOrgSiteGroup(
-                apisession, org_id, sitegroup_id
-            ).data
-            if "name" in sitegroup_info:
-                site_backup["sitegroup_names"].append(sitegroup_info["name"])
+        if step_name == "sitegroups":
+            for sitegroup_id in site_backup["site"]["info"].get("sitegroup_ids", []):
+                site_backup["sitegroups"].append(_do_backup(
+                    apisession, step["mistapi_function"], org_id, step["text"], obj_id=sitegroup_id
+                ))
+        else:
+            obj_id = site_backup["site"]["info"].get(f"{step_name}_id")
+            if obj_id:
+                site_backup[step_name] = _do_backup(
+                    apisession, step["mistapi_function"], org_id, step["text"], obj_id=obj_id
+                )
 
     for xmap in site_backup["site"]["maps"]:
         if "url" in xmap:
@@ -347,6 +354,7 @@ def _backup_site(apisession, site_id, site_name, org_id):
                 urllib.request.urlretrieve(url, image_name)
                 print("\033[92m\u2714\033[0m")
             except Exception:
+                LOGGER.error("Failed to backup image for map %s", xmap['name'], exc_info=True)
                 print("\033[31m\u2716\033[0m")
 
     return site_backup
@@ -398,6 +406,7 @@ def start(
     org_id: str,
     site_ids: list,
     backup_folder: str,
+    unsecure: bool = False,
 ) -> None:
     """
     Main function to start the site backup process
@@ -406,6 +415,7 @@ def start(
     :param org_id: organization ID where the site(s) belong to
     :param site_ids: list of site IDs to backup
     :param backup_folder: path to the folder where to save the backup files
+    :param unsecure: Use unsecure connection (no SSL verification) to download portal and floorplan images
     :return: None
     """
     if not org_id:
@@ -434,6 +444,11 @@ def start(
     current_folder = os.getcwd()
     if not backup_folder:
         backup_folder = BACKUP_FOLDER
+        
+    if unsecure:
+        import ssl
+
+        ssl._create_default_https_context = ssl._create_unverified_context
     _start_site_backup(apisession, org_id, org_name, site_ids, backup_folder)
     os.chdir(current_folder)
 
@@ -484,6 +499,9 @@ Script Parameters:
 -b, --backup_folder=    Path to the folder where to save the site backup (a subfolder
                         will be created with the org name and with the site name)
                         default is "./site_backup"
+                        
+-u, --unsecure          Use unsecure connection (no SSL verification) to download portal and
+                        floorplan images
                         
 -l, --log_file=         define the filepath/filename where to write the logs
                         default is "./script.log"
@@ -558,6 +576,13 @@ python3 ./site_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -s a
         type=str,
         default="./site_backup",
     )
+    parser.add_argument(
+        "-u",
+        "--unsecure",
+        help="Use unsecure connection (no SSL verification) to download portal and floorplan images",
+        action="store_true",
+        default=False,
+    )
 
     args = parser.parse_args()
     
@@ -572,11 +597,11 @@ python3 ./site_conf_backup.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -s a
     ENV_FILE = args.env
     LOG_FILE = args.log_file
     BACKUP_FOLDER = args.backup_folder
-
+    UNSECURE = args.unsecure
     #### LOGS ####
     logging.basicConfig(filename=LOG_FILE, filemode="w")
     LOGGER.setLevel(logging.DEBUG)
     ### START ###
     APISESSION = mistapi.APISession(env_file=ENV_FILE)
     APISESSION.login()
-    start(APISESSION, ORG_ID, SITE_IDS, BACKUP_FOLDER)
+    start(APISESSION, ORG_ID, SITE_IDS, BACKUP_FOLDER, UNSECURE)
