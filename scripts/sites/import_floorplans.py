@@ -106,16 +106,16 @@ python3 ./import_floorplans.py \
 #### IMPORTS #####
 import sys
 import os
-import getopt
+import argparse
 import logging
 
 MISTAPI_MIN_VERSION = "0.44.1"
 
 try:
     import mistapi
-    from mistapi.__logger import console
-except:
-        print("""
+    from mistapi.__logger import console as CONSOLE
+except ImportError:
+    print("""
         Critical: 
         \"mistapi\" package is missing. Please use the pip command to install it.
 
@@ -125,13 +125,13 @@ except:
         # Windows
         py -m pip install mistapi
         """)
-        sys.exit(2)
+    sys.exit(2)
 
 #####################################################################
 #### PARAMETERS #####
-log_file = "./script.log"
-env_file = "~/.mist_env"
-floorplans_folder = "./floorplans/"
+LOG_FILE = "./script.log"
+ENV_FILE = "~/.mist_env"
+FLOORPLANS_FOLDER = "./floorplans/"
 
 #####################################################################
 #### LOGS ####
@@ -156,9 +156,9 @@ class ProgressBar:
         percent = self.steps_count / self.steps_total
         delta = 17
         x = int((size - delta) * percent)
-        print(f"Progress: ", end="")
-        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
-        print(f"{int(percent*100)}%".rjust(5), end="")
+        print("Progress: ", end="")
+        print(f"[{'█' * x}{'.' * (size - delta - x)}]", end="")
+        print(f"{int(percent * 100)}%".rjust(5), end="")
 
     def _pb_new_step(
         self,
@@ -196,19 +196,19 @@ class ProgressBar:
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
     def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.info(f"{message}: Success")
+        LOGGER.info("%s: Success", message)
         self._pb_new_step(
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.warning(f"{message}: Warning")
+        LOGGER.warning("%s: Warning", message)
         self._pb_new_step(
-            message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar
+            message, "\033[93m\u2b58\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.error(f"{message}: Failure")
+        LOGGER.error("%s: Failure", message)
         self._pb_new_step(
             message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
         )
@@ -221,26 +221,37 @@ class ProgressBar:
 
 pb = ProgressBar()
 
+
 #####################################################################
-def _result(errors:list):
-    pb.log_title("Result", display_pbar=False)    
+def _result(errors: list):
+    pb.log_title("Result", display_pbar=False)
     print("\033[A\033[A\033[F")
     if not errors:
-        console.info("All floorplans imported succesfully and devices assigned")
+        CONSOLE.info("All floorplans imported successfully and devices assigned")
     else:
         for error in errors:
             if error.get("level") == "warning":
-                console.warning(error['message'])
-                LOGGER.warning(error['message'])
+                CONSOLE.warning(error["message"])
+                LOGGER.warning(error["message"])
             else:
-                console.error(error["message"])
+                CONSOLE.error(error["message"])
                 LOGGER.error(error["message"])
     print()
+
 
 ###############################################################################
 # IMPORT
 
-def import_projects(apisession: mistapi.APISession, org_id: str, sites: dict, format:str="ekahau", import_all_floorplans:bool=True, import_height:bool=True, import_orientation:bool=True) -> list:
+
+def import_projects(
+    apisession: mistapi.APISession,
+    org_id: str,
+    sites: dict,
+    import_format: str = "ekahau",
+    import_all_floorplans: bool = True,
+    import_height: bool = True,
+    import_orientation: bool = True,
+) -> list:
     pb.log_title("Starting Import Process", display_pbar=False)
     errors = []
     for site_name in sites:
@@ -250,9 +261,11 @@ def import_projects(apisession: mistapi.APISession, org_id: str, sites: dict, fo
         pb.log_message(message)
         site_id = sites[site_name].get("id")
         if sites[site_name].get("project"):
-            project_file = os.path.join(floorplans_folder, sites[site_name].get("project"))
+            project_file = os.path.join(
+                FLOORPLANS_FOLDER, sites[site_name].get("project")
+            )
         if sites[site_name].get("csv"):
-            csv_file = os.path.join(floorplans_folder, sites[site_name].get("csv"))
+            csv_file = os.path.join(FLOORPLANS_FOLDER, sites[site_name].get("csv"))
         if not site_id:
             pb.log_failure(message, inc=True)
             errors.append({"site_name": site_name, "error": "Site ID missing"})
@@ -262,18 +275,18 @@ def import_projects(apisession: mistapi.APISession, org_id: str, sites: dict, fo
         else:
             try:
                 json_dict = {
-                        "import_all_floorplans": import_all_floorplans,
-                        "import_height": import_height,
-                        "import_orientation":import_orientation,
-                        "vendor_name": format,
-                        "site_id": site_id
+                    "import_all_floorplans": import_all_floorplans,
+                    "import_height": import_height,
+                    "import_orientation": import_orientation,
+                    "vendor_name": import_format,
+                    "site_id": site_id,
                 }
                 resp = mistapi.api.v1.orgs.maps.importOrgMapsFile(
                     apisession,
                     org_id,
                     auto_deviceprofile_assignment=True,
                     csv=csv_file,
-                    file=  project_file,
+                    file=project_file,
                     json=json_dict,
                 )
                 if resp.status_code == 200:
@@ -286,11 +299,13 @@ def import_projects(apisession: mistapi.APISession, org_id: str, sites: dict, fo
                     if len(ignored_aps) == 0:
                         pb.log_success(message, inc=True)
                     else:
-                        for mac in ignored_aps:
-                            errors.append({
-                                "level": "warning",
-                                "message": f"site {site_name} - device {mac} not assigned: {ignored_aps[mac]}"
-                            })
+                        for mac, reason in ignored_aps.items():
+                            errors.append(
+                                {
+                                    "level": "warning",
+                                    "message": f"site {site_name} - device {mac} not assigned: {reason}",
+                                }
+                            )
                         pb.log_warning(message, inc=True)
                 else:
                     pb.log_failure(message, inc=True)
@@ -300,7 +315,7 @@ def import_projects(apisession: mistapi.APISession, org_id: str, sites: dict, fo
                             "error": f"site {site_name} - Got HTTP{resp.status_code} from Mist. Please check the script logs.",
                         }
                     )
-            except:
+            except Exception:
                 pb.log_failure(message, inc=True)
                 errors.append(
                     {
@@ -312,8 +327,8 @@ def import_projects(apisession: mistapi.APISession, org_id: str, sites: dict, fo
     return errors
 
 
-def _retrieve_site_ids(apisession: mistapi.APISession, org_id: str, sites: list):
-    pb.log_title(f"Retrieving Site IDs", display_pbar=False)
+def _retrieve_site_ids(apisession: mistapi.APISession, org_id: str, sites: dict):
+    pb.log_title("Retrieving Site IDs", display_pbar=False)
 
     try:
         message = "Retrieving Site IDs from Mist"
@@ -321,7 +336,7 @@ def _retrieve_site_ids(apisession: mistapi.APISession, org_id: str, sites: list)
         resp = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id, limit=1000)
         sites_from_mist = mistapi.get_all(apisession, resp)
         pb.log_success(message, display_pbar=False)
-        for site_name in sites:
+        for site_name, _ in sites.items():
             message = f"Site {site_name}"
             pb.log_message(message, display_pbar=False)
             site = [s for s in sites_from_mist if s["name"] == site_name]
@@ -333,7 +348,7 @@ def _retrieve_site_ids(apisession: mistapi.APISession, org_id: str, sites: list)
             else:
                 sites[site_name]["id"] = site[0]["id"]
                 pb.log_success(f"{message}: {site[0]['id']}", display_pbar=False)
-    except:
+    except Exception:
         pb.log_failure(message, display_pbar=False)
         sys.exit(0)
 
@@ -341,33 +356,34 @@ def _retrieve_site_ids(apisession: mistapi.APISession, org_id: str, sites: list)
 ###############################################################################
 # CHECK EKAHAU/CSV FILES
 def _list_files_to_process() -> dict:
-    pb.log_title(f"Checking Files in {floorplans_folder}", display_pbar=False)
-    files_in_folder = os.listdir(floorplans_folder)
+    pb.log_title(f"Checking Files in {FLOORPLANS_FOLDER}", display_pbar=False)
+    files_in_folder = os.listdir(FLOORPLANS_FOLDER)
     sites_to_process = {}
     for file in files_in_folder:
         message = f"File {file}"
         pb.log_message(message, display_pbar=False)
         if file.endswith(".csv"):
             site_name = file.replace(".csv", "")
-            if not site_name in sites_to_process:
+            if site_name not in sites_to_process:
                 sites_to_process[site_name] = {}
             sites_to_process[site_name]["csv"] = file
             pb.log_success(message, display_pbar=False)
         elif file.endswith(".esx"):
             site_name = file.replace(".esx", "")
-            if not site_name in sites_to_process:
+            if site_name not in sites_to_process:
                 sites_to_process[site_name] = {}
             sites_to_process[site_name]["project"] = file
             pb.log_success(message, display_pbar=False)
         elif file.endswith(".ibwc"):
             site_name = file.replace(".ibwc", "")
-            if not site_name in sites_to_process:
+            if site_name not in sites_to_process:
                 sites_to_process[site_name] = {}
             sites_to_process[site_name]["project"] = file
             pb.log_success(message, display_pbar=False)
         else:
             pb.log_warning(
-                f"{message}: not a CSV, ESX or IBWC file. Skipping it", display_pbar=False
+                f"{message}: not a CSV, ESX or IBWC file. Skipping it",
+                display_pbar=False,
             )
     return sites_to_process
 
@@ -375,45 +391,68 @@ def _list_files_to_process() -> dict:
 ###############################################################################
 # ORG SELECTION
 def _check_org_name_in_script_param(
-    apisession: mistapi.APISession, org_id: str, org_name: str = None
-):
+    apisession: mistapi.APISession, org_id: str, org_name: str = ","
+) -> bool:
     response = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id)
     if response.status_code != 200:
-        console.critical(f"Unable to retrieve the org information: {response.data}")
+        CONSOLE.critical(f"Unable to retrieve the org information: {response.data}")
         sys.exit(3)
     org_name_from_mist = response.data["name"]
     return org_name == org_name_from_mist
 
 
-def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str = None):
+def _check_org_name(
+    apisession: mistapi.APISession,
+    org_id: str,
+    org_name: str = "",
+) -> tuple[str, str]:
     if not org_name:
         org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
     while True:
         print()
         resp = input(
-            "To avoid any error, please confirm the current destination orgnization name: "
+            "To avoid any error, please confirm the current destination organization name: "
         )
         if resp == org_name:
             return org_id, org_name
         else:
             print()
-            print("The orgnization names do not match... Please try again...")
+            print("The organization names do not match... Please try again...")
 
 
-def _select_dest_org(apisession: mistapi.APISession):
+def _select_dest_org(apisession: mistapi.APISession) -> tuple[str, str]:
     print()
     print(" Destination Org ".center(80, "-"))
     print()
     org_id = mistapi.cli.select_org(apisession)[0]
     org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
-    if _check_org_name(apisession, org_id, org_name):
-        return org_id, org_name
+    return _check_org_name(apisession, org_id, org_name)
 
 
-def start(apisession: mistapi.APISession, org_id: str = None, org_name: str = None, format:str="ekahau", import_all_floorplans:bool=True, import_height:bool=True, import_orientation:bool=True):
+def start(
+    apisession: mistapi.APISession,
+    org_id: str = "",
+    org_name: str = "",
+    import_format: str = "ekahau",
+    import_all_floorplans: bool = True,
+    import_height: bool = True,
+    import_orientation: bool = True,
+) -> None:
+    """
+    Main function to start the import process
+
+    :param apisession: Mist APISession object
+    :param org_id: Org ID where to import the floorplans
+    :param org_name: Org name where to import the floorplans
+    :param import_format: Format of the files to import (ekahau or ibwave)
+    :param import_all_floorplans: Include floorplans with unmatched APs
+    :param import_height: Import AP height
+    :param import_orientation: Import AP orientation
+    :return: None
+    """
     if org_id and org_name:
         if not _check_org_name_in_script_param(apisession, org_id, org_name):
-            console.critical(f"Org name {org_name} does not match the org {org_id}")
+            CONSOLE.critical(f"Org name {org_name} does not match the org {org_id}")
             sys.exit(0)
     elif org_id and not org_name:
         org_id, org_name = _check_org_name(apisession, org_id)
@@ -423,25 +462,33 @@ def start(apisession: mistapi.APISession, org_id: str = None, org_name: str = No
         usage()
         sys.exit(0)
 
-    global floorplans_folder
-    if not floorplans_folder.endswith("/"):
-        floorplans_folder += "/"
+    global FLOORPLANS_FOLDER
+    if not FLOORPLANS_FOLDER.endswith("/"):
+        FLOORPLANS_FOLDER += "/"
 
     sites = _list_files_to_process()
     pb.set_steps_total(len(sites))
 
     _retrieve_site_ids(apisession, org_id, sites)
 
-    errors = import_projects(apisession, org_id, sites, format, import_all_floorplans, import_height, import_orientation)
+    errors = import_projects(
+        apisession,
+        org_id,
+        sites,
+        import_format,
+        import_all_floorplans,
+        import_height,
+        import_orientation,
+    )
     _result(errors)
     pb.log_title("Site Import Done", end=True)
 
 
 ###############################################################################
 # USAGE
-def usage():
+def usage(message: str | None = None):
     print(
-"""
+        """
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -546,7 +593,10 @@ python3 ./import_floorplans.py \\
 
 """
     )
+    if message:
+        CONSOLE.error(message)
     sys.exit(0)
+
 
 def check_mistapi_version():
     """Check if the installed mistapi version meets the minimum requirement."""
@@ -589,90 +639,113 @@ py -m pip install --upgrade mistapi
             '"mistapi" package version %s is required, '
             "you are currently using version %s.",
             MISTAPI_MIN_VERSION,
-            mistapi.__version__
+            mistapi.__version__,
         )
 
 
 ###############################################################################
 # ENTRY POINT
 if __name__ == "__main__":
-    try:
-        opts, args = getopt.getopt(
-            sys.argv[1:],
-            "ho:n:f:e:l:",
-            [
-                "help",
-                "org_id=",
-                "--org_name=",
-                "google_api_key=",
-                "folder=",
-                "env=",
-                "log_file=",
-                "format=",
-                "import_all_floorplans=",
-                "import_height=",
-                "import_orientation=",
-            ],
-        )
-    except getopt.GetoptError as err:
-        console.error(err)
+    parser = argparse.ArgumentParser(
+        description="Import multiple Ekahau/iBwave project into Mist Organization.",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""
+Examples:
+python3 ./import_floorplans.py -f ./my_project_folder/
+python3 ./import_floorplans.py \\
+        -f ./my_project_folder/ \\
+        --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 \\
+        --org_name="My Test Org" \\
+        --import_all_floorplans=true
+""",
+        add_help=False,
+    )
+    parser.add_argument("-h", "--help", action="store_true", help="display this help")
+    parser.add_argument(
+        "-o",
+        "--org_id",
+        type=str,
+        help="Set the org_id (only one of the org_id or site_id can be defined)",
+    )
+    parser.add_argument(
+        "-n",
+        "--org_name",
+        type=str,
+        help="Org name where to deploy the floorplans, used to validate the destination org",
+    )
+    parser.add_argument(
+        "-f",
+        "--folder",
+        type=str,
+        help="path to the folder where the Ekahau/Ibwave/CSV files are located",
+    )
+    parser.add_argument(
+        "--format",
+        type=str,
+        choices=["ekahau", "ibwave"],
+        help="format of the files to import (ekahau or ibwave)",
+    )
+    parser.add_argument(
+        "--import_all_floorplans",
+        type=str,
+        choices=["true", "false"],
+        help="Include floorplans with unmatched APs (true or false, default false)",
+    )
+    parser.add_argument(
+        "--import_height",
+        type=str,
+        choices=["true", "false"],
+        help="Import AP height (true or false, default true)",
+    )
+    parser.add_argument(
+        "--import_orientation",
+        type=str,
+        choices=["true", "false"],
+        help="Import AP orientation (true or false, default true)",
+    )
+    parser.add_argument(
+        "-e",
+        "--env",
+        type=str,
+        help="define the env file to use (see mistapi env file documentation here: https://pypi.org/project/mistapi/)",
+    )
+    parser.add_argument(
+        "-l",
+        "--log_file",
+        type=str,
+        help="define the filepath/filename where to write the logs",
+    )
+
+    args = parser.parse_args()
+
+    if args.help:
         usage()
 
-    org_id = None
-    org_name = None
-    format = None
-    import_all_floorplans = None
-    import_height = None
-    import_orientation = None
-    for o, a in opts:
-        if o in ["-h", "--help"]:
-            usage()
-        elif o in ["-o", "--org_id"]:
-            org_id = a
-        elif o in ["-n", "--org_name"]:
-            org_name = a
-        elif o in ["-f", "--folder"]:
-            floorplans_folder = a
-        elif o == "--format":
-            if a in ["ekahau", "ibwave"]:
-                format = a
-            else:
-                console.error("invalid --format value. Only \"ekahau\" or \"ibwave\" are supported...")
-        elif o == "--import_all_floorplans":
-            if a.lower() == "true":
-                import_all_floorplans = True
-            elif a.lower() == "false":
-                import_all_floorplans = False
-            else:
-                console.error("invalid --import_all_floorplans value. Only \"true\" or \"false\" are supported...")
-        elif o == "--import_height":
-            if a.lower() == "true":
-                import_height = True
-            elif a.lower() == "false":
-                import_height = False
-            else:
-                console.error("invalid --import_height value. Only \"true\" or \"false\" are supported...")
-        elif o == "--import_orientation":
-            if a.lower() == "true":
-                import_orientation = True
-            elif a.lower() == "false":
-                import_orientation = False
-            else:
-                console.error("invalid --import_orientation value. Only \"true\" or \"false\" are supported...")
-        elif o in ["-e", "--env"]:
-            env_file = a
-        elif o in ["-l", "--log_file"]:
-            log_file = a
-        else:
-            assert False, "unhandled option"
+    ORG_ID = args.org_id if args.org_id else ""
+    ORG_NAME = args.org_name if args.org_name else ""
+    FLOORPLANS_FOLDER = args.folder if args.folder else FLOORPLANS_FOLDER
+    IMPORT_FORMAT = args.format if args.format else "ekahau"
+    IMPORT_ALL_FLOORPLANS = False if args.import_all_floorplans == "false" else True
+    IMPORT_HEIGHT = False if args.import_height == "false" else True
+    IMPORT_ORIENTATION = False if args.import_orientation == "false" else True
+    ENV_FILE = args.env if args.env else ENV_FILE
+    LOG_FILE = args.log_file if args.log_file else LOG_FILE
 
     #### LOGS ####
-    logging.basicConfig(filename=log_file, filemode="w")
+    logging.basicConfig(filename=LOG_FILE, filemode="w")
     LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### MIST SESSION ###
-    apisession = mistapi.APISession(env_file=env_file)
-    apisession.login()
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
 
     ### START ###
-    start(apisession, org_id, org_name)
+    start(
+        APISESSION,
+        ORG_ID,
+        ORG_NAME,
+        IMPORT_FORMAT,
+        IMPORT_ALL_FLOORPLANS,
+        IMPORT_HEIGHT,
+        IMPORT_ORIENTATION,
+    )
