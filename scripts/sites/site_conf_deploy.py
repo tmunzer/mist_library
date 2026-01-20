@@ -246,11 +246,6 @@ ORG_STEPS = {
     ),
 }
 SITE_STEPS = {
-    "settings": Step(
-        create_mistapi_function=mistapi.api.v1.sites.setting.updateSiteSettings,
-        update_mistapi_function=mistapi.api.v1.sites.setting.updateSiteSettings,
-        text="Site settings",
-    ),
     "maps": Step(
         list_mistapi_function=mistapi.api.v1.sites.maps.listSiteMaps,
         create_mistapi_function=mistapi.api.v1.sites.maps.createSiteMap,
@@ -336,6 +331,11 @@ SITE_STEPS = {
         update_mistapi_function=mistapi.api.v1.sites.wxrules.updateSiteWxRule,
         text="Site wxrules",
         attr_name="order",
+    ),
+    "settings": Step(
+        create_mistapi_function=mistapi.api.v1.sites.setting.updateSiteSettings,
+        update_mistapi_function=mistapi.api.v1.sites.setting.updateSiteSettings,
+        text="Site settings",
     ),
 }
 
@@ -1251,12 +1251,12 @@ def _deploy_org_objects(
             create, object_to_deploy, _ = step.search_existing_object(
                         data, data[step.attr_name], merge_action
                     )
-            if step_name == "networktemplate":
-                if object_to_deploy and object_to_deploy.get("radius_config", {}).get("auth_servers", []):
+            if step_name == "networktemplate" and object_to_deploy:
+                if object_to_deploy.get("radius_config", {}).get("auth_servers", []):
                     for server in object_to_deploy["radius_config"]["auth_servers"]:
                         if "id" in server:
                             del server["id"]
-                if object_to_deploy and object_to_deploy.get("radius_config", {}).get("acct_servers", []):
+                if object_to_deploy.get("radius_config", {}).get("acct_servers", []):
                     for server in object_to_deploy["radius_config"]["acct_servers"]:
                         if "id" in server:
                             del server["id"]
@@ -1716,14 +1716,14 @@ python3 ./site_conf_deploy.py --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 -n "
 
     args = parser.parse_args()
 
-    ORG_ID = args.org_id
-    ORG_NAME = args.org_name
+    ORG_ID = args.org_id if args.org_id else ""
+    ORG_NAME = args.org_name if args.org_name else ""
     BACKUP_FOLDER_PATH = args.backup_path
     # SOURCE_BACKUP = args.source_backup
-    ENV_FILE = args.env
-    LOG_FILE = args.log_file
-    KEYRING_SERVICE = args.keyring_service
-    MERGE_ACTION = args.merge_action
+    ENV_FILE = args.env if args.env else ENV_FILE
+    LOG_FILE = args.log_file if args.log_file else LOG_FILE
+    KEYRING_SERVICE = args.keyring_service if args.keyring_service else None
+    MERGE_ACTION = args.merge_action if args.merge_action else "skip"
     if KEYRING_SERVICE:
         ENV_FILE = None
 
