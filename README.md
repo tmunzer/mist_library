@@ -212,8 +212,8 @@ Below is a full index of scripts included in this repository. Each entry contain
 - [scripts/sites/update_sitegroups.py](scripts/sites/update_sitegroups.py) — Update the sitegroups assigned to sites from a CSV (append or replace).
 - [scripts/sites/update_sites_templates.py](scripts/sites/update_sites_templates.py) — Update templates assigned to sites and auto-assignment rules from a CSV.
 - [scripts/sites/fix_sites_geocoding.py](scripts/sites/fix_sites_geocoding.py) — Ensure sites have geo info (lat/lng, country_code, timezone) and fix missing data.
-- [scripts/sites/not_migrated_to_mistapi/site_conf_restore.py](scripts/sites/not_migrated_to_mistapi/site_conf_restore.py) — Legacy/site-specific restore helper (not migrated to mistapi).
-
+- [scripts/sites/not_migrated_to_mistapi/site_conf_restore.py](scripts/sites/site_conf_restore.py) — Python script to restore site template/backup file. You can use the script "site_conf_backup.py" to generate the backup file from an existing organization.
+- [scripts/sites/update_sites_vars.py](scripts/sites/update_sites_vars.py) — Update site variables from a CSV (supports site name or ID, dry-run, and auto-retrieving site IDs if needed).
 
 ### Exports & Reports
 
