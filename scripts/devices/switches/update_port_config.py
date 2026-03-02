@@ -40,9 +40,9 @@ CSV Example:
 Example:
 #switch_mac,port,port_profile,description
 2c:21:31:xx:xx:xx,ge-1/0/1,srv,"this is a test"
-2c:21:31:xx:xx:xx,ge-2/0/1,sta,"this is a test"
-2c:21:31:yy:yy:yy,ge-3/0/1,sta,"this is a test"
-2c:21:31:zz:zz:zz,ge-1/0/1,sta,"this is a test"
+2c:21:31:xx:xx:xx,ge-2/0/1-5,sta,"this is a test"
+2c:21:31:yy:yy:yy,"ge-0/0/1,ge-3/0/1",sta,"this is a test"
+2c:21:31:zz:zz:zz,"ge-1/0/1-4,ge-2/0/1-2",sta,"this is a test"
 
 ------
 CSV Parameters
@@ -1057,9 +1057,9 @@ CSV Example:
 Example:
 #switch_mac,port,port_profile,description
 2c:21:31:xx:xx:xx,ge-1/0/1,srv,"this is a test"
-2c:21:31:xx:xx:xx,ge-2/0/1,sta,"this is a test"
-2c:21:31:yy:yy:yy,ge-3/0/1,sta,"this is a test"
-2c:21:31:zz:zz:zz,ge-1/0/1,sta,"this is a test"
+2c:21:31:xx:xx:xx,ge-2/0/1-5,sta,"this is a test"
+2c:21:31:yy:yy:yy,"ge-0/0/1,ge-3/0/1",sta,"this is a test"
+2c:21:31:zz:zz:zz,"ge-1/0/1-4,ge-2/0/1-2",sta,"this is a test"
 
 ------
 CSV Parameters
