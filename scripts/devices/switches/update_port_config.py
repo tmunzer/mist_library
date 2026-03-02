@@ -930,7 +930,7 @@ def _read_csv(csv_file: str) -> list:
                                 )
                                 sys.exit(0)
                         else:
-                            entry[field] = column.lower().strip()
+                            entry[field] = column.strip()
                         i += 1
                     entries.append(entry)
                     LOGGER.debug(
