@@ -204,7 +204,7 @@ pb = ProgressBar()
 #####################################################################
 # Auto Assignment Rules
 #####################################################################
-def _get_current_org_config(apisession:mistapi.APISession, org_id:str):
+def _get_current_org_config(apisession:mistapi.APISession, org_id:str) -> dict:
     message = "Retrieving current Org Rules"
     pb.log_message(message, display_pbar=False)
     try:
@@ -215,9 +215,11 @@ def _get_current_org_config(apisession:mistapi.APISession, org_id:str):
             return auto_site_assignment
         else:
             pb.log_failure(message, inc=True)
-    except:
+            return {}
+    except Exception:
         pb.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
+        return {}
 
 def _set_new_org_config(apisession:mistapi.APISession, org_id:str, auto_site_assignment:dict):
     message = "Updating Org Rules"
@@ -531,7 +533,7 @@ def _select_dest_org(apisession: mistapi.APISession):
             return _create_org(apisession)
 
 
-def start(apisession: mistapi.APISession, file_path: str, org_id: str = None, org_name: str = None):
+def start(apisession: mistapi.APISession, file_path: str, org_id: str = "", org_name: str = ""):
     if org_id and org_name:
         if not _check_org_name_in_script_param(apisession, org_id, org_name):
             console.critical(
@@ -565,7 +567,7 @@ def start(apisession: mistapi.APISession, file_path: str, org_id: str = None, or
 
 ###############################################################################
 # USAGE
-def usage(error:str=None):
+def usage(error:str|None=None):
     """
     display script usage
     """
@@ -712,11 +714,11 @@ if __name__ == "__main__":
         opts, args = getopt.getopt(sys.argv[1:], "ho:n:g:f:e:l:", [
                                    "help", "org_id=", "org_name=", "google_api_key=", "file=", "env=", "log_file="])
     except getopt.GetoptError as err:
-        usage(err)
+        usage(err.msg)
 
     CSV_FILE = None
-    ORG_ID = None
-    ORG_NAME = None
+    ORG_ID = ""
+    ORG_NAME = ""
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
