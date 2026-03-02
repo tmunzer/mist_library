@@ -503,7 +503,7 @@ def _process_port_range(mist_port_config_dict: dict, csv_port: str, csv_port_con
     config_updated = False
     # create a copy of the mist port_config
     copy_port_config_dict = mist_port_config_dict.copy()
-    csv_phy, csv_fpc, csv_pic, csv_num, _ = _decompose_interface(csv_port)
+    csv_phy, csv_fpc, csv_pic, csv_num_min, csv_num_max = _decompose_interface(csv_port)
     # for each interface/range in the port_config
     for mist_range in mist_port_config_dict:
         LOGGER.debug(
@@ -515,50 +515,51 @@ def _process_port_range(mist_port_config_dict: dict, csv_port: str, csv_port_con
             # get the decomposed interface/interface range values (fpc, pic, nums)
             mist_phy, mist_fpc, mist_pic, mist_num_min, mist_num_max = _decompose_interface(
                 mist_port)
-            # check if the new interface (csv_port) is part if the interface range
+            # check if the new interface (csv_port) is part of the interface range
+            # (any overlap between the CSV port range and the Mist port range)
             if (
                 mist_phy == csv_phy
                 and mist_fpc == csv_fpc
                 and mist_pic == csv_pic
-                and mist_num_min <= csv_num
-                and mist_num_max >= csv_num
+                and mist_num_min <= csv_num_max
+                and mist_num_max >= csv_num_min
             ):
                 LOGGER.info(
                     "_process_port_range:'%s' is part of '%s'", csv_port, mist_port)
                 # CASE 1
-                # if it is a single interface (mist configuration)
+                # if the CSV range fully covers the Mist range
                 # remove the current configuration (must be replaced by the new one)
-                if mist_num_min == csv_num and mist_num_max == csv_num:
+                if int(csv_num_min) <= int(mist_num_min) and int(csv_num_max) >= int(mist_num_max):
                     new_port = None
                 # CASE 2
-                # if the new interface is the low end of the interface range (mist configuration)
-                # remove the low end interface of the range
-                elif mist_num_min == csv_num:
+                # if the CSV range covers the low end of the Mist range
+                # keep only the high end (ports after csv_num_max)
+                elif int(csv_num_min) <= int(mist_num_min) and int(csv_num_max) < int(mist_num_max):
                     new_port = [
                         _define_new_port_range(
                             mist_phy,
                             mist_fpc,
                             mist_pic,
-                            int(mist_num_min)+1,
+                            int(csv_num_max)+1,
                             int(mist_num_max)
                         )
                     ]
                 # CASE 3
-                # if the new interface is the high end of the interface range (mist configuration)
-                # remove the high end interface of the range
-                elif mist_num_max == csv_num:
+                # if the CSV range covers the high end of the Mist range
+                # keep only the low end (ports before csv_num_min)
+                elif int(csv_num_max) >= int(mist_num_max) and int(csv_num_min) > int(mist_num_min):
                     new_port = [
                         _define_new_port_range(
                             mist_phy,
                             mist_fpc,
                             mist_pic,
                             int(mist_num_min),
-                            int(mist_num_max)-1
+                            int(csv_num_min)-1
                         )
                     ]
                 # CASE 4
-                # else, means if the new interface is "inside" the interface range (mist configuration)
-                # split the interface range in two parts, removing the new interface
+                # else, the CSV range is "inside" the Mist range
+                # split the interface range in two parts, removing the CSV range
                 else:
                     new_port = [
                         _define_new_port_range(
@@ -566,13 +567,13 @@ def _process_port_range(mist_port_config_dict: dict, csv_port: str, csv_port_con
                             mist_fpc,
                             mist_pic,
                             int(mist_num_min),
-                            int(csv_num)-1
+                            int(csv_num_min)-1
                         ),
                         _define_new_port_range(
                             mist_phy,
                             mist_fpc,
                             mist_pic,
-                            int(csv_num)+1,
+                            int(csv_num_max)+1,
                             int(mist_num_max)
                         )
                     ]
