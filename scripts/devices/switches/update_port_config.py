@@ -1164,8 +1164,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    if args.help:
-        usage()
 
     ORG_ID = args.org_id
     CSV_FILE = args.file if args.file else "./update_port_config.csv"
