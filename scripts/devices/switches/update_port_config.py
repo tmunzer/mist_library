@@ -338,6 +338,7 @@ def _checking_port_profiles(
 ) -> dict:
     site_port_profiles = _extract_port_profiles(apisession, org_id, site_ids)
     switches_to_process = {}
+    default_profiles = ["ap", "disabled", "iot", "uplink", "default"]
     for switch_mac in csv_switches:
         message = f"Checking port profiles for switch {switch_mac}"
         PB.log_message(message)
@@ -347,7 +348,14 @@ def _checking_port_profiles(
         mist_template_port_profiles = site_port_profiles[mist_switch_site_id]
         missing_port_profile = []
         for port_profile in csv_switch_data["port_profiles"]:
-            if port_profile in mist_template_port_profiles or port_profile in mist_device_port_profiles:
+            if port_profile in default_profiles:
+                LOGGER.debug(
+                    "_checking_port_profiles:switch '%s': port profile "
+                    "'%s' is a default profile, no need to check it in the site or template settings",
+                    switch_mac,
+                    port_profile
+                )
+            elif port_profile in mist_template_port_profiles or port_profile in mist_device_port_profiles:
                 LOGGER.debug(
                     "_checking_port_profiles:switch '%s': port profile "
                     "'%s' found in the site or template settings",
