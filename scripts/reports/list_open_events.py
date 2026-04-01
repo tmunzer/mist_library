@@ -16,43 +16,82 @@ NOTE 1:
 This script is working with the following event types (use the "Event Options"
 with the "-t"/"--event_types=" CLI parameter to configure the script):
 
-| Script Event Options       | Mist Triggering Events                                               | Mist Clearing Events                                          |
-|----------------------------|----------------------------------------------------------------------|---------------------------------------------------------------|
-| AP_CONFIG                  | AP_CONFIG_FAILED                                                     | AP_CONFIGURED,AP_RECONFIGURED                                 |
-| AP_DISCONNECTED            | AP_DISCONNECTED                                                      | AP_CONNECTED                                                  |
-| AP_RADSEC                  | AP_RADSEC_FAILURE                                                    | AP_RADSEC_RECOVERY                                            |
-| AP_UPGRADE                 | AP_UPGRADE_FAILED                                                    | AP_UPGRADED                                                   |
-| GW_APPID_INSTALL           | GW_APPID_INSTALL_FAILED                                              | GW_APPID_INSTALLED                                            |
-| GW_ARP                     | GW_ARP_UNRESOLVED                                                    | GW_ARP_RESOLVED                                               |
-| GW_BGP_NEIGHBOR            | GW_BGP_NEIGHBOR_DOWN                                                 | GW_BGP_NEIGHBOR_UP                                            |
-| GW_CONFIG                  | GW_CONFIG_FAILED,GW_CONFIG_LOCK_FAILED,GW_CONFIG_ERROR_ADDTL_COMMAND | GW_CONFIGURED,GW_RECONFIGURED                                 |
-| GW_DISCONNECTED            | GW_DISCONNECTED                                                      | GW_CONNECTED                                                  |
-| GW_FIB_COUNT               | GW_FIB_COUNT_THRESHOLD_EXCEEDED                                      | GW_FIB_COUNT_RETURNED_TO_NORMAL                               |
-| GW_FLOW_COUNT              | GW_FLOW_COUNT_THRESHOLD_EXCEEDED                                     | GW_FLOW_COUNT_RETURNED_TO_NORMAL                              |
-| GW_HA_CONTROL_LINK         | GW_HA_CONTROL_LINK_DOWN                                              | GW_HA_CONTROL_LINK_UP                                         |
-| GW_HA_HEALTH_WEIGHT        | GW_HA_HEALTH_WEIGHT_LOW                                              | GW_HA_HEALTH_WEIGHT_RECOVERY                                  |
-| GW_IDP_INSTALL             | GW_IDP_INSTALL_FAILED                                                | GW_IDP_INSTALL                                                |
-| GW_RECOVERY_SNAPSHOT       | GW_RECOVERY_SNAPSHOT_FAILED                                          | GW_RECOVERY_SNAPSHOT_SUCCEEDED,GW_RECOVERY_SNAPSHOT_NOTNEEDED |
-| GW_TUNNEL                  | GW_TUNNEL_DOWN                                                       | GW_TUNNEL_UP                                                  |
-| GW_UPGRADE                 | GW_UPGRADE_FAILED                                                    | GW_UPGRADED                                                   |
-| GW_VPN_PATH                | GW_VPN_PATH_DOWN                                                     | GW_VPN_PATH_UP                                                |
-| GW_VPN_PEER                | GW_VPN_PEER_DOWN                                                     | GW_VPN_PEER_UP                                                |
-| GW_ZTP                     | GW_ZTP_FAILED                                                        | GW_ZTP_FINISHED                                               |
-| SW_BFD_SESSION             | SW_BFD_SESSION_DISCONNECTED                                          | SW_BFD_SESSION_ESTABLISHED                                    |
-| SW_BGP_NEIGHBOR            | SW_BGP_NEIGHBOR_DOWN                                                 | SW_BGP_NEIGHBOR_UP                                            |
-| SW_CONFIG                  | SW_CONFIG_FAILED,SW_CONFIG_LOCK_FAILED,SW_CONFIG_ERROR_ADDTL_COMMAND | SW_CONFIGURED,SW_RECONFIGURED                                 |
-| SW_DDOS_PROTOCOL_VIOLATION | SW_DDOS_PROTOCOL_VIOLATION_SET                                       | SW_DDOS_PROTOCOL_VIOLATION_CLEAR                              |
-| SW_DISCONNECTED            | SW_DISCONNECTED                                                      | SW_CONNECTED                                                  |
-| SW_EVPN_CORE_ISOLATION     | SW_EVPN_CORE_ISOLATED                                                | SW_EVPN_CORE_ISOLATION_CLEARED                                |
-| SW_FPC_POWER               | SW_FPC_POWER_OFF                                                     | SW_FPC_POWER_ON                                               |
-| SW_MAC_LEARNING            | SW_MAC_LEARNING_STOPPED                                              | SW_MAC_LEARNING_RESUMED                                       |
-| SW_MAC_LIMIT               | SW_MAC_LIMIT_EXCEEDED                                                | SW_MAC_LIMIT_RESET                                            |
-| SW_OSPF_NEIGHBOR           | SW_OSPF_NEIGHBOR_DOWN                                                | SW_OSPF_NEIGHBOR_UP                                           |
-| SW_PORT_BPDU               | SW_PORT_BPDU_BLOCKED                                                 | SW_PORT_BPDU_ERROR_CLEARED                                    |
-| SW_RECOVERY_SNAPSHOT       | SW_RECOVERY_SNAPSHOT_FAILED                                          | SW_RECOVERY_SNAPSHOT_SUCCEEDED,SW_RECOVERY_SNAPSHOT_NOTNEEDED |
-| SW_UPGRADE                 | SW_UPGRADE_FAILED                                                    | SW_UPGRADED                                                   |
-| SW_VC_PORT                 | SW_VC_PORT_DOWN                                                      | SW_VC_PORT_UP                                                 |
-| SW_ZTP                     | SW_ZTP_FAILED                                                        | SW_ZTP_FINISHED                                               |
+| Script Event Options          | Mist Triggering Events                                                            | Mist Clearing Events                                          |
+|-------------------------------|-----------------------------------------------------------------------------------|---------------------------------------------------------------|
+| AP_CONFIG                     | AP_CONFIG_FAILED                                                                  | AP_CONFIGURED,AP_RECONFIGURED                                 |
+| AP_DISCONNECTED               | AP_DISCONNECTED                                                                   | AP_CONNECTED                                                  |
+| AP_PORT                       | AP_PORT_DOWN                                                                      | AP_PORT_UP                                                    |
+| AP_RADSEC                     | AP_RADSEC_FAILURE                                                                 | AP_RADSEC_RECOVERY                                            |
+| AP_UPGRADE                    | AP_UPGRADE_FAILED                                                                 | AP_UPGRADED                                                   |
+| ESL_HUNG                      | ESL_HUNG                                                                          | ESL_RECOVERED                                                 |
+| GW_ALARM_CHASSIS_FAN          | GW_ALARM_CHASSIS_FAN                                                              | GW_ALARM_CHASSIS_FAN_CLEAR                                    |
+| GW_ALARM_CHASSIS_HOT          | GW_ALARM_CHASSIS_HOT                                                              | GW_ALARM_CHASSIS_HOT_CLEAR                                    |
+| GW_ALARM_CHASSIS_HUMIDITY     | GW_ALARM_CHASSIS_HUMIDITY                                                         | GW_ALARM_CHASSIS_HUMIDITY_CLEAR                               |
+| GW_ALARM_CHASSIS_MGMT_LINK    | GW_ALARM_CHASSIS_MGMT_LINK_DOWN                                                   | GW_ALARM_CHASSIS_MGMT_LINK_DOWN_CLEAR                         |
+| GW_ALARM_CHASSIS_PARTITION    | GW_ALARM_CHASSIS_PARTITION                                                        | GW_ALARM_CHASSIS_PARTITION_CLEAR                              |
+| GW_ALARM_CHASSIS_PEM          | GW_ALARM_CHASSIS_PEM                                                              | GW_ALARM_CHASSIS_PEM_CLEAR                                    |
+| GW_ALARM_CHASSIS_POE          | GW_ALARM_CHASSIS_POE                                                              | GW_ALARM_CHASSIS_POE_CLEAR                                    |
+| GW_ALARM_CHASSIS_PSU          | GW_ALARM_CHASSIS_PSU                                                              | GW_ALARM_CHASSIS_PSU_CLEAR                                    |
+| GW_ALARM_CHASSIS_WARM         | GW_ALARM_CHASSIS_WARM                                                             | GW_ALARM_CHASSIS_WARM_CLEAR                                   |
+| GW_APPID_INSTALL              | GW_APPID_INSTALL_FAILED                                                           | GW_APPID_INSTALLED                                            |
+| GW_ARP                        | GW_ARP_UNRESOLVED                                                                 | GW_ARP_RESOLVED                                               |
+| GW_BGP_NEIGHBOR               | GW_BGP_NEIGHBOR_DOWN                                                              | GW_BGP_NEIGHBOR_UP                                            |
+| GW_CONDUCTOR                  | GW_CONDUCTOR_DISCONNECTED                                                         | GW_CONDUCTOR_CONNECTED                                        |
+| GW_CONFIG                     | GW_CONFIG_FAILED,GW_CONFIG_LOCK_FAILED,GW_CONFIG_ERROR_ADDTL_COMMAND              | GW_CONFIGURED,GW_RECONFIGURED                                 |
+| GW_DHCP                       | GW_DHCP_UNRESOLVED                                                                | GW_DHCP_RESOLVED                                              |
+| GW_DISCONNECTED               | GW_DISCONNECTED                                                                   | GW_CONNECTED                                                  |
+| GW_FIB_COUNT                  | GW_FIB_COUNT_THRESHOLD_EXCEEDED                                                   | GW_FIB_COUNT_RETURNED_TO_NORMAL                               |
+| GW_FLOW_COUNT                 | GW_FLOW_COUNT_THRESHOLD_EXCEEDED                                                  | GW_FLOW_COUNT_RETURNED_TO_NORMAL                              |
+| GW_HA_CONTROL_LINK            | GW_HA_CONTROL_LINK_DOWN                                                           | GW_HA_CONTROL_LINK_UP                                         |
+| GW_HA_HEALTH_WEIGHT           | GW_HA_HEALTH_WEIGHT_LOW                                                           | GW_HA_HEALTH_WEIGHT_RECOVERY                                  |
+| GW_IDP_INSTALL                | GW_IDP_INSTALL_FAILED                                                             | GW_IDP_INSTALLED                                              |
+| GW_OSPF_NEIGHBOR              | GW_OSPF_NEIGHBOR_DOWN                                                             | GW_OSPF_NEIGHBOR_UP                                           |
+| GW_PORT                       | GW_PORT_DOWN                                                                      | GW_PORT_UP                                                    |
+| GW_RECOVERY_SNAPSHOT          | GW_RECOVERY_SNAPSHOT_FAILED                                                       | GW_RECOVERY_SNAPSHOT_SUCCEEDED,GW_RECOVERY_SNAPSHOT_NOTNEEDED |
+| GW_TUNNEL                     | GW_TUNNEL_DOWN                                                                    | GW_TUNNEL_UP                                                  |
+| GW_UPGRADE                    | GW_UPGRADE_FAILED                                                                 | GW_UPGRADED                                                   |
+| GW_VPN_PATH                   | GW_VPN_PATH_DOWN                                                                  | GW_VPN_PATH_UP                                                |
+| GW_VPN_PEER                   | GW_VPN_PEER_DOWN                                                                  | GW_VPN_PEER_UP                                                |
+| GW_ZTP                        | GW_ZTP_FAILED                                                                     | GW_ZTP_FINISHED                                               |
+| ME_DISCONNECTED               | ME_DISCONNECTED                                                                   | ME_CONNECTED                                                  |
+| ME_FAN                        | ME_FAN_UNPLUGGED                                                                  | ME_FAN_PLUGGED                                                |
+| ME_POWERINPUT                 | ME_POWERINPUT_DISCONNECTED                                                        | ME_POWERINPUT_CONNECTED                                       |
+| ME_PSU                        | ME_PSU_UNPLUGGED                                                                  | ME_PSU_PLUGGED                                                |
+| ME_SERVICE                    | ME_SERVICE_CRASHED,ME_SERVICE_FAILED                                              | ME_SERVICE_STARTED                                            |
+| SW_ALARM_CHASSIS_FAN          | SW_ALARM_CHASSIS_FAN                                                              | SW_ALARM_CHASSIS_FAN_CLEAR                                    |
+| SW_ALARM_CHASSIS_HOT          | SW_ALARM_CHASSIS_HOT                                                              | SW_ALARM_CHASSIS_HOT_CLEAR                                    |
+| SW_ALARM_CHASSIS_HUMIDITY     | SW_ALARM_CHASSIS_HUMIDITY                                                         | SW_ALARM_CHASSIS_HUMIDITY_CLEAR                               |
+| SW_ALARM_CHASSIS_MGMT_LINK    | SW_ALARM_CHASSIS_MGMT_LINK_DOWN                                                   | SW_ALARM_CHASSIS_MGMT_LINK_DOWN_CLEAR                         |
+| SW_ALARM_CHASSIS_PARTITION    | SW_ALARM_CHASSIS_PARTITION                                                        | SW_ALARM_CHASSIS_PARTITION_CLEAR                              |
+| SW_ALARM_CHASSIS_PEM          | SW_ALARM_CHASSIS_PEM                                                              | SW_ALARM_CHASSIS_PEM_CLEAR                                    |
+| SW_ALARM_CHASSIS_POE          | SW_ALARM_CHASSIS_POE                                                              | SW_ALARM_CHASSIS_POE_CLEAR                                    |
+| SW_ALARM_CHASSIS_PSU          | SW_ALARM_CHASSIS_PSU                                                              | SW_ALARM_CHASSIS_PSU_CLEAR                                    |
+| SW_ALARM_IOT                  | SW_ALARM_IOT_SET                                                                  | SW_ALARM_IOT_CLEAR                                            |
+| SW_ALARM_VC_VERSION_MISMATCH  | SW_ALARM_VIRTUAL_CHASSIS_VERSION_MISMATCH                                         | SW_ALARM_VIRTUAL_CHASSIS_VERSION_MISMATCH_CLEAR               |
+| SW_BFD_SESSION                | SW_BFD_SESSION_DISCONNECTED                                                       | SW_BFD_SESSION_ESTABLISHED                                    |
+| SW_BGP_NEIGHBOR               | SW_BGP_NEIGHBOR_DOWN                                                              | SW_BGP_NEIGHBOR_UP                                            |
+| SW_CONFIG                     | SW_CONFIG_FAILED,SW_CONFIG_LOCK_FAILED,SW_CONFIG_ERROR_ADDTL_COMMAND              | SW_CONFIGURED,SW_RECONFIGURED                                 |
+| SW_DDOS_PROTOCOL_VIOLATION    | SW_DDOS_PROTOCOL_VIOLATION_SET                                                    | SW_DDOS_PROTOCOL_VIOLATION_CLEAR                              |
+| SW_DISCONNECTED               | SW_DISCONNECTED                                                                   | SW_CONNECTED                                                  |
+| SW_EVPN_CORE_ISOLATION        | SW_EVPN_CORE_ISOLATED                                                             | SW_EVPN_CORE_ISOLATION_CLEARED                                |
+| SW_FPC_POWER                  | SW_FPC_POWER_OFF                                                                  | SW_FPC_POWER_ON                                               |
+| SW_LACPD_TIMEOUT              | SW_LACPD_TIMEOUT                                                                  | SW_LACPD_TIMEOUT_CLEARED                                      |
+| SW_LOOP                       | SW_LOOP_DETECTED                                                                  | SW_LOOP_CLEARED                                               |
+| SW_MAC_LEARNING               | SW_MAC_LEARNING_STOPPED                                                           | SW_MAC_LEARNING_RESUMED                                       |
+| SW_MAC_LIMIT                  | SW_MAC_LIMIT_EXCEEDED                                                             | SW_MAC_LIMIT_RESET                                            |
+| SW_OSPF_NEIGHBOR              | SW_OSPF_NEIGHBOR_DOWN                                                             | SW_OSPF_NEIGHBOR_UP                                           |
+| SW_PORT                       | SW_PORT_DOWN                                                                      | SW_PORT_UP                                                    |
+| SW_PORT_BPDU                  | SW_PORT_BPDU_BLOCKED                                                              | SW_PORT_BPDU_ERROR_CLEARED                                    |
+| SW_RECOVERY_SNAPSHOT          | SW_RECOVERY_SNAPSHOT_FAILED                                                       | SW_RECOVERY_SNAPSHOT_SUCCEEDED,SW_RECOVERY_SNAPSHOT_NOTNEEDED |
+| SW_UPGRADE                    | SW_UPGRADE_FAILED                                                                 | SW_UPGRADED                                                   |
+| SW_VC_PORT                    | SW_VC_PORT_DOWN                                                                   | SW_VC_PORT_UP                                                 |
+| SW_VC_TRANSITION              | SW_VC_IN_TRANSITION                                                               | SW_VC_STABLE                                                  |
+| SW_ZTP                        | SW_ZTP_FAILED                                                                     | SW_ZTP_FINISHED                                               |
+| TT_MONITORED_RESOURCE         | TT_MONITORED_RESOURCE_FAILED                                                      | TT_MONITORED_RESOURCE_RECOVERED                               |
+| TT_PORT_BLOCKED               | TT_PORT_BLOCKED                                                                   | TT_PORT_RECOVERY                                              |
+| TT_PORT_LACP                  | TT_PORT_DROPPED_FROM_LACP,TT_PORT_LAST_DROPPED_FROM_LACP                          | TT_PORT_JOINED_LACP,TT_PORT_FIRST_JOIN_LACP                   |
+| TT_PORT_LINK                  | TT_PORT_LINK_DOWN                                                                 | TT_PORT_LINK_RECOVERY                                         |
+| TT_TUNNELS                    | TT_TUNNELS_LOST                                                                   | TT_TUNNELS_UP                                                 |
 
 
 NOTE 2:
@@ -166,19 +205,44 @@ LOGGER = logging.getLogger(__name__)
 #####################################################################
 #### CONSTANTS ####
 EVENT_TYPES_DEFINITIONS = {
+    # AP Events
     "AP_CONFIG": ["AP_CONFIG_FAILED", "AP_CONFIGURED", "AP_RECONFIGURED"],
     "AP_DISCONNECTED": ["AP_DISCONNECTED", "AP_CONNECTED"],
+    "AP_PORT": ["AP_PORT_DOWN", "AP_PORT_UP"],
     "AP_RADSEC": ["AP_RADSEC_FAILURE", "AP_RADSEC_RECOVERY"],
     "AP_UPGRADE": ["AP_UPGRADE_FAILED", "AP_UPGRADED"],
+    # ESL Events
+    "ESL_HUNG": ["ESL_HUNG", "ESL_RECOVERED"],
+    # GW Events
+    "GW_ALARM_CHASSIS_FAN": ["GW_ALARM_CHASSIS_FAN", "GW_ALARM_CHASSIS_FAN_CLEAR"],
+    "GW_ALARM_CHASSIS_HOT": ["GW_ALARM_CHASSIS_HOT", "GW_ALARM_CHASSIS_HOT_CLEAR"],
+    "GW_ALARM_CHASSIS_HUMIDITY": [
+        "GW_ALARM_CHASSIS_HUMIDITY",
+        "GW_ALARM_CHASSIS_HUMIDITY_CLEAR",
+    ],
+    "GW_ALARM_CHASSIS_MGMT_LINK": [
+        "GW_ALARM_CHASSIS_MGMT_LINK_DOWN",
+        "GW_ALARM_CHASSIS_MGMT_LINK_DOWN_CLEAR",
+    ],
+    "GW_ALARM_CHASSIS_PARTITION": [
+        "GW_ALARM_CHASSIS_PARTITION",
+        "GW_ALARM_CHASSIS_PARTITION_CLEAR",
+    ],
+    "GW_ALARM_CHASSIS_PEM": ["GW_ALARM_CHASSIS_PEM", "GW_ALARM_CHASSIS_PEM_CLEAR"],
+    "GW_ALARM_CHASSIS_POE": ["GW_ALARM_CHASSIS_POE", "GW_ALARM_CHASSIS_POE_CLEAR"],
+    "GW_ALARM_CHASSIS_PSU": ["GW_ALARM_CHASSIS_PSU", "GW_ALARM_CHASSIS_PSU_CLEAR"],
+    "GW_ALARM_CHASSIS_WARM": ["GW_ALARM_CHASSIS_WARM", "GW_ALARM_CHASSIS_WARM_CLEAR"],
     "GW_APPID_INSTALL": ["GW_APPID_INSTALL_FAILED", "GW_APPID_INSTALLED"],
     "GW_ARP": ["GW_ARP_UNRESOLVED", "GW_ARP_RESOLVED"],
     "GW_BGP_NEIGHBOR": ["GW_BGP_NEIGHBOR_DOWN", "GW_BGP_NEIGHBOR_UP"],
+    "GW_CONDUCTOR": ["GW_CONDUCTOR_DISCONNECTED", "GW_CONDUCTOR_CONNECTED"],
     "GW_CONFIG": [
         "GW_CONFIG_FAILED",
         "GW_CONFIG_LOCK_FAILED",
         "GW_CONFIG_ERROR_ADDTL_COMMAND",
         "GW_CONFIGURED",
     ],
+    "GW_DHCP": ["GW_DHCP_UNRESOLVED", "GW_DHCP_RESOLVED"],
     "GW_DISCONNECTED": ["GW_DISCONNECTED", "GW_CONNECTED"],
     "GW_FIB_COUNT": [
         "GW_FIB_COUNT_THRESHOLD_EXCEEDED",
@@ -191,6 +255,8 @@ EVENT_TYPES_DEFINITIONS = {
     "GW_HA_CONTROL_LINK": ["GW_HA_CONTROL_LINK_DOWN", "GW_HA_CONTROL_LINK_UP"],
     "GW_HA_HEALTH_WEIGHT": ["GW_HA_HEALTH_WEIGHT_LOW", "GW_HA_HEALTH_WEIGHT_RECOVERY"],
     "GW_IDP_INSTALL": ["GW_IDP_INSTALL_FAILED", "GW_IDP_INSTALLED"],
+    "GW_OSPF_NEIGHBOR": ["GW_OSPF_NEIGHBOR_DOWN", "GW_OSPF_NEIGHBOR_UP"],
+    "GW_PORT": ["GW_PORT_DOWN", "GW_PORT_UP"],
     "GW_RECOVERY_SNAPSHOT": [
         "GW_RECOVERY_SNAPSHOT_FAILED",
         "GW_RECOVERY_SNAPSHOT_SUCCEEDED",
@@ -201,6 +267,35 @@ EVENT_TYPES_DEFINITIONS = {
     "GW_VPN_PATH": ["GW_VPN_PATH_DOWN", "GW_VPN_PATH_UP"],
     "GW_VPN_PEER": ["GW_VPN_PEER_DOWN", "GW_VPN_PEER_UP"],
     "GW_ZTP": ["GW_ZTP_FAILED", "GW_ZTP_FINISHED"],
+    # ME Events
+    "ME_DISCONNECTED": ["ME_DISCONNECTED", "ME_CONNECTED"],
+    "ME_FAN": ["ME_FAN_UNPLUGGED", "ME_FAN_PLUGGED"],
+    "ME_POWERINPUT": ["ME_POWERINPUT_DISCONNECTED", "ME_POWERINPUT_CONNECTED"],
+    "ME_PSU": ["ME_PSU_UNPLUGGED", "ME_PSU_PLUGGED"],
+    "ME_SERVICE": ["ME_SERVICE_CRASHED", "ME_SERVICE_FAILED", "ME_SERVICE_STARTED"],
+    # SW Events
+    "SW_ALARM_CHASSIS_FAN": ["SW_ALARM_CHASSIS_FAN", "SW_ALARM_CHASSIS_FAN_CLEAR"],
+    "SW_ALARM_CHASSIS_HOT": ["SW_ALARM_CHASSIS_HOT", "SW_ALARM_CHASSIS_HOT_CLEAR"],
+    "SW_ALARM_CHASSIS_HUMIDITY": [
+        "SW_ALARM_CHASSIS_HUMIDITY",
+        "SW_ALARM_CHASSIS_HUMIDITY_CLEAR",
+    ],
+    "SW_ALARM_CHASSIS_MGMT_LINK": [
+        "SW_ALARM_CHASSIS_MGMT_LINK_DOWN",
+        "SW_ALARM_CHASSIS_MGMT_LINK_DOWN_CLEAR",
+    ],
+    "SW_ALARM_CHASSIS_PARTITION": [
+        "SW_ALARM_CHASSIS_PARTITION",
+        "SW_ALARM_CHASSIS_PARTITION_CLEAR",
+    ],
+    "SW_ALARM_CHASSIS_PEM": ["SW_ALARM_CHASSIS_PEM", "SW_ALARM_CHASSIS_PEM_CLEAR"],
+    "SW_ALARM_CHASSIS_POE": ["SW_ALARM_CHASSIS_POE", "SW_ALARM_CHASSIS_POE_CLEAR"],
+    "SW_ALARM_CHASSIS_PSU": ["SW_ALARM_CHASSIS_PSU", "SW_ALARM_CHASSIS_PSU_CLEAR"],
+    "SW_ALARM_IOT": ["SW_ALARM_IOT_SET", "SW_ALARM_IOT_CLEAR"],
+    "SW_ALARM_VC_VERSION_MISMATCH": [
+        "SW_ALARM_VIRTUAL_CHASSIS_VERSION_MISMATCH",
+        "SW_ALARM_VIRTUAL_CHASSIS_VERSION_MISMATCH_CLEAR",
+    ],
     "SW_BFD_SESSION": ["SW_BFD_SESSION_DISCONNECTED", "SW_BFD_SESSION_ESTABLISHED"],
     "SW_BGP_NEIGHBOR": ["SW_BGP_NEIGHBOR_DOWN", "SW_BGP_NEIGHBOR_UP"],
     "SW_CONFIG": [
@@ -219,9 +314,12 @@ EVENT_TYPES_DEFINITIONS = {
         "SW_EVPN_CORE_ISOLATION_CLEARED",
     ],
     "SW_FPC_POWER": ["SW_FPC_POWER_OFF", "SW_FPC_POWER_ON"],
+    "SW_LACPD_TIMEOUT": ["SW_LACPD_TIMEOUT", "SW_LACPD_TIMEOUT_CLEARED"],
+    "SW_LOOP": ["SW_LOOP_DETECTED", "SW_LOOP_CLEARED"],
     "SW_MAC_LEARNING": ["SW_MAC_LEARNING_STOPPED", "SW_MAC_LEARNING_RESUMED"],
     "SW_MAC_LIMIT": ["SW_MAC_LIMIT_EXCEEDED", "SW_MAC_LIMIT_RESET"],
     "SW_OSPF_NEIGHBOR": ["SW_OSPF_NEIGHBOR_DOWN", "SW_OSPF_NEIGHBOR_UP"],
+    "SW_PORT": ["SW_PORT_DOWN", "SW_PORT_UP"],
     "SW_PORT_BPDU": ["SW_PORT_BPDU_ERROR_CLEARED", "SW_PORT_BPDU_BLOCKED"],
     "SW_RECOVERY_SNAPSHOT": [
         "SW_RECOVERY_SNAPSHOT_FAILED",
@@ -230,7 +328,22 @@ EVENT_TYPES_DEFINITIONS = {
     ],
     "SW_UPGRADE": ["SW_UPGRADE_FAILED", "SW_UPGRADED"],
     "SW_VC_PORT": ["SW_VC_PORT_DOWN", "SW_VC_PORT_UP"],
+    "SW_VC_TRANSITION": ["SW_VC_IN_TRANSITION", "SW_VC_STABLE"],
     "SW_ZTP": ["SW_ZTP_FAILED", "SW_ZTP_FINISHED"],
+    # TT Events
+    "TT_MONITORED_RESOURCE": [
+        "TT_MONITORED_RESOURCE_FAILED",
+        "TT_MONITORED_RESOURCE_RECOVERED",
+    ],
+    "TT_PORT_BLOCKED": ["TT_PORT_BLOCKED", "TT_PORT_RECOVERY"],
+    "TT_PORT_LACP": [
+        "TT_PORT_DROPPED_FROM_LACP",
+        "TT_PORT_LAST_DROPPED_FROM_LACP",
+        "TT_PORT_JOINED_LACP",
+        "TT_PORT_FIRST_JOIN_LACP",
+    ],
+    "TT_PORT_LINK": ["TT_PORT_LINK_DOWN", "TT_PORT_LINK_RECOVERY"],
+    "TT_TUNNELS": ["TT_TUNNELS_LOST", "TT_TUNNELS_UP"],
 }
 
 
@@ -633,6 +746,128 @@ def _process_gw_vpn_peer(devices: dict, event_type: str, event: dict):
 
 
 ###################################################################################################
+################################# GW_OSPF_NEIGHBOR_DOWN
+def _process_gw_ospf_neighbor(devices: dict, event_type: str, event: dict):
+    LOGGER.debug("_process_gw_ospf_neighbor: %s", event)
+    event_text = event.get("text", "")
+    event_timestamp = event.get("timestamp", 0)
+    event_neighbor = None
+    if not event_neighbor:
+        try:
+            event_neighbor = event_text.split("neighbor")[1].strip().split(" ")[0]
+        except Exception:
+            LOGGER.error(
+                "_process_gw_ospf_neighbor: Unable to extract peer from %s", event_text
+            )
+            return
+    _check_device(devices, event)
+    device_entry = _check_device_events(
+        devices,
+        event.get("device_type", ""),
+        event.get("mac", ""),
+        "GW_OSPF_NEIGHBOR_DOWN",
+        "Neighbor",
+        event_neighbor,
+    )
+    if event_type == "GW_OSPF_NEIGHBOR_DOWN":
+        device_entry["status"] = "triggered"
+        device_entry["triggered"] += 1
+    if event_type == "GW_OSPF_NEIGHBOR_UP":
+        device_entry["status"] = "cleared"
+        device_entry["cleared"] += 1
+    device_entry["last_change"] = datetime.fromtimestamp(round(event_timestamp))
+
+
+###################################################################################################
+################################# PORT EVENTS (generic for AP/GW/SW)
+def _process_port_event(
+    devices: dict,
+    event_type: str,
+    event: dict,
+    event_category: str,
+    trigger_events: list,
+    clear_events: list,
+):
+    LOGGER.debug("_process_port_event (category %s): %s", event_category, event)
+    event_timestamp = event.get("timestamp", 0)
+    event_port_id = event.get("port_id")
+    if not event_port_id:
+        event_port_id = "unknown"
+    _check_device(devices, event)
+    device_entry = _check_device_events(
+        devices,
+        event.get("device_type", ""),
+        event.get("mac", ""),
+        event_category,
+        "Port ID",
+        event_port_id,
+    )
+    if event_type in trigger_events:
+        device_entry["status"] = "triggered"
+        device_entry["triggered"] += 1
+    if event_type in clear_events:
+        device_entry["status"] = "cleared"
+        device_entry["cleared"] += 1
+    device_entry["last_change"] = datetime.fromtimestamp(round(event_timestamp))
+
+
+###################################################################################################
+###################################################################################################
+##                                                                                               ##
+##                                       MXEDGE                                                  ##
+##                                                                                               ##
+###################################################################################################
+###################################################################################################
+################################# ME_COMPONENT (FAN/PSU/POWERINPUT)
+def _process_me_component(
+    devices: dict, event_type: str, event: dict, event_category: str
+):
+    LOGGER.debug("_process_me_component (category %s): %s", event_category, event)
+    event_timestamp = event.get("timestamp", 0)
+    event_component = event.get("component", "unknown")
+    _check_device(devices, event)
+    device_entry = _check_device_events(
+        devices,
+        event.get("device_type", ""),
+        event.get("mac", ""),
+        event_category,
+        "Component",
+        event_component,
+    )
+    if "UNPLUGGED" in event_type or "DISCONNECTED" in event_type:
+        device_entry["status"] = "triggered"
+        device_entry["triggered"] += 1
+    if "PLUGGED" in event_type or "CONNECTED" in event_type:
+        device_entry["status"] = "cleared"
+        device_entry["cleared"] += 1
+    device_entry["last_change"] = datetime.fromtimestamp(round(event_timestamp))
+
+
+###################################################################################################
+################################# ME_SERVICE
+def _process_me_service(devices: dict, event_type: str, event: dict):
+    LOGGER.debug("_process_me_service: %s", event)
+    event_timestamp = event.get("timestamp", 0)
+    event_service = event.get("service", "unknown")
+    _check_device(devices, event)
+    device_entry = _check_device_events(
+        devices,
+        event.get("device_type", ""),
+        event.get("mac", ""),
+        "ME_SERVICE_FAILED",
+        "Service",
+        event_service,
+    )
+    if event_type in ["ME_SERVICE_CRASHED", "ME_SERVICE_FAILED"]:
+        device_entry["status"] = "triggered"
+        device_entry["triggered"] += 1
+    if event_type == "ME_SERVICE_STARTED":
+        device_entry["status"] = "cleared"
+        device_entry["cleared"] += 1
+    device_entry["last_change"] = datetime.fromtimestamp(round(event_timestamp))
+
+
+###################################################################################################
 ###################################################################################################
 ##                                                                                               ##
 ##                                       SWITCH                                                  ##
@@ -853,6 +1088,88 @@ def _process_sw_vc_port(devices: dict, event_type: str, event: dict) -> None:
 ###################################################################################################
 ###################################################################################################
 ##                                                                                               ##
+##                                       TUNTERM                                                 ##
+##                                                                                               ##
+###################################################################################################
+###################################################################################################
+################################# TT_MONITORED_RESOURCE
+def _process_tt_monitored_resource(devices: dict, event_type: str, event: dict):
+    LOGGER.debug("_process_tt_monitored_resource: %s", event)
+    event_timestamp = event.get("timestamp", 0)
+    event_resource = event.get("resource", "unknown")
+    _check_device(devices, event)
+    device_entry = _check_device_events(
+        devices,
+        event.get("device_type", ""),
+        event.get("mac", ""),
+        "TT_MONITORED_RESOURCE_FAILED",
+        "Resource",
+        event_resource,
+    )
+    if event_type == "TT_MONITORED_RESOURCE_FAILED":
+        device_entry["status"] = "triggered"
+        device_entry["triggered"] += 1
+    if event_type == "TT_MONITORED_RESOURCE_RECOVERED":
+        device_entry["status"] = "cleared"
+        device_entry["cleared"] += 1
+    device_entry["last_change"] = datetime.fromtimestamp(round(event_timestamp))
+
+
+###################################################################################################
+################################# TT_PORT
+def _process_tt_port(
+    devices: dict, event_type: str, event: dict, event_category: str
+):
+    LOGGER.debug("_process_tt_port (category %s): %s", event_category, event)
+    event_timestamp = event.get("timestamp", 0)
+    event_port = event.get("port", "unknown")
+    _check_device(devices, event)
+    device_entry = _check_device_events(
+        devices,
+        event.get("device_type", ""),
+        event.get("mac", ""),
+        event_category,
+        "Port",
+        event_port,
+    )
+    if event_type in ["TT_PORT_BLOCKED", "TT_PORT_LINK_DOWN"]:
+        device_entry["status"] = "triggered"
+        device_entry["triggered"] += 1
+    if event_type in ["TT_PORT_RECOVERY", "TT_PORT_LINK_RECOVERY"]:
+        device_entry["status"] = "cleared"
+        device_entry["cleared"] += 1
+    device_entry["last_change"] = datetime.fromtimestamp(round(event_timestamp))
+
+
+###################################################################################################
+################################# TT_PORT_LACP
+def _process_tt_port_lacp(devices: dict, event_type: str, event: dict):
+    LOGGER.debug("_process_tt_port_lacp: %s", event)
+    event_timestamp = event.get("timestamp", 0)
+    event_port = event.get("port", "unknown")
+    event_lag = event.get("lag", "")
+    identifier = f"{event_lag}/{event_port}" if event_lag else event_port
+    _check_device(devices, event)
+    device_entry = _check_device_events(
+        devices,
+        event.get("device_type", ""),
+        event.get("mac", ""),
+        "TT_PORT_DROPPED_FROM_LACP",
+        "LAG/Port",
+        identifier,
+    )
+    if event_type in ["TT_PORT_DROPPED_FROM_LACP", "TT_PORT_LAST_DROPPED_FROM_LACP"]:
+        device_entry["status"] = "triggered"
+        device_entry["triggered"] += 1
+    if event_type in ["TT_PORT_JOINED_LACP", "TT_PORT_FIRST_JOIN_LACP"]:
+        device_entry["status"] = "cleared"
+        device_entry["cleared"] += 1
+    device_entry["last_change"] = datetime.fromtimestamp(round(event_timestamp))
+
+
+###################################################################################################
+###################################################################################################
+##                                                                                               ##
 ##                                       RESOLVE                                                  ##
 ##                                                                                               ##
 ###################################################################################################
@@ -993,7 +1310,7 @@ def _check_device(
 def _process_events(events: list) -> dict:
     message = "Processing list of Events"
     PB.log_message(message, display_pbar=False)
-    device_events = {"gateway": {}, "switch": {}, "ap": {}}
+    device_events = {"gateway": {}, "switch": {}, "ap": {}, "mxedge": {}}
     for event in events:
         event_type = event.get("type")
         ####### AP
@@ -1033,7 +1350,107 @@ def _process_events(events: list) -> dict:
                 ["AP_UPGRADE_FAILED"],
                 ["AP_UPGRADED"],
             )
+        elif event_type in ["AP_PORT_DOWN", "AP_PORT_UP"]:
+            _process_port_event(
+                device_events,
+                event_type,
+                event,
+                "AP_PORT_DOWN",
+                ["AP_PORT_DOWN"],
+                ["AP_PORT_UP"],
+            )
+        ####### ESL
+        elif event_type in ["ESL_HUNG", "ESL_RECOVERED"]:
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "ESL_HUNG",
+                ["ESL_HUNG"],
+                ["ESL_RECOVERED"],
+            )
         ####### GW
+        elif event_type.startswith("GW_ALARM_CHASSIS_FAN"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "GW_ALARM_CHASSIS_FAN",
+                ["GW_ALARM_CHASSIS_FAN"],
+                ["GW_ALARM_CHASSIS_FAN_CLEAR"],
+            )
+        elif event_type.startswith("GW_ALARM_CHASSIS_HOT"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "GW_ALARM_CHASSIS_HOT",
+                ["GW_ALARM_CHASSIS_HOT"],
+                ["GW_ALARM_CHASSIS_HOT_CLEAR"],
+            )
+        elif event_type.startswith("GW_ALARM_CHASSIS_HUMIDITY"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "GW_ALARM_CHASSIS_HUMIDITY",
+                ["GW_ALARM_CHASSIS_HUMIDITY"],
+                ["GW_ALARM_CHASSIS_HUMIDITY_CLEAR"],
+            )
+        elif event_type.startswith("GW_ALARM_CHASSIS_MGMT_LINK"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "GW_ALARM_CHASSIS_MGMT_LINK_DOWN",
+                ["GW_ALARM_CHASSIS_MGMT_LINK_DOWN"],
+                ["GW_ALARM_CHASSIS_MGMT_LINK_DOWN_CLEAR"],
+            )
+        elif event_type.startswith("GW_ALARM_CHASSIS_PARTITION"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "GW_ALARM_CHASSIS_PARTITION",
+                ["GW_ALARM_CHASSIS_PARTITION"],
+                ["GW_ALARM_CHASSIS_PARTITION_CLEAR"],
+            )
+        elif event_type.startswith("GW_ALARM_CHASSIS_PEM"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "GW_ALARM_CHASSIS_PEM",
+                ["GW_ALARM_CHASSIS_PEM"],
+                ["GW_ALARM_CHASSIS_PEM_CLEAR"],
+            )
+        elif event_type.startswith("GW_ALARM_CHASSIS_POE"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "GW_ALARM_CHASSIS_POE",
+                ["GW_ALARM_CHASSIS_POE"],
+                ["GW_ALARM_CHASSIS_POE_CLEAR"],
+            )
+        elif event_type.startswith("GW_ALARM_CHASSIS_PSU"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "GW_ALARM_CHASSIS_PSU",
+                ["GW_ALARM_CHASSIS_PSU"],
+                ["GW_ALARM_CHASSIS_PSU_CLEAR"],
+            )
+        elif event_type.startswith("GW_ALARM_CHASSIS_WARM"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "GW_ALARM_CHASSIS_WARM",
+                ["GW_ALARM_CHASSIS_WARM"],
+                ["GW_ALARM_CHASSIS_WARM_CLEAR"],
+            )
         elif event_type.startswith("GW_APPID_INSTALL"):
             _process_common(
                 device_events,
@@ -1062,6 +1479,24 @@ def _process_events(events: list) -> dict:
                     "GW_CONFIG_ERROR_ADDTL_COMMAND",
                 ],
                 ["GW_CONFIGURED", "GW_RECONFIGURED"],
+            )
+        elif event_type in ["GW_CONDUCTOR_DISCONNECTED", "GW_CONDUCTOR_CONNECTED"]:
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "GW_CONDUCTOR_DISCONNECTED",
+                ["GW_CONDUCTOR_DISCONNECTED"],
+                ["GW_CONDUCTOR_CONNECTED"],
+            )
+        elif event_type in ["GW_DHCP_UNRESOLVED", "GW_DHCP_RESOLVED"]:
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "GW_DHCP_UNRESOLVED",
+                ["GW_DHCP_UNRESOLVED"],
+                ["GW_DHCP_RESOLVED"],
             )
         elif event_type in ["GW_DISCONNECTED", "GW_CONNECTED"]:
             _process_common(
@@ -1110,6 +1545,17 @@ def _process_events(events: list) -> dict:
                 ["GW_IDP_INSTALL_FAILED"],
                 ["GW_IDP_INSTALLED"],
             )
+        elif event_type.startswith("GW_OSPF_NEIGHBOR"):
+            _process_gw_ospf_neighbor(device_events, event_type, event)
+        elif event_type in ["GW_PORT_DOWN", "GW_PORT_UP"]:
+            _process_port_event(
+                device_events,
+                event_type,
+                event,
+                "GW_PORT_DOWN",
+                ["GW_PORT_DOWN"],
+                ["GW_PORT_UP"],
+            )
         elif event_type.startswith("GW_RECOVERY_SNAPSHOT"):
             _process_common(
                 device_events,
@@ -1143,7 +1589,115 @@ def _process_events(events: list) -> dict:
                 ["GW_ZTP_FAILED"],
                 ["GW_ZTP_FINISHED"],
             )
+        ####### ME
+        elif event_type in ["ME_DISCONNECTED", "ME_CONNECTED"]:
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "ME_DISCONNECTED",
+                ["ME_DISCONNECTED"],
+                ["ME_CONNECTED"],
+            )
+        elif event_type in ["ME_FAN_UNPLUGGED", "ME_FAN_PLUGGED"]:
+            _process_me_component(device_events, event_type, event, "ME_FAN_UNPLUGGED")
+        elif event_type in ["ME_POWERINPUT_DISCONNECTED", "ME_POWERINPUT_CONNECTED"]:
+            _process_me_component(device_events, event_type, event, "ME_POWERINPUT_DISCONNECTED")
+        elif event_type in ["ME_PSU_UNPLUGGED", "ME_PSU_PLUGGED"]:
+            _process_me_component(device_events, event_type, event, "ME_PSU_UNPLUGGED")
+        elif event_type in ["ME_SERVICE_CRASHED", "ME_SERVICE_FAILED", "ME_SERVICE_STARTED"]:
+            _process_me_service(device_events, event_type, event)
         ####### SW
+        elif event_type.startswith("SW_ALARM_CHASSIS_FAN"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "SW_ALARM_CHASSIS_FAN",
+                ["SW_ALARM_CHASSIS_FAN"],
+                ["SW_ALARM_CHASSIS_FAN_CLEAR"],
+            )
+        elif event_type.startswith("SW_ALARM_CHASSIS_HOT"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "SW_ALARM_CHASSIS_HOT",
+                ["SW_ALARM_CHASSIS_HOT"],
+                ["SW_ALARM_CHASSIS_HOT_CLEAR"],
+            )
+        elif event_type.startswith("SW_ALARM_CHASSIS_HUMIDITY"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "SW_ALARM_CHASSIS_HUMIDITY",
+                ["SW_ALARM_CHASSIS_HUMIDITY"],
+                ["SW_ALARM_CHASSIS_HUMIDITY_CLEAR"],
+            )
+        elif event_type.startswith("SW_ALARM_CHASSIS_MGMT_LINK"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "SW_ALARM_CHASSIS_MGMT_LINK_DOWN",
+                ["SW_ALARM_CHASSIS_MGMT_LINK_DOWN"],
+                ["SW_ALARM_CHASSIS_MGMT_LINK_DOWN_CLEAR"],
+            )
+        elif event_type.startswith("SW_ALARM_CHASSIS_PARTITION"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "SW_ALARM_CHASSIS_PARTITION",
+                ["SW_ALARM_CHASSIS_PARTITION"],
+                ["SW_ALARM_CHASSIS_PARTITION_CLEAR"],
+            )
+        elif event_type.startswith("SW_ALARM_CHASSIS_PEM"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "SW_ALARM_CHASSIS_PEM",
+                ["SW_ALARM_CHASSIS_PEM"],
+                ["SW_ALARM_CHASSIS_PEM_CLEAR"],
+            )
+        elif event_type.startswith("SW_ALARM_CHASSIS_POE"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "SW_ALARM_CHASSIS_POE",
+                ["SW_ALARM_CHASSIS_POE"],
+                ["SW_ALARM_CHASSIS_POE_CLEAR"],
+            )
+        elif event_type.startswith("SW_ALARM_CHASSIS_PSU"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "SW_ALARM_CHASSIS_PSU",
+                ["SW_ALARM_CHASSIS_PSU"],
+                ["SW_ALARM_CHASSIS_PSU_CLEAR"],
+            )
+        elif event_type.startswith("SW_ALARM_IOT"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "SW_ALARM_IOT_SET",
+                ["SW_ALARM_IOT_SET"],
+                ["SW_ALARM_IOT_CLEAR"],
+            )
+        elif event_type.startswith("SW_ALARM_VIRTUAL_CHASSIS_VERSION_MISMATCH"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "SW_ALARM_VIRTUAL_CHASSIS_VERSION_MISMATCH",
+                ["SW_ALARM_VIRTUAL_CHASSIS_VERSION_MISMATCH"],
+                ["SW_ALARM_VIRTUAL_CHASSIS_VERSION_MISMATCH_CLEAR"],
+            )
         elif event_type.startswith("SW_CONFIG_") or event_type in [
             "SW_CONFIGURED",
             "SW_RECONFIGURED",
@@ -1182,6 +1736,24 @@ def _process_events(events: list) -> dict:
             )
         elif event_type.startswith("SW_FPC_POWER"):
             _process_sw_fpc_power(device_events, event_type, event)
+        elif event_type.startswith("SW_LACPD_TIMEOUT"):
+            _process_port_event(
+                device_events,
+                event_type,
+                event,
+                "SW_LACPD_TIMEOUT",
+                ["SW_LACPD_TIMEOUT"],
+                ["SW_LACPD_TIMEOUT_CLEARED"],
+            )
+        elif event_type.startswith("SW_LOOP"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "SW_LOOP_DETECTED",
+                ["SW_LOOP_DETECTED"],
+                ["SW_LOOP_CLEARED"],
+            )
         elif event_type.startswith("SW_MAC_LEARNING"):
             _process_common(
                 device_events,
@@ -1195,6 +1767,15 @@ def _process_events(events: list) -> dict:
             _process_sw_mac_limit(device_events, event_type, event)
         elif event_type.startswith("SW_OSPF_NEIGHBOR"):
             _process_sw_ospf_neighbor(device_events, event_type, event)
+        elif event_type in ["SW_PORT_DOWN", "SW_PORT_UP"]:
+            _process_port_event(
+                device_events,
+                event_type,
+                event,
+                "SW_PORT_DOWN",
+                ["SW_PORT_DOWN"],
+                ["SW_PORT_UP"],
+            )
         elif event_type.startswith("SW_PORT_BPDU"):
             _process_sw_port_bpdu(device_events, event_type, event)
         elif event_type.startswith("SW_RECOVERY_SNAPSHOT"):
@@ -1217,6 +1798,15 @@ def _process_events(events: list) -> dict:
             )
         elif event_type.startswith("SW_VC_PORT"):
             _process_sw_vc_port(device_events, event_type, event)
+        elif event_type.startswith("SW_VC_IN_TRANSITION") or event_type.startswith("SW_VC_STABLE"):
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "SW_VC_IN_TRANSITION",
+                ["SW_VC_IN_TRANSITION"],
+                ["SW_VC_STABLE"],
+            )
         elif event_type.startswith("SW_ZTP"):
             _process_common(
                 device_events,
@@ -1225,6 +1815,29 @@ def _process_events(events: list) -> dict:
                 "SW_ZTP_FAILED",
                 ["SW_ZTP_FAILED"],
                 ["SW_ZTP_FINISHED"],
+            )
+        ####### TT
+        elif event_type.startswith("TT_MONITORED_RESOURCE"):
+            _process_tt_monitored_resource(device_events, event_type, event)
+        elif event_type in ["TT_PORT_BLOCKED", "TT_PORT_RECOVERY"]:
+            _process_tt_port(device_events, event_type, event, "TT_PORT_BLOCKED")
+        elif event_type in [
+            "TT_PORT_DROPPED_FROM_LACP",
+            "TT_PORT_LAST_DROPPED_FROM_LACP",
+            "TT_PORT_JOINED_LACP",
+            "TT_PORT_FIRST_JOIN_LACP",
+        ]:
+            _process_tt_port_lacp(device_events, event_type, event)
+        elif event_type in ["TT_PORT_LINK_DOWN", "TT_PORT_LINK_RECOVERY"]:
+            _process_tt_port(device_events, event_type, event, "TT_PORT_LINK_DOWN")
+        elif event_type in ["TT_TUNNELS_LOST", "TT_TUNNELS_UP"]:
+            _process_common(
+                device_events,
+                event_type,
+                event,
+                "TT_TUNNELS_LOST",
+                ["TT_TUNNELS_LOST"],
+                ["TT_TUNNELS_UP"],
             )
     PB.log_success(message, inc=False, display_pbar=False)
     return device_events
@@ -1656,43 +2269,82 @@ NOTE 1:
 This script is working with the following event types (use the "Event Options"
 with the "-t"/"--event_types=" CLI parameter to configure the script):
 
-| Script Event Options       | Mist Triggering Events                                               | Mist Clearing Events                                          |
-|----------------------------|----------------------------------------------------------------------|---------------------------------------------------------------|
-| AP_CONFIG                  | AP_CONFIG_FAILED                                                     | AP_CONFIGURED,AP_RECONFIGURED                                 |
-| AP_DISCONNECTED            | AP_DISCONNECTED                                                      | AP_CONNECTED                                                  |
-| AP_RADSEC                  | AP_RADSEC_FAILURE                                                    | AP_RADSEC_RECOVERY                                            |
-| AP_UPGRADE                 | AP_UPGRADE_FAILED                                                    | AP_UPGRADED                                                   |
-| GW_APPID_INSTALL           | GW_APPID_INSTALL_FAILED                                              | GW_APPID_INSTALLED                                            |
-| GW_ARP                     | GW_ARP_UNRESOLVED                                                    | GW_ARP_RESOLVED                                               |
-| GW_BGP_NEIGHBOR            | GW_BGP_NEIGHBOR_DOWN                                                 | GW_BGP_NEIGHBOR_UP                                            |
-| GW_CONFIG                  | GW_CONFIG_FAILED,GW_CONFIG_LOCK_FAILED                               | GW_CONFIGURED,GW_RECONFIGURED                                 |
-| GW_DISCONNECTED            | GW_DISCONNECTED                                                      | GW_CONNECTED                                                  |
-| GW_FIB_COUNT               | GW_FIB_COUNT_THRESHOLD_EXCEEDED                                      | GW_FIB_COUNT_RETURNED_TO_NORMAL                               |
-| GW_FLOW_COUNT              | GW_FLOW_COUNT_THRESHOLD_EXCEEDED                                     | GW_FLOW_COUNT_RETURNED_TO_NORMAL                              |
-| GW_HA_CONTROL_LINK         | GW_HA_CONTROL_LINK_DOWN                                              | GW_HA_CONTROL_LINK_UP                                         |
-| GW_HA_HEALTH_WEIGHT        | GW_HA_HEALTH_WEIGHT_LOW                                              | GW_HA_HEALTH_WEIGHT_RECOVERY                                  |
-| GW_IDP_INSTALL             | GW_IDP_INSTALL_FAILED                                                | GW_IDP_INSTALL                                                |
-| GW_RECOVERY_SNAPSHOT       | GW_RECOVERY_SNAPSHOT_FAILED                                          | GW_RECOVERY_SNAPSHOT_SUCCEEDED,GW_RECOVERY_SNAPSHOT_NOTNEEDED |
-| GW_TUNNEL                  | GW_TUNNEL_DOWN                                                       | GW_TUNNEL_UP                                                  |
-| GW_UPGRADE                 | GW_UPGRADE_FAILED                                                    | GW_UPGRADED                                                   |
-| GW_VPN_PATH                | GW_VPN_PATH_DOWN                                                     | GW_VPN_PATH_UP                                                |
-| GW_VPN_PEER                | GW_VPN_PEER_DOWN                                                     | GW_VPN_PEER_UP                                                |
-| GW_ZTP                     | GW_ZTP_FAILED                                                        | GW_ZTP_FINISHED                                               |
-| SW_BFD_SESSION             | SW_BFD_SESSION_DISCONNECTED                                          | SW_BFD_SESSION_ESTABLISHED                                    |
-| SW_BGP_NEIGHBOR            | SW_BGP_NEIGHBOR_DOWN                                                 | SW_BGP_NEIGHBOR_UP                                            |
-| SW_CONFIG                  | SW_CONFIG_FAILED,SW_CONFIG_LOCK_FAILED,SW_CONFIG_ERROR_ADDTL_COMMAND | SW_CONFIGURED,SW_RECONFIGURED                                 |
-| SW_DDOS_PROTOCOL_VIOLATION | SW_DDOS_PROTOCOL_VIOLATION_SET                                       | SW_DDOS_PROTOCOL_VIOLATION_CLEAR                              |
-| SW_DISCONNECTED            | SW_DISCONNECTED                                                      | SW_CONNECTED                                                  |
-| SW_EVPN_CORE_ISOLATION     | SW_EVPN_CORE_ISOLATED                                                | SW_EVPN_CORE_ISOLATION_CLEARED                                |
-| SW_FPC_POWER               | SW_FPC_POWER_OFF                                                     | SW_FPC_POWER_ON                                               |
-| SW_MAC_LEARNING            | SW_MAC_LEARNING_STOPPED                                              | SW_MAC_LEARNING_RESUMED                                       |
-| SW_MAC_LIMIT               | SW_MAC_LIMIT_EXCEEDED                                                | SW_MAC_LIMIT_RESET                                            |
-| SW_OSPF_NEIGHBOR           | SW_OSPF_NEIGHBOR_DOWN                                                | SW_OSPF_NEIGHBOR_UP                                           |
-| SW_PORT_BPDU               | SW_PORT_BPDU_BLOCKED                                                 | SW_PORT_BPDU_ERROR_CLEARED                                    |
-| SW_RECOVERY_SNAPSHOT       | SW_RECOVERY_SNAPSHOT_FAILED                                          | SW_RECOVERY_SNAPSHOT_SUCCEEDED,SW_RECOVERY_SNAPSHOT_NOTNEEDED |
-| SW_UPGRADE                 | SW_UPGRADE_FAILED                                                    | SW_UPGRADED                                                   |
-| SW_VC_PORT                 | SW_VC_PORT_DOWN                                                      | SW_VC_PORT_UP                                                 |
-| SW_ZTP                     | SW_ZTP_FAILED                                                        | SW_ZTP_FINISHED                                               |
+| Script Event Options          | Mist Triggering Events                                                            | Mist Clearing Events                                          |
+|-------------------------------|-----------------------------------------------------------------------------------|---------------------------------------------------------------|
+| AP_CONFIG                     | AP_CONFIG_FAILED                                                                  | AP_CONFIGURED,AP_RECONFIGURED                                 |
+| AP_DISCONNECTED               | AP_DISCONNECTED                                                                   | AP_CONNECTED                                                  |
+| AP_PORT                       | AP_PORT_DOWN                                                                      | AP_PORT_UP                                                    |
+| AP_RADSEC                     | AP_RADSEC_FAILURE                                                                 | AP_RADSEC_RECOVERY                                            |
+| AP_UPGRADE                    | AP_UPGRADE_FAILED                                                                 | AP_UPGRADED                                                   |
+| ESL_HUNG                      | ESL_HUNG                                                                          | ESL_RECOVERED                                                 |
+| GW_ALARM_CHASSIS_FAN          | GW_ALARM_CHASSIS_FAN                                                              | GW_ALARM_CHASSIS_FAN_CLEAR                                    |
+| GW_ALARM_CHASSIS_HOT          | GW_ALARM_CHASSIS_HOT                                                              | GW_ALARM_CHASSIS_HOT_CLEAR                                    |
+| GW_ALARM_CHASSIS_HUMIDITY     | GW_ALARM_CHASSIS_HUMIDITY                                                         | GW_ALARM_CHASSIS_HUMIDITY_CLEAR                               |
+| GW_ALARM_CHASSIS_MGMT_LINK    | GW_ALARM_CHASSIS_MGMT_LINK_DOWN                                                   | GW_ALARM_CHASSIS_MGMT_LINK_DOWN_CLEAR                         |
+| GW_ALARM_CHASSIS_PARTITION    | GW_ALARM_CHASSIS_PARTITION                                                        | GW_ALARM_CHASSIS_PARTITION_CLEAR                              |
+| GW_ALARM_CHASSIS_PEM          | GW_ALARM_CHASSIS_PEM                                                              | GW_ALARM_CHASSIS_PEM_CLEAR                                    |
+| GW_ALARM_CHASSIS_POE          | GW_ALARM_CHASSIS_POE                                                              | GW_ALARM_CHASSIS_POE_CLEAR                                    |
+| GW_ALARM_CHASSIS_PSU          | GW_ALARM_CHASSIS_PSU                                                              | GW_ALARM_CHASSIS_PSU_CLEAR                                    |
+| GW_ALARM_CHASSIS_WARM         | GW_ALARM_CHASSIS_WARM                                                             | GW_ALARM_CHASSIS_WARM_CLEAR                                   |
+| GW_APPID_INSTALL              | GW_APPID_INSTALL_FAILED                                                           | GW_APPID_INSTALLED                                            |
+| GW_ARP                        | GW_ARP_UNRESOLVED                                                                 | GW_ARP_RESOLVED                                               |
+| GW_BGP_NEIGHBOR               | GW_BGP_NEIGHBOR_DOWN                                                              | GW_BGP_NEIGHBOR_UP                                            |
+| GW_CONDUCTOR                  | GW_CONDUCTOR_DISCONNECTED                                                         | GW_CONDUCTOR_CONNECTED                                        |
+| GW_CONFIG                     | GW_CONFIG_FAILED,GW_CONFIG_LOCK_FAILED,GW_CONFIG_ERROR_ADDTL_COMMAND              | GW_CONFIGURED,GW_RECONFIGURED                                 |
+| GW_DHCP                       | GW_DHCP_UNRESOLVED                                                                | GW_DHCP_RESOLVED                                              |
+| GW_DISCONNECTED               | GW_DISCONNECTED                                                                   | GW_CONNECTED                                                  |
+| GW_FIB_COUNT                  | GW_FIB_COUNT_THRESHOLD_EXCEEDED                                                   | GW_FIB_COUNT_RETURNED_TO_NORMAL                               |
+| GW_FLOW_COUNT                 | GW_FLOW_COUNT_THRESHOLD_EXCEEDED                                                  | GW_FLOW_COUNT_RETURNED_TO_NORMAL                              |
+| GW_HA_CONTROL_LINK            | GW_HA_CONTROL_LINK_DOWN                                                           | GW_HA_CONTROL_LINK_UP                                         |
+| GW_HA_HEALTH_WEIGHT           | GW_HA_HEALTH_WEIGHT_LOW                                                           | GW_HA_HEALTH_WEIGHT_RECOVERY                                  |
+| GW_IDP_INSTALL                | GW_IDP_INSTALL_FAILED                                                             | GW_IDP_INSTALLED                                              |
+| GW_OSPF_NEIGHBOR              | GW_OSPF_NEIGHBOR_DOWN                                                             | GW_OSPF_NEIGHBOR_UP                                           |
+| GW_PORT                       | GW_PORT_DOWN                                                                      | GW_PORT_UP                                                    |
+| GW_RECOVERY_SNAPSHOT          | GW_RECOVERY_SNAPSHOT_FAILED                                                       | GW_RECOVERY_SNAPSHOT_SUCCEEDED,GW_RECOVERY_SNAPSHOT_NOTNEEDED |
+| GW_TUNNEL                     | GW_TUNNEL_DOWN                                                                    | GW_TUNNEL_UP                                                  |
+| GW_UPGRADE                    | GW_UPGRADE_FAILED                                                                 | GW_UPGRADED                                                   |
+| GW_VPN_PATH                   | GW_VPN_PATH_DOWN                                                                  | GW_VPN_PATH_UP                                                |
+| GW_VPN_PEER                   | GW_VPN_PEER_DOWN                                                                  | GW_VPN_PEER_UP                                                |
+| GW_ZTP                        | GW_ZTP_FAILED                                                                     | GW_ZTP_FINISHED                                               |
+| ME_DISCONNECTED               | ME_DISCONNECTED                                                                   | ME_CONNECTED                                                  |
+| ME_FAN                        | ME_FAN_UNPLUGGED                                                                  | ME_FAN_PLUGGED                                                |
+| ME_POWERINPUT                 | ME_POWERINPUT_DISCONNECTED                                                        | ME_POWERINPUT_CONNECTED                                       |
+| ME_PSU                        | ME_PSU_UNPLUGGED                                                                  | ME_PSU_PLUGGED                                                |
+| ME_SERVICE                    | ME_SERVICE_CRASHED,ME_SERVICE_FAILED                                              | ME_SERVICE_STARTED                                            |
+| SW_ALARM_CHASSIS_FAN          | SW_ALARM_CHASSIS_FAN                                                              | SW_ALARM_CHASSIS_FAN_CLEAR                                    |
+| SW_ALARM_CHASSIS_HOT          | SW_ALARM_CHASSIS_HOT                                                              | SW_ALARM_CHASSIS_HOT_CLEAR                                    |
+| SW_ALARM_CHASSIS_HUMIDITY     | SW_ALARM_CHASSIS_HUMIDITY                                                         | SW_ALARM_CHASSIS_HUMIDITY_CLEAR                               |
+| SW_ALARM_CHASSIS_MGMT_LINK    | SW_ALARM_CHASSIS_MGMT_LINK_DOWN                                                   | SW_ALARM_CHASSIS_MGMT_LINK_DOWN_CLEAR                         |
+| SW_ALARM_CHASSIS_PARTITION    | SW_ALARM_CHASSIS_PARTITION                                                        | SW_ALARM_CHASSIS_PARTITION_CLEAR                              |
+| SW_ALARM_CHASSIS_PEM          | SW_ALARM_CHASSIS_PEM                                                              | SW_ALARM_CHASSIS_PEM_CLEAR                                    |
+| SW_ALARM_CHASSIS_POE          | SW_ALARM_CHASSIS_POE                                                              | SW_ALARM_CHASSIS_POE_CLEAR                                    |
+| SW_ALARM_CHASSIS_PSU          | SW_ALARM_CHASSIS_PSU                                                              | SW_ALARM_CHASSIS_PSU_CLEAR                                    |
+| SW_ALARM_IOT                  | SW_ALARM_IOT_SET                                                                  | SW_ALARM_IOT_CLEAR                                            |
+| SW_ALARM_VC_VERSION_MISMATCH  | SW_ALARM_VIRTUAL_CHASSIS_VERSION_MISMATCH                                         | SW_ALARM_VIRTUAL_CHASSIS_VERSION_MISMATCH_CLEAR               |
+| SW_BFD_SESSION                | SW_BFD_SESSION_DISCONNECTED                                                       | SW_BFD_SESSION_ESTABLISHED                                    |
+| SW_BGP_NEIGHBOR               | SW_BGP_NEIGHBOR_DOWN                                                              | SW_BGP_NEIGHBOR_UP                                            |
+| SW_CONFIG                     | SW_CONFIG_FAILED,SW_CONFIG_LOCK_FAILED,SW_CONFIG_ERROR_ADDTL_COMMAND              | SW_CONFIGURED,SW_RECONFIGURED                                 |
+| SW_DDOS_PROTOCOL_VIOLATION    | SW_DDOS_PROTOCOL_VIOLATION_SET                                                    | SW_DDOS_PROTOCOL_VIOLATION_CLEAR                              |
+| SW_DISCONNECTED               | SW_DISCONNECTED                                                                   | SW_CONNECTED                                                  |
+| SW_EVPN_CORE_ISOLATION        | SW_EVPN_CORE_ISOLATED                                                             | SW_EVPN_CORE_ISOLATION_CLEARED                                |
+| SW_FPC_POWER                  | SW_FPC_POWER_OFF                                                                  | SW_FPC_POWER_ON                                               |
+| SW_LACPD_TIMEOUT              | SW_LACPD_TIMEOUT                                                                  | SW_LACPD_TIMEOUT_CLEARED                                      |
+| SW_LOOP                       | SW_LOOP_DETECTED                                                                  | SW_LOOP_CLEARED                                               |
+| SW_MAC_LEARNING               | SW_MAC_LEARNING_STOPPED                                                           | SW_MAC_LEARNING_RESUMED                                       |
+| SW_MAC_LIMIT                  | SW_MAC_LIMIT_EXCEEDED                                                             | SW_MAC_LIMIT_RESET                                            |
+| SW_OSPF_NEIGHBOR              | SW_OSPF_NEIGHBOR_DOWN                                                             | SW_OSPF_NEIGHBOR_UP                                           |
+| SW_PORT                       | SW_PORT_DOWN                                                                      | SW_PORT_UP                                                    |
+| SW_PORT_BPDU                  | SW_PORT_BPDU_BLOCKED                                                              | SW_PORT_BPDU_ERROR_CLEARED                                    |
+| SW_RECOVERY_SNAPSHOT          | SW_RECOVERY_SNAPSHOT_FAILED                                                       | SW_RECOVERY_SNAPSHOT_SUCCEEDED,SW_RECOVERY_SNAPSHOT_NOTNEEDED |
+| SW_UPGRADE                    | SW_UPGRADE_FAILED                                                                 | SW_UPGRADED                                                   |
+| SW_VC_PORT                    | SW_VC_PORT_DOWN                                                                   | SW_VC_PORT_UP                                                 |
+| SW_VC_TRANSITION              | SW_VC_IN_TRANSITION                                                               | SW_VC_STABLE                                                  |
+| SW_ZTP                        | SW_ZTP_FAILED                                                                     | SW_ZTP_FINISHED                                               |
+| TT_MONITORED_RESOURCE         | TT_MONITORED_RESOURCE_FAILED                                                      | TT_MONITORED_RESOURCE_RECOVERED                               |
+| TT_PORT_BLOCKED               | TT_PORT_BLOCKED                                                                   | TT_PORT_RECOVERY                                              |
+| TT_PORT_LACP                  | TT_PORT_DROPPED_FROM_LACP,TT_PORT_LAST_DROPPED_FROM_LACP                          | TT_PORT_JOINED_LACP,TT_PORT_FIRST_JOIN_LACP                   |
+| TT_PORT_LINK                  | TT_PORT_LINK_DOWN                                                                 | TT_PORT_LINK_RECOVERY                                         |
+| TT_TUNNELS                    | TT_TUNNELS_LOST                                                                   | TT_TUNNELS_UP                                                 |
 
 
 NOTE 2:
