@@ -1,4 +1,4 @@
-'''
+"""
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -10,8 +10,8 @@
 Python script automate the sites creation in a Mist Org from a CSV file.
 
 **NOTE**
-This Script can use Google APIs (optional) to retrieve lat/lng, tz and country code. 
-To be able to use Google API, you need an API Key first. Mode information available 
+This Script can use Google APIs (optional) to retrieve lat/lng, tz and country code.
+To be able to use Google API, you need an API Key first. Mode information available
 here: https://developers.google.com/maps/documentation/javascript/get-api-key?hl=en
 
 If the Google API Key is not provided, the script will use geopy and timezonefinder
@@ -24,11 +24,11 @@ mistapi: https://pypi.org/project/mistapi/
 -------
 Usage:
 This script requires a parameter to locate the csv file. Other parameters listed below
-are optional. If the optional parameters are not defined, the script will ask for the 
+are optional. If the optional parameters are not defined, the script will ask for the
 additional required settings.
 
 It is recommended to use an environment file to store the required information
-to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more 
+to request the Mist Cloud (see https://pypi.org/project/mistapi/ for more
 information about the available parameters).
 
 -------
@@ -37,7 +37,7 @@ The first line MUST start with a "#" and defines each columns of the CSV file. T
 values are listed below.
 
 When defining the templates, the policies and the sitegroups, it is possible to use the
-object name OR the object id (this must be defined in the first line, by appending "_name" or 
+object name OR the object id (this must be defined in the first line, by appending "_name" or
 "_id"). In case both name and id are defined, the name will be used.
 
 -------
@@ -52,8 +52,8 @@ Required:
 - address
 
 Optional:
-- site_id or site_name                      site used as a template to create 
-                                            the new site. The name, address, 
+- site_id or site_name                      site used as a template to create
+                                            the new site. The name, address,
                                             groups, vars and template will not
                                             be copied from the source site
 - sitetemplate_id or sitetemplate_name
@@ -63,23 +63,24 @@ Optional:
 - networktemplate_id or networktemplate_name
 - rftemplate_id or rftemplate_name
 - secpolicy_id or secpolicy_name
-- site_group_ids or site_group_names        list of groups. If multiple groups,
-                                            must be enclosed by double quote 
-                                            and comma separated 
-                                            (ex: "group1, group2")
-- country_code                              can be detected by the script based
-                                            on the address
-- timezone                                  can be detected by the script based
-                                            on the address
-- vars                                      dict of all the site variables. 
-                                            Format must be key1:var1. 
-                                            If multiple vars, must be enclosed
+- site_group_ids or site_group_names        list of groups. If multiple groups, must be enclosed
                                             by double quote and comma separated
-                                            (e.g. "key1:var1,key2:var2, ...")
-- subnet                                    if set, will add this subnet in the
-                                            auto assignment rules to automatically 
-                                            assign the APs deployed on this subnet
-                                            to this site
+                                            (ex: "group1, group2")
+- country_code                              can be detected by the script based on the address
+- timezone                                  can be detected by the script based on the address
+- vars                                      dict of all the site variables.
+                                            Format must be key1:var1.
+                                            If multiple vars, must be enclosed by double quote 
+                                            and pipe separated
+                                            (e.g. "key1:var1|key2:var2|...")
+- networks                                  dict of all the site networks. Format must be
+                                            network_type:vlan_id:subnet:gateway:subnet6:gateway6.
+                                            If multiple networks, must be enclosed
+                                            by double quote and pipe separated
+                                            (e.g. "network_type1:vlan_id:subnet:gateway:subnet6:gateway6|network_type2:vlan_id:subnet::subnet6:, ...")
+- subnet                                    if set, will add this subnet in the auto assignment
+                                            rules to automatically assign the APs deployed on
+                                            this subnet to this site
 
 -------
 Script Parameters:
@@ -88,37 +89,37 @@ Script Parameters:
 
 -o, --org_id=       Set the org_id (only one of the org_id or site_id can be defined)
 -n, --org_name=     Org name where to deploy the configuration:
-                        - if org_id is provided (existing org), used to validate 
+                        - if org_id is provided (existing org), used to validate
                         the destination org
-                        - if org_id is not provided (new org), the script will 
+                        - if org_id is not provided (new org), the script will
                         create a new org and name it with the org_name value
 
 -g, --google_api_key=   Google API key used for geocoding
                         If not set, the script will use timezonefinder and geopy
-                        package to generate the geo information 
+                        package to generate the geo information
 
 -l, --log_file=     define the filepath/filename where to write the logs
                     default is "./script.log"
--e, --env=          define the env file to use (see mistapi env file documentation 
+-e, --env=          define the env file to use (see mistapi env file documentation
                     here: https://pypi.org/project/mistapi/)
                     default is "~/.mist_env"
 
 -------
 Examples:
-python3 ./import_sites.py -f ./my_new_sites.csv                 
-python3 ./import_sites.py -f ./my_new_sites.csv --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
+python3 ./import_sites.py -f ./my_new_sites.csv
+python3 ./import_sites.py -f ./my_new_sites.csv --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4
 
-'''
+"""
 
 #### IMPORTS #####
 import time
 import sys
 import csv
-import getopt
+import argparse
 import logging
 import types
 import urllib
-from typing import Tuple
+from typing import Tuple, Callable
 import requests
 
 MISTAPI_MIN_VERSION = "0.44.1"
@@ -126,8 +127,8 @@ MISTAPI_MIN_VERSION = "0.44.1"
 try:
     import mistapi
     from mistapi.__logger import console
-except:
-        print("""
+except ImportError:
+    print("""
         Critical: 
         \"mistapi\" package is missing. Please use the pip command to install it.
 
@@ -137,7 +138,7 @@ except:
         # Windows
         py -m pip install mistapi
         """)
-        sys.exit(2)
+    sys.exit(2)
 
 #####################################################################
 #### PARAMETERS #####
@@ -148,6 +149,8 @@ ENV_FILE = "~/.mist_env"
 # https://developers.google.com/maps/documentation/javascript/get-api-key?hl=en
 GOOGLE_API_KEY = ""
 MAX_RETRY = 3
+VARS_SEPARATOR="|"
+NETWORKS_SEPARATOR="|"
 #####################################################################
 #### LOGS ####
 LOGGER = logging.getLogger(__name__)
@@ -163,15 +166,17 @@ PARAMETER_TYPES = [
     "networktemplate",
     "rftemplate",
     "secpolicy",
-    "sitegroup"
+    "sitegroup",
 ]
 GEOLOCATOR = None
 TZFINDER = None
+
+
 #####################################################################
 # PROGRESS BAR
 #####################################################################
 # PROGRESS BAR AND DISPLAY
-class ProgressBar():
+class ProgressBar:
     def __init__(self):
         self.steps_total = 0
         self.steps_count = 0
@@ -180,15 +185,22 @@ class ProgressBar():
         if self.steps_count > self.steps_total:
             self.steps_count = self.steps_total
 
-        percent = self.steps_count/self.steps_total
+        percent = self.steps_count / self.steps_total
         delta = 17
-        x = int((size-delta)*percent)
+        x = int((size - delta) * percent)
         print("\033[A")
-        print(f"Progress: ", end="")
-        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
-        print(f"{int(percent*100)}%".rjust(5), end="")
+        print("Progress: ", end="")
+        print(f"[{'█' * x}{'.' * (size - delta - x)}]", end="")
+        print(f"{int(percent * 100)}%".rjust(5), end="")
 
-    def _pb_new_step(self, message: str, result: str, inc: bool = False, size: int = 80, display_pbar: bool = True):
+    def _pb_new_step(
+        self,
+        message: str,
+        result: str,
+        inc: bool = False,
+        size: int = 80,
+        display_pbar: bool = True,
+    ):
         if inc:
             self.steps_count += 1
         text = f"\033[A\033[F{message}"
@@ -197,7 +209,9 @@ class ProgressBar():
         if display_pbar:
             self._pb_update(size)
 
-    def _pb_title(self, text: str, size: int = 80, end: bool = False, display_pbar: bool = True):
+    def _pb_title(
+        self, text: str, size: int = 80, end: bool = False, display_pbar: bool = True
+    ):
         print()
         print("\033[A")
         print(f" {text} ".center(size, "-"), "\n")
@@ -216,19 +230,22 @@ class ProgressBar():
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
     def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.info(f"{message}: Success")
+        LOGGER.info("%s: Success", message)
         self._pb_new_step(
-            message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar)
+            message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
 
     def log_warning(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.warning(f"{message}: Warning")
+        LOGGER.warning("%s: Warning", message)
         self._pb_new_step(
-            message, "\033[93m\u2B58\033[0m\n", inc=inc, display_pbar=display_pbar)
+            message, "\033[93m\u2b58\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
 
     def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.error(f"{message}: Failure")
+        LOGGER.error("%s: Failure", message)
         self._pb_new_step(
-            message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar)
+            message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
 
     def log_title(self, message, end: bool = False, display_pbar: bool = True):
         LOGGER.info(message)
@@ -242,106 +259,121 @@ PB = ProgressBar()
 ##################
 # GOOGLE LAT/LNG
 class GoogleGeocoding:
-
-    def __init__(self, google_api_key:str) -> None:
+    def __init__(self, google_api_key: str) -> None:
         self.google_api_key = google_api_key
 
     def _log_url(self, url):
         query_params = url.split("?")[1].split("&")
-        for param in query_params:
-            key = param.split("=")[0]
-            value = param.split("=")[1]
-            if key == "key":
-                value = f"{value[0:3]}...{value[-3:len(value)]}"
-                url = url.replace(param, f"{key}:{value}")
+        for q_param in query_params:
+            q_key = q_param.split("=")[0]
+            q_value = q_param.split("=")[1]
+            if q_key == "key":
+                q_value = f"{q_value[0:3]}...{q_value[-3 : len(q_value)]}"
+                url = url.replace(q_param, f"{q_key}:{q_value}")
         return url
 
-    def _get_google_geocoding(self, address, retry:int=0):
+    def _get_google_geocoding(self, address, retry: int = 0):
         if retry == MAX_RETRY:
-            LOGGER.error(f"_get_google_geocoding: too many retries...")
+            LOGGER.error("_get_google_geocoding: too many retries...")
             return None
         else:
             try:
                 data = {"location": None, "country_code": ""}
                 url = f"https://maps.googleapis.com/maps/api/geocode/json?address={urllib.parse.quote(address)}&key={self.google_api_key}"
-                LOGGER.debug(f"_get_google_geocoding: URL: {self._log_url(url)}")
-                response = requests.get(url)
-                LOGGER.debug(f"_get_google_geocoding: Response: {response.content}")
+                LOGGER.debug("_get_google_geocoding: URL: %s", self._log_url(url))
+                response = requests.get(url, timeout=10)
+                LOGGER.debug("_get_google_geocoding: Response: %s", response.content)
                 if response.status_code == 200:
                     data = response.json()
-                    LOGGER.debug(f"_get_google_geocoding: Response JSON: {data}")
+                    LOGGER.debug("_get_google_geocoding: Response JSON: %s", data)
                     if data["status"] == "OK":
                         if len(data["results"]) > 0:
                             data["location"] = {
                                 "address": data["results"][0]["formatted_address"],
-                                "latitude": data["results"][0]["geometry"]["location"]["lat"],
-                                "longitude": data["results"][0]["geometry"]["location"]["lng"]
+                                "latitude": data["results"][0]["geometry"]["location"][
+                                    "lat"
+                                ],
+                                "longitude": data["results"][0]["geometry"]["location"][
+                                    "lng"
+                                ],
                             }
                             for entry in data["results"][0]["address_components"]:
                                 if "country" in entry["types"]:
                                     data["country_code"] = entry["short_name"]
-                            LOGGER.info("_get_google_geocoding: Request succeed with Data")
+                            LOGGER.info(
+                                "_get_google_geocoding: Request succeed with Data"
+                            )
                             return data
                         else:
-                            LOGGER.warning("_get_google_geocoding: Request succeed without Data")
-                            LOGGER.info(f"_get_google_geocoding: retrying")
+                            LOGGER.warning(
+                                "_get_google_geocoding: Request succeed without Data"
+                            )
+                            LOGGER.info("_get_google_geocoding: retrying")
                             return self._get_google_geocoding(address, retry + 1)
                     elif data["status"] == "REQUEST_DENIED":
-                        LOGGER.warning(f"_get_google_geocoding: Request failed: {data['error_message']}")
+                        LOGGER.warning(
+                            "_get_google_geocoding: Request failed: %s", data['error_message']
+                        )
                         LOGGER.warning(response.content)
-                        LOGGER.info(f"_get_google_geocoding: retrying")
+                        LOGGER.info("_get_google_geocoding: retrying")
                         return self._get_google_geocoding(address, retry + 1)
                     else:
-                        LOGGER.warning("_get_google_geocoding: Request failed without Data")
-                        LOGGER.info(f"_get_google_geocoding: retrying")
+                        LOGGER.warning(
+                            "_get_google_geocoding: Request failed without Data"
+                        )
+                        LOGGER.info("_get_google_geocoding: retrying")
                         return self._get_google_geocoding(address, retry + 1)
                 else:
-                    LOGGER.warning("_get_google_geocoding: Unable to get the location from Google API")
+                    LOGGER.warning(
+                        "_get_google_geocoding: Unable to get the location from Google API"
+                    )
                     LOGGER.warning(response.content)
-                    LOGGER.info(f"_get_google_geocoding: retrying")
+                    LOGGER.info("_get_google_geocoding: retrying")
                     return self._get_google_geocoding(address, retry + 1)
-            except:
-                LOGGER.warning("_get_google_geocoding: Unable to get the location from Google API")
+            except Exception:
+                LOGGER.warning(
+                    "_get_google_geocoding: Unable to get the location from Google API"
+                )
                 LOGGER.error("Exception occurred", exc_info=True)
-                LOGGER.info(f"_get_google_geocoding: retrying")
+                LOGGER.info("_get_google_geocoding: retrying")
                 return self._get_google_geocoding(address, retry + 1)
 
-
-    def _get_google_tz(self, location, retry:int=0):
+    def _get_google_tz(self, location, retry: int = 0):
         if retry == MAX_RETRY:
-            LOGGER.error(f"_get_google_tz: too many retries...")
+            LOGGER.error("_get_google_tz: too many retries...")
             return None
         else:
             try:
                 ts = int(time.time())
                 url = f"https://maps.googleapis.com/maps/api/timezone/json?location={location['latitude']},{location['longitude']}&timestamp={ts}&key={self.google_api_key}"
                 response = requests.get(url)
-                LOGGER.debug(f"_get_google_tz: Response: {response.content}")
+                LOGGER.debug("_get_google_tz: Response: %s", response.content)
                 if response.status_code == 200:
                     data = response.json()
-                    LOGGER.debug(f"_get_google_geocoding: Response JSON: {data}")
+                    LOGGER.debug("_get_google_geocoding: Response JSON: %s", data)
                     if data["status"] == "OK":
                         tz = data["timeZoneId"]
                         LOGGER.info("_get_google_tz: Request succeed with Data")
                         return tz
                     elif data["status"] == "REQUEST_DENIED":
-                        LOGGER.warning(f"_get_google_tz: Request failed: {data['error_message']}")
-                        LOGGER.info(f"_get_google_tz: retrying")
+                        LOGGER.warning(
+                            "_get_google_tz: Request failed: %s", data['error_message']
+                        )
+                        LOGGER.info("_get_google_tz: retrying")
                         return self._get_google_tz(location, retry + 1)
                     else:
                         LOGGER.warning("_get_google_tz: Request failed without Data")
-                        LOGGER.info(f"_get_google_tz: retrying")
+                        LOGGER.info("_get_google_tz: retrying")
                         return self._get_google_tz(location, retry + 1)
                 else:
                     LOGGER.warning("_get_google_tz: Unable to find the site timezone")
-                    LOGGER.info(f"_get_google_tz: retrying")
+                    LOGGER.info("_get_google_tz: retrying")
                     return self._get_google_tz(location, retry + 1)
-            except:
+            except Exception:
                 LOGGER.warning("_get_google_tz: Unable to find the site timezone")
                 LOGGER.error("Exception occurred", exc_info=True)
-                LOGGER.info(f"_get_google_tz: retrying")
+                LOGGER.info("_get_google_tz: retrying")
                 return self._get_google_tz(location, retry + 1)
-
 
     def geocoding(self, site):
         data = self._get_google_geocoding(site["address"])
@@ -349,18 +381,19 @@ class GoogleGeocoding:
             tz = self._get_google_tz(data["location"])
             if tz:
                 data["tz"] = tz
-        LOGGER.debug(f"geocoding: Returns {data}")
+        LOGGER.debug("geocoding: Returns %s", data)
         return data
+
 
 ################
 # OPEN LAT/LNG
 class OpenGeocoding:
-
     def __init__(self) -> None:
         try:
             from timezonefinder import TimezoneFinder
+
             self.tzfinder = TimezoneFinder()
-        except:
+        except ImportError:
             print("""
         Critical: 
         \"timezonefinder\" package is required when \"google_api_key\" is not defined.
@@ -371,12 +404,15 @@ class OpenGeocoding:
 
         # Windows
         py -m pip install timezonefinder
+
+
             """)
             sys.exit(2)
         try:
             from geopy import Nominatim
+
             self.geolocator = Nominatim(user_agent="import_app")
-        except:
+        except ImportError:
             print("""
         Critical: 
         \"geopy\" package is required when \"google_api_key\" is not defined.
@@ -387,37 +423,40 @@ class OpenGeocoding:
 
         # Windows
         py -m pip install geopy
+
+
             """)
             sys.exit(2)
 
-
     def _get_open_geocoding(self, site):
         try:
-            time.sleep(.01)
-            location = self.geolocator.geocode(site["address"], addressdetails=True, timeout=5)
+            time.sleep(0.01)
+            location = self.geolocator.geocode(
+                site["address"], addressdetails=True #, timeout=5
+            )
             if isinstance(location, types.NoneType):
-                LOGGER.warning(f"_get_open_geocoding: Unable to find the address")
+                LOGGER.warning("_get_open_geocoding: Unable to find the address")
                 return None
             else:
-                LOGGER.info(f"_get_open_geocoding: Address found")
+                LOGGER.info("_get_open_geocoding: Address found")
                 return location
-        except:
+        except Exception:
             LOGGER.warning("_get_open_geocoding: Unable to get the location")
             LOGGER.error("Exception occurred", exc_info=True)
             return None
 
-
     def _get_open_tz(self, location):
         try:
-            tz = self.tzfinder.timezone_at(lat=location.latitude, lng=location.longitude)
+            tz = self.tzfinder.timezone_at(
+                lat=location.latitude, lng=location.longitude
+            )
             country_code = str(location.raw["address"]["country_code"]).upper()
-            LOGGER.info(f"_get_open_tz: Timezone found")
+            LOGGER.info("_get_open_tz: Timezone found")
             return {"tz": tz, "country_code": country_code}
-        except:
+        except Exception:
             LOGGER.warning("_get_open_tz: Unable to find the site timezone")
             LOGGER.error("Exception occurred", exc_info=True)
             return None
-
 
     def geocoding(self, site):
         data = {}
@@ -426,49 +465,54 @@ class OpenGeocoding:
             data = {
                 "location": {
                     "latitude": location.latitude,
-                    "longitude": location.longitude
+                    "longitude": location.longitude,
                 },
-                **self._get_open_tz(location)
+                **self._get_open_tz(location),
             }
-        LOGGER.debug(f"geocoding: Returns {data}")
+        LOGGER.debug("geocoding: Returns %s", data)
         return data
-
 
 
 #####################################################################
 # Auto Assignment Rules
 #####################################################################
-def _get_current_org_config(apisession:mistapi.APISession, org_id:str):
+def _get_current_org_config(apisession: mistapi.APISession, org_id: str) -> dict|None:
     message = "Retrieving current Org Rules"
     PB.log_message(message, display_pbar=False)
     try:
         res = mistapi.api.v1.orgs.setting.getOrgSettings(apisession, org_id)
         if res.status_code == 200:
             PB.log_success(message, inc=True)
-            auto_site_assignment = res.data.get("auto_site_assignment", {"enable": True})
+            auto_site_assignment = res.data.get(
+                "auto_site_assignment", {"enable": True}
+            )
             return auto_site_assignment
         else:
             PB.log_failure(message, inc=True)
-    except:
+    except Exception:
         PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
 
-def _set_new_org_config(apisession:mistapi.APISession, org_id:str, auto_site_assignment:dict):
+
+def _set_new_org_config(
+    apisession: mistapi.APISession, org_id: str, auto_site_assignment: dict
+):
     message = "Updating Org Rules"
     PB.log_message(message, display_pbar=False)
     try:
         res = mistapi.api.v1.orgs.setting.updateOrgSettings(
-                apisession, org_id, {"auto_site_assignment": auto_site_assignment}
-            )
+            apisession, org_id, {"auto_site_assignment": auto_site_assignment}
+        )
         if res.status_code == 200:
             PB.log_success(message, inc=True)
         else:
             PB.log_failure(message, inc=True)
-    except:
+    except Exception:
         PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
 
-def _compare_rules(org_rules:list, new_rules:list):
+
+def _compare_rules(org_rules: list, new_rules: list):
     errors = []
     if not org_rules:
         org_rules = []
@@ -476,32 +520,37 @@ def _compare_rules(org_rules:list, new_rules:list):
         message = f"Checking subnet {rule.get('subnet')}"
         PB.log_message(message)
         try:
-            subnet_exists = list(r for r in org_rules if r.get("subnet") == rule.get("subnet"))
+            subnet_exists = list(
+                r for r in org_rules if r.get("subnet") == rule.get("subnet")
+            )
             if subnet_exists:
                 LOGGER.warning(
-                    f"_compare_rules:subnet {rule.get('subnet')} configured for site {rule.get('value')} already exists: {subnet_exists}"
-                    )
+                    "_compare_rules:subnet %s configured for site %s already exists: %s",
+                    rule.get('subnet'), rule.get('value'), subnet_exists
+                )
                 errors.append(
                     f"subnet {rule.get('subnet')} configured for site {rule.get('value')} already exists: {subnet_exists}"
-                    )
+                )
             else:
                 org_rules.append(rule)
-        except:
+        except Exception:
             LOGGER.error("Exception occurred", exc_info=True)
             errors.append(
                 f"error when processing subnet {rule.get('subnet')} configured for site {rule.get('value')}"
-                )
+            )
     if errors:
         PB.log_warning(message, inc=True)
     return org_rules
 
 
-def _update_org_rules(apisession:mistapi.APISession, org_id:str, new_rules:list):
+def _update_org_rules(apisession: mistapi.APISession, org_id: str, new_rules: list):
     PB.log_title("Updating Autoprovisioning Rules")
     auto_site_assignment = _get_current_org_config(apisession, org_id)
-    auto_site_assignment["rules"] = _compare_rules(auto_site_assignment.get("rules", {}), new_rules)
-    _set_new_org_config(apisession, org_id, auto_site_assignment)
-
+    if auto_site_assignment:
+        auto_site_assignment["rules"] = _compare_rules(
+            auto_site_assignment.get("rules", {}), new_rules
+        )
+        _set_new_org_config(apisession, org_id, auto_site_assignment)
 
 
 #####################################################################
@@ -514,7 +563,7 @@ def _get_geo_info(site: dict, geocoder: callable) -> dict:
     if data:
         site["latlng"] = {
             "lat": data["location"]["latitude"],
-            "lng": data["location"]["longitude"]
+            "lng": data["location"]["longitude"],
         }
         site["timezone"] = data["tz"]
         site["country_code"] = data["country_code"]
@@ -524,7 +573,9 @@ def _get_geo_info(site: dict, geocoder: callable) -> dict:
     return site
 
 
-def _create_site(apisession: mistapi.APISession, org_id: str, site: dict, geocoder:callable):
+def _create_site(
+    apisession: mistapi.APISession, org_id: str, site: dict, geocoder: Callable
+):
     site = _get_geo_info(site, geocoder).copy()
     if site:
         message = f"Site {site['name']}: Site creation"
@@ -532,16 +583,17 @@ def _create_site(apisession: mistapi.APISession, org_id: str, site: dict, geocod
         try:
             if "vars" in site:
                 del site["vars"]
-            response = mistapi.api.v1.orgs.sites.createOrgSite(
-                apisession, org_id, site)
-            if response.status_code == 200:
+            response = mistapi.api.v1.orgs.sites.createOrgSite(apisession, org_id, site)
+            if response.status_code == 200 and isinstance(response.data, dict):
                 PB.log_success(
-                    f"Site {site['name']}: Created (ID {response.data['id']})", True)
+                    f"Site {site['name']}: Created (ID {response.data['id']})", True
+                )
                 return response.data
             else:
                 PB.log_failure(message, True)
-        except:
+        except Exception:
             PB.log_failure(message, True)
+            LOGGER.error("Exception occurred", exc_info=True)
     else:
         PB.inc()
         return None
@@ -552,30 +604,45 @@ def _update_site(apisession: mistapi.APISession, site: dict, site_id: str):
         message = f"Site {site['name']}: Updating Site settings"
         PB.log_message(message)
         try:
-            vars = site["vars"]
             site_vars = {}
-            for entry in vars.split(","):
+            site_networks = {}
+            for entry in site.get("vars", "").split(VARS_SEPARATOR):
                 key = entry.split(":")[0]
                 val = entry.split(":")[1]
                 site_vars[key] = val
+            for entry in site.get("networks", "").split(NETWORKS_SEPARATOR):
+                network_type = entry.split(":")[0]
+                vlan_id = entry.split(":")[1]
+                subnet = entry.split(":")[2]
+                gateway = entry.split(":")[3]
+                subnet6 = entry.split(":")[4]
+                gateway6 = entry.split(":")[5]
+                site_networks[network_type] = {
+                    "vlan_id": vlan_id,
+                    "subnet": subnet,
+                    "gateway": gateway,
+                    "subnet6": subnet6,
+                    "gateway6": gateway6,
+                }
             mistapi.api.v1.sites.setting.updateSiteSettings(
-                apisession, site_id, {"vars": site_vars})
+                apisession, site_id, {"vars": site_vars, "networks": site_networks}
+            )
             PB.log_success(message, True)
-        except:
+        except Exception:
             PB.log_failure(message, True)
+            LOGGER.error("Exception occurred", exc_info=True)
     else:
-        PB.log_success(
-            f"Site {site['name']}: No Site settings to update", True)
+        PB.log_success(f"Site {site['name']}: No Site settings to update", True)
 
 
 ###############################################################################
 # CLONING FROM SOURCE SITE
 ###############################################################################
 def _clone_src_site_settings(
-        apisession:mistapi.APISession, src_site_id:str, dst_site_id:str, site_name:str
-    ):
+    apisession: mistapi.APISession, src_site_id: str, dst_site_id: str, site_name: str
+):
     src_site = None
-    message= f"Site {site_name}: Retrievning settings from src site"
+    message = f"Site {site_name}: Retrievning settings from src site"
     PB.log_message(message)
     try:
         resp = mistapi.api.v1.sites.setting.getSiteSetting(apisession, src_site_id)
@@ -585,60 +652,63 @@ def _clone_src_site_settings(
             src_site = resp.data
             if "vars" in src_site:
                 del src_site["vars"]
-    except:
+    except Exception:
         PB.log_failure(message, True)
+        LOGGER.error("Exception occurred", exc_info=True)
 
     if src_site:
-        message= f"Site {site_name}: Deploying settings from src site"
+        message = f"Site {site_name}: Deploying settings from src site"
         PB.log_message(message)
         try:
             resp = mistapi.api.v1.sites.setting.updateSiteSettings(
-                apisession,
-                dst_site_id, src_site
-                )
+                apisession, dst_site_id, src_site
+            )
             if resp.status_code != 200:
                 PB.log_failure(message, True)
             else:
-                PB.log_success(f"Site {site_name}: Cloning settings from src site", True)
-        except:
+                PB.log_success(
+                    f"Site {site_name}: Cloning settings from src site", True
+                )
+        except Exception:
             PB.log_failure(message, True)
-
-
+            LOGGER.error("Exception occurred", exc_info=True)
 
 ###############################################################################
 # MATCHING OBJECT NAME / OBJECT ID
 ###############################################################################
 # SPECIFIC TO SITE GROUPS
 def _replace_sitegroup_names(
-        apisession: mistapi.APISession, org_id: str, sitegroups: dict, sitegroup_names: dict
-    ) -> Tuple[dict, str]:
+    apisession: mistapi.APISession, org_id: str, sitegroups: dict, sitegroup_names: dict
+) -> Tuple[dict, list[str]]:
     sitegroup_ids = []
     for sitegroup_name in sitegroup_names:
         if sitegroup_name not in sitegroups:
             response = mistapi.api.v1.orgs.sitegroups.createOrgSiteGroup(
-                apisession, org_id, {"name": sitegroup_name})
+                apisession, org_id, {"name": sitegroup_name}
+            )
             if response.status_code == 200:
                 sitegroups[sitegroup_name] = response.data["id"]
             else:
                 PB.log_warning(
-                    f"Unable to create site group {sitegroup_name}", inc=False)
+                    f"Unable to create site group {sitegroup_name}", inc=False
+                )
         sitegroup_ids.append(sitegroups[sitegroup_name])
     return sitegroups, sitegroup_ids
+
 
 # GENERIC REPLACE FUNCTION
 
 
 def _replace_object_names_by_ids(
-        apisession: mistapi.APISession, org_id: str, site: dict, parameters: dict
-    ) -> dict:
-    '''
+    apisession: mistapi.APISession, org_id: str, site: dict, parameters: dict
+) -> Tuple[dict, str|None]:
+    """
     replace the template/policy/groups names by the corresponding ids
-    '''
+    """
     warning = False
     source_site_id = None
     message = f"Site {site['name']}: updating IDs"
     PB.log_message(message)
-
 
     if "site_id" in site:
         source_site_id = site["site_id"]
@@ -646,12 +716,15 @@ def _replace_object_names_by_ids(
     elif "site_name" in site:
         source_site_id = parameters["site"].get(site["site_name"], None)
         if not source_site_id:
-            PB.log_warning(f"Site {site['name']}: Source site {site['site_name']} not found")
+            PB.log_warning(
+                f"Site {site['name']}: Source site {site['site_name']} not found"
+            )
         del site["site_name"]
 
     if "sitegroup_names" in site:
         parameters["sitegroup"], site["sitegroup_ids"] = _replace_sitegroup_names(
-            apisession, org_id, parameters["sitegroup"], site["sitegroup_names"])
+            apisession, org_id, parameters["sitegroup"], site["sitegroup_names"]
+        )
         del site["sitegroup_names"]
 
     for parameter in PARAMETER_TYPES:
@@ -660,23 +733,27 @@ def _replace_object_names_by_ids(
                 name = site[f"{parameter}_name"]
                 site[f"{parameter}_id"] = parameters[parameter][name]
                 del site[f"{parameter}_name"]
-        except:
+        except KeyError:
             warning = True
             PB.log_warning(
-                f"Site {site['name']}: Missing {parameter} on dest org", inc=False)
+                f"Site {site['name']}: Missing {parameter} on dest org", inc=False
+            )
     if not warning:
         PB.log_success(message, True)
     else:
         PB.log_warning(message, True)
     return site, source_site_id
 
+
 # GET FROM MIST
 
 
-def _retrieve_objects(apisession: mistapi.APISession, org_id: str, parameters_in_use:list) -> dict:
-    '''
+def _retrieve_objects(
+    apisession: mistapi.APISession, org_id: str, parameters_in_use: list
+) -> dict:
+    """
     Get the list of the current templates, policies and sitegoups
-    '''
+    """
     parameters = {}
     for parameter_type in parameters_in_use:
         message = f"Retrieving {parameter_type} from Mist"
@@ -689,35 +766,47 @@ def _retrieve_objects(apisession: mistapi.APISession, org_id: str, parameters_in
                 response = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id)
             if parameter_type == "alarmtemplate":
                 response = mistapi.api.v1.orgs.alarmtemplates.listOrgAlarmTemplates(
-                    apisession, org_id)
+                    apisession, org_id
+                )
             elif parameter_type == "aptemplate":
                 response = mistapi.api.v1.orgs.aptemplates.listOrgAptemplates(
-                    apisession, org_id)
+                    apisession, org_id
+                )
             elif parameter_type == "gatewaytemplate":
                 response = mistapi.api.v1.orgs.gatewaytemplates.listOrgGatewayTemplates(
-                    apisession, org_id)
+                    apisession, org_id
+                )
             elif parameter_type == "networktemplate":
                 response = mistapi.api.v1.orgs.networktemplates.listOrgNetworkTemplates(
-                    apisession, org_id)
+                    apisession, org_id
+                )
             elif parameter_type == "rftemplate":
                 response = mistapi.api.v1.orgs.rftemplates.listOrgRfTemplates(
-                    apisession, org_id)
+                    apisession, org_id
+                )
             elif parameter_type == "secpolicy":
                 response = mistapi.api.v1.orgs.secpolicies.listOrgSecPolicies(
-                    apisession, org_id)
+                    apisession, org_id
+                )
             elif parameter_type == "sitegroup":
                 response = mistapi.api.v1.orgs.sitegroups.listOrgSiteGroups(
-                    apisession, org_id)
+                    apisession, org_id
+                )
             elif parameter_type == "sitetemplate":
                 response = mistapi.api.v1.orgs.sitetemplates.listOrgSiteTemplates(
-                    apisession, org_id)
-            data = mistapi.get_all(apisession, response)
-            for entry in data:
-                parameter_values[entry["name"]] = entry["id"]
-            parameters[parameter_type] = parameter_values
-            PB.log_success(message, display_pbar=False)
-        except:
+                    apisession, org_id
+                )
+            if response:
+                data = mistapi.get_all(apisession, response)
+                for entry in data:
+                    parameter_values[entry["name"]] = entry["id"]
+                parameters[parameter_type] = parameter_values
+                PB.log_success(message, display_pbar=False)
+            else:
+                PB.log_failure(message, display_pbar=False)
+        except Exception:
             PB.log_failure(message, display_pbar=False)
+            LOGGER.error("Exception occurred", exc_info=True)
     return parameters
 
 
@@ -730,6 +819,7 @@ def _extract_groups(data: str) -> list:
         result.append(entry.strip())
     return result
 
+
 ###############################################################################
 # Optional site parameters (if id and name is defined, the name will
 # be used):
@@ -740,17 +830,24 @@ def _extract_groups(data: str) -> list:
 # - networktemplate_id or networktemplate_name
 # - rftemplate_id or rftemplate_name
 # - secpolicy_id or secpolicy_name
-# - site_group_ids or site_group_names      list of groups. If multiple groups,
-#                                           must be enclosed by double quote and
-#                                           comma separated (ex: "group1, group2")
-# - country_code                            can be detected by the script based on
-#                                           the address
-# - timezone                                can be detected by the script based on
-#                                           the address
-# - vars                                    dict of all the site variables. Format
-#                                           must be key1:var1. If multiple vars,
-#                                           must be enclosed by double quote and
-#                                           comma separated (ex: "key1:var1,key2:var2")
+# - site_group_ids or site_group_names        list of groups. If multiple groups, must be enclosed
+#                                             by double quote and comma separated
+#                                             (ex: "group1, group2")
+# - country_code                              can be detected by the script based on the address
+# - timezone                                  can be detected by the script based on the address
+# - vars                                      dict of all the site variables.
+#                                             Format must be key1:var1.
+#                                             If multiple vars, must be enclosed by double quote 
+#                                             and comma separated
+#                                             (e.g. "key1:var1,key2:var2, ...")
+# - networks                                  dict of all the site networks. Format must be
+#                                             network_type:vlan_id:subnet:gateway:subnet6:gateway6.
+#                                             If multiple networks, must be enclosed
+#                                             by double quote and comma separated
+#                                             (e.g. "network_type1:vlan_id:subnet:gateway:subnet6:gateway6,network_type2:vlan_id:subnet::subnet6:, ...")
+# - subnet                                    if set, will add this subnet in the auto assignment
+#                                             rules to automatically assign the APs deployed on
+#                                             this subnet to this site
 #
 
 
@@ -761,69 +858,74 @@ def _check_settings(sites: list):
     parameters_in_use = []
     line = 1
     for site in sites:
-        line +=1
+        line += 1
         if "name" not in site:
             PB.log_failure(message, display_pbar=False)
-            console.error(f"Line {line}: Missing site parameter \"name\"")
+            console.error(f'Line {line}: Missing site parameter "name"')
             sys.exit(0)
         elif site["name"] in site_name:
             PB.log_failure(message, display_pbar=False)
-            console.error(f"Line {line}: Site Name \"{site['name']}\" duplicated")
+            console.error(f'Line {line}: Site Name "{site["name"]}" duplicated')
             sys.exit(0)
         else:
             site_name.append(site["name"])
 
         if "address" not in site:
             PB.log_failure(message, display_pbar=False)
-            console.error(f"Line {line}: Missing site parameter \"address\"")
+            console.error(f'Line {line}: Missing site parameter "address"')
             sys.exit(0)
 
         for key in site:
             parameter_name = key.split("_")
-            if key in [ "name", "address", "vars", "country_code", "timezone"]:
+            if key in ["name", "address", "vars", "country_code", "timezone", "networks"]:
                 pass
-            elif key in [ "sitegroup_names", "sitegroup_ids"]:
+            elif key in ["sitegroup_names", "sitegroup_ids"]:
                 if "sitegroup" not in parameters_in_use:
                     parameters_in_use.append("sitegroup")
-                pass
-            elif parameter_name[0] in PARAMETER_TYPES and parameter_name[1] in ["name", "id"]:
-                if not parameter_name[0] in parameters_in_use:
+            elif parameter_name[0] in PARAMETER_TYPES and parameter_name[1] in [
+                "name",
+                "id",
+            ]:
+                if parameter_name[0] not in parameters_in_use:
                     parameters_in_use.append(parameter_name[0])
-                pass
             else:
                 PB.log_failure(message, display_pbar=False)
-                console.error(f"Line {line}: Invalid site parameter \"{key}\"")
+                console.error(f'Line {line}: Invalid site parameter "{key}"')
                 sys.exit(0)
     PB.log_success(message, display_pbar=False)
     return parameters_in_use
 
 
 def _process_sites_data(
-        apisession: mistapi.APISession, org_id: str, sites: list
-    ) -> dict:
-    '''
+    apisession: mistapi.APISession, org_id: str, sites: list
+) -> dict:
+    """
     Function to validate sites data and retrieve the required object from Mist
-    '''
+    """
     parameters = {}
     PB.log_title("Preparing Sites Import", display_pbar=False)
     parameters_in_use = _check_settings(sites)
     parameters = _retrieve_objects(apisession, org_id, parameters_in_use)
     return parameters
 
-def _check_sites(apisession:mistapi.APISession, org_id:str, sites:list):
-    '''
+
+def _check_sites(apisession: mistapi.APISession, org_id: str, sites: list):
+    """
     function to remove sites already created in the Org (based on the site name)
-    '''
+    """
     message = "Retrieving Sites from Org"
     PB.log_message(message)
     try:
         res = mistapi.api.v1.orgs.sites.listOrgSites(apisession, org_id, limit=1000)
         sites_from_mist = mistapi.get_all(apisession, res)
-        PB.log_success(message, inc=True)
-    except:
-        PB.log_failure(message, inc=True)
+        PB.log_success(message, display_pbar=False)
+    except Exception:
+        PB.log_failure(message, display_pbar=False)
+        LOGGER.error("Exception occurred", exc_info=True)
         sys.exit(1)
 
+    message = "Checking if Sites already exist"
+    PB.log_message(message)
     sites_to_create = []
     if not sites_from_mist:
         sites_to_create = sites
@@ -831,51 +933,74 @@ def _check_sites(apisession:mistapi.APISession, org_id:str, sites:list):
         site_already_created = []
         for site in sites:
             try:
-                site_exists = list(s for s in sites_from_mist if s.get("name").lower() == site.get("name").lower())
+                site_exists = list(
+                    s
+                    for s in sites_from_mist
+                    if s.get("name").lower() == site.get("name").lower()
+                )
                 if site_exists:
                     LOGGER.warning(
-                        f"_check_sites:site {site.get('name')} already exists. Won't be created..."
-                        )
+                        "_check_sites:site %s already exists. Won't be created...", site.get('name')
+                    )
                     site_already_created.append(site.get("name"))
                 else:
                     sites_to_create.append(site)
-            except:
+            except Exception:
                 sites_to_create.append(site)
 
+    if len(sites_to_create) == 0:
+        PB.log_failure(message, display_pbar=False)
+        console.warning("All sites already exist in the organization...")
+        sys.exit(0)
+    elif len(sites) != len(sites_to_create):
+        PB.log_warning(message, display_pbar=False)
+        console.warning("Some sites already exist in the organization...")
+    else:
+        PB.log_success(message, display_pbar=False)
     return sites_to_create
 
 
 def _create_sites(
-        apisession: mistapi.APISession,
-        org_id: str,
-        sites: list,
-        parameters: dict,
-        geocoder:callable
-    ):
-    '''
+    apisession: mistapi.APISession,
+    org_id: str,
+    sites: list,
+    parameters: dict,
+    geocoder: Callable,
+):
+    """
     Function to create and update all the sites
-    '''
+    """
     PB.log_title("Creating Sites", display_pbar=True)
     for site in sites:
         site, source_site_id = _replace_object_names_by_ids(
-            apisession, org_id, site, parameters)
+            apisession, org_id, site, parameters
+        )
         new_site = _create_site(apisession, org_id, site, geocoder)
         if not new_site:
             PB.inc()
         else:
             if source_site_id:
                 _clone_src_site_settings(
-                        apisession, source_site_id, new_site["id"], new_site["name"]
-                    )
+                    apisession, source_site_id, new_site["id"], new_site["name"]
+                )
             else:
                 PB.inc()
             _update_site(apisession, site, new_site["id"])
 
 
+def _prepare_csv(file_path:str):
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = f.read().replace("“", '"').replace("”", '"').replace("’", "'")
+        f.close()
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(data)
+        f.close()
+
 def _read_csv_file(file_path: str):
-    with open(file_path, "r") as f:
+    _prepare_csv(file_path)
+    with open(file_path, "r", encoding="utf-8") as f:
         data = csv.reader(f, skipinitialspace=True, quotechar='"')
-        data = [[c.replace('\ufeff', '') for c in row] for row in data]
+        data = [[c.replace("\ufeff", "") for c in row] for row in data]
         fields = []
         sites = []
         auto_assignment_rules = []
@@ -883,12 +1008,11 @@ def _read_csv_file(file_path: str):
             if not fields:
                 for column in line:
                     fields.append(column.strip().replace("#", ""))
-            else:
+            elif len(line) > 1 and line[0].strip() != "":
                 site = {}
                 i = 0
                 subnet = None
                 for column in line:
-
                     field = fields[i]
                     if field == "subnet":
                         subnet = column
@@ -898,64 +1022,60 @@ def _read_csv_file(file_path: str):
                         site[field] = column
                     i += 1
                 if subnet:
-                    auto_assignment_rules.append({
-                        "src": "subnet",
-                        "subnet": subnet,
-                        "value": site["name"]
-                    })
+                    auto_assignment_rules.append(
+                        {"src": "subnet", "subnet": subnet, "value": site["name"]}
+                    )
                 sites.append(site)
+            else:
+                LOGGER.info("Skipping empty line")
         return sites, auto_assignment_rules
 
 
 def _check_org_name_in_script_param(
-        apisession: mistapi.APISession, org_id: str, org_name: str = None
-    ):
+    apisession: mistapi.APISession, org_id: str, org_name: str | None = None
+):
     response = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id)
     if response.status_code != 200:
-        console.critical(
-            f"Unable to retrieve the org information: {response.data}")
+        console.critical(f"Unable to retrieve the org information: {response.data}")
         sys.exit(3)
     org_name_from_mist = response.data["name"]
     return org_name == org_name_from_mist
 
 
-def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str = None):
+def _check_org_name(apisession: mistapi.APISession, org_id: str, org_name: str = ""):
     if not org_name:
         response = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id)
         if response.status_code != 200:
-            console.critical(
-                f"Unable to retrieve the org information: {response.data}")
+            console.critical(f"Unable to retrieve the org information: {response.data}")
             sys.exit(3)
         org_name = response.data["name"]
     while True:
         print()
         resp = input(
-            "To avoid any error, please confirm the current destination orgnization name: ")
+            "To avoid any error, please confirm the current destination organization name: "
+        )
         if resp == org_name:
             return org_id, org_name
         else:
             print()
-            print("The orgnization names do not match... Please try again...")
+            print("The organization names do not match... Please try again...")
 
 
-def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str = None):
+def _create_org(apisession: mistapi.APISession, custom_dest_org_name: str|None = None):
     while True:
         if not custom_dest_org_name:
             custom_dest_org_name = input("Organization name? ")
         if custom_dest_org_name:
-            org = {
-                "name": custom_dest_org_name
-            }
-            message = f"Creating the organization \"{custom_dest_org_name}\" in {apisession.get_cloud()} "
+            org = {"name": custom_dest_org_name}
+            message = f'Creating the organization "{custom_dest_org_name}" in {apisession.get_cloud()} '
             PB.log_message(message, display_pbar=False)
             try:
                 PB.log_success(message, display_pbar=False)
-            except Exception as e:
+            except Exception:
                 PB.log_failure(message, display_pbar=False)
                 LOGGER.error("Exception occurred", exc_info=True)
                 sys.exit(10)
-            org_id = mistapi.api.v1.orgs.orgs.createOrg(
-                apisession, org).data["id"]
+            org_id = mistapi.api.v1.orgs.orgs.createOrg(apisession, org).data["id"]
             return org_id, custom_dest_org_name
 
 
@@ -965,13 +1085,13 @@ def _select_dest_org(apisession: mistapi.APISession):
     print()
     while True:
         res = input(
-            "Do you want to import into a (n)ew organization or (e)xisting one, (q) to quit? ")
+            "Do you want to import into a (n)ew organization or (e)xisting one, (q) to quit? "
+        )
         if res.lower() == "q":
             sys.exit(0)
         elif res.lower() == "e":
             org_id = mistapi.cli.select_org(apisession)[0]
-            org_name = mistapi.api.v1.orgs.orgs.getOrg(
-                apisession, org_id).data["name"]
+            org_name = mistapi.api.v1.orgs.orgs.getOrg(apisession, org_id).data["name"]
             if _check_org_name(apisession, org_id, org_name):
                 return org_id, org_name
         elif res.lower() == "n":
@@ -979,31 +1099,30 @@ def _select_dest_org(apisession: mistapi.APISession):
 
 
 def start(
-        apisession: mistapi.APISession,
-        file_path: str,
-        org_id: str = None,
-        org_name: str = None,
-        google_api_key:str = None
-    ):
-    '''
+    apisession: mistapi.APISession,
+    file_path: str,
+    org_id: str  = "",
+    org_name: str = "",
+    google_api_key: str = "",
+):
+    """
     Start the process to create the sites
 
     PARAMS
     -------
-    :param  mistapi.APISession  apisession      mistapi session with `Super User` access the source 
+    :param  mistapi.APISession  apisession      mistapi session with `Super User` access the source
                                                 Org, already logged in
     :param  str                 file_path       path to the CSV file with all the sites to create
     :param  str                 org_id          Optional, org_id of the org where to process the sites
     :param  str                 org_name        Optional, name of the org where to process the sites
                                                 (used for validation)
-    :param  str                 google_api_key  Optional, Google API key used for geocoding. 
+    :param  str                 google_api_key  Optional, Google API key used for geocoding.
                                                 If not set, the script will use timezonefinder and
                                                 geopy package to generate the geo information
-    '''
+    """
     if org_id and org_name:
         if not _check_org_name_in_script_param(apisession, org_id, org_name):
-            console.critical(
-                f"Org name {org_name} does not match the org {org_id}")
+            console.critical(f"Org name {org_name} does not match the org {org_id}")
             sys.exit(0)
     elif org_id and not org_name:
         org_id, org_name = _check_org_name(apisession, org_id)
@@ -1013,7 +1132,6 @@ def start(
         org_id, org_name = _select_dest_org(apisession)
     else:  # should not since we covered all the possibilities...
         sys.exit(0)
-
 
     message = "Loading Geocoder"
     PB.log_message(message, display_pbar=False)
@@ -1025,11 +1143,11 @@ def start(
         else:
             geocoder = OpenGeocoding()
             PB.log_success(f"{message}: Open", display_pbar=False)
-    except:
-            PB.log_failure(message, display_pbar=False)
-            LOGGER.critical("start: Unable to load the Geocoder")
-            LOGGER.critical("Exception occurred", exc_info=True)
-            sys.exit(0)
+    except Exception:
+        PB.log_failure(message, display_pbar=False)
+        LOGGER.critical("start: Unable to load the Geocoder")
+        LOGGER.critical("Exception occurred", exc_info=True)
+        sys.exit(0)
 
     sites, auto_assignment_rules = _read_csv_file(file_path)
     # 4 = IDs +  geocoding + site creation + clone site settings + site settings update
@@ -1051,11 +1169,11 @@ def start(
 
 ###############################################################################
 # USAGE
-def usage(error:str=None):
+def usage(error: str | None = None):
     """
     display script usage
     """
-    print('''
+    print("""
 -------------------------------------------------------------------------------
 
     Written by Thomas Munzer (tmunzer@juniper.net)
@@ -1117,23 +1235,24 @@ Optional:
 - networktemplate_id or networktemplate_name
 - rftemplate_id or rftemplate_name
 - secpolicy_id or secpolicy_name
-- site_group_ids or site_group_names        list of groups. If multiple groups,
-                                            must be enclosed by double quote 
-                                            and comma separated 
-                                            (ex: "group1, group2")
-- country_code                              can be detected by the script based
-                                            on the address
-- timezone                                  can be detected by the script based
-                                            on the address
-- vars                                      dict of all the site variables. 
-                                            Format must be key1:var1. 
-                                            If multiple vars, must be enclosed
+- site_group_ids or site_group_names        list of groups. If multiple groups, must be enclosed
                                             by double quote and comma separated
-                                            (e.g. "key1:var1,key2:var2, ...")
-- subnet                                    if set, will add this subnet in the
-                                            auto assignment rules to automatically 
-                                            assign the APs deployed on this subnet
-                                            to this site
+                                            (ex: "group1, group2")
+- country_code                              can be detected by the script based on the address
+- timezone                                  can be detected by the script based on the address
+- vars                                      dict of all the site variables.
+                                            Format must be key1:var1.
+                                            If multiple vars, must be enclosed by double quote 
+                                            and pipe separated
+                                            (e.g. "key1:var1|key2:var2|...")
+- networks                                  dict of all the site networks. Format must be
+                                            network_type:vlan_id:subnet:gateway:subnet6:gateway6.
+                                            If multiple networks, must be enclosed
+                                            by double quote and pipe separated
+                                            (e.g. "network_type1:vlan_id:subnet:gateway:subnet6:gateway6|network_type2:vlan_id:subnet::subnet6:, ...")
+- subnet                                    if set, will add this subnet in the auto assignment
+                                            rules to automatically assign the APs deployed on
+                                            this subnet to this site
 
 -------
 Script Parameters:
@@ -1162,10 +1281,11 @@ Examples:
 python3 ./import_sites.py -f ./my_new_sites.csv                 
 python3 ./import_sites.py -f ./my_new_sites.csv --org_id=203d3d02-xxxx-xxxx-xxxx-76896a3330f4 
 
-''')
+""")
     if error:
         console.error(error)
     sys.exit(0)
+
 
 def check_mistapi_version():
     """Check if the installed mistapi version meets the minimum requirement."""
@@ -1208,72 +1328,61 @@ py -m pip install --upgrade mistapi
             '"mistapi" package version %s is required, '
             "you are currently using version %s.",
             MISTAPI_MIN_VERSION,
-            mistapi.__version__
+            mistapi.__version__,
         )
 
 
 ###############################################################################
 # ENTRY POINT
 if __name__ == "__main__":
-    try:
-        opts, args = getopt.getopt(sys.argv[1:],
-                                    "ho:n:g:f:e:l:", 
-                                    [
-                                        "help",
-                                        "org_id=",
-                                        "org_name=",
-                                        "google_api_key=",
-                                        "file=",
-                                        "env=",
-                                        "log_file="
-                                    ]
-                                )
-    except getopt.GetoptError as err:
-        usage(err)
+    parser = argparse.ArgumentParser(
+        description="Automate the sites creation in a Mist Org from a CSV file.",
+        add_help=False,
+    )
+    parser.add_argument("-f", "--file", dest="csv_file", required=True, help="Path to the CSV file")
+    parser.add_argument("-o", "--org_id", dest="org_id", default="", help="Org ID")
+    parser.add_argument("-n", "--org_name", dest="org_name", default="", help="Org name")
+    parser.add_argument("-g", "--google_api_key", dest="google_api_key", default="", help="Google API key used for geocoding")
+    parser.add_argument("-l", "--log_file", dest="log_file", default="./script.log", help="Log file path")
+    parser.add_argument("-e", "--env", dest="env_file", default="~/.mist_env", help="Env file to use")
+    parser.add_argument("-h", "--help", action="store_true", help="Show this help message and exit")
 
-    CSV_FILE = None
-    ORG_ID = None
-    ORG_NAME = None
-    PARAMS = {}
+    args = parser.parse_args()
 
-    for o, a in opts:
-        if o in ["-h", "--help"]:
-            usage()
-        elif o in ["-o", "--org_id"]:
-            PARAMS[o]=a
-            ORG_ID = a
-        elif o in ["-n", "--org_name"]:
-            PARAMS[o]=a
-            ORG_NAME = a
-        elif o in ["-g", "--google_api_key"]:
-            PARAMS[o]="*****************"
-            GOOGLE_API_KEY = a
-        elif o in ["-f", "--file"]:
-            PARAMS[o]=a
-            CSV_FILE = a
-        elif o in ["-e", "--env"]:
-            PARAMS[o]=a
-            ENV_FILE = a
-        elif o in ["-l", "--log_file"]:
-            PARAMS[o]=a
-            LOG_FILE = a
-        else:
-            assert False, "unhandled option"
+
+    if args.help:
+        usage()
+        
+    CSV_FILE = args.csv_file
+    ORG_ID = args.org_id
+    ORG_NAME = args.org_name
+    GOOGLE_API_KEY = args.google_api_key
+    LOG_FILE = args.log_file
+    ENV_FILE = args.env_file
+
+    PARAMS = {
+        "-f": CSV_FILE,
+        "-o": ORG_ID,
+        "-n": ORG_NAME,
+        "-g": "*****************" if GOOGLE_API_KEY else "",
+        "-l": LOG_FILE,
+        "-e": ENV_FILE,
+    }
 
     #### LOGS ####
-    logging.basicConfig(filename=LOG_FILE, filemode='w')
+    logging.basicConfig(filename=LOG_FILE, filemode="w")
     LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     #### LOG SCRIPT PARAMETERS ####
     for param, value in PARAMS.items():
-        LOGGER.debug(f"opts: {param} is {value}")
+        LOGGER.debug("opts: %s is %s", param, value)
     ### MIST SESSION ###
-    apisession = mistapi.APISession(env_file=ENV_FILE)
-    apisession.login()
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
 
     ### START ###
     if not CSV_FILE:
         console.error("CSV File is missing")
         usage()
     else:
-        start(apisession, CSV_FILE, ORG_ID, ORG_NAME, GOOGLE_API_KEY)
+        start(APISESSION, CSV_FILE, ORG_ID, ORG_NAME, GOOGLE_API_KEY)
