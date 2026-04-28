@@ -95,8 +95,8 @@ MISTAPI_MIN_VERSION = "0.44.1"
 try:
     import mistapi
     from mistapi.__logger import console as CONSOLE
-except:
-        print("""
+except ImportError:
+    print("""
         Critical: 
         \"mistapi\" package is missing. Please use the pip command to install it.
 
@@ -106,11 +106,11 @@ except:
         # Windows
         py -m pip install mistapi
         """)
-        sys.exit(2)
+    sys.exit(2)
 
 #### PARAMETERS #####
-ENV_FILE="~/.mist_env"
-CSV_FILE="./import_guests.csv"
+ENV_FILE = "~/.mist_env"
+CSV_FILE = "./import_guests.csv"
 LOG_FILE = "./script.log"
 
 #####################################################################
@@ -119,6 +119,8 @@ LOGGER = logging.getLogger(__name__)
 
 #####################################################################
 # PROGRESS BAR AND DISPLAY
+
+
 class ProgressBar:
     def __init__(self):
         self.steps_total = 0
@@ -131,7 +133,7 @@ class ProgressBar:
         percent = self.steps_count / self.steps_total
         delta = 17
         x = int((size - delta) * percent)
-        print(f"Progress: ", end="")
+        print("Progress: ", end="")
         print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
         print(f"{int(percent*100)}%".rjust(5), end="")
 
@@ -167,38 +169,41 @@ class ProgressBar:
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
     def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.info(f"{message}: Success")
+        LOGGER.info("%s: Success", message)
         self._pb_new_step(
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.error(f"{message}: Failure")
+        LOGGER.error("%s: Failure", message)
         self._pb_new_step(
             message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
     def log_title(self, message, end: bool = False, display_pbar: bool = True):
-        LOGGER.info(message)
+        LOGGER.info("%s", message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
+
 
 PB = ProgressBar()
 
 #####################################################################
 # FUNCTIONS
 
-def _process_wlans(wlans:list):
+
+def _process_wlans(wlans: list) -> dict:
     data = {}
     for wlan in wlans:
         ssid = wlan["ssid"]
-        id = wlan["id"]
+        wlan_id = wlan["id"]
         if ssid not in data:
-            data[ssid] = [id]
+            data[ssid] = [wlan_id]
         else:
-            data[ssid].append(id)
+            data[ssid].append(wlan_id)
     return data
 
-def _update_guest_payload(message:str, guest: dict, wlans:dict):
+
+def _update_guest_payload(message: str, guest: dict, wlans: dict) -> dict:
 
     # Tmp fix. seems that "authorized_expiring_time" is not usable anymore at the site level. Use the "minutes" field instead
     expire_time = guest.get("authorized_expiring_time")
@@ -206,45 +211,50 @@ def _update_guest_payload(message:str, guest: dict, wlans:dict):
         now = datetime.datetime.now().timestamp()
         minutes = (expire_time - now)/60
         guest["minutes"] = minutes
-        
+
     if "ssid" in guest:
         ssid = guest["ssid"]
         del guest["ssid"]
-        LOGGER.debug(f"_replace_guest_wlan:looking for the id for WLAN {ssid}")
+        LOGGER.debug("_replace_guest_wlan:looking for the id for WLAN %s", ssid)
         wlan_ids = wlans.get(ssid, [])
-        if len(wlan_ids)==0:
-            LOGGER.error(f"_replace_guest_wlan:unable to find WLAN {ssid} in the org")
+        if len(wlan_ids) == 0:
+            LOGGER.error(
+                "_replace_guest_wlan:unable to find WLAN %s in the org", ssid)
             PB.log_failure(message, inc=True)
-            return None
+            return {}
         elif len(wlan_ids) > 1:
             LOGGER.error(
-                f"_replace_guest_wlan:too many WLANs with the name {ssid} in the org"
-                )
+                "_replace_guest_wlan:too many WLANs with the name %s in the org", ssid) 
             PB.log_failure(message, inc=True)
-            return None
+            return {}
         else:
-            LOGGER.debug(f"_replace_guest_wlan:found the id for WLAN {ssid}: {wlan_ids[0]}")
-            guest["wlan_id"] = wlan_ids[0]   
+            LOGGER.debug(
+                "_replace_guest_wlan:found the id for WLAN %s: %s", ssid, wlan_ids[0])
+            guest["wlan_id"] = wlan_ids[0]
     return guest
 
-def _retrieve_site_wlans(apisession:mistapi.APISession, site_id:str):
-    message = f"retrieving Site WLANs"
+
+def _retrieve_site_wlans(apisession: mistapi.APISession, site_id: str) -> dict:
+    message = "retrieving Site WLANs"
     try:
         PB.log_message(message)
-        resp = mistapi.api.v1.sites.wlans.listSiteWlanDerived(apisession, site_id)
+        resp = mistapi.api.v1.sites.wlans.listSiteWlansDerived(
+            apisession, site_id)
         wlans = mistapi.get_all(apisession, resp)
         if len(wlans) > 0:
             PB.log_success(message, inc=True)
             return _process_wlans(wlans)
         else:
             PB.log_failure(message, inc=True)
-            CONSOLE.critical(f"No Site WLANs found... Exiting...")
-    except Exception as e:
+            CONSOLE.critical("No Site WLANs found... Exiting...")
+            sys.exit(255)
+    except Exception:
         PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
+        sys.exit(255)
 
 
-def _create_site_guest(apisession:mistapi.APISession, site_id:str, guests:list,wlans:dict):
+def _create_site_guest(apisession: mistapi.APISession, site_id: str, guests: list, wlans: dict) -> None:
     PB.log_title("Create Site Guests")
     for guest in guests:
         message = f"create guest {guest['mac']}"
@@ -256,18 +266,19 @@ def _create_site_guest(apisession:mistapi.APISession, site_id:str, guests:list,w
             guest_payload = _update_guest_payload(message, guest, wlans)
 
             if guest_payload:
-                resp = mistapi.api.v1.sites.guests.updateSiteGuestAuthorization(apisession, site_id, mac, guest_payload)
+                resp = mistapi.api.v1.sites.guests.updateSiteGuestAuthorization(
+                    apisession, site_id, mac, guest_payload)
                 if resp.status_code == 200:
                     PB.log_success(message, inc=True)
                 else:
                     PB.log_failure(message, inc=True)
-        except Exception as e:
+        except Exception:
             PB.log_failure(message, inc=True)
             LOGGER.error("Exception occurred", exc_info=True)
 
 
-def _retrieve_org_wlans(apisession:mistapi.APISession, org_id:str):
-    message = f"retrieving Org WLANs"
+def _retrieve_org_wlans(apisession: mistapi.APISession, org_id: str) -> dict:
+    message = "retrieving Org WLANs"
     try:
         PB.log_message(message)
         resp = mistapi.api.v1.orgs.wlans.listOrgWlans(apisession, org_id)
@@ -277,12 +288,15 @@ def _retrieve_org_wlans(apisession:mistapi.APISession, org_id:str):
             return _process_wlans(wlans)
         else:
             PB.log_failure(message, inc=True)
-            CONSOLE.critical(f"No Org WLANs found... Exiting...")
-    except Exception as e:
+            CONSOLE.critical("No Org WLANs found... Exiting...")
+            sys.exit(255)
+    except Exception:
         PB.log_failure(message, inc=True)
         LOGGER.error("Exception occurred", exc_info=True)
+        sys.exit(255)
 
-def _create_org_guest(apisession:mistapi.APISession, org_id:str, guests:list, wlans:dict):
+
+def _create_org_guest(apisession: mistapi.APISession, org_id: str, guests: list, wlans: dict) -> None:
     PB.log_title("Create Org Guests")
 
     for guest in guests:
@@ -292,42 +306,45 @@ def _create_org_guest(apisession:mistapi.APISession, org_id:str, guests:list, wl
 
             mac = guest["mac"].replace(":", "")
             del guest["mac"]
-                        
+
             guest_payload = _update_guest_payload(message, guest, wlans)
-            
+
             if guest_payload:
-                resp = mistapi.api.v1.orgs.guests.updateOrgGuestAuthorization(apisession, org_id, mac, guest_payload)
+                resp = mistapi.api.v1.orgs.guests.updateOrgGuestAuthorization(
+                    apisession, org_id, mac, guest_payload)
                 if resp.status_code == 200:
                     PB.log_success(message, inc=True)
                 else:
                     PB.log_failure(message, inc=True)
-        except Exception as e:
+        except Exception:
             PB.log_failure(message, inc=True)
             LOGGER.error("Exception occurred", exc_info=True)
 
-def _read_csv(csv_file:str):
+
+def _read_csv(csv_file: str) -> list:
     message = "Processing CSV File"
     try:
         PB.log_message(message, display_pbar=False)
-        LOGGER.debug(f"_read_csv:opening CSV file {csv_file}")
-        with open(csv_file, "r") as f:
+        LOGGER.debug("_read_csv:opening CSV file %s", csv_file)
+        with open(csv_file, "r", encoding="utf-8") as f:
             data = csv.reader(f, skipinitialspace=True, quotechar='"')
             data = [[c.replace("\ufeff", "") for c in row] for row in data]
             fields = []
             guests = []
             for line in data:
-                LOGGER.debug(f"_read_csv:new csv line:{line}")
+                LOGGER.debug("_read_csv:new csv line:%s", line)
                 if not fields:
                     for column in line:
                         fields.append(column.replace("#", "").strip())
-                    LOGGER.debug(f"_read_csv:detected CSV fields: {fields}")
+                    LOGGER.debug("_read_csv:detected CSV fields: %s", fields)
                     if "mac" not in fields:
-                        LOGGER.critical(f"_read_csv:mac address not in CSV file... Exiting...")
+                        LOGGER.critical(
+                            "_read_csv:mac address not in CSV file... Exiting...")
                         PB.log_failure(message, display_pbar=False)
                         CONSOLE.critical(
                             "CSV format invalid (MAC Address not found). "
                             "Please double check it... Exiting..."
-                            )
+                        )
                         sys.exit(255)
                 else:
                     guest = {}
@@ -344,34 +361,33 @@ def _read_csv(csv_file:str):
                                 guest[field] = False
                             else:
                                 LOGGER.error(
-                                    f"_read_csv:Unable to convert {field} value "
-                                    f"({column}) to bool"
-                                    )
+                                    "_read_csv:Unable to convert %s value (%s) to bool", field, column
+                                )
                                 guest[field] = True
                         elif field in ["authorized_expiring_time", "authorized_time"]:
                             try:
                                 data = int(column)
                                 guest[field] = data
-                            except:
+                            except Exception:
                                 LOGGER.error(
-                                    f"_read_csv:Unable to convert {field} value "
-                                    f"({column}) to int"
-                                    )
+                                    "_read_csv:Unable to convert %s value (%s) to int", field, column
+                                )
                         else:
                             guest[field] = column.strip()
                         i += 1
                     if "authorized" not in guest:
                         guest["authorized"] = True
-                    LOGGER.debug(f"_read_csv:new guest:{guest}")
+                    LOGGER.debug("_read_csv:new guest:%s", guest)
                     guests.append(guest)
         PB.log_message(message, display_pbar=False)
         return guests
-    except Exception as e:
+    except Exception:
         PB.log_failure(message, display_pbar=False)
         LOGGER.error("Exception occurred", exc_info=True)
+        sys.exit(255)
 
 
-def _menu(apisession:mistapi.APISession):
+def _menu(apisession: mistapi.APISession) -> tuple[str, str]:
     while True:
         actions = ["ORG level", "SITE level"]
         print("Where do you want to import the Guests:")
@@ -388,23 +404,22 @@ def _menu(apisession:mistapi.APISession):
                 resp_num = int(resp)
                 if resp_num >= 0 and resp_num <= len(actions):
                     if actions[resp_num] == "ORG level":
-                        org_id = mistapi.cli.select_org(apisession)[0], None
-                        LOGGER.debug(f"_menu:selected org_id: {org_id}")
-                        return org_id, None
+                        org_id = mistapi.cli.select_org(apisession)[0]
+                        LOGGER.debug("_menu:selected org_id: %s", org_id)
+                        return org_id, ""
                     elif actions[resp_num] == "SITE level":
                         site_id = mistapi.cli.select_site(apisession)[0]
-                        LOGGER.debug(f"_menu:selected site_id: {site_id}")
-                        return None, site_id
+                        LOGGER.debug("_menu:selected site_id: %s", site_id)
+                        return "", site_id
                     else:
-                        LOGGER.error(f"_menu:wrong selection:{resp_num}")
+                        LOGGER.error("_menu:wrong selection:%s", resp_num)
                         print(f"{resp_num} is not part of the possibilities.")
-            except:
-                LOGGER.error(f"_menu:not number:{resp}")
+            except Exception:
+                LOGGER.error("_menu:not number:%s", resp)
                 print("Only numbers are allowed.")
 
 
-
-def start(apisession:mistapi.APISession, org_id:str=None, site_id:str=None, csv_file:str=None):
+def start(apisession: mistapi.APISession, org_id: str = "", site_id: str = "", csv_file: str = ""):
     """
     Start the process
 
@@ -426,7 +441,8 @@ def start(apisession:mistapi.APISession, org_id:str=None, site_id:str=None, csv_
 
     """
     if org_id and site_id:
-        CONSOLE.critical("Inavlid Parameters: \"org_id\" and site_id\" are exclusive")
+        CONSOLE.critical(
+            "Invalid Parameters: \"org_id\" and site_id\" are exclusive")
     elif not org_id and not site_id:
         org_id, site_id = _menu(apisession)
 
@@ -445,10 +461,9 @@ def start(apisession:mistapi.APISession, org_id:str=None, site_id:str=None, csv_
         _create_site_guest(apisession, site_id, guests, wlans)
 
 
-
 ###############################################################################
 # USAGE
-def usage(error_message:str=None):
+def usage(error_message: str | None = None):
     """
     show script usage
     """
@@ -541,6 +556,7 @@ python3 ./import_guests.py \
         CONSOLE.critical(error_message)
     sys.exit(0)
 
+
 def check_mistapi_version():
     """Check if the installed mistapi version meets the minimum requirement."""
 
@@ -586,7 +602,8 @@ py -m pip install --upgrade mistapi
         )
 
 #####################################################################
-##### ENTRY POINT ####
+#####  ENTRY POINT ####
+
 
 if __name__ == "__main__":
     try:
@@ -596,8 +613,8 @@ if __name__ == "__main__":
         CONSOLE.error(err)
         usage()
 
-    ORG_ID = None
-    SITE_ID = None
+    ORG_ID = ""
+    SITE_ID = ""
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -608,7 +625,7 @@ if __name__ == "__main__":
                 usage(
                     "Inavlid Parameters: \"-o\"/\"--org_id\" "
                     "and \"-s\"/\"--site_id\" are exclusive"
-                    )
+                )
         elif o in ["-s", "--site_id"]:
             if not ORG_ID:
                 SITE_ID = a
@@ -616,7 +633,7 @@ if __name__ == "__main__":
                 usage(
                     "Inavlid Parameters: \"-o\"/\"--org_id\" "
                     "and \"-s\"/\"--site_id\" are exclusive"
-                    )
+                )
         elif o in ["-f", "--file"]:
             CSV_FILE = a
         elif o in ["-e", "--env"]:
@@ -630,7 +647,6 @@ if __name__ == "__main__":
     LOGGER.setLevel(logging.DEBUG)
     check_mistapi_version()
     ### START ###
-    apisession = mistapi.APISession(env_file=ENV_FILE)
-    apisession.login()
-    start(apisession, ORG_ID, SITE_ID, CSV_FILE)
-    
+    APISESSION = mistapi.APISession(env_file=ENV_FILE)
+    APISESSION.login()
+    start(APISESSION, ORG_ID, SITE_ID, CSV_FILE)
