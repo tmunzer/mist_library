@@ -19,7 +19,7 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 Prerequisites:
 
-- Python >= 3.10+ 
+- Python >= 3.10
 - A Mist API token or username/password with appropriate privileges
 - Repository checked out locally
 
