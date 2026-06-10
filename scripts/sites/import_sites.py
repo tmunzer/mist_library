@@ -43,7 +43,7 @@ object name OR the object id (this must be defined in the first line, by appendi
 -------
 CSV Example:
 #name,address,sitegroup_names,rftemplate_id,networktemplate_name,gatewaytemplate_name,vars
-Juniper France, "41 rue de Villiers, Neuilly sur Seine, France", "test1, test2",39ce2...ab5ee,ex-lab,test,"vlan_guest:3,vlan_corp:2"
+Juniper France, "41 rue de Villiers, Neuilly sur Seine, France", "test1, test2",39ce2...ab5ee,ex-lab,test,"vlan_guest:3|vlan_corp:2"
 
 -------
 CSV Parameters:
@@ -1241,7 +1241,7 @@ object name OR the object id (this must be defined in the first line, by appendi
 -------
 CSV Example:
 #name,address,sitegroup_names,rftemplate_id,networktemplate_name,gatewaytemplate_name,vars
-Juniper France, "41 rue de Villiers, Neuilly sur Seine, France", "test1, test2",39ce2...ab5ee,ex-lab,test,"vlan_guest:3,vlan_corp:2"
+Juniper France, "41 rue de Villiers, Neuilly sur Seine, France", "test1, test2",39ce2...ab5ee,ex-lab,test,"vlan_guest:3|vlan_corp:2"
 
 -------
 CSV Parameters:
