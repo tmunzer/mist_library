@@ -607,31 +607,34 @@ def _create_site(
 
 
 def _update_site(apisession: mistapi.APISession, site: dict, site_id: str, src_site_data: dict = {}) -> None:
-    if "vars" in site and site["vars"] or "networks" in site and site["networks"] or src_site_data:
+    if site.get("vars") or site.get("networks") or src_site_data:
         message = f"Site {site['name']}: Updating Site settings"
         PB.log_message(message)
         site_data = src_site_data.copy()
         try:            
             site_vars = {}
             site_networks = {}
+            
             for entry in site.get("vars", "").split(VARS_SEPARATOR):
-                key = entry.split(":")[0]
-                val = entry.split(":")[1]
-                site_vars[key] = val
+                if len(entry.split(":")) == 2:
+                    k = entry.split(":")[0]
+                    v = entry.split(":")[1]
+                    site_vars[k] = v
             for entry in site.get("networks", "").split(NETWORKS_SEPARATOR):
-                network_type = entry.split(":")[0]
-                vlan_id = entry.split(":")[1]
-                subnet = entry.split(":")[2]
-                gateway = entry.split(":")[3]
-                subnet6 = entry.split(":")[4]
-                gateway6 = entry.split(":")[5]
-                site_networks[network_type] = {
-                    "vlan_id": vlan_id,
-                    "subnet": subnet,
-                    "gateway": gateway,
-                    "subnet6": subnet6,
-                    "gateway6": gateway6,
-                }
+                if len(entry.split(":")) == 6:
+                    network_type = entry.split(":")[0]
+                    vlan_id = entry.split(":")[1]
+                    subnet = entry.split(":")[2]
+                    gateway = entry.split(":")[3]
+                    subnet6 = entry.split(":")[4]
+                    gateway6 = entry.split(":")[5]
+                    site_networks[network_type] = {
+                        "vlan_id": vlan_id,
+                        "subnet": subnet,
+                        "gateway": gateway,
+                        "subnet6": subnet6,
+                        "gateway6": gateway6,
+                    }
             site_data["vars"] = site_vars
             site_data["networks"] = site_networks
             mistapi.api.v1.sites.setting.updateSiteSettings(
