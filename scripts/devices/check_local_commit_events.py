@@ -8,16 +8,16 @@
 
 -------------------------------------------------------------------------------
 This script can be used to retrieve and save into files the CLI Commit events
-(commit done locally one the switches) for all the switches belonging to a Mist 
-Organization.
+(commit done locally on the switches or the gateways) for all the switches and 
+gateways belonging to a Mist Organization.
 
 The script is automatically retrieving the list of sites with managed switches,
 then it is retrieving the commit events for each site, and saving the CLI 
 commit events into a file. 
 The script is creating a dedicated folder for each Mist Org (based on the 
-org_id), one sub folder for each site with managed switches withing the org
-(based on the site_id), and then one file for each switch with local commit
-events (based on the switch MAC address).
+org_id), one sub folder for each site with managed switches or gateways within 
+the org (based on the site_id), and then one file for each switch or gateway 
+with local commit events (based on the device MAC address).
 
 -------
 Requirements:
@@ -52,7 +52,7 @@ Script Parameters:
 
 -f, --folder=       folder where to save the files. The script will create a subfolder
                     with the org_id then one subfolder per site, and one file per
-                    switch with CLI commit events in the subfolder.
+                    device (switch or gateway) with CLI commit events in the subfolder.
                     If the folder doesn't exists, it will be created.
                     default: "./cli_commit_events"
 
@@ -99,7 +99,6 @@ except ImportError:
 
 #### PARAMETERS #####
 ENV_FILE = "~/.mist_env"
-CSV_FILE = "./update_port_config.csv"
 LOG_FILE = "./script.log"
 
 ###############################################################################
@@ -194,7 +193,7 @@ PB = ProgressBar()
 # FUNCTION
 def _find_sites(apisession: mistapi.APISession, org_id: str) -> list:
     """
-    Find all the sites from the org with Managed switches
+    Find all the sites from the org with switches or gateways
 
     PARAMS
     -------
@@ -208,29 +207,31 @@ def _find_sites(apisession: mistapi.APISession, org_id: str) -> list:
     RETURNS
     -------
     list:
-        list of site_id where there is at list one managed switch
+        list of site_id where there is at least one managed switch or gateway
     """
     site_ids = []
-    try:
-        message = "Retrieving the Sites with managed switches"
-        PB.log_message(message, display_pbar=False)
-        resp = mistapi.api.v1.orgs.devices.countOrgDevices(
-            apisession, org_id, distinct="site_id", managed="true", limit=1000
-        )
-        if resp.status_code == 200:
-            results = mistapi.get_all(apisession, resp)
-            for site in results:
-                if site.get("site_id") != "00000000-0000-0000-0000-000000000000":
-                    site_ids.append(site.get("site_id"))
-            PB.log_success(message, display_pbar=False)
-            return site_ids
-        else:
+    for device_type in ["switch", "gateway"]:
+        try:
+            message = f"Retrieving the Sites with managed {device_type}"
+            PB.log_message(message, display_pbar=False)
+            resp = mistapi.api.v1.orgs.devices.countOrgDevices(
+                apisession, org_id, distinct="site_id", type=device_type, limit=1000
+            )
+            if resp.status_code == 200:
+                results = mistapi.get_all(apisession, resp)
+                for site in results:
+                    if site.get("site_id") != "00000000-0000-0000-0000-000000000000" and site.get("site_id") not in site_ids:
+                        site_ids.append(site.get("site_id"))
+                PB.log_success(message, display_pbar=False)
+                return site_ids
+            else:
+                PB.log_failure(message, display_pbar=False)
+                sys.exit(100)
+        except Exception:
             PB.log_failure(message, display_pbar=False)
+            LOGGER.error("Exception occurred", exc_info=True)
             sys.exit(100)
-    except Exception:
-        PB.log_failure(message, display_pbar=False)
-        LOGGER.error("Exception occurred", exc_info=True)
-        sys.exit(100)
+    return []
 
 
 def _find_events(apisession: mistapi.APISession, site_id: str, duration: str) -> list:
@@ -255,7 +256,7 @@ def _find_events(apisession: mistapi.APISession, site_id: str, duration: str) ->
         message = f"Site {site_id}: retrieving CLI Commit Events"
         PB.log_message(message, display_pbar=True)
         resp = mistapi.api.v1.sites.devices.searchSiteDeviceEvents(
-            apisession, site_id, type="SW_CONFIGURED", limit=1000, duration=duration
+            apisession, site_id, type="SW_CONFIGURED,GW_CONFIGURED", limit=1000, duration=duration
         )
         if resp.status_code == 200:
             results = mistapi.get_all(apisession, resp)
@@ -304,13 +305,13 @@ def _save_events(events: dict, site_id: str) -> None:
         try:
             if not os.path.exists(site_id):
                 os.makedirs(site_id)
-            for mac, switch_events in events.items():
+            for mac, device_events in events.items():
                 file_path = f"./{site_id}/{mac}"
-                sorted_switch_events = sorted(
-                    switch_events, key=lambda d: d["timestamp"], reverse=True
+                sorted_device_events = sorted(
+                    device_events, key=lambda d: d["timestamp"], reverse=True
                 )
-                with open(file_path, "w") as f:
-                    for e in sorted_switch_events:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    for e in sorted_device_events:
                         f.write(
                             f"-------------- commit at {e.get('timestamp')} - user {e.get('commit_user')} --------------\n"
                         )
@@ -380,7 +381,8 @@ def start(
         for more information. Wrong format may result in empty results.
     folder: str, default: "./cli_commit_events"
         folder where to save the files. The script will create a subfolder with the org_id then
-        one subfolder per site, and one file per switch with CLI commit events in the subfolder.
+        one subfolder per site, and one file per device (switch or gateway) with CLI commit 
+        events in the subfolder.
         If the folder doesn't exists, it will be created.
     """
     if not org_id:
@@ -408,16 +410,16 @@ def usage(error_message: str|None = None):
 
 -------------------------------------------------------------------------------
 This script can be used to retrieve and save into files the CLI Commit events
-(commit done locally one the switches) for all the switches belonging to a Mist 
-Organization.
+(commit done locally on the switches or the gateways) for all the switches and 
+gateways belonging to a Mist Organization.
 
 The script is automatically retrieving the list of sites with managed switches,
 then it is retrieving the commit events for each site, and saving the CLI 
 commit events into a file. 
 The script is creating a dedicated folder for each Mist Org (based on the 
-org_id), one sub folder for each site with managed switches withing the org
-(based on the site_id), and then one file for each switch with local commit
-events (based on the switch MAC address).
+org_id), one sub folder for each site with managed switches or gateways within 
+the org (based on the site_id), and then one file for each switch or gateway 
+with local commit events (based on the device MAC address).
 
 -------
 Requirements:
@@ -452,7 +454,7 @@ Script Parameters:
 
 -f, --folder=       folder where to save the files. The script will create a subfolder
                     with the org_id then one subfolder per site, and one file per
-                    switch with CLI commit events in the subfolder.
+                    device (switch or gateway) with CLI commit events in the subfolder.
                     If the folder doesn't exists, it will be created.
                     default: "./cli_commit_events"
 
@@ -525,7 +527,7 @@ py -m pip install --upgrade mistapi
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Retrieve and save CLI Commit events from Mist switches",
+        description="Retrieve and save CLI Commit events from Mist switches and gateways",
         add_help=False,
     )
     # Add help manually to maintain control over usage function
