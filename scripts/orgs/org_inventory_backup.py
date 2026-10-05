@@ -380,7 +380,7 @@ def _backup_inventory(
         )
         evpn_topologies = mistapi.get_all(mist_session, response)
         for evpn_topology in evpn_topologies:
-            backup["org"]["old_evpntopo_id"][deviceprofile["name"]] = evpn_topology[
+            backup["org"]["old_evpntopo_id"][evpn_topology["name"]] = evpn_topology[
                 "id"
             ]
         PB.log_success(message, True)
