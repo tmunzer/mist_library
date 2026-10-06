@@ -153,9 +153,9 @@ class ProgressBar:
         percent = self.steps_count / self.steps_total
         delta = 17
         x = int((size - delta) * percent)
-        print(f"Progress: ", end="")
-        print(f"[{'█'*x}{'.'*(size-delta-x)}]", end="")
-        print(f"{int(percent*100)}%".rjust(5), end="")
+        print("Progress: ", end="")
+        print(f"[{'█' * x}{'.' * (size - delta - x)}]", end="")
+        print(f"{int(percent * 100)}%".rjust(5), end="")
 
     def _pb_new_step(
         self,
@@ -182,28 +182,79 @@ class ProgressBar:
             print("".ljust(80))
             self._pb_update(size)
 
-    def set_steps_total(self, steps_total: int):
+    def set_steps_total(self, steps_total: int) -> None:
+        """
+        Set the total number of steps for the progress bar.
+        :param steps_total: The total number of steps
+        """
         self.steps_total = steps_total
 
-    def log_message(self, message, display_pbar: bool = True):
+    def log_message(self, message, display_pbar: bool = True) -> None:
+        """
+        Log a message in the progress bar.
+        :param message: The message to log
+        :param display_pbar: If True, the progress bar will be displayed after the message
+        """
         self._pb_new_step(message, " ", display_pbar=display_pbar)
 
-    def log_success(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.info(f"{message}: Success")
+    def log_debug(self, message) -> None:
+        """
+        Log a debug message.
+        :param message: The debug message to log
+        """
+        LOGGER.debug(message)
+
+    def log_success(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a success message in the progress bar.
+        :param message: The success message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the success
+        """
+        LOGGER.info("%s: Success", message)
         self._pb_new_step(
             message, "\033[92m\u2714\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
-    def log_failure(self, message, inc: bool = False, display_pbar: bool = True):
-        LOGGER.error(f"{message}: Failure")
+    def log_warning(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a warning message in the progress bar.
+        :param message: The warning message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the warning
+        """
+        LOGGER.warning(message)
+        self._pb_new_step(
+            message, "\033[93m\u2b58\033[0m\n", inc=inc, display_pbar=display_pbar
+        )
+
+    def log_failure(
+        self, message, inc: bool = False, display_pbar: bool = True
+    ) -> None:
+        """
+        Log a failure message in the progress bar.
+        :param message: The failure message to log
+        :param inc: If True, the step count will be incremented
+        :param display_pbar: If True, the progress bar will be displayed after the failure
+        """
+        LOGGER.error("%s: Failure", message)
         self._pb_new_step(
             message, "\033[31m\u2716\033[0m\n", inc=inc, display_pbar=display_pbar
         )
 
-    def log_title(self, message, end: bool = False, display_pbar: bool = True):
+    def log_title(self, message, end: bool = False, display_pbar: bool = True) -> None:
+        """
+        Log a title message in the progress bar.
+        :param message: The title message to log
+        :param end: If True, the progress bar will not be displayed after the title
+        :param display_pbar: If True, the progress bar will be displayed after the title
+        """
         LOGGER.info(message)
         self._pb_title(message, end=end, display_pbar=display_pbar)
-
 
 PB = ProgressBar()
 
@@ -603,7 +654,7 @@ def _backup_inventory(
         )
         evpn_topologies = mistapi.get_all(mist_session, response)
         for evpn_topology in evpn_topologies:
-            backup["org"]["old_evpntopo_id"][deviceprofile["name"]] = evpn_topology[
+            backup["org"]["old_evpntopo_id"][evpn_topology["name"]] = evpn_topology[
                 "id"
             ]
         PB.log_success(message, True)
