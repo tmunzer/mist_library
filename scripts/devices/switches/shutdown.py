@@ -234,10 +234,11 @@ def shutdown(session: mistapi.APISession, site_id: str, device_id: str, verbose:
                 if verbose:
                     print(data.decode("utf-8", errors="replace"), end="")
                 shell_output += data.decode("utf-8", errors="replace")
+            LOGGER.debug("Shell output:\n%s", shell_output)
             if "System going down IMMEDIATELY" in shell_output:
                 PB.log_success(message, inc=1)
             else:
-                PB.log_failure(message, inc=1)
+                raise RuntimeError(f"Failed to shut down device {device_id}. Shell output:\n{shell_output}")
     except Exception as e:
         PB.log_failure(message, inc=1)
         LOGGER.error("Failed to shut down device %s: %s", device_id, str(e))
@@ -311,10 +312,10 @@ py -m pip install --upgrade mistapi
 #### SCRIPT ENTRYPOINT ####
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Shutdown one or multiple switches")
-    parser.add_argument("-s", "--site-id", help="ID of the site")
-    parser.add_argument("-d", "--device-ids", help="IDs of the devices, comma-separated")
-    parser.add_argument("-e", "--env-file", default=ENV_FILE, help="Path to the environment file")
-    parser.add_argument("-l", "--log-file", default=LOG_FILE, help="Path to the log file")
+    parser.add_argument("-s", "--site_id", help="ID of the site")
+    parser.add_argument("-d", "--device_ids", help="IDs of the devices, comma-separated")
+    parser.add_argument("-e", "--env_file", default=ENV_FILE, help="Path to the environment file")
+    parser.add_argument("-l", "--log_file", default=LOG_FILE, help="Path to the log file")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose display by showing the switches outputs")
     args = parser.parse_args()
     
